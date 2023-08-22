@@ -1,0 +1,51 @@
+name: Deploy documentation
+
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install package and dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements_dev.txt
+        python -m pip install --no-build-isolation --no-deps --verbose --editable .
+    - name: Build docs
+      run: |
+        cd docs
+        make html
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: docs
+        path: docs/_build/html
+    - name: Deploy docs
+      if: github.event_name == 'push'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        personal_token: ${{ secrets.PHASORPY_DOC_DEPLOY_KEY }}
+        external_repository: phasorpy/phasorpy.github.io
+        publish_dir: docs/_build/html
+        publish_branch: main
+        destination_dir: ${{github.ref_name}}
+        # cname: phasorpy.org

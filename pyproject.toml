@@ -1,0 +1,157 @@
+[build-system]
+requires = [
+    "setuptools>=68",
+    "wheel",
+    # "numpy",
+    # "Cython",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phasorpy"
+description = "Analysis of fluorescence lifetime and hyperspectral images using the phasor approach"
+readme = { file = "README.md", content-type = "text/markdown" }
+dynamic = ["version"]
+dependencies = [
+    "numpy",
+    "matplotlib",
+    "click",
+    # "scipy",
+    # "scikit-image",
+    # "scikit-learn",
+    # "pandas",
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+authors = [{ name = "PhasorPy Contributors"},]
+license = { text = "MIT" }
+
+[project.urls]
+Homepage = "https://www.phasorpy.org"
+Code = "https://github.com/phasorpy/phasorpy"
+"Issue tracker" = "https://github.com/phasorpy/phasorpy/issues"
+
+[project.scripts]
+phasorpy = "phasorpy.cli:main"
+
+[project.optional-dependencies]
+docs = [
+    "sphinx",
+    "sphinx-issues",
+    "sphinx_gallery",
+    "sphinx-copybutton",
+    "sphinx_click",
+    "pydata-sphinx-theme",
+    "numpydoc",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-runner",
+    "pytest-doctestplus",
+    "coverage",
+]
+io = [
+    "aicsimageio",
+    "tifffile",
+    "lfdfiles",
+    "sdtfile",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["phasorpy"]
+license-files = ["LICENSE.txt"]
+zip-safe = false
+
+[tool.setuptools.dynamic]
+version = {attr = "phasorpy.version.__version__"}
+
+[tool.setuptools.package-data]
+phasorpy = ["py.typed"]
+
+[tool.pylint.format]
+max-line-length = 79
+max-module-lines = 2500
+
+[tool.pylint.messages_control]
+disable = [
+    "import-outside-toplevel",
+    "wrong-import-order",
+    "wrong-import-position",
+]
+
+[tool.black]
+line-length = 79
+target-versions = ["py310", "py311", "py312"]
+skip-string-normalization = true
+
+[tool.isort]
+profile = "black"
+line_length = 79
+
+[tool.codespell]
+skip = "*.html,*.css,*.js,*.map,./.git,./docs/_build,./docs/tutorials,PKG-INFO,_htmlcov,pyproject.toml"
+ignore-words-list = "ba,compiletime,hist,nd,unparseable,HSI"
+
+[tool.mypy]
+# follow_imports = "silent"
+ignore_missing_imports = true
+packages = ["phasorpy"]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "pragma: ${PY_MAJOR_VERSION} no cover",
+]
+
+[tool.coverage.html]
+directory = "_htmlcov"
+
+[tool.pytest.ini_options]
+addopts = "--cov=phasorpy --cov-report html --doctest-modules --doctest-glob=*.py --doctest-glob=*.rst"
+doctest_optionflags = [
+    "NORMALIZE_WHITESPACE",
+    "ELLIPSIS",
+    "IGNORE_EXCEPTION_DETAIL",
+]
+testpaths = [
+    "src/phasorpy",
+    "tests",
+    "docs",
+]
+norecursedirs = [
+    "._",
+    ".git",
+    ".github",
+    ".vscode",
+    ".mypy_cache",
+    ".pytest_cache",
+    "adhoc",
+    "build",
+    "docs",
+    "fixture",
+    "htmlcov",
+    "_htmlcov",
+    "tutorials",
+    "phasorpy.egg-info",
+]
+
+[tool.cibuildwheel]
+skip = "cp37 cp38 cp39 pp*"
+test-requires = ["pytest", "pytest-cov", "coverage"]
+test-command = "pytest tests"

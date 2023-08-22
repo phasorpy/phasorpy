@@ -1,0 +1,58 @@
+# Requirements for developing the PhasorPy library
+#
+# numpy requirements
+# use NEP29 minimum
+numpy == 1.23.5; python_version == "3.10"
+# use latest
+numpy >= 1.25; python_version > "3.10"
+#
+# runtime requirements
+matplotlib
+click
+#
+# build requirements
+setuptools
+build
+wheel
+twine
+packaging
+# Cython
+# meson-python
+#
+# documentation requirements
+sphinx
+sphinx-issues
+sphinx_gallery
+sphinx-copybutton
+sphinx_click
+numpydoc
+pydata-sphinx-theme
+#
+# test requirements
+pytest
+coverage
+pytest-cov
+pytest-runner
+pytest-doctestplus
+#
+# tools requirements
+tomli; python_version < "3.11"
+black
+flake8
+isort
+mypy
+codespell
+# pre-commit
+# pooch
+#
+# optional requirements
+# aicsimageio
+# scipy
+# scikit-image
+# scikit-learn
+# pandas
+# xarray
+# zarr
+# fsspec
+# lfdfiles
+# sdtfile

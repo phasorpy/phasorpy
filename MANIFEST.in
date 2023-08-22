@@ -1,0 +1,18 @@
+include LICENSE.txt
+include README.md
+
+include tests/*.py
+
+include docs/*.py
+include docs/*.rst
+include docs/api/*.rst
+include docs/_static/*.*
+
+recursive-include tutorials *.py
+recursive-include tutorials *.rst
+
+exclude *.cmd
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * *Copy*
