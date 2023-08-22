@@ -83,6 +83,17 @@ version = {attr = "phasorpy.version.__version__"}
 [tool.setuptools.package-data]
 phasorpy = ["py.typed"]
 
+[tool.pylint.format]
+max-line-length = 79
+max-module-lines = 2500
+
+[tool.pylint.messages_control]
+disable = [
+    "import-outside-toplevel",
+    "wrong-import-order",
+    "wrong-import-position",
+]
+
 [tool.black]
 line-length = 79
 target-versions = ["py310", "py311", "py312"]
@@ -97,9 +108,10 @@ skip = "*.html,*.css,*.js,*.map,./.git,./docs/_build,./docs/tutorials,PKG-INFO,_
 ignore-words-list = "ba,compiletime,hist,nd,unparseable,HSI"
 
 [tool.mypy]
-follow_imports = "silent"
+# follow_imports = "silent"
 ignore_missing_imports = true
 packages = ["phasorpy"]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
 
 [tool.coverage.report]
 exclude_lines = [

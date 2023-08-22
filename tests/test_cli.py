@@ -7,6 +7,7 @@ from phasorpy.cli import main
 
 
 def test_version():
+    """Test ``python -m phasorpy --version``."""
     runner = CliRunner()
     result = runner.invoke(main, ['--version'])
 
@@ -15,6 +16,7 @@ def test_version():
 
 
 def test_versions():
+    """Test ``python -m phasorpy --versions``."""
     runner = CliRunner()
     result = runner.invoke(main, ['--versions'])
 

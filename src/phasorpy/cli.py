@@ -34,4 +34,4 @@ def main(versions: bool) -> int:
 if __name__ == '__main__':
     import sys
 
-    sys.exit(main())
+    sys.exit(main())  # pylint: disable=no-value-for-parameter

@@ -6,5 +6,5 @@ __all__ = ['__version__', 'versions']
 
 from .version import __version__, versions
 
-__version__ = __version__  # for Sphinx
+__version__ = __version__  # pylint: disable=self-assigning-variable
 """PhasorPy version string."""

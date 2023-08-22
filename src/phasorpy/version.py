@@ -27,10 +27,10 @@ def versions(*, sep: str = '\n') -> str:
 
     try:
         path = os.path.dirname(__file__)
-    except Exception:
+    except NameError:
         path = ''
 
-    versions = [
+    version_strings = [
         f'Python {sys.version} ({sys.executable})',
         f'phasorpy {__version__} ({path})',
     ]
@@ -49,11 +49,11 @@ def versions(*, sep: str = '\n') -> str:
     ):
         try:
             __import__(module)
-        except Exception:
-            versions.append(f'{module.lower()} N/A')
+        except ModuleNotFoundError:
+            version_strings.append(f'{module.lower()} N/A')
             continue
         lib = sys.modules[module]
-        versions.append(
+        version_strings.append(
             f"{module.lower()} {getattr(lib, '__version__', 'unknown')}"
         )
-    return sep.join(versions)
+    return sep.join(version_strings)

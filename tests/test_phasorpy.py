@@ -4,6 +4,7 @@ from phasorpy import __version__, versions
 
 
 def test_versions():
-    v = versions()
-    assert f'phasorpy {__version__}' in v
-    assert 'numpy' in v
+    """Test phasorpy.versions function."""
+    ver = versions()
+    assert f'phasorpy {__version__}' in ver
+    assert 'numpy' in ver
