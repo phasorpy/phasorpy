@@ -130,7 +130,7 @@ approach to analyze fluorescence time-resolved or spectral images:
   and
   `Time Gated Phasor PlugIn <http://spechron.com/Time%20gated%20Phasor-Download.aspx>`_
   are open-source ImageJ plugins by Farzad Fereidouni, which provide
-  visualization, segmentation, and unmixing of time resolved and spectral
+  visualization, segmentation, and unmixing of time-resolved and spectral
   images using the phasor approach. The software is distributed under an
   unknown license and was last updated in 2013.
 
@@ -147,6 +147,11 @@ approach to analyze fluorescence time-resolved or spectral images:
   is an open-source Python library for linear unmixing and phasor tools for
   FLIM analysis developed by Jay Unruh. The library is distributed under
   the GPL2 license.
+
+- `FLIMLib <https://flimlib.github.io>`_ is an exponential curve fitting
+  library used for Fluorescent Lifetime Imaging (FLIM). It includes a function
+  to calculate phasor coordinates from time-resolved signals.
+  FLIMLib is licensed under the GPL v3.
 
 - `Instant-FLIM-Analysis <https://github.com/yzhang34/Instant-FLIM-Analysis>`_
   is an open-source Matlab program that analyzes data acquired with an
