@@ -148,6 +148,11 @@ approach to analyze fluorescence time-resolved or spectral images:
   FLIM analysis developed by Jay Unruh. The library is distributed under
   the GPL2 license.
 
+- `PhasorIdentifier <https://github.com/Mariochem92/PhasorIdentifier>`_
+  is a Jupyter notebook to analyze FLIM files, including masking, cell
+  segmentation, pH correlation, nanoscale effects, and precise quantification.
+  The notebook is distributed under CC BY-NC 4.0.
+
 - `FLIMLib <https://flimlib.github.io>`_ is an exponential curve fitting
   library used for Fluorescent Lifetime Imaging (FLIM). It includes a function
   to calculate phasor coordinates from time-resolved signals.
