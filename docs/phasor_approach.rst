@@ -158,6 +158,11 @@ approach to analyze fluorescence time-resolved or spectral images:
   to calculate phasor coordinates from time-resolved signals.
   FLIMLib is licensed under the GPL v3.
 
+- `PAM <https://pam.readthedocs.io/en/latest/phasor.html>`_
+  is an open-source GUI-based Matlab package for the analysis of fluorescence
+  experiments. The phasor analysis includes region of interests, fractions,
+  triangular mixtures, and FRET estimation. PAM is licensed under the GPL v3.
+
 - `Instant-FLIM-Analysis <https://github.com/yzhang34/Instant-FLIM-Analysis>`_
   is an open-source Matlab program that analyzes data acquired with an
   "instant FLIM" system. It supports image segmentation based on phasor plot
