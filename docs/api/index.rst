@@ -13,4 +13,5 @@ PhasorPy library version |version|.
     :maxdepth: 2
 
     phasorpy
+    color
     cli
