@@ -9,6 +9,9 @@ numpy >= 1.25; python_version > "3.10"
 # runtime requirements
 matplotlib
 click
+pooch
+xarray
+tifffile
 #
 # build requirements
 setuptools
@@ -43,7 +46,6 @@ isort
 mypy
 codespell
 # pre-commit
-# pooch
 #
 # optional requirements
 # aicsimageio
@@ -51,8 +53,7 @@ codespell
 # scikit-image
 # scikit-learn
 # pandas
-# xarray
 # zarr
 # fsspec
-# lfdfiles
-# sdtfile
+lfdfiles
+sdtfile

@@ -16,6 +16,9 @@ dependencies = [
     "numpy",
     "matplotlib",
     "click",
+    "pooch",
+    "xarray",
+    "tifffile",
     # "scipy",
     # "scikit-image",
     # "scikit-learn",
@@ -36,7 +39,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-authors = [{ name = "PhasorPy Contributors"},]
+authors = [{ name = "PhasorPy Contributors" }]
 license = { text = "MIT" }
 
 [project.urls]
@@ -64,21 +67,16 @@ test = [
     "pytest-doctestplus",
     "coverage",
 ]
-io = [
-    "aicsimageio",
-    "tifffile",
-    "lfdfiles",
-    "sdtfile",
-]
+io = ["lfdfiles", "sdtfile"]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 packages = ["phasorpy"]
 license-files = ["LICENSE.txt"]
 zip-safe = false
 
 [tool.setuptools.dynamic]
-version = {attr = "phasorpy.version.__version__"}
+version = { attr = "phasorpy.version.__version__" }
 
 [tool.setuptools.package-data]
 phasorpy = ["py.typed"]
@@ -86,6 +84,21 @@ phasorpy = ["py.typed"]
 [tool.pylint.format]
 max-line-length = 79
 max-module-lines = 2500
+good-names = [
+    "i",
+    "j",
+    "k",
+    "x",
+    "y",
+    "z",
+    "c",
+    "t",
+    "ax",
+    "fh",
+    "dc",
+    "re",
+    "im",
+]
 
 [tool.pylint.messages_control]
 disable = [
@@ -104,7 +117,7 @@ profile = "black"
 line_length = 79
 
 [tool.codespell]
-skip = "*.html,*.css,*.js,*.map,./.git,./docs/_build,./docs/tutorials,PKG-INFO,_htmlcov,pyproject.toml"
+skip = "*.html,*.css,*.js,*.map,./.git,./data,./docs/_build,./docs/tutorials,PKG-INFO,_htmlcov,pyproject.toml"
 ignore-words-list = "ba,compiletime,hist,nd,unparseable,HSI"
 
 [tool.mypy]
@@ -114,10 +127,7 @@ packages = ["phasorpy"]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
 
 [tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "pragma: ${PY_MAJOR_VERSION} no cover",
-]
+exclude_lines = ["pragma: no cover", "pragma: ${PY_MAJOR_VERSION} no cover"]
 
 [tool.coverage.html]
 directory = "_htmlcov"
@@ -129,11 +139,7 @@ doctest_optionflags = [
     "ELLIPSIS",
     "IGNORE_EXCEPTION_DETAIL",
 ]
-testpaths = [
-    "src/phasorpy",
-    "tests",
-    "docs",
-]
+testpaths = ["src/phasorpy", "tests", "docs"]
 norecursedirs = [
     "._",
     ".git",
