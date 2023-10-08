@@ -13,6 +13,7 @@ from __future__ import annotations
 
 __all__ = ['fetch']
 
+import os
 from typing import Any
 
 import pooch
@@ -224,10 +225,10 @@ class _Unzip(pooch.processors.ExtractorProcessor):
     """Pooch processor that unpacks ZIP archive and returns single file."""
 
     def __call__(self, fname, action, pooch_):
-        filenames = pooch.processors.ExtractorProcessor.__call__(
+        pooch.processors.ExtractorProcessor.__call__(
             self, fname, action, pooch_
         )
-        return filenames[0]
+        return os.path.splitext(fname)[0]
 
     def _extract_file(self, fname, extract_dir):
         """Extract all files from ZIP archive."""
