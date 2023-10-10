@@ -39,13 +39,15 @@ def versions(*, sep: str = '\n') -> str:
         'numpy',
         'matplotlib',
         'click',
+        'pooch',
+        'xarray',
         'tifffile',
+        'lfdfiles',
+        'sdtfile',
         # 'scipy',
         # 'skimage',
         # 'sklearn',
         # 'aicsimageio',
-        # 'lfdfiles',
-        # 'sdtfile',
     ):
         try:
             __import__(module)

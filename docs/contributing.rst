@@ -2,7 +2,7 @@ Contributing
 ============
 
 As a community-maintained project, PhasorPy welcomes contributions in the form
-of bug reports, bug fixes, documentation, and enhancement proposals.
+of bug reports, bug fixes, datasets, documentation, and enhancement proposals.
 This document provides information on how to contribute.
 
 The :doc:`code_of_conduct` should be honored by everyone participating in the
@@ -19,6 +19,14 @@ Propose enhancements
 
 To suggest a new feature or other improvement to the PhasorPy library, open a
 `GitHub issue <https://github.com/phasorpy/phasorpy/issues>`_.
+
+Share data files
+----------------
+
+The PhasorPy project strives to support reading image and metadata from many
+time-resolved and hyperspectral file formats used in bio-imaging.
+Consider sharing datasets for testing and use in tutorials, preferably with the
+`PhasorPy community on Zenodo <https://zenodo.org/communities/phasorpy/>`_.
 
 Report bugs
 -----------
@@ -164,7 +172,7 @@ Run the unit tests and doctests in the development environment::
 
 All tests must pass.
 
-PhasorPy strives to maintain near 100% test coverage. The coverage report
+PhasorPy strives to maintain near complete test coverage. The coverage report
 is automatically generated during testing.
 
 Configuration settings for pytest and other tools are in the
@@ -179,7 +187,7 @@ standard and be formatted with
 `black <https://black.readthedocs.io/en/stable/>`_
 (single quotes and lines up to 79 characters are allowed)::
 
-    python -m black --check phasorpy tutorials
+    python -m black --check src/phasorpy tutorials tests
 
 User-facing classes and functions must use
 `type hints <https://peps.python.org/pep-0484/>`_
@@ -192,14 +200,14 @@ static type checker::
 Import statements must be sorted and sectioned using
 `isort <https://pycqa.github.io/isort/>`_::
 
-    $ python -m isort src/phasorpy tutorials
+    $ python -m isort src/phasorpy tutorials tests
 
 Check for common misspellings in text files::
 
     $ python -m codespell_lib
 
 The PhasorPy project follows numpy's
-`NEP 29 <https://numpy.org/neps/nep-0029-deprecation_policy.html>`
+`NEP 29 <https://numpy.org/neps/nep-0029-deprecation_policy.html>`_
 for Python and NumPy version support.
 However, the initial requirements are Python 3.10+ and numpy 1.23+.
 

@@ -42,3 +42,4 @@ from typing import (
 )
 
 from numpy.typing import ArrayLike, DTypeLike, NDArray
+from xarray import DataArray
