@@ -191,7 +191,7 @@ def fetch(
 
     Returns
     -------
-    full_path : str
+    str
         Absolute path of file in local storage.
 
     Examples

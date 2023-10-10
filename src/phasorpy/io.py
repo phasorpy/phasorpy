@@ -165,13 +165,16 @@ def write_ometiff_phasor(
         Refer to the OME model for allowed axes and their order.
     bigtiff : bool, optional
         Write BigTIFF file, which can exceed 4 GB.
-    **kwargs : optional
+    **kwargs : dict, optional
         Additional parameters passed to ``tifffile.TiffWriter.write``,
         for example ``compression``.
 
     Examples
     --------
-    >>> write_ometiff_phasor('_phasor.ome.tif', [[1]], [[0.5]], [[0.5]])
+    >>> dc, re, im = numpy.random.rand(3, 32, 32, 32)
+    >>> write_ometiff_phasor(
+    ...     '_phasor.ome.tif', dc, re, im, axes='ZYX', compression='zlib'
+    ... )
 
     """
     import tifffile
@@ -220,14 +223,14 @@ def read_ometiff_phasor(
 
     Examples
     --------
-    >>> write_ometiff_phasor('_phasor.ome.tif', [[1]], [[0.5]], [[0.5]])
+    >>> write_ometiff_phasor('_phasor.ome.tif', *numpy.random.rand(3, 32, 32))
     >>> dc, re, im = read_ometiff_phasor('_phasor.ome.tif')
     >>> dc.data
     array(...)
     >>> dc.dtype
     dtype('float32')
     >>> dc.shape
-    (1, 1)
+    (32, 32)
     >>> dc.dims
     ('Y', 'X')
 
@@ -271,7 +274,7 @@ def read_lsm(
 
     Returns
     -------
-    data : xarray.DataArray
+    xarray.DataArray
         Hyperspectral image data.
         Usually, a 3 to 5 dimensional array of type ``uint8`` or ``uint16``.
 
@@ -359,6 +362,7 @@ def read_ifli(
     filename: str | PathLike[Any],
     /,
     channel: int = 0,
+    **kwargs: Any,
 ) -> DataArray:
     """Return image and metadata from ISS IFLI file.
 
@@ -372,10 +376,13 @@ def read_ifli(
         Name of ISS IFLI file to read.
     channel : int, optional
         Index of channel to return. The first channel is returned by default.
+    **kwargs : dict, optional
+        Additional parameters passed to ``lfdfiles.VistaIfli.asarray``,
+        for example ``memmap=True``.
 
     Returns
     -------
-    data : xarray.DataArray
+    xarray.DataArray
         Average intensity and phasor coordinates.
         An array of up to 8 dimensions and type ``float32``.
         The last dimension contains `dc`, `re`, and `im` phasor coordinates.
@@ -415,7 +422,7 @@ def read_ifli(
 
     with lfdfiles.VistaIfli(filename) as ifli:
         assert ifli.axes is not None
-        data = ifli.asarray()[:, channel : channel + 1]
+        data = ifli.asarray(**kwargs)[:, channel : channel + 1]
         shape, axes, _ = _squeeze_axes(data.shape, ifli.axes, skip='FYX')
         data = data.reshape(shape)
         header = ifli.header
@@ -464,7 +471,7 @@ def read_sdt(
 
     Returns
     -------
-    data : xarray.DataArray
+    xarray.DataArray
         Time correlated single photon counting image data
         of type ``uint16``, ``uint32``, or ``float32``.
 
@@ -532,7 +539,7 @@ def read_ref(
 
     Returns
     -------
-    data : xarray.DataArray
+    xarray.DataArray
         Referenced fluorescence lifetime polar coordinates.
         An array of 5 (rarely more) 256x256 images of type ``float32``:
 
@@ -589,7 +596,7 @@ def read_r64(
 
     Returns
     -------
-    data : xarray.DataArray
+    xarray.DataArray
         Referenced fluorescence lifetime polar coordinates.
         An array of 5 (rarely more) 256x256 images of type ``float32``:
 
@@ -648,7 +655,7 @@ def read_b64(
 
     Returns
     -------
-    data : xarray.DataArray
+    xarray.DataArray
         Stack of square-sized intensity images of type ``int16``.
 
     Raises
@@ -703,7 +710,7 @@ def read_z64(
 
     Returns
     -------
-    data : xarray.DataArray
+    xarray.DataArray
         Single or stack of square-sized images of type ``float32``.
 
     Raises
@@ -749,7 +756,7 @@ def read_bh(
 
     Returns
     -------
-    data : xarray.DataArray
+    xarray.DataArray
         Time-domain fluorescence lifetime histogram of shape
         ``(256, 256, 256)`` and type ``float32``.
 
@@ -797,7 +804,7 @@ def read_bhz(
 
     Returns
     -------
-    data : xarray.DataArray
+    xarray.DataArray
         Time-domain fluorescence lifetime histogram of shape
         ``(256, 256, 256)`` and type ``float32``.
 

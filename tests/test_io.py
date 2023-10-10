@@ -126,7 +126,7 @@ def test_read_sdt():
 def test_read_ifli():
     """Test read ISS VistaVision file."""
     filename = fetch('frequency_domain.ifli')
-    data = read_ifli(filename)
+    data = read_ifli(filename, memmap=True)
     assert data.shape == (256, 256, 4, 3)
     assert data.dtype == numpy.float32
     assert data.dims == ('Y', 'X', 'F', 'S')

@@ -187,7 +187,7 @@ standard and be formatted with
 `black <https://black.readthedocs.io/en/stable/>`_
 (single quotes and lines up to 79 characters are allowed)::
 
-    python -m black --check phasorpy tutorials
+    python -m black --check src/phasorpy tutorials tests
 
 User-facing classes and functions must use
 `type hints <https://peps.python.org/pep-0484/>`_
@@ -200,14 +200,14 @@ static type checker::
 Import statements must be sorted and sectioned using
 `isort <https://pycqa.github.io/isort/>`_::
 
-    $ python -m isort src/phasorpy tutorials
+    $ python -m isort src/phasorpy tutorials tests
 
 Check for common misspellings in text files::
 
     $ python -m codespell_lib
 
 The PhasorPy project follows numpy's
-`NEP 29 <https://numpy.org/neps/nep-0029-deprecation_policy.html>`
+`NEP 29 <https://numpy.org/neps/nep-0029-deprecation_policy.html>`_
 for Python and NumPy version support.
 However, the initial requirements are Python 3.10+ and numpy 1.23+.
 
