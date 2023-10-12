@@ -71,7 +71,21 @@ html_theme_options = {
     'logo': {
         'text': 'PhasorPy',
         'alt_text': 'PhasorPy',
+        # 'image_dark': '_static/logo-dark.svg',
     },
+    'header_links_before_dropdown': 4,
+    'icon_links': [
+        {
+            'name': 'GitHub',
+            'url': 'https://github.com/phasorpy/phasorpy',
+            'icon': 'fa-brands fa-github',
+        },
+        # {
+        #     'name': 'PyPI',
+        #     'url': 'https://pypi.org/project/phasorpy/',
+        #     'icon': 'fa-custom fa-pypi',
+        # },
+    ],
 }
 
 sphinx_gallery_conf = {
