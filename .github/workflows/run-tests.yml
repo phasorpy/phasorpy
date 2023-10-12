@@ -30,7 +30,7 @@ jobs:
         python -m pip install -r requirements_dev.txt
     - name: Print dependency versions
       run: |
-        phasorpy --versions
+        phasorpy versions
     - name: Test with pytest
       run: |
         python -X dev -m pytest

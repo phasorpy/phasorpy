@@ -6,11 +6,18 @@ import pytest
 
 from phasorpy.datasets import fetch
 
+# skip large downloads by default
+SKIP_LARGE = bool(int(os.environ.get('SKIP_LARGE', 1)))
+
 
 def test_fetch():
     """Test fetch file."""
-    filename = fetch('simfcs.r64')
+    name = 'simfcs.r64'
+    filename = fetch(name)
+    assert filename.endswith(name)
     assert os.path.exists(filename)
+    filename = fetch(name, return_scalar=False)
+    assert filename[0].endswith(name)
 
 
 def test_fetch_inzip():
@@ -36,3 +43,32 @@ def test_fetch_nonexistent():
     """Test fetch non-existent file."""
     with pytest.raises(ValueError):
         fetch('non-existent.file')
+
+
+def test_fetch_multi():
+    """Test fetch multiple files."""
+    filenames = fetch('simfcs.r64', 'simfcs.ref')
+    for filename in filenames:
+        assert os.path.exists(filename)
+
+
+def test_fetch_list():
+    """Test fetch multiple files."""
+    filenames = fetch(['simfcs.r64', 'simfcs.ref'])
+    assert len(filenames) == 2
+
+
+@pytest.mark.skipif(SKIP_LARGE, reason='large download')
+def test_fetch_repo():
+    """Test fetch repo."""
+    filenames = fetch('tests')
+    for filename in filenames:
+        assert os.path.exists(filename)
+
+
+@pytest.mark.skipif(SKIP_LARGE, reason='large download')
+def test_fetch_all():
+    """Test fetch all files."""
+    filenames = fetch()
+    for filename in filenames:
+        assert os.path.exists(filename)

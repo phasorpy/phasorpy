@@ -8,27 +8,43 @@ Invoke the command line application with::
 
 from __future__ import annotations
 
+import os
+
 import click
 
 from . import version
 
 
-@click.command(help='PhasorPy package command line interface.')
+@click.group(help='PhasorPy package command line interface.')
 @click.version_option(version=version.__version__)
+def main() -> int:
+    """PhasorPy command line interface."""
+    return 0
+
+
+@main.command(help='Show runtime versions.')
+def versions():
+    """Versions command group."""
+    click.echo(version.versions())
+
+
+@main.command(help='Fetch sample files from remote repositories.')
+@click.argument('files', nargs=-1)
 @click.option(
-    '--versions',
+    '--hideprogress',
     default=False,
     is_flag=True,
-    show_default=True,
-    help='Show runtime versions and exit.',
     type=click.BOOL,
+    help='Hide progressbar.',
 )
-def main(versions: bool) -> int:
-    """PhasorPy command line interface."""
-    if versions:
-        click.echo(version.versions())
-        return 0
-    return 0
+def fetch(files, hideprogress):
+    """Fetch command group."""
+    from . import datasets
+
+    files = datasets.fetch(
+        *files, return_scalar=False, progressbar=not hideprogress
+    )
+    click.echo(f'Cached at {os.path.commonpath(files)}')
 
 
 if __name__ == '__main__':

@@ -1,8 +1,17 @@
 """Manage sample data files for testing and tutorials.
 
 The ``phasorpy.datasets`` module provides a :py:func:`fetch` function to
-download data files from remote repositories.
-The downloaded files are cached in a local directory.
+download data files from remote repositories and cache them in a local
+directory. The cache location can be changed by setting the
+``PHASORPY_DATA_DIR`` environment variable.
+
+Datasets from the following repositories are available:
+
+- `PhasorPy tests <https://zenodo.org/record/8417894>`_
+- `LFD Workshop <https://zenodo.org/record/8411056>`_
+- `FLUTE <https://zenodo.org/record/8046636>`_
+- `napari-flim-phasor-plotter
+  <https://github.com/zoccoler/napari-flim-phasor-plotter/tree/0.0.6/src/napari_flim_phasor_plotter/data>`_
 
 The implementation is based on the `Pooch <https://www.fatiando.org/pooch>`_
 library.
@@ -11,16 +20,22 @@ library.
 
 from __future__ import annotations
 
-__all__ = ['fetch']
+__all__ = ['fetch', 'REPOSITORIES']
 
 import os
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ._typing import Any, Iterable
 
 import pooch
+
+ENV = 'PHASORPY_DATA_DIR'
 
 TESTS = pooch.create(
     path=pooch.os_cache('phasorpy'),
     base_url='doi:10.5281/zenodo.8417894',
+    env=ENV,
     registry={
         'flimage.int.bin': (
             'sha256:'
@@ -128,6 +143,7 @@ TESTS = pooch.create(
 LFD_WORKSHOP = pooch.create(
     path=pooch.os_cache('phasorpy'),
     base_url='doi:10.5281/zenodo.8411056',
+    env=ENV,
     registry={
         '4-22-03-2-A5-CHO-CELL3B.tif': (
             'sha256:'
@@ -164,61 +180,186 @@ LFD_WORKSHOP = pooch.create(
     },
 )
 
-REPOSITORIES: tuple[pooch.Pooch, ...] = (TESTS, LFD_WORKSHOP)
+FLUTE = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url='doi:10.5281/zenodo.8046636',
+    env=ENV,
+    registry={
+        'Embryo.tif': (
+            'sha256:'
+            'd1107de8d0f3da476e90bcb80ddf40231df343ed9f28340c873cf858ca869e20'
+        ),
+        'Fluorescein_Embryo.tif': (
+            'sha256:'
+            '53cb66439a6e921aef1aa7f57ef542260c51cdb8fe56a643f80ea88fe2230bc8'
+        ),
+        'Fluorescein_hMSC.tif': (
+            'sha256:'
+            'a3f22076e8dc89b639f690146e46ff8a068388cbf381c2f3a9225cdcbbcec605'
+        ),
+        'hMSC control.tif': (
+            'sha256:'
+            '725570373ee51ee226560ec5ebb57708e2fac53effc94774c03b71c67a42c9f8'
+        ),
+        'hMSC-ZOOM.tif': (
+            'sha256:'
+            '6ff4be17e9d98a94b44ef13ec57af3c520f8deaeef72a7210ea371b84617ce92'
+        ),
+        'hMSC_rotenone.tif': (
+            'sha256:'
+            'cd0d2bd3baddc0f82c84c9624692e51bbbc56a80ac20b5936be0898d619c2bf2'
+        ),
+    },
+)
+
+NAPARI_FLIM_PHASOR_PLOTTER = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url='https://github.com/zoccoler/napari-flim-phasor-plotter/'
+    'raw/0.0.6/src/napari_flim_phasor_plotter/data',
+    env=ENV,
+    registry={
+        'hazelnut_FLIM_single_image.ptu': (
+            'sha256:'
+            '262f60ebc0054ba985fdda3032b58419aac07720e5f157800616c864d15fc2d3'
+        ),
+        'hazelnut_FLIM_z_stack.zip': (
+            'sha256:'
+            '8d26ebc7c758a70ee256d95c06f7921baa3cecbcdde82c7bb54b66bcb8db156e'
+        ),
+        'lifetime_cat.tif': (
+            'sha256:'
+            '5f2a2d20284a6f32fa3d1d13cb0c535cea5c2ec99c23148d9ee2d1e22d121a34'
+        ),
+        'lifetime_cat_labels.tif': (
+            'sha256:'
+            '102d74c202171f0ce2821dfbf1c92ead578bafebf99830e0cfa766e7407aadf9'
+        ),
+        'lifetime_cat_metadata.yml': (
+            'sha256:'
+            '20c447c1251598f255309fa866e58fc0e4abc2b73e824d18727833a05467d8bc'
+        ),
+        'seminal_receptacle_FLIM_single_image.sdt': (
+            'sha256:'
+            '2ba169495e533235cffcad953e76c7969286aad9181b946f5167390b8ff1a44a'
+        ),
+    },
+)
+
+
+REPOSITORIES: dict[str, pooch.Pooch] = {
+    'tests': TESTS,
+    'lfd-workshop': LFD_WORKSHOP,
+    'flute': FLUTE,
+    'napari-flim-phasor-plotter': NAPARI_FLIM_PHASOR_PLOTTER,
+}
 """Pooch repositories."""
 
 
 def fetch(
-    filename: str,
-    /,
-    *,
+    *args: str | Iterable[str | pooch.Pooch] | pooch.Pooch,
     extract_dir: str | None = '.',
+    return_scalar: bool = True,
     **kwargs: Any,
-) -> str:
-    """Return absolute path to sample file in local storage.
+) -> Any:  # str | tuple[str, ...]
+    """Return absolute path(s) to sample file(s) in local storage.
 
-    The file is downloaded from a remote repository if the file does not
-    already exist in the local storage.
+    The files are downloaded from a remote repository if they do not already
+    exist in the local storage.
 
     Parameters
     ----------
-    filename : str
-        Name of file to fetch from local storage.
+    *args: str or iterable of str, optional
+        Name(s) of file(s) or repositories to fetch from local storage.
+        If omitted, return files in all repositories.
     extract_dir : str or None, optional
         Path, relative to cache location, where ZIP files will be unpacked.
+    return_scalar : bool, optional
+        If true (default), return single path as string, else tuple of string.
     **kwargs : optional
-        Additional parameters passed to ``pooch.fetch()``.
+        Additional arguments passed to ``pooch.fetch()``.
+        For example, ``progressbar=True``.
 
     Returns
     -------
-    str
-        Absolute path of file in local storage.
+    str or tuple of str
+        Absolute path(s) of file(s) in local storage.
 
     Examples
     --------
     >>> fetch('simfcs.r64')
     '...simfcs.r64'
+    >>> fetch('simfcs.r64', 'simfcs.ref')
+    ('...simfcs.r64', '...simfcs.ref')
 
     """
-    for repo in REPOSITORIES:
-        if filename + '.zip' in repo.registry:
-            # download and extract ZIP, return file name
-            return repo.fetch(
-                filename + '.zip',
-                processor=_Unzip([filename], extract_dir),
-                **kwargs,
-            )
-        if filename in repo.registry:
-            if filename.endswith('.zip'):
-                # download and extract ZIP, return all file names in ZIP
-                return repo.fetch(
-                    filename,
-                    processor=pooch.processors.Unzip(extract_dir=extract_dir),
+    filenames: list[str] = []
+    if not args:
+        args = tuple(REPOSITORIES.keys())
+    for arg in args:
+        if isinstance(arg, str):
+            if arg in REPOSITORIES:
+                # fetch all files in repository
+                filenames.extend(
+                    fetch(
+                        *REPOSITORIES[arg].registry.keys(),
+                        extract_dir=extract_dir,
+                        return_scalar=False,
+                        **kwargs,
+                    )
+                )
+                continue
+            for repo in REPOSITORIES.values():
+                if arg + '.zip' in repo.registry:
+                    # fetch single file in ZIP
+                    filenames.append(
+                        repo.fetch(
+                            arg + '.zip',
+                            processor=_Unzip([arg], extract_dir),
+                            **kwargs,
+                        )
+                    )
+                    break
+                if arg in repo.registry:
+                    if arg.endswith('.zip'):
+                        # fetch and extract all files in ZIP
+                        filenames.extend(
+                            repo.fetch(
+                                arg,
+                                processor=pooch.processors.Unzip(
+                                    extract_dir=extract_dir
+                                ),
+                                **kwargs,
+                            )
+                        )
+                    else:
+                        # fetch single file
+                        filenames.append(repo.fetch(arg, **kwargs))
+                    break
+            else:
+                raise ValueError(f'file {arg!r} not found')
+        elif isinstance(arg, pooch.Pooch):
+            # fetch all files in repository
+            filenames.extend(
+                fetch(
+                    *arg.registry.keys(),
+                    extract_dir=extract_dir,
+                    return_scalar=False,
                     **kwargs,
                 )
-            # download file, return file name
-            return repo.fetch(filename, **kwargs)
-    raise ValueError('file not found')
+            )
+        else:
+            # fetch all files in iterable
+            filenames.extend(
+                fetch(
+                    *arg,
+                    extract_dir=extract_dir,
+                    return_scalar=False,
+                    **kwargs,
+                )
+            )
+    if return_scalar and len(filenames) == 1:
+        return filenames[0]
+    return tuple(filenames)
 
 
 class _Unzip(pooch.processors.ExtractorProcessor):

@@ -33,5 +33,5 @@ Any data files necessary to run the code can be attached to the issue or shared 
 Information how PhasorPy was installed (pip, conda, or other) and the console output of:
 
 ```
-$ python -m phasorpy --versions
+$ python -m phasorpy versions
 ```
