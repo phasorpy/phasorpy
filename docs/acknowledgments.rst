@@ -28,4 +28,4 @@ bug fixes, or expertise:
 - Enrico Gratton
 - :user:`Leonel Malacrida <lmalacrida>`
 - :user:`Bruno Pannunzio <bruno-pannunzio>`
-- :user:`Bruno Schuty <schutyb>`
+- :user:`Bruno Schüty <schutyb>`

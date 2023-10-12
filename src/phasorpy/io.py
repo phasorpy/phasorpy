@@ -166,7 +166,7 @@ def write_ometiff_phasor(
     bigtiff : bool, optional
         Write BigTIFF file, which can exceed 4 GB.
     **kwargs : dict, optional
-        Additional parameters passed to ``tifffile.TiffWriter.write``,
+        Additional arguments passed to ``tifffile.TiffWriter.write``,
         for example ``compression``.
 
     Examples
@@ -377,7 +377,7 @@ def read_ifli(
     channel : int, optional
         Index of channel to return. The first channel is returned by default.
     **kwargs : dict, optional
-        Additional parameters passed to ``lfdfiles.VistaIfli.asarray``,
+        Additional arguments passed to ``lfdfiles.VistaIfli.asarray``,
         for example ``memmap=True``.
 
     Returns

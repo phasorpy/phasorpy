@@ -58,7 +58,7 @@ and include the following items in the bug report:
 - Information how PhasorPy was installed (pip, conda, or other) and the output
   of::
 
-    $ python -m phasorpy --versions
+    $ python -m phasorpy versions
     Python 3.11.4 ...
     phasorpy 0.1.dev ...
     numpy 1.25.2

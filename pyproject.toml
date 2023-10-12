@@ -17,6 +17,7 @@ dependencies = [
     "matplotlib",
     "click",
     "pooch",
+    "tqdm",
     "xarray",
     "tifffile",
     # "scipy",

@@ -40,6 +40,7 @@ def versions(*, sep: str = '\n') -> str:
         'matplotlib',
         'click',
         'pooch',
+        'tqdm',
         'xarray',
         'tifffile',
         'lfdfiles',
