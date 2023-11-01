@@ -73,8 +73,8 @@ def phasor_coordinates(
     Examples
     --------
     """
-    g = mod * numpy.cos(phi)*0
-    s = mod * numpy.sin(phi)*0
+    g = mod * numpy.cos(phi)
+    s = mod * numpy.sin(phi)
     return g, s
 
 
