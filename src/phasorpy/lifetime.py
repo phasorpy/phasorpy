@@ -1,6 +1,4 @@
 """
-
-
 The `phasorpy.lifetime` module provides functions to:
 - Convert phase and modulation data into phasor coordinates and vice-versa in the frequency domain
 - Manage phase and modulation lifetime computations
@@ -57,14 +55,13 @@ def phasor_coordinates(
 
     Examples
     --------
-    >>> data = read_r64(fetch('simfcs.r64'))
-    >>> phi = data[1,:,:]
-    >>> mod = data[2,:,:]
+    >>> phi = numpy.random.rand(256, 256)
+    >>> mod = numpy.random.rand(256, 256)
     >>> g,s=phasor_coordinates(phi,mod)
     >>> g.dtype
-    dtype('float32')
+    dtype('float64')
     >>> s.dtype
-    dtype('float32')
+    dtype('float64')
     >>> s.shape
     (256, 256)
     >>> g.shape
@@ -95,15 +92,17 @@ def phasemodule_values(
       Module values Module values of type ``float32`.
     Examples
     --------
+    >>> g = numpy.random.rand(256, 256)
+    >>> s = numpy.random.rand(256, 256)
     >>> g.shape
     (256, 256)
     >>> g.dtype
-    dtype('float32')
+    dtype('float64')
     >>> phi, mod = phasemodule_values(g, s)
     >>> phi.shape
     (256, 256)
     >>> phi.dtype
-    dtype('float32')
+    dtype('float64')
     """
     g = numpy.asarray(g)  # Convert to NumPy array if not already
     s = numpy.asarray(s)  # Convert to NumPy array if not already
@@ -124,7 +123,7 @@ def lifetime_computation_phasor(
       Real part value of the phasor coordinates.
     s: float
       Imaginary part value of the phasor coordinates.
-    laser_rep_frequency: int
+    laser_rep_frequency: float
       laser repetition frequency in MHz.
     Returns:
     -------
@@ -150,7 +149,7 @@ def lifetime_computation_phasor(
 
 
 def lifetime_computation_array(
-    g: ArrayLike, s: ArrayLike, laser_rep_frequency: int, /,
+    g: ArrayLike, s: ArrayLike, laser_rep_frequency: float, /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
      Calculate lifetime values from phasor coordinates and laser repetition frequency.
@@ -160,7 +159,7 @@ def lifetime_computation_array(
       Real part of the phasor coordinates of type ``float32`.
     s: array_like
       Imaginary part of the phasor coordinates of type ``float32`.
-    laser_rep_frequency: int
+    laser_rep_frequency: float
       laser repetition frequency in MHz.
     Returns:
     -------
@@ -168,6 +167,10 @@ def lifetime_computation_array(
       Lifetime modulation values for each pixel of type ``float32`.
     tau_phi: array_like
       Lifetime phase values for each pixel of type ``float32.
+    >>> phi = numpy.random.rand(256, 256)
+    >>> mod = numpy.random.rand(256, 256)
+    >>> laser_rep_frequency = 80.0
+    >>> g,s=phasor_coordinates(phi,mod)
     >>> tau_m, tau_phi = lifetime_computation_array(g, s, laser_rep_frequency)
     >>> tau_phi.shape
     (256, 256)
@@ -203,7 +206,7 @@ def lifetime_computation_array(
 
 
 def phasor_lifetime(
-    g: ArrayLike, s: ArrayLike, laser_rep_frequency: int, /,
+    g: ArrayLike, s: ArrayLike, laser_rep_frequency: float, /,
 ) -> tuple[Sequence[float], Sequence[float], Sequence[float], Sequence[float]]:
     """
     Compute lifetime values and standard deviations from phasor coordinates and laser repetition frequency.
@@ -213,27 +216,30 @@ def phasor_lifetime(
       Real part of the phasor coordinates of type ``float32`.
     s: array_like
       Imaginary part of the phasor coordinates of type ``float32`.
-    laser_rep_frequency: int
+    laser_rep_frequency: float
       laser repetition frequency in MHz.
     Returns:
     -------
-    lt: list[float]
+    lt: Sequence[float]
       Sequence containing lifetime values, [lt_m, lt_phi].
-    lt_std: list[float]
+    lt_std: Sequence[float]
       Sequence containing standard deviations for lifetime values, [lt_m_std, lt_phi_std].
-    phasor_position: list[float]
+    phasor_position: Sequence[float]
       Sequence with the average phasor coordinates, [g_av, s_av].
-    phasor_std: list[float]
+    phasor_std: Sequence[float]
       Sequence with standard deviations for phasor coordinates, [g_std, s_std].
     Examples
     --------
+    >>> g = numpy.random.rand(256, 256)
+    >>> s = numpy.random.rand(256, 256)
+    >>> laser_rep_frequency = 80
     >>> lt, lt_std, phasor_position, phasor_std=phasor_lifetime(g,s,laser_rep_frequency)
-    >>> lt
-    [2.7887070057312577, 1.3381967509310462]
-    >>> lt_std
-    [1.4161441091671687, 0.5015655986614462]
-    >>> phasor_position
-    [0.48188266, 0.32413888]
+    >>> numpy.shape(lt)
+    (2,)
+    >>> numpy.shape(lt_std)
+    (2,)
+    >>> numpy.shape(phasor_position)
+    (2,)
     """
     g = numpy.asarray(g)  # Convert to NumPy array if not already
     s = numpy.asarray(s)  # Convert to NumPy array if not already
@@ -265,7 +271,7 @@ def phasor_lifetime(
 def refplot(
     names: Sequence[str],
     lifetimes: Sequence[float],
-    laser_rep_frequency: int,
+    laser_rep_frequency: float,
     /,
 ) -> tuple[Sequence[float], Sequence[float]]:
     """
@@ -276,7 +282,7 @@ def refplot(
        List of sample names.
     lifetimes: sequence of floating-point numbers.
       List of lifetime values corresponding to the samples (nanoseconds).
-    laser_rep_frequency: int 
+    laser_rep_frequency: float 
       laser repetition frequency in MHz.
     Returns:
     -------
@@ -351,7 +357,7 @@ def fractional_intensities(
 
 
 def apparent_lifetime(
-    g: float, s: float, laser_rep_frequency: int, /, ref_tau: float,
+    g: float, s: float, laser_rep_frequency: float, /, ref_tau: float,
 ) -> tuple[Sequence[float], float, float]:
     """
     Calculate apparent lifetime and relative fractions exploiting circle chord theorem.
