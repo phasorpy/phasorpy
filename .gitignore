@@ -12,6 +12,9 @@ tutorials/data/*
 *.flif
 *.lif
 *.czi
+*.ptu
+*.lnk
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
