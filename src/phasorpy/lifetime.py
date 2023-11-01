@@ -16,6 +16,7 @@ Please note: FRET- and time-domain related functionalities are not yet implement
 
 """
 from __future__ import annotations
+
 __all__ = [
     'phasor_coordinates',
     'phasemodule_values',
@@ -24,20 +25,20 @@ __all__ = [
     'phasor_lifetime',
     'refplot',
     'fractional_intensities',
-    'apparent_lifetime'
-    ]
+    'apparent_lifetime',
+]
 
-from typing import TYPE_CHECKING
 import warnings
+from typing import TYPE_CHECKING
+
 import numpy
 
 if TYPE_CHECKING:
     from ._typing import Any, ArrayLike, PathLike, Sequence
 
+
 def phasor_coordinates(
-    phi: ArrayLike,
-    mod: ArrayLike,
-    /,
+    phi: ArrayLike, mod: ArrayLike, /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
     Convert phase and module information into phasor coordinates in the frequency domain.
@@ -72,13 +73,11 @@ def phasor_coordinates(
     phi = numpy.radians(phi)
     g = mod * numpy.cos(phi)
     s = mod * numpy.sin(phi)
-    return  g, s
+    return g, s
 
 
 def phasemodule_values(
-    g: ArrayLike,
-    s: ArrayLike,
-    /,
+    g: ArrayLike, s: ArrayLike, /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
     Convert phasor coordinates into phase and module
@@ -109,16 +108,13 @@ def phasemodule_values(
     g = numpy.asarray(g)  # Convert to NumPy array if not already
     s = numpy.asarray(s)  # Convert to NumPy array if not already
     phi = numpy.arctan2(s, g)
-    mod = (g**2 + s**2) ** 0.5
+    mod = (g ** 2 + s ** 2) ** 0.5
 
     return phi, mod
 
 
 def lifetime_computation_phasor(
-    g: float,
-    s: float,
-    laser_rep_frequency: float,
-    /,
+    g: float, s: float, laser_rep_frequency: float, /,
 ) -> tuple[float, float]:
     """
     Calculate lifetime values from phasor coordinates and laser repetition frequency.
@@ -147,17 +143,14 @@ def lifetime_computation_phasor(
     """
     omega = laser_rep_frequency * numpy.pi * 2
     tau_m = (
-        numpy.sqrt((1 - (g**2 + s**2)) / (omega**2 * (g**2 + s**2)))
+        numpy.sqrt((1 - (g ** 2 + s ** 2)) / (omega ** 2 * (g ** 2 + s ** 2)))
     ) * 10e2
     tau_phi = 1 / omega * s / g * 10e2
     return tau_m, tau_phi
 
 
 def lifetime_computation_array(
-    g: ArrayLike,
-    s: ArrayLike,
-    laser_rep_frequency: int,
-    /,
+    g: ArrayLike, s: ArrayLike, laser_rep_frequency: int, /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
      Calculate lifetime values from phasor coordinates and laser repetition frequency.
@@ -180,27 +173,37 @@ def lifetime_computation_array(
     (256, 256)
     """
     # Filter out RuntimeWarnings for divide by zero and invalid value
-    warnings.filterwarnings("ignore", category=RuntimeWarning, message="divide by zero encountered in divide")
-    warnings.filterwarnings("ignore", category=RuntimeWarning, message="invalid value encountered in sqrt")
-    warnings.filterwarnings("ignore", category=RuntimeWarning, message="invalid value encountered in divide")
+    warnings.filterwarnings(
+        "ignore",
+        category=RuntimeWarning,
+        message="divide by zero encountered in divide",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        category=RuntimeWarning,
+        message="invalid value encountered in sqrt",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        category=RuntimeWarning,
+        message="invalid value encountered in divide",
+    )
     g = numpy.asarray(g)  # Convert to NumPy array if not already
     s = numpy.asarray(s)  # Convert to NumPy array if not already
     omega = laser_rep_frequency * numpy.pi * 2
     tau_m = numpy.zeros(numpy.size(g))
     tau_phi = numpy.zeros(numpy.size(g))
     tau_m = (
-        numpy.sqrt((1 - (g**2 + s**2)) / (omega**2 * (g**2 + s**2)))
+        numpy.sqrt((1 - (g ** 2 + s ** 2)) / (omega ** 2 * (g ** 2 + s ** 2)))
     ) * 10e2
     tau_phi = 1 / omega * s / g * 10e2
     tau_m[numpy.isnan(tau_m) > 0] = 0
     tau_phi[numpy.isnan(tau_phi) > 0] = 0
     return tau_m, tau_phi
 
+
 def phasor_lifetime(
-    g: ArrayLike,
-    s: ArrayLike,
-    laser_rep_frequency: int,
-    /,
+    g: ArrayLike, s: ArrayLike, laser_rep_frequency: int, /,
 ) -> tuple[Sequence[float], Sequence[float], Sequence[float], Sequence[float]]:
     """
     Compute lifetime values and standard deviations from phasor coordinates and laser repetition frequency.
@@ -245,12 +248,10 @@ def phasor_lifetime(
     s_std = numpy.sqrt(s_var)
     phasor_position = [g_av, s_av]
     phasor_std = [g_std, s_std]
-    lt_m, lt_phi = lifetime_computation_phasor(
-        g_av, s_av, laser_rep_frequency
-    )
+    lt_m, lt_phi = lifetime_computation_phasor(g_av, s_av, laser_rep_frequency)
     lt_phi_std = numpy.sqrt((g_std / g_av) ** 2 + (s_std / s_av) ** 2)
-    lt_m_std = 2 * g_std / numpy.sqrt(g_av**2) + 2 * s_std / numpy.sqrt(
-        s_av**2
+    lt_m_std = 2 * g_std / numpy.sqrt(g_av ** 2) + 2 * s_std / numpy.sqrt(
+        s_av ** 2
     )
     lt = [lt_m, lt_phi]
     lt_std = [lt_m_std, lt_phi_std]
@@ -350,11 +351,7 @@ def fractional_intensities(
 
 
 def apparent_lifetime(
-    g: float,
-    s: float,
-    laser_rep_frequency: int,
-    /,
-    ref_tau: float,
+    g: float, s: float, laser_rep_frequency: int, /, ref_tau: float,
 ) -> tuple[Sequence[float], float, float]:
     """
     Calculate apparent lifetime and relative fractions exploiting cirlce chord theorem.
@@ -411,12 +408,9 @@ def apparent_lifetime(
     x_int = xref - tot_dist * numpy.cos(beta)
     y_int = yref + tot_dist * numpy.sin(beta)
     intersection_points = [x_int, y_int]
-    (
-        lifetime_int_point,
-        _,
-        _,
-        _,
-    ) = phasor_lifetime(x_int, y_int, laser_rep_frequency)
+    (lifetime_int_point, _, _, _,) = phasor_lifetime(
+        x_int, y_int, laser_rep_frequency
+    )
     lifetime2 = lifetime_int_point
 
     return lifetime2, frac_species1, frac_species2
