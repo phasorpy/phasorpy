@@ -10,15 +10,17 @@ Purpose: Converts phase and modulation data into phasor coordinates in the frequ
 phasemodule_values
 Purpose: Converts phasor coordinates back into phase and module.
 
-lifetime
-Purpose: Calculates lifetime values from phasor coordinates and FLIM frequency, yielding τm and τφ.
+lifetime_computation_phasor
+Purpose: Calculates lifetime values from phasor coordinates and laser repetition frequency, yielding τm and τφ.
 
-lifetime_computation
-lifetime_computation_single_phasor
+lifetime_computation_array
+Purpose: Calculates lifetime values for each pixel from phasor coordinates and laser repetition frequency, to map τm and τφ.
+
+phasor_lifetime
 Purpose: Computes lifetime values and standard deviations from phasor coordinates and laser repetition frequency with error propagation.
 
 refplot
-Purpose: Generates reference phasor coordinates based on sample lifetimes and FLIM frequency.
+Purpose: Generates reference phasor coordinates based on sample lifetimes and laser repetition frequency.
 
 fractional_intensities
 Purpose: Calculates intensity fractions between two reference points and a target phasor.
@@ -33,8 +35,13 @@ from __future__ import annotations
 __all__ = [
     'phasor_coordinates',
     'phasemodule_values',
-    'lifetime_computation_single_phasor',
-    'lifetime_computation_array']
+    'lifetime_computation_phasor',
+    'lifetime_computation_array',
+    'phasor_lifetime',
+    'refplot',
+    'fractional_intensities',
+    'apparent_lifetime'
+    ]
 
 from typing import TYPE_CHECKING
 
@@ -85,7 +92,7 @@ def phasemodule_values(
     return phi, mod
 
 
-def lifetime_computation_single_phasor(
+def lifetime_computation_phasor(
     g: float,
     s: float,
     laser_rep_frequency: float,
@@ -175,7 +182,7 @@ def phasor_lifetime(
     s_std = numpy.sqrt(s_var)
     phasor_position = [g_av, s_av]
     phasor_std = [g_std, s_std]
-    lt_m, lt_phi = lifetime_computation_single_phasor(
+    lt_m, lt_phi = lifetime_computation_phasor(
         g_av, s_av, laser_rep_frequency
     )
     lt_phi_std = numpy.sqrt((g_std / g_av) ** 2 + (s_std / s_av) ** 2)
