@@ -60,16 +60,18 @@ def phasor_coordinates(
     Convert phase and module information into phasor coordinates in the frequency domain.
     Parameters:
     ----------
-    phi: array_like
+    phi : array_like
         Phase angle values in radians for each pixel
-    mod: array_like
+    mod : array_like
         Module values for each pixel
     Returns:
     -------
-    g: array_like
+    g : array_like
         Real part of the phasor coordinates.
-    s: array_like
+    s : array_like
         Imaginary part of the phasor coordinates.
+    Examples
+    --------
     """
     g = mod * numpy.cos(phi)
     s = mod * numpy.sin(phi)
@@ -82,17 +84,19 @@ def phasemodule_values(
     /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
-    # Convert phasor coordinates into phase and module
-    # Parameters:
-    # - g: array_like
-    #   Real part of the phasor coordinates.
-    # - s: array_like
-    #   Imaginary part of the phasor coordinates.
-    # Returns:
-    # - phi: array_like
-    #   Phase angle in radians.
-    # - mod: array_like 
-    #   Module.
+    Convert phasor coordinates into phase and module
+    Parameters:
+    ----------
+    - g: array_like
+      Real part of the phasor coordinates.
+    - s: array_like
+      Imaginary part of the phasor coordinates.
+    Returns:
+    -------
+    - phi: array_like
+      Phase angle in radians.
+    - mod: array_like 
+      Module.
     """
     g = numpy.asarray(g)  # Convert to NumPy array if not already
     s = numpy.asarray(s)  # Convert to NumPy array if not already
@@ -109,19 +113,21 @@ def lifetime_computation_phasor(
     /,
 ) -> tuple[float, float]:
     """
-    # Calculate lifetime values from phasor coordinates and FLIM frequency.
-    # Parameters:
-    # - g: float
-    #   Real part of the phasor coordinates.
-    # - s: float
-    #   Imaginary part of the phasor coordinates.
-    # - laser_rep_frequency: int
-    #   laser repetition frequency.
-    # Returns:
-    # - tau_m: float
-    #   Lifetime modulation.
-    # - tau_phi: float
-    #   Lifetime phase.
+    Calculate lifetime values from phasor coordinates and FLIM frequency.
+    Parameters:
+    ----------
+    - g: float
+      Real part of the phasor coordinates.
+    - s: float
+      Imaginary part of the phasor coordinates.
+    - laser_rep_frequency: int
+      laser repetition frequency.
+    Returns:
+    -------
+    - tau_m: float
+      Lifetime modulation.
+    - tau_phi: float
+      Lifetime phase.
     """
     omega = laser_rep_frequency * numpy.pi * 2
     tau_m = (
@@ -138,19 +144,21 @@ def lifetime_computation_array(
     /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
-    # Calculate lifetime values from phasor coordinates and FLIM frequency.
-    # Parameters:
-    # - g: array_like
-    #   Real part of the phasor coordinates.
-    # - s: array_like
-    #   Imaginary part of the phasor coordinates.
-    # - laser_rep_frequency: int
-    #   laser repetition frequency.
-    # Returns:
-    # - tau_m: array_like
-    #   Lifetime modulation.
-    # - tau_phi: array_like
-    #   Lifetime phase.
+     Calculate lifetime values from phasor coordinates and FLIM frequency.
+    Parameters:
+    ----------
+    - g: array_like
+      Real part of the phasor coordinates.
+    - s: array_like
+      Imaginary part of the phasor coordinates.
+    - laser_rep_frequency: int
+      laser repetition frequency.
+    Returns:
+    -------
+    - tau_m: array_like
+      Lifetime modulation.
+    - tau_phi: array_like
+      Lifetime phase.
     """
     g = numpy.asarray(g)  # Convert to NumPy array if not already
     s = numpy.asarray(s)  # Convert to NumPy array if not already
@@ -178,23 +186,25 @@ def phasor_lifetime(
     /,
 ) -> tuple[list[float], list[float], list[float], list[float]]:
     """
-    # Compute lifetime values and standard deviations from phasor coordinates and FLIM frequency.
-    # Parameters:
-    # - g: array_like
-    #   Real part of the phasor coordinates.
-    # - s: array_like
-    #   Imaginary part of the phasor coordinates.
-    # - laser_rep_frequency: int
-    #   laser repetition frequency.
-    # Returns:
-    # - lt: list[float]
-    #   List containing lifetime values, [lt_m, lt_phi].
-    # - lt_std: list[float]
-    #   List containing standard deviations for lifetime values, [lt_m_std, lt_phi_std].
-    # - phasor_position: list[float]
-    #   List with the average phasor coordinates, [g_av, s_av].
-    # - phasor_std: list[float]
-    #   List with standard deviations for phasor coordinates, [g_std, s_std].
+    Compute lifetime values and standard deviations from phasor coordinates and FLIM frequency.
+    Parameters:
+    ----------
+    - g: array_like
+      Real part of the phasor coordinates.
+    - s: array_like
+      Imaginary part of the phasor coordinates.
+    - laser_rep_frequency: int
+      laser repetition frequency.
+    Returns:
+    -------
+    - lt: list[float]
+      List containing lifetime values, [lt_m, lt_phi].
+    - lt_std: list[float]
+      List containing standard deviations for lifetime values, [lt_m_std, lt_phi_std].
+    - phasor_position: list[float]
+      List with the average phasor coordinates, [g_av, s_av].
+    - phasor_std: list[float]
+      List with standard deviations for phasor coordinates, [g_std, s_std].
     """
     g = numpy.asarray(g)  # Convert to NumPy array if not already
     s = numpy.asarray(s)  # Convert to NumPy array if not already
@@ -226,21 +236,26 @@ def phasor_lifetime(
 
 
 def refplot(
-    names: list[str],
-    lifetimes: list[float],
+    names: Sequence[str],
+    lifetimes: Sequence[float],
     laser_rep_frequency: int,
     /,
-) -> tuple[list[float], list[float]]:
+) -> tuple[Sequence[float], Sequence[float]]:
     """
-    # Generates reference phasor coordinates based on sample lifetimes and FLIM frequency.
-    # Parameters:
-    # - names: 
-    #   List of sample names.
-    # - lifetimes: List of lifetime values corresponding to the samples.
-    # - laser_rep_frequency: laser repetition frequency.
-    # Returns:
-    # - g_ref: Real part of the reference phasor coordinates.
-    # - s_ref: Imaginary part of the reference phasor coordinates.
+     Generates reference phasor coordinates based on sample lifetimes and FLIM frequency.
+     Parameters:
+    ----------
+     - names: list[str]
+       List of sample names.
+     - lifetimes: sequence of floating-point numbers.
+    List of lifetime values corresponding to the samples.
+     - laser_rep_frequency: int 
+     laser repetition frequency.
+     Returns:
+     - g_ref: 
+       Real part of the reference phasor coordinates.
+     - s_ref: 
+       Imaginary part of the reference phasor coordinates.
     """
     g_ref = []
     s_ref = []
@@ -259,14 +274,15 @@ def fractional_intensities(
     target: tuple[float, float],
 ) -> list[float]:
     """
-    # Calculate intensity fractions between two reference points and a target point.
-    # Parameters:
-    # - RefA: Coordinates of the first reference point.
-    # - RefB: Coordinates of the second reference point.
-    # - target: Coordinates of the target phasor.
-    # - labels: A dictionary for labeling categories.
-    # Returns:
-    # - ratio a list of intensity fractions.
+    Calculate intensity fractions between two reference points and a target point.
+    Parameters:
+    ----------
+    - RefA: Coordinates of the first reference point.
+    - RefB: Coordinates of the second reference point.
+    - target: Coordinates of the target phasor.
+    - labels: A dictionary for labeling categories.
+    Returns:
+    - ratio a list of intensity fractions.
     """
 
     Tot_distance = ((RefA[0] - RefB[0]) ** 2 + (RefA[1] - RefB[1]) ** 2) ** 0.5
@@ -295,6 +311,7 @@ def apparent_lifetime(
     Calculate apparent lifetime and relative fractions.
 
     Parameters:
+    ----------
     - g,s: Real and imaginary part of phasor coordinates. (could be implemented to input list also)
     - laser_rep_frequency: Laser repetition frequency.
     - ref_tau: Reference lifetime of one of the two putable species.
