@@ -121,7 +121,7 @@ def lifetime_computation_phasor(
     /,
 ) -> tuple[float, float]:
     """
-    Calculate lifetime values from phasor coordinates and FLIM frequency.
+    Calculate lifetime values from phasor coordinates and laser repetition frequency.
     Parameters:
     ----------
     g: float
@@ -160,7 +160,7 @@ def lifetime_computation_array(
     /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
-     Calculate lifetime values from phasor coordinates and FLIM frequency.
+     Calculate lifetime values from phasor coordinates and laser repetition frequency.
     Parameters:
     ----------
     g: array_like
@@ -203,7 +203,7 @@ def phasor_lifetime(
     /,
 ) -> tuple[Sequence[float], Sequence[float], Sequence[float], Sequence[float]]:
     """
-    Compute lifetime values and standard deviations from phasor coordinates and FLIM frequency.
+    Compute lifetime values and standard deviations from phasor coordinates and laser repetition frequency.
     Parameters:
     ----------
     g: array_like
@@ -268,7 +268,7 @@ def refplot(
     /,
 ) -> tuple[Sequence[float], Sequence[float]]:
     """
-    Generates reference phasor coordinates based on sample lifetimes and FLIM frequency.
+    Generates reference phasor coordinates based on sample lifetimes and laser repetition frequency.
     Parameters:
     ----------
     names: sequence of str
