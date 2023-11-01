@@ -44,7 +44,7 @@ def phasor_coordinates(
     Parameters:
     ----------
     phi : array_like
-        Phase angle values in radians of type ``float32` for each pixel.
+        Phase angle values of type ``float32` for each pixel.
     mod : array_like
         Module values of type ``float32` for each pixel.
     Returns:
