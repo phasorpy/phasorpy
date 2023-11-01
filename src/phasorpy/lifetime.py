@@ -1,34 +1,18 @@
 """
 
 
-The `phasorpy.lifetime` module provides essential functions for the analysis of fluorescence lifetime imaging (FLIM) data. 
-Here's an overview of the key functions and their roles in the context of the phasorpy project:
+The `phasorpy.lifetime` module provides functions to:
+- Convert phase and modulation data into phasor coordinates and viceversa in the frequency domain
+- Manage phase and modulation lifetime computations
+- Manage apparent single lifetimes
+- Compute fractional intensities in mixtures of two components
 
-phasor_coordinates
-Purpose: Converts phase and modulation data into phasor coordinates in the frequency domain.
+Future implementations to be considered:
+- Spatial filtering: linear (gaussian) and non-linear (median)
+- Making some functions flexible enough to manage both arrays and single values
+- Compute intensity fractions for mixture of three species
 
-phasemodule_values
-Purpose: Converts phasor coordinates back into phase and module.
-
-lifetime_computation_phasor
-Purpose: Calculates lifetime values from phasor coordinates and laser repetition frequency, yielding τm and τφ.
-
-lifetime_computation_array
-Purpose: Calculates lifetime values for each pixel from phasor coordinates and laser repetition frequency, to map τm and τφ.
-
-phasor_lifetime
-Purpose: Computes lifetime values and standard deviations from phasor coordinates and laser repetition frequency with error propagation.
-
-refplot
-Purpose: Generates reference phasor coordinates based on sample lifetimes and laser repetition frequency.
-
-fractional_intensities
-Purpose: Calculates intensity fractions between two reference points and a target phasor.
-
-apparent_lifetime
-Purpose: Calculate apparent lifetime and relative fractions.
-
-Please note that FRET-related functionalities are currently under development and will be added by experts in the future. The `phasorpy.lifetime` module forms a valuable foundation for FLIM data analysis in your project, with these functions serving as key components for your analysis and research needs.
+Please note: FRET- and time-domain related functionalities are not yet implemented.
 
 """
 from __future__ import annotations
