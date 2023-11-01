@@ -2,7 +2,7 @@
 
 
 The `phasorpy.lifetime` module provides functions to:
-- Convert phase and modulation data into phasor coordinates and viceversa in the frequency domain
+- Convert phase and modulation data into phasor coordinates and vice-versa in the frequency domain
 - Manage phase and modulation lifetime computations
 - Manage apparent single lifetimes
 - Compute fractional intensities in mixtures of two components
@@ -354,7 +354,7 @@ def apparent_lifetime(
     g: float, s: float, laser_rep_frequency: int, /, ref_tau: float,
 ) -> tuple[Sequence[float], float, float]:
     """
-    Calculate apparent lifetime and relative fractions exploiting cirlce chord theorem.
+    Calculate apparent lifetime and relative fractions exploiting circle chord theorem.
 
     Parameters:
     ----------
