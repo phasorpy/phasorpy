@@ -357,7 +357,7 @@ def apparent_lifetime(
     ref_tau: float,
 ) -> tuple[Sequence[float], float, float]:
     """
-    Calculate apparent lifetime and relative fractions.
+    Calculate apparent lifetime and relative fractions exploiting cirlce chord theorem.
 
     Parameters:
     ----------
