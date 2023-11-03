@@ -13,9 +13,7 @@ import numpy
 
 
 def wavelength2rgb(
-    wavelength: ArrayLike,
-    /,
-    dtype: DTypeLike | None = None,
+    wavelength: ArrayLike, /, dtype: DTypeLike | None = None,
 ) -> tuple[float, float, float] | NDArray[Any]:
     """Return approximate sRGB color components of visible wavelength(s).
 
@@ -65,9 +63,7 @@ def wavelength2rgb(
 
 
 def float2int(
-    rgb: ArrayLike,
-    /,
-    dtype: DTypeLike = numpy.uint8,
+    rgb: ArrayLike, /, dtype: DTypeLike = numpy.uint8,
 ) -> NDArray[Any]:
     """Return normalized color components as integer type.
 

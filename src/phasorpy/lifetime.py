@@ -36,9 +36,7 @@ if TYPE_CHECKING:
 
 
 def phasor_coordinates(
-    phi: ArrayLike,
-    mod: ArrayLike,
-    /,
+    phi: ArrayLike, mod: ArrayLike, /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
     Convert phase and module information into phasor coordinates in the frequency domain.
@@ -76,9 +74,7 @@ def phasor_coordinates(
 
 
 def phasemodule_values(
-    g: ArrayLike,
-    s: ArrayLike,
-    /,
+    g: ArrayLike, s: ArrayLike, /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
     Convert phasor coordinates into phase and module
@@ -111,16 +107,12 @@ def phasemodule_values(
     g = numpy.asarray(g)  # Convert to NumPy array if not already
     s = numpy.asarray(s)  # Convert to NumPy array if not already
     phi = numpy.arctan2(s, g)
-    mod = (g**2 + s**2) ** 0.5
-
+    mod = numpy.hypot(g, s)
     return phi, mod
 
 
 def lifetime_computation_phasor(
-    g: float,
-    s: float,
-    laser_rep_frequency: float,
-    /,
+    g: float, s: float, laser_rep_frequency: float, /,
 ) -> tuple[float, float]:
     """
     Calculate lifetime values from phasor coordinates and laser repetition frequency.
@@ -149,17 +141,14 @@ def lifetime_computation_phasor(
     """
     omega = laser_rep_frequency * numpy.pi * 2
     tau_m = (
-        numpy.sqrt((1 - (g**2 + s**2)) / (omega**2 * (g**2 + s**2)))
+        numpy.sqrt((1 - (g * g + s * s)) / (omega * omega * (g * g + s * s)))
     ) * 10e2
     tau_phi = 1 / omega * s / g * 10e2
     return tau_m, tau_phi
 
 
 def lifetime_computation_array(
-    g: ArrayLike,
-    s: ArrayLike,
-    laser_rep_frequency: float,
-    /,
+    g: ArrayLike, s: ArrayLike, laser_rep_frequency: float, /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
      Calculate lifetime values from phasor coordinates and laser repetition frequency.
@@ -207,7 +196,7 @@ def lifetime_computation_array(
     tau_m = numpy.zeros(numpy.size(g))
     tau_phi = numpy.zeros(numpy.size(g))
     tau_m = (
-        numpy.sqrt((1 - (g**2 + s**2)) / (omega**2 * (g**2 + s**2)))
+        numpy.sqrt((1 - (g * g + s * s)) / (omega * omega * (g * g + s * s)))
     ) * 10e2
     tau_phi = 1 / omega * s / g * 10e2
     tau_m[numpy.isnan(tau_m) > 0] = 0
@@ -216,10 +205,7 @@ def lifetime_computation_array(
 
 
 def phasor_lifetime(
-    g: ArrayLike,
-    s: ArrayLike,
-    laser_rep_frequency: float,
-    /,
+    g: ArrayLike, s: ArrayLike, laser_rep_frequency: float, /,
 ) -> tuple[Sequence[float], Sequence[float], Sequence[float], Sequence[float]]:
     """
     Compute lifetime values and standard deviations from phasor coordinates and laser repetition frequency.
@@ -261,16 +247,16 @@ def phasor_lifetime(
     g_av = numpy.average(g)
     s_av = numpy.average(s)
     phasor_position = [g_av, s_av]
-    g_var = numpy.average((g - g_av) ** 2)
-    s_var = numpy.average((s - s_av) ** 2)
+    g_var = numpy.average((g - g_av) * (g - g_av))
+    s_var = numpy.average((s - s_av) * (s - s_av))
     g_std = numpy.sqrt(g_var)
     s_std = numpy.sqrt(s_var)
     phasor_position = [g_av, s_av]
     phasor_std = [g_std, s_std]
     lt_m, lt_phi = lifetime_computation_phasor(g_av, s_av, laser_rep_frequency)
-    lt_phi_std = numpy.sqrt((g_std / g_av) ** 2 + (s_std / s_av) ** 2)
-    lt_m_std = 2 * g_std / numpy.sqrt(g_av**2) + 2 * s_std / numpy.sqrt(
-        s_av**2
+    lt_phi_std = numpy.hypot(g_std / g_av, s_std / s_av)
+    lt_m_std = 2 * g_std / numpy.sqrt(g_av * g_av) + 2 * s_std / numpy.sqrt(
+        s_av * s_av
     )
     lt = [lt_m, lt_phi]
     lt_std = [lt_m_std, lt_phi_std]
@@ -316,7 +302,7 @@ def refplot(
     s_ref = []
     omega = laser_rep_frequency * numpy.pi * 10e-3
     for tau in lifetimes:
-        M = 1 / numpy.sqrt(1 + (omega * tau) ** 2)
+        M = 1 / numpy.sqrt(1 + (omega * tau) * (omega * tau))
         phi = numpy.arctan(omega * tau)
         g_ref.append(M * numpy.cos(phi))
         s_ref.append(M * numpy.sin(phi))
@@ -353,8 +339,6 @@ def fractional_intensities(
     >>> ratios
     [0.2948457429517342, 0.7051542570482657]
     """
-
-    Tot_distance = ((RefA[0] - RefB[0]) ** 2 + (RefA[1] - RefB[1]) ** 2) ** 0.5
     distanceA = (
         (RefA[0] - target[0]) ** 2 + (RefA[1] - target[1]) ** 2
     ) ** 0.5
@@ -370,11 +354,7 @@ def fractional_intensities(
 
 
 def apparent_lifetime(
-    g: float,
-    s: float,
-    laser_rep_frequency: float,
-    /,
-    ref_tau: float,
+    g: float, s: float, laser_rep_frequency: float, /, ref_tau: float,
 ) -> tuple[Sequence[float], float, float]:
     """
     Calculate apparent lifetime and relative fractions exploiting circle chord theorem.
@@ -407,14 +387,14 @@ def apparent_lifetime(
     """
     r = 0.5
     omega = laser_rep_frequency * numpy.pi * 10 ** (-3)
-    M = 1 / numpy.sqrt(1 + (omega * ref_tau) ** 2)
+    M = 1 / numpy.sqrt(1 + (omega * ref_tau) * (omega * ref_tau))
     phi = numpy.arctan(ref_tau * omega)
     xref = M * numpy.cos(phi)
     yref = M * numpy.sin(phi)
     # alpha is the angle of the segment connecting the center of the circle to the nad_free phasor
     # this angle is found via trigonometry
     a = xref - r
-    c = numpy.sqrt((r - xref) ** 2 + (yref) ** 2)
+    c = numpy.sqrt((r - xref) * (r - xref) + (yref) * (yref))
     alpha = numpy.arctan(yref / c)
     x1 = xref - g
     y1 = s - yref
@@ -431,12 +411,9 @@ def apparent_lifetime(
     x_int = xref - tot_dist * numpy.cos(beta)
     y_int = yref + tot_dist * numpy.sin(beta)
     intersection_points = [x_int, y_int]
-    (
-        lifetime_int_point,
-        _,
-        _,
-        _,
-    ) = phasor_lifetime(x_int, y_int, laser_rep_frequency)
+    (lifetime_int_point, _, _, _,) = phasor_lifetime(
+        x_int, y_int, laser_rep_frequency
+    )
     lifetime2 = lifetime_int_point
 
     return lifetime2, frac_species1, frac_species2

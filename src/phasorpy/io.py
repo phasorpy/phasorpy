@@ -197,8 +197,7 @@ def write_ometiff_phasor(
 
 
 def read_ometiff_phasor(
-    filename: str | PathLike[Any],
-    /,
+    filename: str | PathLike[Any], /,
 ) -> tuple[DataArray, DataArray, DataArray]:
     """Return phasor images and metadata from OME-TIFF written by PhasorPy.
 
@@ -258,10 +257,7 @@ def read_ometiff_phasor(
     return dc, re, im
 
 
-def read_lsm(
-    filename: str | PathLike[Any],
-    /,
-) -> DataArray:
+def read_lsm(filename: str | PathLike[Any], /,) -> DataArray:
     """Return hyperspectral image and metadata from Zeiss LSM file.
 
     LSM files contain multi-dimensional image and metadata from laser
@@ -359,10 +355,7 @@ def read_lsm(
 
 
 def read_ifli(
-    filename: str | PathLike[Any],
-    /,
-    channel: int = 0,
-    **kwargs: Any,
+    filename: str | PathLike[Any], /, channel: int = 0, **kwargs: Any,
 ) -> DataArray:
     """Return image and metadata from ISS IFLI file.
 
@@ -452,10 +445,7 @@ def read_ifli(
 
 
 def read_sdt(
-    filename: str | PathLike[Any],
-    /,
-    *,
-    index: int = 0,
+    filename: str | PathLike[Any], /, *, index: int = 0,
 ) -> DataArray:
     """Return time-resolved image and metadata from Becker & Hickl SDT file.
 
@@ -522,10 +512,7 @@ def read_sdt(
     return DataArray(data, **metadata)
 
 
-def read_ref(
-    filename: str | PathLike[Any],
-    /,
-) -> DataArray:
+def read_ref(filename: str | PathLike[Any], /,) -> DataArray:
     """Return referenced lifetime data and metadata from SimFCS REF file.
 
     REF files contain referenced fluorescence lifetime image data:
@@ -579,10 +566,7 @@ def read_ref(
     return DataArray(data, **metadata)
 
 
-def read_r64(
-    filename: str | PathLike[Any],
-    /,
-) -> DataArray:
+def read_r64(filename: str | PathLike[Any], /,) -> DataArray:
     """Return referenced lifetime data and metadata from SimFCS R64 file.
 
     R64 files contain referenced fluorescence lifetime image data:
@@ -639,10 +623,7 @@ def read_r64(
     return DataArray(data, **metadata)
 
 
-def read_b64(
-    filename: str | PathLike[Any],
-    /,
-) -> DataArray:
+def read_b64(filename: str | PathLike[Any], /,) -> DataArray:
     """Return intensity image and metadata from SimFCS B64 file.
 
     B64 files contain one or more square intensity image(s), a carpet
@@ -693,10 +674,7 @@ def read_b64(
     return DataArray(data, **metadata)
 
 
-def read_z64(
-    filename: str | PathLike[Any],
-    /,
-) -> DataArray:
+def read_z64(filename: str | PathLike[Any], /,) -> DataArray:
     """Return image and metadata from SimFCS Z64 file.
 
     Z64 files contain stacks of square images such as intensity volumes
@@ -739,10 +717,7 @@ def read_z64(
     return DataArray(data, **metadata)
 
 
-def read_bh(
-    filename: str | PathLike[Any],
-    /,
-) -> DataArray:
+def read_bh(filename: str | PathLike[Any], /,) -> DataArray:
     """Return image and metadata from SimFCS B&H file.
 
     B&H files contain time-domain fluorescence lifetime histogram data,
@@ -787,10 +762,7 @@ def read_bh(
     return DataArray(data, **metadata)
 
 
-def read_bhz(
-    filename: str | PathLike[Any],
-    /,
-) -> DataArray:
+def read_bhz(filename: str | PathLike[Any], /,) -> DataArray:
     """Return image and metadata from SimFCS BHZ file.
 
     BHZ files contain time-domain fluorescence lifetime histogram data,
@@ -862,10 +834,7 @@ def _metadata(
 
 
 def _squeeze_axes(
-    shape: Sequence[int],
-    axes: str,
-    /,
-    skip: str = 'XY',
+    shape: Sequence[int], axes: str, /, skip: str = 'XY',
 ) -> tuple[tuple[int, ...], str, tuple[bool, ...]]:
     """Return shape and axes with length-1 dimensions removed.
 
