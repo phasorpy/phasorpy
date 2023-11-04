@@ -134,10 +134,10 @@ def lifetime_computation_phasor(
     --------
     >>> g=0.195
     >>> s=0.400
-    >>> laser_rep_frequency=80
+    >>> laser_rep_frequency=80.0
     >>> tau_m, tau_phi=lifetime_computation_phasor(g, s, laser_rep_frequency)
-    >>> tau_phi, tau_m
-    (4.080895976715265, 4.00359878497335)
+    >>> print('tau_phi (ns):', f"{tau_phi:.3f}",'tau_m (ns):', f"{tau_m:.3f}")
+    tau_phi (ns): 4.081 tau_m (ns): 4.004
     """
     omega = laser_rep_frequency * numpy.pi * 2
     tau_m = (
@@ -231,7 +231,7 @@ def phasor_lifetime(
     --------
     >>> g = numpy.random.rand(256, 256)
     >>> s = numpy.random.rand(256, 256)
-    >>> laser_rep_frequency = 80
+    >>> laser_rep_frequency = 80.0
     >>> lt, lt_std, phasor_position, phasor_std=phasor_lifetime(g,s,laser_rep_frequency)
     >>> numpy.shape(lt)
     (2,)
@@ -293,10 +293,13 @@ def refplot(
     --------
     >>> names=['free','bound']
     >>> lifetimes = [0.37, 3.4]
-    >>> laser_rep_frequency = 80
+    >>> laser_rep_frequency = 80.0
     >>> g_ref,s_ref=refplot(names, lifetimes, laser_rep_frequency)
-    >>> g_ref,s_ref
-    ([0.5362691540599069, 0.013509993393265021], [0.4986828134834594, 0.11544467710457233])
+    >>> formatted_g_ref=[f"{x:.3f}" for x in g_ref]
+    >>> formatted_s_ref=[f"{x:.3f}" for x in s_ref]
+    >>> print('g_ref', formatted_g_ref, 's_ref', formatted_s_ref)
+    g_ref ['0.536', '0.014'] s_ref ['0.499', '0.115']
+
     """
     g_ref = []
     s_ref = []
@@ -336,8 +339,9 @@ def fractional_intensities(
     >>> RefB=[0.31,0.46]
     >>> target=[0.51,0.35]
     >>> ratios=fractional_intensities(RefA,RefB,target)
-    >>> ratios
-    [0.2948457429517342, 0.7051542570482657]
+    >>> formatted_ratios=[f"{x:.3f}" for x in ratios]
+    >>> print('Intensity fractions:', formatted_ratios)
+    Intensity fractions: ['0.295', '0.705']
     """
     distanceA = (
         (RefA[0] - target[0]) ** 2 + (RefA[1] - target[1]) ** 2
@@ -379,11 +383,18 @@ def apparent_lifetime(
       species 2 fraction.
     >>> g=0.6
     >>> s=0.4
-    >>> laser_rep_frequency = 80
+    >>> laser_rep_frequency = 80.0
     >>> ref_tau=0.37
     >>> lifetime2, frac_species1,frac_species2=apparent_lifetime(g,s,laser_rep_frequency,0.37)
-    >>> lifetime2, frac_species1,frac_species2
-    ([2.09816056498088, 2.11118113734811], 0.24660520747448866, 0.7533947925255113)
+    >>> formatted_lifetime2=[f"{x:.3f}" for x in lifetime2]
+    >>> print('lifetime second species', formatted_lifetime2)
+    lifetime second species ['2.098', '2.111']
+    >>> print('fraction species 1:', f"{frac_species1:.3f}")
+    fraction species 1: 0.247
+    >>> print('fraction species 2:', f"{frac_species2:.3f}")
+    fraction species 2: 0.753
+
+
     """
     r = 0.5
     omega = laser_rep_frequency * numpy.pi * 10 ** (-3)
