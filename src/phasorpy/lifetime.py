@@ -36,7 +36,9 @@ if TYPE_CHECKING:
 
 
 def phasor_coordinates(
-    phi: ArrayLike, mod: ArrayLike, /,
+    phi: ArrayLike,
+    mod: ArrayLike,
+    /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
     Convert phase and module information into phasor coordinates in the frequency domain.
@@ -74,7 +76,9 @@ def phasor_coordinates(
 
 
 def phasemodule_values(
-    g: ArrayLike, s: ArrayLike, /,
+    g: ArrayLike,
+    s: ArrayLike,
+    /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
     Convert phasor coordinates into phase and module
@@ -112,7 +116,10 @@ def phasemodule_values(
 
 
 def lifetime_computation_phasor(
-    g: float, s: float, laser_rep_frequency: float, /,
+    g: float,
+    s: float,
+    laser_rep_frequency: float,
+    /,
 ) -> tuple[float, float]:
     """
     Calculate lifetime values from phasor coordinates and laser repetition frequency.
@@ -148,7 +155,10 @@ def lifetime_computation_phasor(
 
 
 def lifetime_computation_array(
-    g: ArrayLike, s: ArrayLike, laser_rep_frequency: float, /,
+    g: ArrayLike,
+    s: ArrayLike,
+    laser_rep_frequency: float,
+    /,
 ) -> tuple[ArrayLike, ArrayLike]:
     """
      Calculate lifetime values from phasor coordinates and laser repetition frequency.
@@ -205,7 +215,10 @@ def lifetime_computation_array(
 
 
 def phasor_lifetime(
-    g: ArrayLike, s: ArrayLike, laser_rep_frequency: float, /,
+    g: ArrayLike,
+    s: ArrayLike,
+    laser_rep_frequency: float,
+    /,
 ) -> tuple[Sequence[float], Sequence[float], Sequence[float], Sequence[float]]:
     """
     Compute lifetime values and standard deviations from phasor coordinates and laser repetition frequency.
@@ -358,7 +371,11 @@ def fractional_intensities(
 
 
 def apparent_lifetime(
-    g: float, s: float, laser_rep_frequency: float, /, ref_tau: float,
+    g: float,
+    s: float,
+    laser_rep_frequency: float,
+    /,
+    ref_tau: float,
 ) -> tuple[Sequence[float], float, float]:
     """
     Calculate apparent lifetime and relative fractions exploiting circle chord theorem.
@@ -422,9 +439,12 @@ def apparent_lifetime(
     x_int = xref - tot_dist * numpy.cos(beta)
     y_int = yref + tot_dist * numpy.sin(beta)
     intersection_points = [x_int, y_int]
-    (lifetime_int_point, _, _, _,) = phasor_lifetime(
-        x_int, y_int, laser_rep_frequency
-    )
+    (
+        lifetime_int_point,
+        _,
+        _,
+        _,
+    ) = phasor_lifetime(x_int, y_int, laser_rep_frequency)
     lifetime2 = lifetime_int_point
 
     return lifetime2, frac_species1, frac_species2
