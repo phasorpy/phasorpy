@@ -50,7 +50,8 @@ and include the following items in the bug report:
     AttributeError: module 'phasorpy' has no attribute 'do_something'
     ```
 - Any data files necessary to run the code can be attached to the GitHub issue
-  or shared via cloud storage.
+  or shared via cloud storage, preferably on
+  `Zenodo.org <https://zenodo.org/communities/phasorpy/>`_.
 
 - An explanation why the current behavior is wrong and what is expected
   instead.
@@ -67,7 +68,7 @@ and include the following items in the bug report:
 Contribute code or documentation
 --------------------------------
 
-The PhasorPy source code for the library and documentation is hosted in
+The source code for the PhasorPy library and documentation is hosted in
 a GitHub repository at
 `https://github.com/phasorpy/phasorpy <https://github.com/phasorpy/phasorpy>`_.
 
@@ -158,22 +159,21 @@ This replays local commits at the "new-feature-branch" branch on top
 of the latest PhasorPy upstream main branch.
 Merge-conflicts need to be resolved before submitting a pull request.
 
-Run the tests
-.............
+Tests
+.....
 
 PhasorPy includes a `pytest <https://docs.pytest.org/>`_ based suite of
-unit tests, as well as
-`doctests <https://docs.python.org/3/library/doctest.html>`_ in function and
-class docstrings.
+unit tests in the ``tests`` folder. All classes and functions must be tested
+thorougly.
 
-Run the unit tests and doctests in the development environment::
+Run the unit tests in the development environment::
 
     $ python -m pytest -v
 
 All tests must pass.
 
 PhasorPy strives to maintain near complete test coverage. The coverage report
-is automatically generated during testing.
+is automatically generated during testing in the ``_htmlcov`` folder.
 
 Configuration settings for pytest and other tools are in the
 ``pyproject.toml`` file.
@@ -220,9 +220,13 @@ following the `numpydoc
 <https://numpydoc.readthedocs.io/en/stable/format.html#docstring-standard>`_
 standard.
 
-Examples in docstrings must run and pass as doctests::
+Examples in docstrings must run and pass as
+`doctests <https://docs.python.org/3/library/doctest.html>`_ ::
 
     $ python -m pytest -v phasorpy
+
+Examples in docstrings are meant to illustrate mere usage, not to
+provide a testing framework.
 
 PhasorPy uses `Sphinx <https://www.sphinx-doc.org>`_
 to generate the documentation in HTML format published at
@@ -263,7 +267,8 @@ Commit changed and new files to the local repository::
     $ git add phasorpy/new_file.py
     $ git commit -a -m "Summarize changes in 50 characters or less"
 
-Please do not include binary data files in the repository.
+Please do not include binary data, or any files other than source code,
+documentation, or project settings in the repository.
 
 Create a pull request
 .....................
@@ -278,6 +283,8 @@ Open the personal fork on GitHub::
     $ open https://github.com/your-user-name/phasorpy.git
 
 Click the green "pull request" button on the "new-feature-branch" branch.
+
+Review the pull request checklist for recommendations.
 
 All tests are automatically run via
 `GitHub Actions <https://github.com/features/actions>`_ for every pull request
