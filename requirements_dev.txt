@@ -1,11 +1,5 @@
 # Requirements for developing the PhasorPy library
 #
-# numpy requirements
-# use NEP29 minimum
-numpy == 1.23.5; python_version == "3.10"
-# use latest
-numpy >= 1.25; python_version > "3.10"
-#
 # runtime requirements
 matplotlib
 click
@@ -49,12 +43,12 @@ codespell
 # pre-commit
 #
 # optional requirements
-# aicsimageio
 # scipy
 # scikit-image
 # scikit-learn
 # pandas
 # zarr
 # fsspec
+# bioio
 lfdfiles
 sdtfile
