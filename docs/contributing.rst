@@ -119,6 +119,7 @@ following from within the local phasorpy repository::
     $ python -m venv ~/pyenv/phasorpy-dev
     $ source ~/pyenv/phasorpy-dev/bin/activate
     $ pip install -r requirements_dev.txt
+    $ pip install -r requirements_numpy.txt
     $ pip install -e .
 
 Verify that the development environment is working by running the tests::

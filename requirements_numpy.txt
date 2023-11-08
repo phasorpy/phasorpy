@@ -1,0 +1,6 @@
+# Numpy requirements for developing the PhasorPy library
+#
+# use NEP29 minimum on Python 3.10
+numpy == 1.23.5; python_version == "3.10"
+# use recent
+numpy >= 1.25; python_version > "3.10"
