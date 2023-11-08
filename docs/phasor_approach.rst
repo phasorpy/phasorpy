@@ -172,7 +172,8 @@ approach to analyze fluorescence time-resolved or spectral images:
   is a commercial software by FLIM LABS, a vendor of portable devices for
   fluorescence lifetime imaging and spectroscopy. The software provides
   real-time FLIM phasor-plot analysis, AI-driven phasor-plot analysis
-  techniques, and an application programming interface.
+  techniques, and an application programming interface. Python modules 
+  by FLIM LABS are available on `GitHub <https://github.com/FLIMLABS>`_.
 
 - `VistaVision <https://iss.com/software/vistavision>`_
   is a commercial Windows desktop software by ISS, Inc., for confocal
