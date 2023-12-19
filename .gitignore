@@ -95,6 +95,7 @@ docs/build/
 docs/_build/
 docs/examples/
 docs/tutorials/
+docs/sg_execution_times.rst
 
 # PyBuilder
 .pybuilder/
