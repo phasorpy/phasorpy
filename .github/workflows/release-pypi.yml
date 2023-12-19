@@ -24,7 +24,7 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install PyBuild
@@ -33,7 +33,7 @@ jobs:
       - name: Build wheel and sdist
         run: |
           python -m build .
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: releases
           path: dist
@@ -43,11 +43,11 @@ jobs:
     needs: [build_artifacts]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: releases
           path: dist
-      - uses: actions/setup-python@v4.6.0
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: |
@@ -69,7 +69,7 @@ jobs:
       id-token: write
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: releases
           path: dist
