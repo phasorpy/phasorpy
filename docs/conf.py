@@ -18,7 +18,7 @@ sphinx_gallery.gen_rst.EXAMPLE_HEADER = (
 # project information
 
 project = 'PhasorPy'
-copyright = '2022-2023 PhasorPy Contributors'
+copyright = '2022-2024 PhasorPy Contributors'
 author = 'PhasorPy Contributors'
 
 import phasorpy
