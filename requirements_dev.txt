@@ -52,3 +52,4 @@ codespell
 # bioio
 lfdfiles
 sdtfile
+ptufile

@@ -29,6 +29,7 @@ from collections.abc import (
     ValuesView,
 )
 from os import PathLike
+from types import EllipsisType
 from typing import (
     Any,
     BinaryIO,
