@@ -617,7 +617,7 @@ def read_ptu(
     >>> data.coords['H'].data
     array(...)
     >>> data.attrs['frequency']
-    2.51...
+    78.02
 
     """
     import ptufile
@@ -636,9 +636,9 @@ def read_ptu(
             keepdims=keepdims,
             asxarray=True,
         )
+        assert isinstance(data, DataArray)
+        data.attrs['frequency'] = ptu.syncrate * 1e-6  # MHz
 
-    assert isinstance(data, DataArray)
-    data.attrs['frequency'] *= 1e-6  # MHz
     return data
 
 

@@ -199,7 +199,7 @@ def test_read_ptu():
     assert_almost_equal(
         data.coords['H'].data[[1, -1]], [9.69696970e-11, 3.97090909e-07]
     )
-    assert_almost_equal(data.attrs['frequency'], 2.517700195304632)
+    assert data.attrs['frequency'] == 78.02
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
