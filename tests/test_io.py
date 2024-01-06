@@ -208,13 +208,33 @@ def test_read_fbd():
     # TODO: test files with different firmwares
     # TODO: gather public FBD files and upload to Zenodo
     filename = private_file('convallaria_000$EI0S.fbd')
-    data = read_fbd(filename, channel=0, integrate_frames=0)
+    data = read_fbd(filename)
     assert data.values.sum(dtype=numpy.uint64) == 9310275
     assert data.dtype == numpy.uint16
-    assert data.shape == (9, 256, 256, 64)
-    assert data.dims == ('T', 'Y', 'X', 'H')
+    assert data.shape == (9, 2, 256, 256, 64)
+    assert data.dims == ('T', 'C', 'Y', 'X', 'H')
     assert_almost_equal(data.coords['H'].data[[1, -1]], [0.0981748, 6.1850105])
     assert_almost_equal(data.attrs['frequency'], 40.0)
+
+    data = read_fbd(filename, frame=-1, channel=0)
+    assert data.values.sum(dtype=numpy.uint64) == 9310275
+    assert data.shape == (1, 1, 256, 256, 64)
+    assert data.dims == ('T', 'C', 'Y', 'X', 'H')
+
+    data = read_fbd(filename, frame=-1, channel=1, keepdims=False)
+    assert data.values.sum(dtype=numpy.uint64) == 0  # channel 1 is empty
+    assert data.shape == (256, 256, 64)
+    assert data.dims == ('Y', 'X', 'H')
+
+    data = read_fbd(filename, frame=1, channel=0, keepdims=False)
+    assert data.values.sum(dtype=numpy.uint64) == 1033137
+    assert data.shape == (256, 256, 64)
+    assert data.dims == ('Y', 'X', 'H')
+
+    data = read_fbd(filename, frame=1, channel=0)
+    assert data.values.sum(dtype=numpy.uint64) == 1033137
+    assert data.shape == (1, 1, 256, 256, 64)
+    assert data.dims == ('T', 'C', 'Y', 'X', 'H')
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')

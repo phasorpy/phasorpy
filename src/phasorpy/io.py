@@ -723,9 +723,10 @@ def read_fbd(
     filename: str | PathLike[Any],
     /,
     *,
+    frame: int | None = None,
     channel: int | None = None,
+    keepdims: bool = True,
     laser_factor: float = -1.0,
-    integrate_frames: int = 1,
 ) -> DataArray:
     """Return frequency-domain image and metadata from FLIMbox FBD file.
 
@@ -743,17 +744,21 @@ def read_fbd(
     ----------
     filename : str or Path
         Name of FLIMbox FBD file to read.
+    frame : int
+        If None (default), return all frames.
+        If < 0, integrate time axis, else return specified frame.
+    channel : int
+        If None (default), return all channels, else return specified channel.
+    keepdims :
+        If true (default), reduced axes are left as size-one dimension.
     laser_factor : float
         Factor to correct dwell_time/laser_frequency.
-    integrate_frames : int
-        Specifies which frames to sum. By default, all frames are summed
-        into one. If 0, no frames are summed.
 
     Returns
     -------
     xarray.DataArray
         Frequency-domain image histogram with :ref:`axes codes <axes>`
-        ``'CYXH'`` and type ``uint16``:
+        ``'TCYXH'`` and type ``uint16``:
 
         - ``coords['H']``: phases in radians.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -771,7 +776,7 @@ def read_fbd(
     >>> data.dtype  # doctest: +SKIP
     dtype('uint16')
     >>> data.shape  # doctest: +SKIP
-    (1, 2, 256, 256, 64)
+    (9, 2, 256, 256, 64)
     >>> data.dims  # doctest: +SKIP
     ('T', 'C', 'Y', 'X', 'H')
     >>> data.coords['H'].data  # doctest: +SKIP
@@ -782,13 +787,42 @@ def read_fbd(
     """
     import lfdfiles
 
+    integrate_frames = 0 if frame is None or frame >= 0 else 1
+
     with lfdfiles.FlimboxFbd(filename, laser_factor=laser_factor) as fbd:
         data = fbd.asimage(None, None, integrate_frames=integrate_frames)
-        if channel is not None:
-            data = data[:, channel].copy()
-            axes = 'TYXH'
+        if integrate_frames:
+            frame = None
+        copy = False
+        axes = 'TCYXH'
+        if channel is None:
+            if not keepdims and data.shape[1] == 1:
+                data = data[:, 0]
+                axes = 'TYXH'
         else:
-            axes = 'TCYXH'
+            if channel < 0 or channel >= data.shape[1]:
+                raise IndexError(f'{channel=} out of bounds')
+            if keepdims:
+                data = data[:, channel : channel + 1]
+            else:
+                data = data[:, channel]
+                axes = 'TYXH'
+            copy = True
+        if frame is None:
+            if not keepdims and data.shape[0] == 1:
+                data = data[0]
+                axes = axes[1:]
+        else:
+            if frame < 0 or frame > data.shape[0]:
+                raise IndexError(f'{frame=} out of bounds')
+            if keepdims:
+                data = data[frame : frame + 1]
+            else:
+                data = data[frame]
+                axes = axes[1:]
+            copy = True
+        if copy:
+            data = data.copy()
         # TODO: return arrival window indices or micro-times as H coords?
         phases = numpy.linspace(
             0.0, numpy.pi * 2, data.shape[-1], endpoint=False
