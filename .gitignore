@@ -1,5 +1,8 @@
 _/*
 data/*
+testdata/*
+test_data/*
+tests/data/*
 tutorials/data/*
 *.tif
 *.tiff
@@ -43,6 +46,7 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.whl
 MANIFEST
 
 # PyInstaller

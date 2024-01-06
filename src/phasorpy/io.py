@@ -2,16 +2,19 @@
 
 The ``phasorpy.io`` module provides functions to
 
-- read time-resolved and hyperspectral image data and metadata from many
-  file formats used in bio-imaging.
+- read time-resolved and hyperspectral image data and metadata (as relevant
+  to phasor analysis) from many file formats used in bio-imaging.
 - write phasor coordinate images to OME-TIFF files for import in ImageJ
   or Bio-Formats.
 
-These file formats are currently supported:
+The following file formats are currently supported:
 
 - Zeiss LSM: :py:func:`read_lsm`
 - ISS IFLI: :py:func:`read_ifli`
 - Becker & Hickl SDT: :py:func:`read_sdt`
+- PicoQuant PTU: :py:func:`read_ptu`
+- FLIMbox FBD: :py:func:`read_fbd`
+- FlimFast FLIF: :py:func:`read_flif`
 - SimFCS REF: :py:func:`read_ref`
 - SimFCS R64: :py:func:`read_r64`
 - SimFCS B64: :py:func:`read_b64`
@@ -23,19 +26,18 @@ Support for other file formats is being considered:
 
 - OME-TIFF
 - Zeiss CZI
-- PicoQuant PTU
 - Leica LIF
 - Nikon ND2
 - Olympus OIB/OIF
 - Olympus OIR
-- FLIMbox FBD
-- FlimFast FLIF
 
 The functions are implemented as minimal wrappers around specialized
 third-party file reader libraries, currently
 `tifffile <https://github.com/cgohlke/tifffile>`_,
+`ptufile <https://github.com/cgohlke/ptufile>`_,
 `sdtfile <https://github.com/cgohlke/sdtfile>`_, and
 `lfdfiles <https://github.com/cgohlke/lfdfiles>`_.
+For advanced or unsupported use cases, consider using these libraries directly.
 
 The read functions typically have the following signature::
 
@@ -49,7 +51,7 @@ where ``ext`` indicates the file format and ``kwargs`` are optional arguments
 passed to the underlying file reader library or used to select which data is
 returned. The returned `xarray.DataArray
 <https://docs.xarray.dev/en/stable/user-guide/data-structures.html>`_
-contains a n-dimensional array with labeled coordinates, dimensions, and
+contains an n-dimensional array with labeled coordinates, dimensions, and
 attributes:
 
 - ``data`` or ``values`` (*array_like*)
@@ -109,8 +111,8 @@ __all__ = [
     'read_bh',
     'read_bhz',
     # 'read_czi',
-    # 'read_fbd',
-    # 'read_flif',
+    'read_fbd',
+    'read_flif',
     'read_ifli',
     # 'read_lif',
     'read_lsm',
@@ -119,19 +121,28 @@ __all__ = [
     # 'read_oir',
     # 'read_ometiff',
     'read_ometiff_phasor',
-    # 'read_ptu',
+    'read_ptu',
     'read_r64',
     'read_ref',
     'read_sdt',
     'read_z64',
     'write_ometiff_phasor',
+    '_squeeze_axes',
 ]
 
 import os
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, ArrayLike, PathLike, Sequence
+    from ._typing import (
+        Any,
+        ArrayLike,
+        PathLike,
+        Sequence,
+        DTypeLike,
+        EllipsisType,
+        Literal,
+    )
 
 import numpy
 from xarray import DataArray
@@ -384,7 +395,8 @@ def read_ifli(
     -------
     xarray.DataArray
         Average intensity and phasor coordinates.
-        An array of up to 8 dimensions and type ``float32``.
+        An array of up to 8 dimensions with :ref:`axes codes <axes>`
+        ``'RCTZYXFS'`` and type ``float32``.
         The last dimension contains `dc`, `re`, and `im` phasor coordinates.
 
         - ``coords['F']``: modulation frequencies.
@@ -422,19 +434,21 @@ def read_ifli(
 
     with lfdfiles.VistaIfli(filename) as ifli:
         assert ifli.axes is not None
-        data = ifli.asarray(**kwargs)[:, channel : channel + 1]
+        # always return one acquisition channel to simplify metadata handling
+        data = ifli.asarray(**kwargs)[:, channel : channel + 1].copy()
         shape, axes, _ = _squeeze_axes(data.shape, ifli.axes, skip='FYX')
+        axes = axes.replace('E', 'C')  # spectral axis
         data = data.reshape(shape)
         header = ifli.header
         coords: dict[str, Any] = {}
         coords['S'] = ['dc', 're', 'im']
         coords['F'] = numpy.array(header['ModFrequency'])
         # TODO: how to distinguish time- from frequency-domain?
-        # TODO: how extract spatial coordinates?
+        # TODO: how to extract spatial coordinates?
         if 'T' in axes:
             coords['T'] = numpy.array(header['TimeTags'])
-        if 'E' in axes:
-            coords['E'] = numpy.array(header['SpectrumInfo'])
+        if 'C' in axes:
+            coords['C'] = numpy.array(header['SpectrumInfo'])
         # if 'Z' in axes:
         #     coords['Z'] = numpy.array(header[])
         metadata = _metadata(axes, shape, filename, **coords)
@@ -459,7 +473,7 @@ def read_sdt(
 ) -> DataArray:
     """Return time-resolved image and metadata from Becker & Hickl SDT file.
 
-    SDT files contain time correlated single photon counting measurement data
+    SDT files contain time-correlated single photon counting measurement data
     and instrumentation parameters.
 
     Parameters
@@ -472,8 +486,9 @@ def read_sdt(
     Returns
     -------
     xarray.DataArray
-        Time correlated single photon counting image data
-        of type ``uint16``, ``uint32``, or ``float32``.
+        Time correlated single photon counting image data with
+        :ref:`axes codes <axes>` ``'YXH'`` and type ``uint16``, ``uint32``,
+        or ``float32``.
 
         - ``coords['H']``: times of the histogram bins.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -481,8 +496,8 @@ def read_sdt(
     Raises
     ------
     ValueError
-        File is not a SDT file or is not a "SPC Setup & Data File" containing
-        time correlated single photon counting data.
+        File is not an SDT file containing time-correlated single photon
+        counting data.
 
     Examples
     --------
@@ -504,11 +519,14 @@ def read_sdt(
     import sdtfile
 
     with sdtfile.SdtFile(filename) as sdt:
-        if 'SPC Setup & Data File' not in sdt.info.id:
-            # skip FCS and DLL data
+        if (
+            'SPC Setup & Data File' not in sdt.info.id
+            and 'SPC FCS Data File' not in sdt.info.id
+        ):
+            # skip DLL data
             raise ValueError(
                 f'{os.path.basename(filename)!r} '
-                'is not a SDT "SPC Setup & Data File"'
+                'is not an SDT file containing TCSPC data'
             )
         # filter block types?
         # sdtfile.BlockType(sdt.block_headers[index].block_type).contents
@@ -519,6 +537,300 @@ def read_sdt(
     # TODO: get spatial coordinates from scanner settings?
     metadata = _metadata('QYXH'[-data.ndim :], data.shape, filename, H=times)
     metadata['attrs']['frequency'] = 1e-6 / (times[-1] + times[1])
+    return DataArray(data, **metadata)
+
+
+def read_ptu(
+    filename: str | PathLike[Any],
+    /,
+    selection: Sequence[int | slice | EllipsisType | None] | None = None,
+    *,
+    trimdims: Sequence[Literal['T', 'C', 'H']] | None = None,
+    dtype: DTypeLike | None = None,
+    frame: int | None = None,
+    channel: int | None = None,
+    keepdims: bool = True,
+) -> DataArray:
+    """Return image histogram and metadata from PicoQuant PTU T3 mode file.
+
+    PTU files contain time-correlated single photon counting measurement data
+    and instrumentation parameters.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of PTU file to read.
+    selection : sequence of index types
+        Indices for all dimensions:
+
+        - ``None``: return all items along axis (default).
+        - ``Ellipsis``: return all items along multiple axes.
+        - ``int``: return single item along axis.
+        - ``slice``: return chunk of axis.
+          ``slice.step`` is binning factor.
+          If ``slice.step=-1``, integrate all items along axis.
+
+    trimdims : str
+        Axes to trim. The default is ``'TCH'``.
+    dtype : dtype-like
+        Unsigned integer type of image histogram array.
+        The default is ``uint16``. Increase the bit depth to avoid
+        overflows when integrating.
+    frame : int
+        If < 0, integrate time axis, else return specified frame.
+        Overrides ``selection`` for axis ``T``.
+    channel : int
+        If < 0, integrate channel axis, else return specified channel.
+        Overrides ``selection`` for axis ``C``.
+    keepdims :
+        If true (default), reduced axes are left as size-one dimension.
+
+    Returns
+    -------
+    xarray.DataArray
+        Decoded TTTR T3 records as up to 5-dimensional image array
+        with :ref:`axes codes <axes>` ``'TYXCH'`` and type specified
+        in ``dtype``:
+
+        - ``coords['H']``: times of the histogram bins.
+        - ``attrs['frequency']``: repetition frequency in MHz.
+
+    Raises
+    ------
+    ptufile.PqFileError
+        File is not a PicoQuant PTU file or is corrupted.
+    ValueError
+        File is not a PicoQuant PTU T3 mode file containing time-correlated
+        single photon counting data.
+
+    Examples
+    --------
+    >>> data = read_ptu(fetch('hazelnut_FLIM_single_image.ptu'))
+    >>> data.values
+    array(...)
+    >>> data.dtype
+    dtype('uint16')
+    >>> data.shape
+    (5, 256, 256, 1, 139)
+    >>> data.dims
+    ('T', 'Y', 'X', 'C', 'H')
+    >>> data.coords['H'].data
+    array(...)
+    >>> data.attrs['frequency']
+    78.02
+
+    """
+    import ptufile
+
+    with ptufile.PtuFile(filename, trimdims=trimdims) as ptu:
+        if not ptu.is_t3 or not ptu.is_image:
+            raise ValueError(
+                f'{os.path.basename(filename)!r} '
+                'is not a PTU file containing a T3 mode image'
+            )
+        data = ptu.decode_image(
+            selection,
+            dtype=dtype,
+            frame=frame,
+            channel=channel,
+            keepdims=keepdims,
+            asxarray=True,
+        )
+        assert isinstance(data, DataArray)
+        data.attrs['frequency'] = ptu.syncrate * 1e-6  # MHz
+
+    return data
+
+
+def read_flif(
+    filename: str | PathLike[Any],
+    /,
+) -> DataArray:
+    """Return frequency-domain image and metadata from FlimFast FLIF file.
+
+    FlimFast FLIF files contain camera images and metadata from
+    frequency-domain fluorescence lifetime measurements.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of FlimFast FLIF file to read.
+
+    Returns
+    -------
+    xarray.DataArray
+        Frequency-domain phase images with :ref:`axes codes <axes>` ``'THYX'``
+        and type ``uint16``:
+
+        - ``coords['H']``: phases in radians.
+        - ``attrs['frequency']``: repetition frequency in MHz.
+        - ``attrs['ref_phase']``: measured phase of reference.
+        - ``attrs['ref_mod']``: measured modulation of reference.
+        - ``attrs['ref_tauphase']``: lifetime from phase of reference.
+        - ``attrs['ref_taumod']``: lifetime from modulation of reference.
+
+    Raises
+    ------
+    lfdfile.LfdFileError
+        File is not a FlimFast FLIF file.
+
+    Examples
+    --------
+    >>> data = read_flif(fetch('flimfast.flif'))
+    >>> data.values
+    array(...)
+    >>> data.dtype
+    dtype('uint16')
+    >>> data.shape
+    (32, 220, 300)
+    >>> data.dims
+    ('H', 'Y', 'X')
+    >>> data.coords['H'].data
+    array(...)
+    >>> data.attrs['frequency']
+    80.65...
+
+    """
+    import lfdfiles
+
+    with lfdfiles.FlimfastFlif(filename) as flif:
+        nphases = int(flif.header.phases)
+        data = flif.asarray()
+        if data.shape[0] < nphases:
+            raise ValueError(f'measured phases {data.shape[0]} < {nphases=}')
+        if data.shape[0] % nphases != 0:
+            data = data[: (data.shape[0] // nphases) * nphases]
+        data = data.reshape(-1, nphases, data.shape[1], data.shape[2])
+        if data.shape[0] == 1:
+            data = data[0]
+            axes = 'HYX'
+        else:
+            axes = 'THYX'
+        # TODO: check if phases are ordered
+        phases = numpy.radians(flif.records['phase'][:nphases])
+        metadata = _metadata(axes, data.shape, H=phases)
+        attrs = metadata['attrs']
+        attrs['frequency'] = float(flif.header.frequency)
+        attrs['ref_phase'] = float(flif.header.measured_phase)
+        attrs['ref_mod'] = float(flif.header.measured_mod)
+        attrs['ref_tauphase'] = float(flif.header.ref_tauphase)
+        attrs['ref_taumod'] = float(flif.header.ref_taumod)
+
+    return DataArray(data, **metadata)
+
+
+def read_fbd(
+    filename: str | PathLike[Any],
+    /,
+    *,
+    frame: int | None = None,
+    channel: int | None = None,
+    keepdims: bool = True,
+    laser_factor: float = -1.0,
+) -> DataArray:
+    """Return frequency-domain image and metadata from FLIMbox FBD file.
+
+    FDB files contain encoded data from the FLIMbox device, which can be
+    decoded to photon arrival windows, channels, and global times.
+    The encoding scheme depends on the FLIMbox device's firmware.
+    The FBD file format is undocumented.
+
+    This function may fail to produce expected results when files use unknown
+    firmware, do not contain image scans, settings were recorded incorrectly,
+    scanner and FLIMbox frequencies were out of sync, or scanner settings were
+    changed during acquisition.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of FLIMbox FBD file to read.
+    frame : int
+        If None (default), return all frames.
+        If < 0, integrate time axis, else return specified frame.
+    channel : int
+        If None (default), return all channels, else return specified channel.
+    keepdims :
+        If true (default), reduced axes are left as size-one dimension.
+    laser_factor : float
+        Factor to correct dwell_time/laser_frequency.
+
+    Returns
+    -------
+    xarray.DataArray
+        Frequency-domain image histogram with :ref:`axes codes <axes>`
+        ``'TCYXH'`` and type ``uint16``:
+
+        - ``coords['H']``: phases in radians.
+        - ``attrs['frequency']``: repetition frequency in MHz.
+
+    Raises
+    ------
+    lfdfile.LfdFileError
+        File is not a FLIMbox FBD file.
+
+    Examples
+    --------
+    >>> data = read_fbd(fetch('convallaria_000$EI0S.fbd'))  # doctest: +SKIP
+    >>> data.values  # doctest: +SKIP
+    array(...)
+    >>> data.dtype  # doctest: +SKIP
+    dtype('uint16')
+    >>> data.shape  # doctest: +SKIP
+    (9, 2, 256, 256, 64)
+    >>> data.dims  # doctest: +SKIP
+    ('T', 'C', 'Y', 'X', 'H')
+    >>> data.coords['H'].data  # doctest: +SKIP
+    array(...)
+    >>> data.attrs['frequency']  # doctest: +SKIP
+    40.0
+
+    """
+    import lfdfiles
+
+    integrate_frames = 0 if frame is None or frame >= 0 else 1
+
+    with lfdfiles.FlimboxFbd(filename, laser_factor=laser_factor) as fbd:
+        data = fbd.asimage(None, None, integrate_frames=integrate_frames)
+        if integrate_frames:
+            frame = None
+        copy = False
+        axes = 'TCYXH'
+        if channel is None:
+            if not keepdims and data.shape[1] == 1:
+                data = data[:, 0]
+                axes = 'TYXH'
+        else:
+            if channel < 0 or channel >= data.shape[1]:
+                raise IndexError(f'{channel=} out of bounds')
+            if keepdims:
+                data = data[:, channel : channel + 1]
+            else:
+                data = data[:, channel]
+                axes = 'TYXH'
+            copy = True
+        if frame is None:
+            if not keepdims and data.shape[0] == 1:
+                data = data[0]
+                axes = axes[1:]
+        else:
+            if frame < 0 or frame > data.shape[0]:
+                raise IndexError(f'{frame=} out of bounds')
+            if keepdims:
+                data = data[frame : frame + 1]
+            else:
+                data = data[frame]
+                axes = axes[1:]
+            copy = True
+        if copy:
+            data = data.copy()
+        # TODO: return arrival window indices or micro-times as H coords?
+        phases = numpy.linspace(
+            0.0, numpy.pi * 2, data.shape[-1], endpoint=False
+        )
+        metadata = _metadata(axes, data.shape, H=phases)
+        attrs = metadata['attrs']
+        attrs['frequency'] = fbd.laser_frequency * 1e-6
+
     return DataArray(data, **metadata)
 
 
@@ -541,7 +853,7 @@ def read_ref(
     -------
     xarray.DataArray
         Referenced fluorescence lifetime polar coordinates.
-        An array of 5 (rarely more) 256x256 images of type ``float32``:
+        An array of five 256x256 images of type ``float32``:
 
         0. average intensity
         1. phase of 1st harmonic in degrees
@@ -598,7 +910,7 @@ def read_r64(
     -------
     xarray.DataArray
         Referenced fluorescence lifetime polar coordinates.
-        An array of 5 (rarely more) 256x256 images of type ``float32``:
+        An array of five 256x256 images of type ``float32``:
 
         0. average intensity
         1. phase of 1st harmonic in degrees
@@ -757,8 +1069,8 @@ def read_bh(
     Returns
     -------
     xarray.DataArray
-        Time-domain fluorescence lifetime histogram of shape
-        ``(256, 256, 256)`` and type ``float32``.
+        Time-domain fluorescence lifetime histogram with axes ``'HYX'``,
+        shape ``(256, 256, 256)``, and type ``float32``.
 
     Raises
     ------
@@ -805,8 +1117,8 @@ def read_bhz(
     Returns
     -------
     xarray.DataArray
-        Time-domain fluorescence lifetime histogram of shape
-        ``(256, 256, 256)`` and type ``float32``.
+        Time-domain fluorescence lifetime histogram with axes ``'HYX'``,
+        shape ``(256, 256, 256)``, and type ``float32``.
 
     Raises
     ------
@@ -871,30 +1183,33 @@ def _squeeze_axes(
 
     Remove unused dimensions unless their axes are listed in ``skip``.
 
-    Adapted from `tifffile <https://github.com/cgohlke/tifffile/>`_.
+    Adapted from the tifffile library.
 
-    Parameters:
-        shape:
-            Sequence of dimension sizes.
-        axes:
-            Character codes for dimensions in ``shape``.
-        skip:
-            Character codes for dimensions whose length-1 dimensions are
-            not removed. The default is 'XY'.
+    Parameters
+    ----------
+    shape : tuple of ints
+        Sequence of dimension sizes.
+    axes : str
+        Character codes for dimensions in ``shape``.
+    skip : str (optional)
+        Character codes for dimensions whose length-1 dimensions are
+        not removed. The default is 'XY'.
 
-    Returns:
-        shape:
-            Sequence of dimension sizes with length-1 dimensions removed.
-        axes:
-            Character codes for dimensions in output `shape`.
-        squeezed:
-            Dimensions were kept (True) or removed (False).
+    Returns
+    -------
+    shape : tuple of ints
+        Sequence of dimension sizes with length-1 dimensions removed.
+    axes : str
+        Character codes for dimensions in output `shape`.
+    squeezed : str
+        Dimensions were kept (True) or removed (False).
 
-    Examples:
-        >>> _squeeze_axes((5, 1, 2, 1, 1), 'TZYXC')
-        ((5, 2, 1), 'TYX', (True, False, True, True, False))
-        >>> _squeeze_axes((1,), 'Q')
-        ((1,), 'Q', (True,))
+    Examples
+    --------
+    >>> _squeeze_axes((5, 1, 2, 1, 1), 'TZYXC')
+    ((5, 2, 1), 'TYX', (True, False, True, True, False))
+    >>> _squeeze_axes((1,), 'Q')
+    ((1,), 'Q', (True,))
 
     """
     if len(shape) != len(axes):

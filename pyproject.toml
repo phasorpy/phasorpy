@@ -68,7 +68,7 @@ test = [
     "pytest-doctestplus",
     "coverage",
 ]
-io = ["lfdfiles", "sdtfile"]
+io = ["lfdfiles", "sdtfile", "ptufile"]
 
 [tool.setuptools]
 package-dir = { "" = "src" }
