@@ -37,6 +37,7 @@ from typing import (
     Optional,
     TextIO,
     Union,
+    Dict,
     cast,
     final,
     overload,

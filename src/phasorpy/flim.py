@@ -49,9 +49,9 @@ if TYPE_CHECKING:
     from ._typing import Any, NDArray, Callable, Dict, Sequence
 
 import numpy
-from phasorpy.phasor import phasor
-
 from numpy.testing import assert_array_equal
+
+from phasorpy.phasor import phasor
 
 
 class FlimData:
@@ -145,7 +145,7 @@ class FlimData:
         Raises
         ------
         ValueError
-            If the original data is not provided and either the average phasor or the real and imaginary coordinates are also not provided. 
+            If the original data is not provided and either the average phasor or the real and imaginary coordinates are also not provided.
 
         Examples
         --------
@@ -160,7 +160,7 @@ class FlimData:
         0.0
         >>> flim_data.calibration_status
         False
-        
+
         """
         self.laser_frequency = float(laser_frequency)
         self.original_data = original_data
@@ -188,7 +188,7 @@ class FlimData:
         self.modulation_correction = float(modulation_correction)
 
         self.calibration_status = calibration_status
-    
+
     def __eq__(self, other):
         if isinstance(other, FlimData):
             assert_array_equal(self.original_data, other.original_data)
@@ -196,8 +196,13 @@ class FlimData:
             assert self.phi_correction == other.phi_correction
             assert self.modulation_correction == other.modulation_correction
             assert_array_equal(self.average_phasor, other.average_phasor)
-            assert_array_equal(self.real_phasor_coordinates, other.real_phasor_coordinates)
-            assert_array_equal(self.imaginary_phasor_coordinates, other.imaginary_phasor_coordinates)
+            assert_array_equal(
+                self.real_phasor_coordinates, other.real_phasor_coordinates
+            )
+            assert_array_equal(
+                self.imaginary_phasor_coordinates,
+                other.imaginary_phasor_coordinates,
+            )
             assert self.calibration_status == other.calibration_status
             return True
         return False
@@ -243,7 +248,7 @@ class FlimData:
         When called with reference data, the method adjusts the calibration parameters, such as phase and modulation corrections,
         based on the provided reference data and correction functions. The calibration process updates
         the 'phi_correction', 'modulation_correction', and 'calibration_status' attributes of the FlimData object.
-        
+
         Examples
         --------
         >>> # Example 1: Recalibrating with reference data
@@ -258,7 +263,7 @@ class FlimData:
 
         >>> # Example 3: Calibrating with a custom center function
         >>> flim_data.calibrate(center_function=my_custom_center_function, additional_arg=42)
-   
+
         """
         if self.calibration_status and not recalibrate:
             raise ValueError(
@@ -277,13 +282,14 @@ class FlimData:
                 raise ValueError(
                     'Either reference name or reference tau must be provided'
                 )
+            assert reference_tau is not None
             omega_tau = (
                 2
                 * numpy.pi
                 * float(self.laser_frequency)
                 / 1000
                 * float(reference_tau)
-            )   
+            )
             g_reference = 1 / (1 + numpy.power(omega_tau, 2))
             s_reference = g_reference * omega_tau
             phi_reference = numpy.arctan(s_reference / g_reference)
@@ -291,25 +297,31 @@ class FlimData:
                 numpy.power(g_reference, 2) + numpy.power(s_reference, 2)
             )
             _, g_observed, s_observed = phasor(
-                reference_data.original_data if isinstance(reference_data, FlimData) else reference_data
+                reference_data.original_data
+                if isinstance(reference_data, FlimData)
+                else reference_data
             )  # TODO add axis optional
-            if center_function != 'mean':
-                try:
-                    real_center, imaginary_center = center_function(
-                        g_observed, s_observed, **kwargs
-                    )
-                except:
-                    raise ValueError(
-                        'Function to calculate center of mass should recieve arguments real and imaginary coordinates, and the optional keyword arguments, and return two values: real_center and imaginary_center.'
-                    )
-            else:
+            if center_function == 'mean':
                 real_center, imaginary_center = numpy.mean(
                     g_observed
                 ), numpy.mean(s_observed)
+
+            if not callable(center_function):
+                raise ValueError(
+                    'Invalid value for center_function. It should be a callable or "mean".'
+                )
+
+            try:
+                real_center, imaginary_center = center_function(
+                    g_observed, s_observed, **kwargs
+                )
+            except Exception as e:
+                raise ValueError(
+                    'Function to calculate center of mass should receive arguments real and imaginary coordinates, and the optional keyword arguments, and return two values: real_center and imaginary_center.'
+                ) from e
             phi_observed = numpy.arctan(imaginary_center / real_center)
             modulation_observed = numpy.sqrt(
-                numpy.power(real_center, 2)
-                + numpy.power(imaginary_center, 2)
+                numpy.power(real_center, 2) + numpy.power(imaginary_center, 2)
             )
 
             self.phi_correction = (
@@ -333,7 +345,10 @@ class FlimData:
                 ),
             )
         )
-
+        assert (
+            self.real_phasor_coordinates is not None
+            and self.imaginary_phasor_coordinates is not None
+        )
         self.real_phasor_coordinates, self.imaginary_phasor_coordinates = (
             phase_correction_matrix.dot(
                 numpy.vstack(
@@ -347,7 +362,6 @@ class FlimData:
         ).reshape((2, *self.real_phasor_coordinates.shape))
 
         self.calibration_status = True
-
 
 
 def calibrate_multiple_flim(
@@ -385,7 +399,7 @@ def calibrate_multiple_flim(
     ------
     ValueError
         If 'reference_data' is given without providing 'reference_name' or 'reference_tau', or if neither 'reference_data' or 'phi_correction' and 'modulation_correction' are provided.
-    
+
     Examples
     --------
     >>> image_list = [image1, image2]
@@ -394,7 +408,7 @@ def calibrate_multiple_flim(
     True
     >>> image2.calibration_status
     True
-    
+
     """
     for image in image_list:
         if phi_correction is not None and modulation_correction is not None:
