@@ -55,7 +55,7 @@ def calibration_parameters(
             'spatial_median',
             'geometric_median'
         ], optional
-        Function to calculate the center of mass or centroid of the phasor 
+        Function to calculate the center of mass or centroid of the phasor
         coordinates, by default 'mean'.
 
     Returns
@@ -114,7 +114,7 @@ def calibrate_phasor(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Calibrate fluorescence lifetime imaging (FLIM) data.
 
-    This function applies phase and modulation correction to FLIM data 
+    This function applies phase and modulation correction to FLIM data
     based on the provided calibration parameters.
 
     Parameters
@@ -124,15 +124,15 @@ def calibrate_phasor(
     imaginary_phasor : ArrayLike | Sequence | float
         Imaginary component of the phasor to be calibrated.
     calibration_parameters : tuple[float,float]
-        Pre-calculated phase and modulation correction parameters. Can be 
+        Pre-calculated phase and modulation correction parameters. Can be
         calculated with `calibration_parameters` function.
 
     Returns
     -------
     Tuple[NDArray[Any], NDArray[Any]]
-        real_phasor_calibrated: Array containing the calibrated real 
+        real_phasor_calibrated: Array containing the calibrated real
             component of the phasor.
-        imaginary_phasor_calibrated: Array containing the calibrated 
+        imaginary_phasor_calibrated: Array containing the calibrated
             imaginary component of the phasor.
 
     Examples
@@ -169,9 +169,7 @@ def calibrate_phasor(
 def center_of_mass(
     x_coords: ArrayLike | Sequence | float,
     y_coords: ArrayLike | Sequence | float,
-    method: Literal[
-        'mean', 'spatial_median', 'geometric_median'
-    ] = 'mean',
+    method: Literal['mean', 'spatial_median', 'geometric_median'] = 'mean',
 ) -> tuple[float, float]:
     """Calculate the center of mass (centroid) of a set of 2D coordinates.
 
