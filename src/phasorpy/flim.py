@@ -159,10 +159,6 @@ def calibrate_phasor(
         )
         * modulation_correction
     ).reshape((2, *real_phasor.shape))
-    if isinstance(real_phasor, list):
-        real_phasor_calibrated = real_phasor_calibrated.tolist()
-    if isinstance(imaginary_phasor, list):
-        imaginary_phasor_calibrated = imaginary_phasor_calibrated.tolist()
     return real_phasor_calibrated, imaginary_phasor_calibrated
 
 
