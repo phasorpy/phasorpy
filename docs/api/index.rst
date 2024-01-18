@@ -17,3 +17,4 @@ PhasorPy library version |version|.
     datasets
     io
     cli
+    flim
