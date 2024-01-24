@@ -138,18 +138,18 @@ def polar_from_reference_phasor(
 
     Examples
     --------
-    >>> measured_real = -0.4
-    >>> measured_imag = 0.2
-    >>> known_real = 0.3
-    >>> known_imag = 0.3
+    >>> measured_real = 0.5
+    >>> measured_imag = 0.0
+    >>> known_real = 1.0
+    >>> known_imag = 0.0
     >>> phase0, modulation0 = polar_from_reference_phasor(
     ...     measured_real, measured_imag,
     ...     known_real, known_imag
     ... )
     >>> phase0
-    -5.034139534781332
+    0.0
     >>> modulation0
-    0.9486832980505137
+    2.0
     """
     measured_real = numpy.asarray(measured_real)
     measured_imag = numpy.asarray(measured_imag)
