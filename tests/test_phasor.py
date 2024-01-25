@@ -9,7 +9,7 @@ from numpy.testing import (
 )
 
 from phasorpy.phasor import (
-    phasor_calibration,
+    phasor_calibrate,
     phasor_center,
     phasor_from_lifetime,
     phasor_to_polar,
@@ -19,10 +19,12 @@ from phasorpy.phasor import (
 
 SYNTH_DATA_ARRAY = numpy.array([[50, 1], [1, 1]])
 SYNTH_DATA_LIST = [1, 2, 4]
+SYNTH_PHI = numpy.array([[0.5, 0.5], [0.5, 0.5]])
+SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
 
 
 @pytest.mark.parametrize(
-    "real_data, imag_data, expected_phase, expected_modulation",
+    "real, imag, expected_phase, expected_modulation",
     [
         (1, 0, 0.0, 1.0),
         (-0.5, -0.7, -2.191045812777718, 0.8602325267042626),
@@ -44,11 +46,9 @@ SYNTH_DATA_LIST = [1, 2, 4]
         ),
     ],
 )
-def test_phasor_to_polar(
-    real_data, imag_data, expected_phase, expected_modulation
-):
+def test_phasor_to_polar(real, imag, expected_phase, expected_modulation):
     """Test `phasor_to_polar` function with scalar, list and array inputs"""
-    polar_phase, polar_modulation = phasor_to_polar(real_data, imag_data)
+    polar_phase, polar_modulation = phasor_to_polar(real, imag)
     assert_almost_equal(polar_phase, expected_phase)
     assert_almost_equal(polar_modulation, expected_modulation)
 
@@ -140,8 +140,8 @@ def test_polar_from_reference_phasor(
 
 
 @pytest.mark.parametrize(
-    """real_data, imag_data,
-    reference_real_phase, reference_imag_modulation,
+    """real, imag,
+    phase0, modulation0,
     expected_real, expected_imag""",
     [
         (2, 2, None, None, 2, 2),
@@ -196,37 +196,40 @@ def test_polar_from_reference_phasor(
             numpy.array([[39.81570233, 0.79631405], [0.79631405, 0.79631405]]),
             numpy.array([[135.70081005, 2.7140162], [2.7140162, 2.7140162]]),
         ),
+        (
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            SYNTH_PHI,
+            SYNTH_MOD,
+            numpy.array([[39.81570233, 0.79631405], [0.79631405, 0.79631405]]),
+            numpy.array([[135.70081005, 2.7140162], [2.7140162, 2.7140162]]),
+        ),  # test with phase0 and modulation0 as arrays
     ],
 )
-def test_phasor_calibration(
-    real_data,
-    imag_data,
-    reference_real_phase,
-    reference_imag_modulation,
+def test_phasor_calibrate(
+    real,
+    imag,
+    phase0,
+    modulation0,
     expected_real,
     expected_imag,
 ):
-    """Test `phasor_calibration` function with scalar, list and array inputs"""
-    if (
-        reference_real_phase is not None
-        and reference_imag_modulation is not None
-    ):
-        calibrated_real, calibrated_imag = phasor_calibration(
-            real_data,
-            imag_data,
-            reference_real_phase,
-            reference_imag_modulation,
+    """Test `phasor_calibrate` function with scalar, list and array inputs"""
+    if phase0 is not None and modulation0 is not None:
+        calibrated_real, calibrated_imag = phasor_calibrate(
+            real,
+            imag,
+            phase0,
+            modulation0,
         )
     else:
-        calibrated_real, calibrated_imag = phasor_calibration(
-            real_data, imag_data
-        )
+        calibrated_real, calibrated_imag = phasor_calibrate(real, imag)
     assert_almost_equal(calibrated_real, expected_real)
     assert_almost_equal(calibrated_imag, expected_imag)
 
 
 @pytest.mark.parametrize(
-    """real_data, imag_data,
+    """real, imag,
     skip_axes, method,
     expected_real_center, expected_imag_center""",
     [
@@ -264,28 +267,11 @@ def test_phasor_calibration(
             1.0,
             1.0,
         ),
-        # Scalar input with skip_axes
-        (1.0, -4.0, (0,), 'mean', numpy.nan, numpy.nan),
-        # List input with skip_axes
-        (SYNTH_DATA_LIST, SYNTH_DATA_LIST, (0,), 'mean', 3.0, 3.0),
-        (SYNTH_DATA_LIST, SYNTH_DATA_LIST, (0,), 'spatial_median', 3.0, 3.0),
-        (SYNTH_DATA_LIST, SYNTH_DATA_LIST, (0,), 'geometric_median', 3.0, 3.0),
-        # Array input with skip_axes
-        (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY, (0,), 'mean', 1.0, 1.0),
-        (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY, (0,), 'spatial_median', 1.0, 1.0),
-        (
-            SYNTH_DATA_ARRAY,
-            SYNTH_DATA_ARRAY,
-            (0,),
-            'geometric_median',
-            1.0,
-            1.0,
-        ),
     ],
 )
 def test_phasor_center(
-    real_data,
-    imag_data,
+    real,
+    imag,
     skip_axes,
     method,
     expected_real_center,
@@ -294,10 +280,16 @@ def test_phasor_center(
     """Test `phasor_center` function with scalar, list and array inputs with
     all methods available"""
     real_center, imag_center = phasor_center(
-        real_data, imag_data, skip_axes=skip_axes, method=method
+        real, imag, skip_axes=skip_axes, method=method
     )
     assert_almost_equal(real_center, expected_real_center)
     assert_almost_equal(imag_center, expected_imag_center)
+
+
+def test_phasor_center_method_error():
+    """Test method not supported in `phasor_center` function."""
+    with pytest.raises(AssertionError):
+        phasor_center(0, 0, method='method_not_supported')
 
 
 @pytest.mark.parametrize(

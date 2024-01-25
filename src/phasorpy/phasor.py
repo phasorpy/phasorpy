@@ -1,28 +1,27 @@
-"""Manipulate phasor  data
+"""Calculate, convert, calibrate, and reduce phasor coordinates.
 
 The ``phasorpy.phasor`` module provides functions to:
-    - transform phasor to polar coordinates
-    - calibration of phasor coordinates
-    - compute phasor coordinates from lifetime values
 
-
-Lifetime values for known fluorophores can be obtained from the ISS website:
-https://iss.com/resources#lifetime-data-of-selected-fluorophores.
+- calculate phasor coordinates from time-resolved and spectral signals
+- calculate phasor coordinates from single- or multi-component
+    fluorescence lifetimes
+- convert between phasor and polar (phase and modulation) coordinates,
+    and apparent single lifetimes
+- calibrate phasor coordinates with reference signal of known
+    fluorescence lifetime
+- reduce arrays of phasor coordinates to single coordinates
 
 """
 
 from __future__ import annotations
 
 __all__ = [
-    "phasor_calibration",
+    "phasor_calibrate",
     "polar_from_reference_phasor",
     "polar_from_reference",
     "phasor_to_polar",
     "phasor_from_lifetime",
     "phasor_center",
-    "_mean",
-    "_spatial_median",
-    "_geometric_median",
 ]
 
 from typing import TYPE_CHECKING
@@ -35,13 +34,13 @@ import math
 import numpy
 
 
-def phasor_calibration(
+def phasor_calibrate(
     real: ArrayLike,
     imag: ArrayLike,
     phase0: ArrayLike = 0.0,
     modulation0: ArrayLike = 1.0,
     /,
-) -> tuple[ArrayLike, ArrayLike]:
+) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return calibrated/referenced phasor coordinates.
 
     Parameters
@@ -57,50 +56,47 @@ def phasor_calibration(
     modulation0 : array_like, optional
         Radial component of polar coordinates for calibration. Defaults to 1.0.
 
-
     Returns
     -------
-    tuple[NDArray[Any], NDArray[Any]]
-        real:
-            Calibrated real component of phasor coordinates in Cartesian form.
-        imag:
-            Calibrated imaginary component of phasor coordinates in Cartesian
-            form.
+    real, imag:
+        Calibrated real and imaginary components of phasor coordinates.
 
     Examples
     --------
-    >>> real_data = numpy.array([1.0, 2.0, 3.0])
-    >>> imag_data = numpy.array([4.0, 5.0, 6.0])
+    >>> real = numpy.array([1.0, 2.0, 3.0])
+    >>> imag = numpy.array([4.0, 5.0, 6.0])
     >>> phase0 = 0.5
     >>> modulation0 = 2.0
-    >>> calibrated_real, calibrated_imag = phasor_calibration(
-    ...     real_data, imag_data,
+    >>> real_calibrated, imag_calibrated = phasor_calibrate(
+    ...     real, imag,
     ...     phase0,
     ...     modulation0
     ... )
-    >>> calibrated_real
+    >>> real_calibrated
     array(...)
-    >>> calibrated_imag
+    >>> imag_calibrated
+    array(...)
+    >>> phase0 = numpy.array([0.5, 0.2, 0.3])
+    >>> modulation0 = numpy.array([1.5, 2.0, 0.3])
+    >>> real_calibrated, imag_calibrated = phasor_calibrate(
+    ...     real, imag,
+    ...     phase0,
+    ...     modulation0
+    ... )
+    >>> real_calibrated
+    array(...)
+    >>> imag_calibrated
     array(...)
     """
-    phi0, mod0 = numpy.asarray(phase0), numpy.asarray(modulation0)
+    phi0 = numpy.asarray(phase0)
+    mod0 = numpy.asarray(modulation0)
+    re = numpy.asarray(real)
+    im = numpy.asarray(imag)
     if numpy.all(phi0 == 0) and numpy.all(mod0 == 1):
-        return real, imag
-    real = numpy.asarray(real)
-    imag = numpy.asarray(imag)
-    correction_matrix = (
-        numpy.array(
-            (
-                (numpy.cos(phi0), -numpy.sin(phi0)),
-                (numpy.sin(phi0), numpy.cos(phi0)),
-            )
-        )
-        * mod0
-    )
-    real, imag = (
-        correction_matrix.dot(numpy.vstack([real.flatten(), imag.flatten()]))
-    ).reshape((2, *real.shape))
-    return real, imag
+        return re, im
+    re_calibrated = (re * numpy.cos(phi0) - im * numpy.sin(phi0)) * mod0
+    im_calibrated = (re * numpy.sin(phi0) + im * numpy.cos(phi0)) * mod0
+    return re_calibrated, im_calibrated
 
 
 def polar_from_reference_phasor(
@@ -110,8 +106,7 @@ def polar_from_reference_phasor(
     known_imag: ArrayLike,
     /,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return angular and radial components for calibration from
-    reference phasor.
+    """Return  components for calibration from reference phasor.
 
     Parameters
     ----------
@@ -130,26 +125,13 @@ def polar_from_reference_phasor(
 
     Returns
     -------
-    tuple[NDArray[Any], NDArray[Any]]
-        phase0:
-            Angular component of polar coordinates for calibration.
-        modulation0:
-            Radial component of polar coordinates for calibration.
+    phase0, modulation0: ndarray
+        Angular and radial components of polar coordinates for calibration.
 
     Examples
     --------
-    >>> measured_real = 0.5
-    >>> measured_imag = 0.0
-    >>> known_real = 1.0
-    >>> known_imag = 0.0
-    >>> phase0, modulation0 = polar_from_reference_phasor(
-    ...     measured_real, measured_imag,
-    ...     known_real, known_imag
-    ... )
-    >>> phase0
-    0.0
-    >>> modulation0
-    2.0
+    >>> polar_from_reference_phasor(0.5, 0.0, 1.0, 0.0)
+    (0.0, 2.0)
     """
     measured_real = numpy.asarray(measured_real)
     measured_imag = numpy.asarray(measured_imag)
@@ -174,8 +156,7 @@ def polar_from_reference(
     known_modulation: ArrayLike,
     /,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return angular and radial components for calibration from reference
-    polar coordinates.
+    """Return components for calibration from reference polar coordinates.
 
     Parameters
     ----------
@@ -194,26 +175,13 @@ def polar_from_reference(
 
     Returns
     -------
-    tuple[NDArray[Any], NDArray[Any]]
-        phase0:
-            Angular component of polar coordinates for calibration.
-        modulation0:
-            Radial component of polar coordinates for calibration.
+    phase0, modulation0:
+        Angular and radial components of polar coordinates for calibration.
 
     Examples
     --------
-    >>> measured_phase = 0.4
-    >>> measured_modulation = 1.3
-    >>> known_phase = 0.2
-    >>> known_modulation = 0.4
-    >>> phase0, modulation0 = polar_from_reference(
-    ...     measured_phase, measured_modulation,
-    ...     known_phase, known_modulation
-    ... )
-    >>> phase0
-    0.2
-    >>> modulation0
-    3.25
+    >>> polar_from_reference(0.4, 1.3, 0.2, 0.4)
+    (0.2, 3.25)
     """
     measured_phase = numpy.asarray(measured_phase)
     measured_modulation = numpy.asarray(measured_modulation)
@@ -242,11 +210,8 @@ def phasor_to_polar(
 
     Returns
     -------
-    tuple[NDArray[Any], NDArray[Any]]
-        phase:
-            Phase values calculated from the phasor coordinates.
-        modulation:
-            Modulation values calculated from the phasor coordinates.
+    phase, modulation:
+        Phase and modulation values calculated from the phasor coordinates.
 
     Examples
     --------
@@ -368,31 +333,28 @@ def phasor_center(
 
     Returns
     -------
-    tuple[NDArray[Any], NDArray[Any]]
+    real_center, imag_center:
         Real and imaginary center coordinates calculated based on
         the specified method.
 
     Examples
     --------
-    >>> real_data = numpy.array([1.0, 2.0, 3.0])
-    >>> imag_data = numpy.array([4.0, 5.0, 6.0])
-    >>> center_mean, center_spatial_median, center_geometric_median = (
-    ...     phasor_center(real_data, imag_data, method='mean'),
-    ...     phasor_center(real_data, imag_data, method='spatial_median'),
-    ...     phasor_center(real_data, imag_data, method='geometric_median')
-    ... )
-    >>> center_mean
+    >>> real = numpy.array([1.0, 2.0, 3.0])
+    >>> imag = numpy.array([4.0, 5.0, 6.0])
+    >>> phasor_center(real, imag, method='mean')
     (2.0, 5.0)
-    >>> center_spatial_median
+    >>> phasor_center(real, imag, method='spatial_median')
     (2.0, 5.0)
-    >>> center_geometric_median
+    >>> phasor_center(real, imag, method='geometric_median')
     (2.0, 5.0)
     """
+    supported_methods = ['mean', 'spatial_median', 'geometric_median']
+    assert method in supported_methods, (
+        f"Method not supported, supported methods are: "
+        f"{', '.join(supported_methods)}"
+    )
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
-    if skip_axes is not None:
-        real = numpy.delete(real, skip_axes, axis=None)
-        imag = numpy.delete(imag, skip_axes, axis=None)
     return {
         'mean': _mean,
         'spatial_median': _spatial_median,
@@ -414,18 +376,15 @@ def _mean(
 
     Returns
     -------
-    tuple[NDArray[Any], NDArray[Any]]
+    real_center, imag_center:
         Mean real and imaginary center coordinates.
 
     Examples
     --------
     >>> real_data = numpy.array([1.0, 2.0, 3.0])
     >>> imag_data = numpy.array([4.0, 5.0, 6.0])
-    >>> mean_center_real, mean_center_imag = _mean(real_data, imag_data)
-    >>> mean_center_real
-    2.0
-    >>> mean_center_imag
-    5.0
+    >>> _mean(real_data, imag_data)
+    (2.0, 5.0)
     """
     return numpy.mean(real), numpy.mean(imag)
 
@@ -444,20 +403,15 @@ def _spatial_median(
 
     Returns
     -------
-    tuple[numpy.ndarray, numpy.ndarray]
+    real_center, imag_center:
         Spatial median center for real and imaginary coordinates.
 
     Examples
     --------
     >>> real_data = numpy.array([1.0, 2.0, 3.0])
     >>> imag_data = numpy.array([4.0, 5.0, 6.0])
-    >>> spatial_median_real, spatial_median_imag = (
-    ...     _spatial_median(real_data, imag_data)
-    ... )
-    >>> spatial_median_real
-    2.0
-    >>> spatial_median_imag
-    5.0
+    >>> _spatial_median(real_data, imag_data)
+    (2.0, 5.0)
     """
     points = numpy.column_stack((real.flatten(), imag.flatten()))
     medians = numpy.median(points, axis=0)
@@ -478,20 +432,15 @@ def _geometric_median(
 
     Returns
     -------
-    tuple[numpy.ndarray, numpy.ndarray]
+    real_center, imag_center:
         Geometric median center for real and imaginary coordinates.
 
     Examples
     --------
     >>> real_data = numpy.array([1.0, 2.0, 3.0])
     >>> imag_data = numpy.array([4.0, 5.0, 6.0])
-    >>> geometric_median_real, geometric_median_imag = (
-    ...     _geometric_median(real_data, imag_data)
-    ... )
-    >>> geometric_median_real
-    2.0
-    >>> geometric_median_imag
-    5.0
+    >>> _geometric_median(real_data, imag_data)
+    (2.0, 5.0)
     """
     points = numpy.column_stack((real.flatten(), imag.flatten()))
     x = numpy.median(points, axis=0)
