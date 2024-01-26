@@ -2,6 +2,7 @@
 
 The ``phasorpy.phasor`` module provides functions to:
 
+<<<<<<< HEAD
 - calculate phasor coordinates from time-resolved and spectral signals:
 
   - :py:func:`phasor_from_signal` (not implemented yet)
@@ -28,6 +29,16 @@ The ``phasorpy.phasor`` module provides functions to:
 - reduce arrays of phasor coordinates to single coordinates:
 
   - :py:func:`phasor_center`
+=======
+- calculate phasor coordinates from time-resolved and spectral signals
+- calculate phasor coordinates from single- or multi-component
+    fluorescence lifetimes
+- convert between phasor and polar (phase and modulation) coordinates,
+    and apparent single lifetimes
+- calibrate phasor coordinates with reference signal of known
+    fluorescence lifetime
+- reduce arrays of phasor coordinates to single coordinates
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
 
 """
 
@@ -74,12 +85,15 @@ def phasor_calibrate(
     modulation0 : array_like, optional
         Radial component of polar coordinates for calibration. Defaults to 1.0.
 
+<<<<<<< HEAD
     Raises
     ------
     ValueError
         If the shapes of 'phase0' and 'modulation0' arrays do not match.
         If the shapes of 'real' and 'imag' arrays do not match.
 
+=======
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
     Returns
     -------
     real, imag:
@@ -114,6 +128,7 @@ def phasor_calibrate(
     """
     phi0 = numpy.asarray(phase0)
     mod0 = numpy.asarray(modulation0)
+<<<<<<< HEAD
     if phi0.shape != mod0.shape:
         raise ValueError(f'{phi0.shape=} != {mod0.shape=}')
     re = numpy.array(real, copy=True, dtype=float)
@@ -130,6 +145,14 @@ def phasor_calibrate(
     im_calibrated *= sin
     im *= cos
     im_calibrated += im
+=======
+    re = numpy.asarray(real)
+    im = numpy.asarray(imag)
+    if numpy.all(phi0 == 0) and numpy.all(mod0 == 1):
+        return re, im
+    re_calibrated = (re * numpy.cos(phi0) - im * numpy.sin(phi0)) * mod0
+    im_calibrated = (re * numpy.sin(phi0) + im * numpy.cos(phi0)) * mod0
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
     return re_calibrated, im_calibrated
 
 
@@ -161,12 +184,15 @@ def polar_from_reference_phasor(
     -------
     phase0, modulation0: ndarray
         Angular and radial components of polar coordinates for calibration.
+<<<<<<< HEAD
 
     Raises
     ------
     ValueError
         If the shapes of 'measured_real' and 'measured_imag' do not match.
         If the shapes of 'known_real' and 'known_imag' do not match.
+=======
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
 
     Examples
     --------
@@ -221,6 +247,7 @@ def polar_from_reference(
     -------
     phase0, modulation0:
         Angular and radial components of polar coordinates for calibration.
+<<<<<<< HEAD
 
     Raises
     ------
@@ -228,6 +255,8 @@ def polar_from_reference(
         If the shapes of 'measured_phase' and 'measured_modulation' do
             not match.
         If the shapes of 'known_phase' and 'known_modulation' do not match.
+=======
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
 
     Examples
     --------
@@ -269,11 +298,14 @@ def phasor_to_polar(
     -------
     phase, modulation:
         Phase and modulation values calculated from the phasor coordinates.
+<<<<<<< HEAD
 
     Raises
     ------
     ValueError
         If the shapes of the 'real' and 'imag' do not match.
+=======
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
 
     Examples
     --------
@@ -412,6 +444,7 @@ def phasor_center(
     >>> imag = numpy.array([4.0, 5.0, 6.0])
     >>> phasor_center(real, imag, method='mean')
     (2.0, 5.0)
+<<<<<<< HEAD
     >>> phasor_center(real, imag, method='median')
     (2.0, 5.0)
     """
@@ -425,6 +458,20 @@ def phasor_center(
     imag = numpy.asarray(imag)
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
+=======
+    >>> phasor_center(real, imag, method='spatial_median')
+    (2.0, 5.0)
+    >>> phasor_center(real, imag, method='geometric_median')
+    (2.0, 5.0)
+    """
+    supported_methods = ['mean', 'spatial_median', 'geometric_median']
+    assert method in supported_methods, (
+        f"Method not supported, supported methods are: "
+        f"{', '.join(supported_methods)}"
+    )
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
     return {
         'mean': _mean,
         'median': _median,
@@ -499,6 +546,7 @@ def _median(
     --------
     >>> real_data = numpy.array([1.0, 2.0, 3.0])
     >>> imag_data = numpy.array([4.0, 5.0, 6.0])
+<<<<<<< HEAD
     >>> _median(real_data, imag_data)
     (2.0, 5.0)
     """
@@ -509,3 +557,49 @@ def _median(
         return numpy.median(real, axis=included_axes), numpy.median(
             imag, axis=included_axes
         )
+=======
+    >>> _spatial_median(real_data, imag_data)
+    (2.0, 5.0)
+    """
+    points = numpy.column_stack((real.flatten(), imag.flatten()))
+    medians = numpy.median(points, axis=0)
+    return medians[0], medians[1]
+
+
+def _geometric_median(
+    real: NDArray[Any], imag: NDArray[Any]
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return the geometric median center of phasor coordinates.
+
+    Parameters
+    ----------
+    real : numpy.ndarray
+        Array containing the real components of the phasor coordinates.
+    imag : numpy.ndarray
+        Array containing the imaginary components of the phasor coordinates.
+
+    Returns
+    -------
+    real_center, imag_center:
+        Geometric median center for real and imaginary coordinates.
+
+    Examples
+    --------
+    >>> real_data = numpy.array([1.0, 2.0, 3.0])
+    >>> imag_data = numpy.array([4.0, 5.0, 6.0])
+    >>> _geometric_median(real_data, imag_data)
+    (2.0, 5.0)
+    """
+    points = numpy.column_stack((real.flatten(), imag.flatten()))
+    x = numpy.median(points, axis=0)
+    for _ in range(100):
+        distances = numpy.linalg.norm(points - x, axis=1)
+        weights = 1 / (distances + 1e-6)
+        x_new = numpy.sum(
+            weights[:, numpy.newaxis] * points, axis=0
+        ) / numpy.sum(weights)
+        if numpy.linalg.norm(x_new - x) < 1e-6:
+            break
+        x = x_new
+    return x[0], x[1]
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd

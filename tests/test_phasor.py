@@ -50,11 +50,15 @@ SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
 )
 def test_phasor_to_polar(real, imag, expected_phase, expected_modulation):
     """Test `phasor_to_polar` function with scalar, list and array inputs"""
+<<<<<<< HEAD
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
     polar_phase, polar_modulation = phasor_to_polar(real_copy, imag_copy)
     assert_array_equal(real, real_copy)
     assert_array_equal(imag, imag_copy)
+=======
+    polar_phase, polar_modulation = phasor_to_polar(real, imag)
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
     assert_almost_equal(polar_phase, expected_phase)
     assert_almost_equal(polar_modulation, expected_modulation)
 
@@ -265,21 +269,32 @@ def test_phasor_calibrate(
     expected_imag,
 ):
     """Test `phasor_calibrate` function with scalar, list and array inputs"""
+<<<<<<< HEAD
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
     if phase0 is not None and modulation0 is not None:
         calibrated_real, calibrated_imag = phasor_calibrate(
             real_copy,
             imag_copy,
+=======
+    if phase0 is not None and modulation0 is not None:
+        calibrated_real, calibrated_imag = phasor_calibrate(
+            real,
+            imag,
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
             phase0,
             modulation0,
         )
     else:
+<<<<<<< HEAD
         calibrated_real, calibrated_imag = phasor_calibrate(
             real_copy, imag_copy
         )
     assert_array_equal(real, real_copy)
     assert_array_equal(imag, imag_copy)
+=======
+        calibrated_real, calibrated_imag = phasor_calibrate(real, imag)
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
     assert_almost_equal(calibrated_real, expected_real)
     assert_almost_equal(calibrated_imag, expected_imag)
 
@@ -309,6 +324,7 @@ def test_phasor_calibrate_exceptions():
         ),
         (SYNTH_DATA_LIST, SYNTH_DATA_LIST, None, 'median', 2.0, 2.0),
         (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY, None, 'mean', 13.25, 13.25),
+<<<<<<< HEAD
         (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY, None, 'median', 1.0, 1.0),
         # with skip_axes
         (
@@ -326,6 +342,16 @@ def test_phasor_calibrate_exceptions():
             'median',
             numpy.asarray([25.5, 1.0]),
             numpy.asarray([25.5, 1.0]),
+=======
+        (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY, None, 'spatial_median', 1.0, 1.0),
+        (
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            None,
+            'geometric_median',
+            1.0,
+            1.0,
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
         ),
     ],
 )
@@ -342,7 +368,11 @@ def test_phasor_center(
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
     real_center, imag_center = phasor_center(
+<<<<<<< HEAD
         real_copy, imag_copy, skip_axes=skip_axes, method=method
+=======
+        real, imag, skip_axes=skip_axes, method=method
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
     )
     assert_array_equal(real, real_copy)
     assert_array_equal(imag, imag_copy)
@@ -350,12 +380,19 @@ def test_phasor_center(
     assert_almost_equal(imag_center, expected_imag_center)
 
 
+<<<<<<< HEAD
 def test_phasor_center_exceptions():
     """Test exceptions in `phasor_center` function."""
     with pytest.raises(ValueError):
         phasor_center(0, 0, method='method_not_supported')
     with pytest.raises(ValueError):
         phasor_center([0], [0, 0])
+=======
+def test_phasor_center_method_error():
+    """Test method not supported in `phasor_center` function."""
+    with pytest.raises(AssertionError):
+        phasor_center(0, 0, method='method_not_supported')
+>>>>>>> 0bd26b3ea256f064c93beb437e53d1c5d354dafd
 
 
 @pytest.mark.parametrize(
