@@ -61,12 +61,12 @@ def phasor_calibrate(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return calibrated/referenced phasor coordinates.
 
-    Calibration of phasor coordinates in fluorescence lifetime analysis is 
+    Calibration of phasor coordinates in fluorescence lifetime analysis is
     necessary to account for the instrument response function (IRF) and delays
     in the electronics.
-    
+
     This function can also be used to transform/rotate any phasor coordinate.
-    
+
     Parameters
     ----------
     real : array_like
@@ -83,7 +83,7 @@ def phasor_calibrate(
     Raises
     ------
     ValueError
-        The array shapes of `real` and `imag`, or `phase0` and `modulation0` 
+        The array shapes of `real` and `imag`, or `phase0` and `modulation0`
         do not match.
 
     Returns
@@ -100,7 +100,9 @@ def phasor_calibrate(
     (array(...), array(...))
 
     Use separate reference coordinates for each phasor coordinate:
-    >>> phasor_calibrate([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [0.5, 0.2, 0.3], [1.5, 2.0, 0.3])
+    >>> phasor_calibrate(
+    ... [1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [0.5, 0.2, 0.3], [1.5, 2.0, 0.3]
+    ... )
     (array(...), array(...))
     """
     phi0 = numpy.asarray(phase0)
@@ -157,8 +159,8 @@ def polar_from_reference_phasor(
     Raises
     ------
     ValueError
-        The array shapes of `measured_real` and `measured_imag`, or `known_real`
-        and `known_imag` do not match.
+        The array shapes of `measured_real` and `measured_imag`, or
+        `known_real` and `known_imag` do not match.
 
     Examples
     --------
@@ -212,8 +214,8 @@ def polar_from_reference(
     Returns
     -------
     phase0: ndarray
-        Angular component of polar coordinates for calibration. 
-    
+        Angular component of polar coordinates for calibration.
+
     modulation0: ndarray
         Radial component of polar coordinates for calibration.
 
@@ -222,7 +224,7 @@ def polar_from_reference(
     ValueError
         The array shapes of `measured_phase` and `measured_modulation`, or
         `known_phase` and `known_modulation` do not match.
-        
+
 
     Examples
     --------
@@ -406,7 +408,7 @@ def phasor_center(
     Compute center coordinates with the 'mean' method:
     >>> phasor_center([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], method='mean')
     (2.0, 5.0)
-    
+
     Compute center coordinates with the 'median' method:
     >>> phasor_center([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], method='median')
     (2.0, 5.0)
