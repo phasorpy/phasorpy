@@ -61,6 +61,12 @@ def phasor_calibrate(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return calibrated/referenced phasor coordinates.
 
+    Calibration of phasor coordinates in fluorescence lifetime analysis is 
+    necessary to account for the instrument response function (IRF) and delays
+    in the electronics.
+    
+    This function can also be used to transform/rotate any phasor coordinate.
+    
     Parameters
     ----------
     real : array_like
@@ -77,40 +83,25 @@ def phasor_calibrate(
     Raises
     ------
     ValueError
-        If the shapes of 'phase0' and 'modulation0' arrays do not match.
-        If the shapes of 'real' and 'imag' arrays do not match.
+        The array shapes of `real` and `imag`, or `phase0` and `modulation0` 
+        do not match.
 
     Returns
     -------
-    real, imag:
-        Calibrated real and imaginary components of phasor coordinates.
+    real: ndarray
+        Calibrated real component of phasor coordinates.
+    imag: ndarray
+        Calibrated imaginary component of phasor coordinates.
 
     Examples
     --------
-    >>> real = numpy.array([1.0, 2.0, 3.0])
-    >>> imag = numpy.array([4.0, 5.0, 6.0])
-    >>> phase0 = 0.5
-    >>> modulation0 = 2.0
-    >>> real_calibrated, imag_calibrated = phasor_calibrate(
-    ...     real, imag,
-    ...     phase0,
-    ...     modulation0
-    ... )
-    >>> real_calibrated
-    array(...)
-    >>> imag_calibrated
-    array(...)
-    >>> phase0 = numpy.array([0.5, 0.2, 0.3])
-    >>> modulation0 = numpy.array([1.5, 2.0, 0.3])
-    >>> real_calibrated, imag_calibrated = phasor_calibrate(
-    ...     real, imag,
-    ...     phase0,
-    ...     modulation0
-    ... )
-    >>> real_calibrated
-    array(...)
-    >>> imag_calibrated
-    array(...)
+    Use scalar reference coordinates to calibrate phasor coordinates:
+    >>> phasor_calibrate([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], 0.5, 0.2)
+    (array(...), array(...))
+
+    Use separate reference coordinates for each phasor coordinate:
+    >>> phasor_calibrate([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [0.5, 0.2, 0.3], [1.5, 2.0, 0.3])
+    (array(...), array(...))
     """
     phi0 = numpy.asarray(phase0)
     mod0 = numpy.asarray(modulation0)
@@ -159,14 +150,15 @@ def polar_from_reference_phasor(
 
     Returns
     -------
-    phase0, modulation0: ndarray
-        Angular and radial components of polar coordinates for calibration.
-
+    phase0: ndarray
+        Angular component of polar coordinates for calibration.
+    modulation0: ndarray
+        Radial component of polar coordinates for calibration.
     Raises
     ------
     ValueError
-        If the shapes of 'measured_real' and 'measured_imag' do not match.
-        If the shapes of 'known_real' and 'known_imag' do not match.
+        The array shapes of `measured_real` and `measured_imag`, or `known_real`
+        and `known_imag` do not match.
 
     Examples
     --------
@@ -219,15 +211,18 @@ def polar_from_reference(
 
     Returns
     -------
-    phase0, modulation0:
-        Angular and radial components of polar coordinates for calibration.
+    phase0: ndarray
+        Angular component of polar coordinates for calibration. 
+    
+    modulation0: ndarray
+        Radial component of polar coordinates for calibration.
 
     Raises
     ------
     ValueError
-        If the shapes of 'measured_phase' and 'measured_modulation' do
-            not match.
-        If the shapes of 'known_phase' and 'known_modulation' do not match.
+        The array shapes of `measured_phase` and `measured_modulation`, or
+        `known_phase` and `known_modulation` do not match.
+        
 
     Examples
     --------
@@ -267,8 +262,10 @@ def phasor_to_polar(
 
     Returns
     -------
-    phase, modulation:
-        Phase and modulation values calculated from the phasor coordinates.
+    phase: ndarray
+        Phase values calculated from the phasor coordinates.
+    modulation: ndarray
+        Modulation values calculated from the phasor coordinates.
 
     Raises
     ------
@@ -277,15 +274,10 @@ def phasor_to_polar(
 
     Examples
     --------
-    >>> real_data = numpy.array([1.0, 2.0, 3.0])
-    >>> imag_data = numpy.array([4.0, 5.0, 6.0])
     >>> phase, modulation = phasor_to_polar(
-    ...     real_data, imag_data
+    ...     [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]
     ... )
-    >>> phase
-    array(...)
-    >>> modulation
-    array(...)
+    (array(...), array(...))
     """
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
@@ -324,8 +316,10 @@ def phasor_from_lifetime(
 
     Returns
     -------
-    real, imag: ndarray
-        Real and imaginary components of phasor coordinates.
+    real: ndarray
+        Real component of phasor coordinates.
+    imag: ndarray
+        Imaginary components of phasor coordinates.
 
     Raises
     ------
@@ -386,7 +380,7 @@ def phasor_center(
     imag : array_like
         Scalar or array containing the imaginary components of the
         phasor coordinates.
-    skip_axes : tuple[int, ...] or None, optional
+    skip_axes : tuple of int, optional
         Axes to be excluded during center calculation. If None, all
         axes are considered.
     method : str, optional
@@ -396,9 +390,10 @@ def phasor_center(
 
     Returns
     -------
-    real_center, imag_center:
-        Real and imaginary center coordinates calculated based on
-        the specified method.
+    real_center: ndarray
+        Real center coordinates calculated based on the specified method.
+    imag_center: ndarray
+        Imaginary center coordinates calculated based on the specified method.
 
     Raises
     ------
@@ -408,11 +403,12 @@ def phasor_center(
 
     Examples
     --------
-    >>> real = numpy.array([1.0, 2.0, 3.0])
-    >>> imag = numpy.array([4.0, 5.0, 6.0])
-    >>> phasor_center(real, imag, method='mean')
+    Compute center coordinates with the 'mean' method:
+    >>> phasor_center([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], method='mean')
     (2.0, 5.0)
-    >>> phasor_center(real, imag, method='median')
+    
+    Compute center coordinates with the 'median' method:
+    >>> phasor_center([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], method='median')
     (2.0, 5.0)
     """
     supported_methods = ['mean', 'median']
@@ -447,20 +443,20 @@ def _mean(
         Array containing the real components of the phasor coordinates.
     imag : numpy.ndarray
         Array containing the imaginary components of the phasor coordinates.
-    skip_axes : tuple[int, ...] or None, optional
+    skip_axes : tuple of int, optional
         Axes to be excluded during center calculation. If None, all
         axes are considered.
 
     Returns
     -------
-    real_center, imag_center:
-        Mean real and imaginary center coordinates.
+    real_center: ndarray
+        Mean real center coordinates.
+    imag_center: ndarray
+        Mean imaginary center coordinates.
 
     Examples
     --------
-    >>> real_data = numpy.array([1.0, 2.0, 3.0])
-    >>> imag_data = numpy.array([4.0, 5.0, 6.0])
-    >>> _mean(real_data, imag_data)
+    >>> _mean([1.0, 2.0, 3.0], [4.0, 5.0, 6.0])
     (2.0, 5.0)
     """
     if skip_axes is None:
@@ -486,20 +482,20 @@ def _median(
         Array containing the real components of the phasor coordinates.
     imag : numpy.ndarray
         Array containing the imaginary components of the phasor coordinates.
-    skip_axes : tuple[int, ...] or None, optional
+    skip_axes : tuple of int, optional
         Axes to be excluded during center calculation. If None, all
         axes are considered.
 
     Returns
     -------
-    real_center, imag_center:
-        Spatial median center for real and imaginary coordinates.
+    real_center: ndarray
+        Spatial median center for real coordinates.
+    imag_center: ndarray
+        Spatial median center for imaginary coordinates.
 
     Examples
     --------
-    >>> real_data = numpy.array([1.0, 2.0, 3.0])
-    >>> imag_data = numpy.array([4.0, 5.0, 6.0])
-    >>> _median(real_data, imag_data)
+    >>> _median([1.0, 2.0, 3.0], [4.0, 5.0, 6.0])
     (2.0, 5.0)
     """
     if skip_axes is None:
