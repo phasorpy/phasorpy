@@ -270,8 +270,7 @@ def phasor_to_polar(
     >>> phasor_to_polar(
     ...     [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]
     ... )
-    (array([1.326, 1.19, 1.107]),
-    array([4.123, 5.385, 6.708]))
+    (array([1.326, 1.19, 1.107]), array([4.123, 5.385, 6.708]))
 
     """
     real = numpy.asarray(real)
@@ -323,14 +322,26 @@ def phasor_from_lifetime(
 
     Examples
     --------
-    >>> phasor_from_lifetime(80.0, 1.9894368)  # 1000/(2*pi*80) = 1.9894368
-    (0.4999999971471051, 0.5)
-    >>> phasor_from_lifetime(80.0, [3.9788735, 0.9947183], [0.5, 0.4])
-    (0.46666668360659397, 0.39999999247557416)
+    Phasor coordinates of a single lifetime component at 80 MHz:
+
+    >>> phasor_from_lifetime(80.0, 1.9894368)  # doctest: +NUMBER
+    (0.5, 0.5)
+
+    Phasor coordinates of two lifetime components with equal fractional
+    intensities:
+
+    >>> phasor_from_lifetime(
+    ...     80.0, [3.9788735, 0.9947183], [0.5, 0.5]
+    ... )  # doctest: +NUMBER
+    (0.5, 0.4)
+
+    Phasor coordinates of a double-exponential decay with equal
+    pre-exponential amplitudes:
+
     >>> phasor_from_lifetime(
     ...     80.0, [3.9788735, 0.9947183], [0.5, 0.5], is_preexp=True
-    ... )
-    (0.3200000038038807, 0.39999999917836626)
+    ... )  # doctest: +NUMBER
+    (0.32, 0.4)
 
     """
     tau = numpy.array(lifetime, dtype=numpy.float64, copy=True)
