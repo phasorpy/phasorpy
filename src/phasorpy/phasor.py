@@ -408,12 +408,12 @@ def phasor_center(
     Examples
     --------
     Compute center coordinates with the 'mean' method:
-    
+
     >>> phasor_center([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], method='mean')
     (2.0, 5.0)
 
     Compute center coordinates with the 'median' method:
-    
+
     >>> phasor_center([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], method='median')
     (2.0, 5.0)
 
