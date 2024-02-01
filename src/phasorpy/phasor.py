@@ -70,10 +70,9 @@ def phasor_calibrate(
     Parameters
     ----------
     real : array_like
-        Scalar or array containing the real components of phasor coordinates.
+        Real component of phasor coordinates.
     imag : array_like
-        Scalar or array containing the imaginary components of phasor
-        coordinates.
+        Imaginary component of phasor coordinates.
     phase0 : array_like, optional
         Angular component of polar coordinates for calibration. Defaults
         to 0.0.
@@ -96,14 +95,17 @@ def phasor_calibrate(
     Examples
     --------
     Use scalar reference coordinates to calibrate phasor coordinates:
+
     >>> phasor_calibrate([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], 0.5, 0.2)
-    (array(...), array(...))
+    (array([-0.208, -0.1284, -0.04876]), array([0.798, 1.069, 1.341]))
 
     Use separate reference coordinates for each phasor coordinate:
+
     >>> phasor_calibrate(
     ... [1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [0.5, 0.2, 0.3], [1.5, 2.0, 0.3]
     ... )
-    (array(...), array(...))
+    (array([-1.56, 1.934, 0.3279]), array([5.985, 10.6, 1.986]))
+
     """
     phi0 = numpy.asarray(phase0)
     mod0 = numpy.asarray(modulation0)
@@ -133,22 +135,18 @@ def polar_from_reference_phasor(
     known_imag: ArrayLike,
     /,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return  components for calibration from reference phasor.
+    """Return polar coordinates for calibration from reference phasor.
 
     Parameters
     ----------
     measured_real: array_like
-        Scalar or array containing the real component of measured
-        phasor coordinates.
+        Real component of measured phasor coordinates.
     measured_imag: array_like
-        Scalar or array containing the imaginary component of the measured
-        phasor coordinates.
+        Imaginary component of the measured phasor coordinates.
     known_real: array_like
-        Scalar or array containing the real component of the reference
-        phasor coordinates.
+        Real component of the reference phasor coordinates.
     known_imag: array_like
-        Scalar or array containing the imaginary component of the reference
-        phasor coordinates.
+        Imaginary component of the reference phasor coordinates.
 
     Returns
     -------
@@ -156,6 +154,7 @@ def polar_from_reference_phasor(
         Angular component of polar coordinates for calibration.
     modulation0: ndarray
         Radial component of polar coordinates for calibration.
+
     Raises
     ------
     ValueError
@@ -166,6 +165,7 @@ def polar_from_reference_phasor(
     --------
     >>> polar_from_reference_phasor(0.5, 0.0, 1.0, 0.0)
     (0.0, 2.0)
+
     """
     measured_real = numpy.asarray(measured_real)
     measured_imag = numpy.asarray(measured_imag)
@@ -177,11 +177,7 @@ def polar_from_reference_phasor(
         raise ValueError(f'{known_real.shape=} != {known_imag.shape=}')
     measured_phi, measured_mod = phasor_to_polar(measured_real, measured_imag)
     known_phi, known_mod = phasor_to_polar(known_real, known_imag)
-    phase0 = numpy.where(
-        measured_real < 0,
-        known_phi - numpy.pi - measured_phi,
-        known_phi - measured_phi,
-    )
+    phase0 = known_phi - measured_phi
     modulation0 = known_mod / measured_mod
     phase0 = phase0.item() if numpy.isscalar(modulation0) else phase0
     return phase0, modulation0
@@ -199,17 +195,13 @@ def polar_from_reference(
     Parameters
     ----------
     measured_phase: array_like
-        Scalar or array containing the angular component of measured polar
-        coordinates (in radians).
+        Angular component of measured polar coordinates (in radians).
     measured_modulation: array_like
-        Scalar or array containing the radial component of the measured
-        polar coordinates.
+        Radial component of the measured polar coordinates.
     known_phase: array_like
-        Scalar or array containing the angular component of the reference
-        polar coordinates (in radians).
+        Angular component of the reference polar coordinates (in radians).
     known_modulation: array_like
-        Scalar or array containing the radial component of the reference
-        polar coordinates.
+        Radial component of the reference polar coordinates.
 
     Returns
     -------
@@ -230,6 +222,7 @@ def polar_from_reference(
     --------
     >>> polar_from_reference(0.4, 1.3, 0.2, 0.4)
     (0.2, 3.25)
+
     """
     measured_phase = numpy.asarray(measured_phase)
     measured_modulation = numpy.asarray(measured_modulation)
@@ -256,11 +249,9 @@ def phasor_to_polar(
     Parameters
     ----------
     real : array_like
-        Scalar or array containing the real components of the
-        phasor coordinates.
+        Real component of the phasor coordinates.
     imag : array_like
-        Scalar or array containing the imaginary components of the
-        phasor coordinates.
+        Imaginary component of the phasor coordinates.
 
     Returns
     -------
@@ -279,7 +270,9 @@ def phasor_to_polar(
     >>> phasor_to_polar(
     ...     [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]
     ... )
-    (array(...), array(...))
+    (array([1.326, 1.19, 1.107]),
+    array([4.123, 5.385, 6.708]))
+
     """
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
@@ -331,13 +324,13 @@ def phasor_from_lifetime(
     Examples
     --------
     >>> phasor_from_lifetime(80.0, 1.9894368)  # 1000/(2*pi*80) = 1.9894368
-    (0..., 0...)
+    (0.4999999971471051, 0.5)
     >>> phasor_from_lifetime(80.0, [3.9788735, 0.9947183], [0.5, 0.4])
-    (0..., 0...)
+    (0.46666668360659397, 0.39999999247557416)
     >>> phasor_from_lifetime(
     ...     80.0, [3.9788735, 0.9947183], [0.5, 0.5], is_preexp=True
     ... )
-    (0..., 0...)
+    (0.3200000038038807, 0.39999999917836626)
 
     """
     tau = numpy.array(lifetime, dtype=numpy.float64, copy=True)
@@ -377,11 +370,9 @@ def phasor_center(
     Parameters
     ----------
     real : array_like
-        Scalar or array containing the real components of the
-        phasor coordinates.
+        Real component of the phasor coordinates.
     imag : array_like
-        Scalar or array containing the imaginary components of the
-        phasor coordinates.
+        Imaginary component of the phasor coordinates.
     skip_axes : tuple of int, optional
         Axes to be excluded during center calculation. If None, all
         axes are considered.
@@ -412,6 +403,7 @@ def phasor_center(
     Compute center coordinates with the 'median' method:
     >>> phasor_center([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], method='median')
     (2.0, 5.0)
+
     """
     supported_methods = ['mean', 'median']
     if method not in supported_methods:
@@ -442,9 +434,9 @@ def _mean(
     Parameters
     ----------
     real : numpy.ndarray
-        Array containing the real components of the phasor coordinates.
+        Real components of the phasor coordinates.
     imag : numpy.ndarray
-        Array containing the imaginary components of the phasor coordinates.
+        Imaginary components of the phasor coordinates.
     skip_axes : tuple of int, optional
         Axes to be excluded during center calculation. If None, all
         axes are considered.
@@ -460,6 +452,7 @@ def _mean(
     --------
     >>> _mean([1.0, 2.0, 3.0], [4.0, 5.0, 6.0])
     (2.0, 5.0)
+
     """
     if skip_axes is None:
         return numpy.mean(real), numpy.mean(imag)
@@ -481,9 +474,9 @@ def _median(
     Parameters
     ----------
     real : numpy.ndarray
-        Array containing the real components of the phasor coordinates.
+        Real components of the phasor coordinates.
     imag : numpy.ndarray
-        Array containing the imaginary components of the phasor coordinates.
+        Imaginary components of the phasor coordinates.
     skip_axes : tuple of int, optional
         Axes to be excluded during center calculation. If None, all
         axes are considered.
@@ -499,6 +492,7 @@ def _median(
     --------
     >>> _median([1.0, 2.0, 3.0], [4.0, 5.0, 6.0])
     (2.0, 5.0)
+
     """
     if skip_axes is None:
         return numpy.median(real), numpy.median(imag)

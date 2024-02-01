@@ -13,8 +13,8 @@ PhasorPy library version |version|.
     :maxdepth: 2
 
     phasorpy
+    phasor
+    io
     color
     datasets
-    io
     cli
-    phasor
