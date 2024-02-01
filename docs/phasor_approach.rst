@@ -148,6 +148,12 @@ approach to analyze fluorescence time-resolved or spectral images:
   FLIM analysis developed by Jay Unruh. The library is distributed under
   the GPL2 license.
 
+- `tttrlib <https://github.com/Fluorescence-Tools/tttrlib>`_
+  is an open-source C++ and Python library to read, write, and process
+  time-tagged time-resolved (TTTR) data. It includes functions for computing
+  and correcting phasor coordinates. The library is distributed under the
+  BSD license.
+
 - `PhasorIdentifier <https://github.com/Mariochem92/PhasorIdentifier>`_
   is a Jupyter notebook to analyze FLIM files, including masking, cell
   segmentation, pH correlation, nanoscale effects, and precise quantification.
