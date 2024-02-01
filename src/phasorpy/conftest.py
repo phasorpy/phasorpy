@@ -1,7 +1,7 @@
 """Pytest configuration."""
 
 import pytest
-import numpy 
+import numpy
 
 from .datasets import fetch
 
@@ -10,7 +10,8 @@ from .datasets import fetch
 def add_fetch(doctest_namespace):
     """Add datasets.fetch to doctest namespace."""
     doctest_namespace['fetch'] = fetch
-    
+
+
 @pytest.fixture(autouse=True)
 def set_printoptions():
     """Adjust numpy array print options for use with `# doctest: +NUMBER`."""
