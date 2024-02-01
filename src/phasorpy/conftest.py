@@ -1,7 +1,7 @@
 """Pytest configuration."""
 
-import pytest
 import numpy
+import pytest
 
 from .datasets import fetch
 
