@@ -110,7 +110,7 @@ disable = [
 
 [tool.black]
 line-length = 79
-target-versions = ["py310", "py311", "py312"]
+target-version = ["py310"]
 skip-string-normalization = true
 
 [tool.isort]
