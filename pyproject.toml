@@ -2,8 +2,8 @@
 requires = [
     "setuptools>=68",
     "wheel",
-    # "numpy",
-    # "Cython",
+    "numpy",
+    "Cython",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -156,9 +156,11 @@ norecursedirs = [
     "_htmlcov",
     "tutorials",
     "phasorpy.egg-info",
+    "phasorpy_dev",
+    "phasorpy-dev",
 ]
 
 [tool.cibuildwheel]
-skip = "cp37 cp38 cp39 pp*"
-test-requires = ["pytest", "pytest-cov", "coverage"]
-test-command = "pytest tests"
+skip = "pp* cp37* cp38* cp39* *musllinux* *i686 *ppc64le *s390x cp39*win*arm64 cp310*win*arm64"
+test-requires = ["lfdfiles", "sdtfile", "ptufile", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage"]
+test-command = "pytest {project}/tests"

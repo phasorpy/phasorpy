@@ -45,6 +45,7 @@ def versions(*, sep: str = '\n') -> str:
         'tifffile',
         'lfdfiles',
         'sdtfile',
+        'ptufile',
         # 'scipy',
         # 'skimage',
         # 'sklearn',

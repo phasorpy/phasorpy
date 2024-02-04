@@ -17,7 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-20.04"]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.12"]
+        # 3.11 tested with cibuildwheel
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
@@ -49,6 +50,7 @@ jobs:
       matrix:
         os: ["windows-2019", "macos-12"]
         python-version: ["3.10"]
+        # 3.12 tested with cibuildwheel
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
@@ -68,6 +70,24 @@ jobs:
       run: |
         cd docs
         make html
+
+  build_wheels:
+    name: Test cibuildwheel
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-22.04", "windows-2019", "macos-12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pypa/cibuildwheel@v2.16.5
+        env:
+          CIBW_BUILD: "cp311-manylinux_x86_64 cp312-win_amd64 cp312-macosx_x86_64"
+          CIBW_SKIP:
+      - uses: actions/upload-artifact@v4
+        with:
+          path: ./wheelhouse/*.whl
+          name: wheels-${{ matrix.os }}
 
   static_analysis:
     name: Static code analysis

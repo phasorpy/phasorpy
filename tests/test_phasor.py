@@ -1,6 +1,7 @@
 """Tests for the phasorpy.phasor module."""
 
 import copy
+import math
 
 import numpy
 import pytest
@@ -14,6 +15,10 @@ from phasorpy.phasor import (
     phasor_calibrate,
     phasor_center,
     phasor_from_lifetime,
+    phasor_from_polar,
+    phasor_from_signal,
+    phasor_from_signal_f1,
+    phasor_semicircle,
     phasor_to_polar,
     polar_from_reference,
     polar_from_reference_phasor,
@@ -23,6 +28,73 @@ SYNTH_DATA_ARRAY = numpy.array([[50, 1], [1, 1]])
 SYNTH_DATA_LIST = [1, 2, 4]
 SYNTH_PHI = numpy.array([[0.5, 0.5], [0.5, 0.5]])
 SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
+
+
+def test_phasor_from_signal():
+    """Test `phasor_from_signal` function."""
+    sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
+    signal = 1.1 * (numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1)
+    assert_allclose(phasor_from_signal(signal), (1.1, 0.5, 0.5), atol=1e-6)
+    # the sinusoidal signal does not have a second harmonic component
+    assert_allclose(
+        phasor_from_signal(signal, harmonic=2), (1.1, 0.0, 0.0), atol=1e-6
+    )
+    with pytest.raises(ValueError):
+        phasor_from_signal(signal[:2])
+    with pytest.raises(ValueError):
+        phasor_from_signal(signal, harmonic=0)
+    # TODO: more tests (dimensions, axis, types, NaN, ...)
+
+
+def test_phasor_from_signal_f1():
+    """Test `phasor_from_signal_f1` function."""
+    sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
+    signal = 1.1 * (numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1)
+    assert_allclose(phasor_from_signal_f1(signal), (1.1, 0.5, 0.5), atol=1e-6)
+    assert_allclose(
+        phasor_from_signal_f1(signal, sample_phase=sample_phase),
+        (1.1, 0.5, 0.5),
+        atol=1e-6,
+    )
+    assert_allclose(
+        phasor_from_signal_f1(signal[::-1], sample_phase=sample_phase[::-1]),
+        (1.1, 0.5, 0.5),
+        atol=1e-6,
+    )
+    with pytest.raises(ValueError):
+        phasor_from_signal_f1(signal[:2])
+    with pytest.raises(ValueError):
+        phasor_from_signal_f1(signal, sample_phase=sample_phase[::-2])
+    # TODO: more tests (dimensions, axis, types, NaN, ...)
+
+
+def test_phasor_from_polar():
+    """Test `phasor_from_polar` function."""
+    real, imag = phasor_from_polar(
+        [0.0, math.pi / 4, math.pi / 2], [1.0, math.sqrt(0.5), 1.0]
+    )
+    assert_allclose(real, [1, 0.5, 0.0], atol=1e-6)
+    assert_allclose(imag, [0, 0.5, 1], atol=1e-6)
+    with pytest.raises(ValueError):
+        phasor_from_polar(
+            [0.0, math.pi / 4, math.pi / 2], [1.0, math.sqrt(0.5)]
+        )
+    # TODO: more tests (dimensions, types, roundtrip with phasor_to_polar, ...)
+
+
+def test_phasor_semicircle():
+    """Test `phasor_semicircle` function."""
+    real, imag = phasor_semicircle(1)
+    assert_allclose(real, 0.0, atol=1e-6)
+    assert_allclose(imag, 0.0, atol=1e-6)
+    real, imag = phasor_semicircle(2)
+    assert_allclose(real, [0, 1], atol=1e-6)
+    assert_allclose(imag, [0.0, 0], atol=1e-6)
+    real, imag = phasor_semicircle(3)
+    assert_allclose(real, [0, 0.5, 1], atol=1e-6)
+    assert_allclose(imag, [0.0, 0.5, 0], atol=1e-6)
+    with pytest.raises(ValueError):
+        phasor_semicircle(0)
 
 
 @pytest.mark.parametrize(
@@ -372,15 +444,28 @@ def test_phasor_center_exceptions():
         ((80.0, [1.9894368]), {}, (0.5, 0.5)),
         ((80.0, [1.9894368], [1.0]), {}, (0.5, 0.5)),
         ((80.0, [1.9894368], [0.6]), {}, (0.5, 0.5)),
-        # two lifetimes
+        # two lifetime components
         ((80.0, [0.0, 1e9], [0.5, 0.5]), {}, (0.5, 0.0)),
         ((80.0, [0.0, 1e9], [0.6, 0.4]), {}, (0.6, 0.0)),
         ((80.0, [3.9788735, 0.9947183], [0.0, 1.0]), {}, (0.8, 0.4)),
         ((80.0, [3.9788735, 0.9947183], [1.0, 0.0]), {}, (0.2, 0.4)),
         ((80.0, [3.9788735, 0.9947183], [0.5, 0.5]), {}, (0.5, 0.4)),
         ((80.0, [3.9788735, 0.9947183], [0.25, 0.75]), {}, (0.65, 0.4)),
-        # three lifetimes
-        ((80.0, [0.0, 1.9894368, 1e9]), {}, (0.5, 0.5 / 3)),
+        # three single lifetimes, fraction is None
+        (
+            (80.0, [0.0, 1.9894368, 1e9]),
+            {},
+            ([1.0, 0.5, 0.0], [0.0, 0.5, 0.0]),
+        ),
+        (
+            ([80.0, 80.0], [0.0, 1.9894368, 1e9]),
+            {},
+            (
+                [[1.0, 0.5, 0.0], [1.0, 0.5, 0.0]],
+                [[0.0, 0.5, 0.0], [0.0, 0.5, 0.0]],
+            ),
+        ),
+        # three lifetime components
         ((80.0, [0.0, 1.9894368, 1e9], [1, 1, 1]), {}, (0.5, 0.5 / 3)),
         ((80.0, [0.0, 1.9894368, 1e9], [0, 1, 0]), {}, (0.5, 0.5)),
         ((80.0, [0.0, 1.9894368, 1e9], [1, 1, 0]), {}, (0.75, 0.5 / 2)),
@@ -391,8 +476,24 @@ def test_phasor_center_exceptions():
             {},
             (0.5, (0.4 + 0.5 + 0.4) / 3),
         ),
+        # multiple frequencies
+        (
+            ([40.0, 80.0, 160.0], 1.9894368),  # single lifetime
+            {},
+            ([0.8, 0.5, 0.2], [0.4, 0.5, 0.4]),
+        ),
+        (
+            ([40.0, 80.0], [3.9788735, 0.9947183]),  # two single lifetimes
+            {},
+            ([[0.5, 0.94117648], [0.2, 0.8]], [[0.5, 0.2352941], [0.4, 0.4]]),
+        ),
+        (
+            ([40.0, 80.0], [3.9788735, 0.9947183], [0.5, 0.5]),  # 2 components
+            {},
+            ([0.72058825, 0.5], [0.36764705, 0.4]),
+        ),
         # preexponential amplitudes
-        ((80.0, 0.0), {'is_preexp': True}, (numpy.nan, numpy.nan)),  # ?
+        ((80.0, 0.0), {'is_preexp': True}, (1.0, 0.0)),
         ((80.0, 1e9), {'is_preexp': True}, (0.0, 0.0)),
         ((80.0, 3.9788735), {'is_preexp': True}, (0.2, 0.4)),
         ((80.0, [0.0, 1e9], [0.5, 0.5]), {'is_preexp': True}, (0.0, 0.0)),
@@ -416,6 +517,9 @@ def test_phasor_center_exceptions():
             {'is_preexp': True},
             (0.457143, 0.4),
         ),
+        # TODO: variable lifetime, constant fraction
+        # TODO: constant lifetime, variable fraction
+        # TODO: squeeze
     ],
 )
 def test_phasor_from_lifetime(args, kwargs, expected):
@@ -434,6 +538,16 @@ def test_phasor_from_lifetime_exceptions():
         phasor_from_lifetime(80.0, 0.0, [])
     with pytest.raises(ValueError):
         phasor_from_lifetime(80.0, [0.0, 1e9], [1.0])
+    with pytest.raises(ValueError):
+        phasor_from_lifetime([[80.0]], 1.9894368)  # frequency is not 1D
+    with pytest.raises(ValueError):
+        phasor_from_lifetime(80.0, [[[0.0]]])  # lifetime is > 2D
+    with pytest.raises(ValueError):
+        phasor_from_lifetime(80.0, 0.0, [[[1.0]]])  # fraction is > 2D
+    with pytest.raises(ValueError):
+        phasor_from_lifetime(80.0, [[0.0, 1e9]], [[1.0]])  # shape mismatch
+    with pytest.raises(ValueError):
+        phasor_from_lifetime(80.0, [[[0.0]]], [[[1.0]]])  # matching but > 2D
 
 
 def test_phasor_from_lifetime_modify():
