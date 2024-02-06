@@ -19,7 +19,8 @@ def _phasor_from_lifetime(
     const double[::1] frequency,
     const double[:, ::1] lifetime,
     const double[:, ::1] fraction,
-    const bint is_preexp,
+    const double unit_conversion,
+    const bint preexponential,
 ):
     """Calculate phasor coordinates from lifetime components.
 
@@ -41,7 +42,10 @@ def _phasor_from_lifetime(
         Buffer of two dimensions:
             0. fractions
             1. fractions of lifetime components
-    is_preexp:
+    unit_conversion:
+        Product of `frequency` and `lifetime` units' prefix factors.
+        1e-3 for MHz and ns. 1.0 for Hz and s.
+    preexponential:
         If true, fractions are pre-exponential amplitudes, else fractional
         intensities.
 
@@ -51,7 +55,7 @@ def _phasor_from_lifetime(
         ssize_t ncomp = lifetime.shape[1]  # number lifetime components
         ssize_t ntau = lifetime.shape[0]  # number lifetimes
         ssize_t nfrac = fraction.shape[0]  # number fractions
-        double twopi = 2e-3 * M_PI
+        double twopi = 2 * M_PI * unit_conversion
         double nan = NAN  # float('NaN')
         double freq, tau, frac, sum, re, im, gs
         ssize_t f, t, s
@@ -82,7 +86,7 @@ def _phasor_from_lifetime(
                     re = 0.0
                     im = 0.0
                     sum = 0.0
-                    if is_preexp:
+                    if preexponential:
                         for s in range(ncomp):
                             sum += fraction[t, s] * lifetime[t, s]  # Fdc
                     else:
@@ -95,7 +99,7 @@ def _phasor_from_lifetime(
                     for s in range(ncomp):
                         tau = lifetime[t, s]
                         frac = fraction[t, s] / sum
-                        if is_preexp:
+                        if preexponential:
                             frac *= tau
                         tau *= freq  # omega_tau
                         gs = frac / (1.0 + tau * tau)
@@ -112,12 +116,12 @@ def _phasor_from_lifetime(
         with nogil:
             for f in range(nfreq):
                 freq = frequency[f] * twopi  # omega
-                if not is_preexp:
+                if not preexponential:
                     sum = 0.0
                     for s in range(ncomp):
                         sum += fraction[0, s]
                 for t in range(ntau):
-                    if is_preexp:
+                    if preexponential:
                         sum = 0.0
                         for s in range(ncomp):
                             sum += fraction[0, s] * lifetime[t, s]  # Fdc
@@ -130,7 +134,7 @@ def _phasor_from_lifetime(
                     for s in range(ncomp):
                         tau = lifetime[t, s]
                         frac = fraction[0, s] / sum
-                        if is_preexp:
+                        if preexponential:
                             frac *= tau
                         tau *= freq  # omega_tau
                         gs = frac / (1.0 + tau * tau)
@@ -151,7 +155,7 @@ def _phasor_from_lifetime(
                     re = 0.0
                     im = 0.0
                     sum = 0.0
-                    if is_preexp:
+                    if preexponential:
                         for s in range(ncomp):
                             sum += fraction[t, s] * lifetime[0, s]  # Fdc
                     else:
@@ -164,7 +168,7 @@ def _phasor_from_lifetime(
                     for s in range(ncomp):
                         tau = lifetime[0, s]
                         frac = fraction[t, s] / sum
-                        if is_preexp:
+                        if preexponential:
                             frac *= tau
                         tau *= freq  # omega_tau
                         gs = frac / (1.0 + tau * tau)

@@ -546,7 +546,8 @@ def phasor_from_lifetime(
     /,
     fraction: ArrayLike | None = None,
     *,
-    is_preexp: bool = False,
+    preexponential: bool = False,
+    unit_conversion: float = 1e-3,
     squeeze: bool = True,
 ) -> tuple[NDArray[numpy.float64], NDArray[numpy.float64]]:
     r"""Return phasor coordinates from lifetime components.
@@ -566,9 +567,13 @@ def phasor_from_lifetime(
         Fractional intensities or pre-exponential amplitudes of the lifetime
         components. Fractions are normalized to sum to 1.
         See notes below for allowed dimensions.
-    is_preexp : bool, optional
+    preexponential : bool, optional
         If true, `fraction` values are pre-exponential amplitudes,
         else fractional intensities (default).
+    unit_conversion : float
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
     squeeze : bool, optional
         If true (default), length-one dimensions are removed from phasor
         coordinates.
@@ -634,7 +639,8 @@ def phasor_from_lifetime(
 
     Examples
     --------
-    Phasor coordinates of a single lifetime component at 80 MHz:
+    Phasor coordinates of a single lifetime component (in ns) at a
+    frequency of 80 MHz:
 
     >>> phasor_from_lifetime(80.0, 1.9894368)  # doctest: +NUMBER
     (0.5, 0.5)
@@ -651,7 +657,7 @@ def phasor_from_lifetime(
     amplitudes:
 
     >>> phasor_from_lifetime(
-    ...     80.0, [3.9788735, 0.9947183], [0.5, 0.5], is_preexp=True
+    ...     80.0, [3.9788735, 0.9947183], [0.5, 0.5], preexponential=True
     ... )  # doctest: +NUMBER
     (0.32, 0.4)
 
@@ -678,16 +684,19 @@ def phasor_from_lifetime(
     (array([0.5, 0.5]), array([0.4, 0.5]))
 
     Phasor coordinates of multiple two-component lifetimes with specific
-    fractions at multiple frequencies:
+    fractions at multiple frequencies. Frequencies are in Hz, lifetimes in ns:
 
     >>> phasor_from_lifetime(
-    ...     [40.0, 80.0],
-    ...     [[1.0, 0.9947183], [3.9788735, 0.9947183]],
-    ...     [[0, 1], [0.5, 0.5]]
+    ...     [40e6, 80e6],
+    ...     [[1e-9, 0.9947183e-9], [3.9788735e-9, 0.9947183e-9]],
+    ...     [[0, 1], [0.5, 0.5]],
+    ...    unit_conversion=1.0
     ... )  # doctest: +NUMBER
     (array([[0.941, 0.721], [0.8, 0.5]]), array([[0.235, 0.368], [0.4, 0.4]]))
 
     """
+    if unit_conversion < 1e-16:
+        raise ValueError(f'{unit_conversion=} < 1e-16')
     frequency = numpy.array(frequency, dtype=numpy.float64, ndmin=1)
     if frequency.ndim != 1:
         raise ValueError('frequency is not one-dimensional array')
@@ -736,7 +745,9 @@ def phasor_from_lifetime(
 
     phasor = numpy.empty((2, frequency.size, nvar), dtype=numpy.float64)
 
-    _phasor_from_lifetime(phasor, frequency, lifetime, fraction, is_preexp)
+    _phasor_from_lifetime(
+        phasor, frequency, lifetime, fraction, unit_conversion, preexponential
+    )
 
     if squeeze:
         phasor = phasor.squeeze()

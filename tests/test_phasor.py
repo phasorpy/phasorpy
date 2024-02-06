@@ -493,28 +493,28 @@ def test_phasor_center_exceptions():
             ([0.72058825, 0.5], [0.36764705, 0.4]),
         ),
         # preexponential amplitudes
-        ((80.0, 0.0), {'is_preexp': True}, (1.0, 0.0)),
-        ((80.0, 1e9), {'is_preexp': True}, (0.0, 0.0)),
-        ((80.0, 3.9788735), {'is_preexp': True}, (0.2, 0.4)),
-        ((80.0, [0.0, 1e9], [0.5, 0.5]), {'is_preexp': True}, (0.0, 0.0)),
+        ((80.0, 0.0), {'preexponential': True}, (1.0, 0.0)),
+        ((80.0, 1e9), {'preexponential': True}, (0.0, 0.0)),
+        ((80.0, 3.9788735), {'preexponential': True}, (0.2, 0.4)),
+        ((80.0, [0.0, 1e9], [0.5, 0.5]), {'preexponential': True}, (0.0, 0.0)),
         (
             (80.0, [3.9788735, 0.9947183], [0.0, 1.0]),
-            {'is_preexp': True},
+            {'preexponential': True},
             (0.8, 0.4),
         ),
         (
             (80.0, [3.9788735, 0.9947183], [1.0, 0.0]),
-            {'is_preexp': True},
+            {'preexponential': True},
             (0.2, 0.4),
         ),
         (
             (80.0, [3.9788735, 0.9947183], [0.5, 0.5]),
-            {'is_preexp': True},
+            {'preexponential': True},
             (0.32, 0.4),
         ),
         (
             (80.0, [3.9788735, 0.9947183], [0.25, 0.75]),
-            {'is_preexp': True},
+            {'preexponential': True},
             (0.457143, 0.4),
         ),
         # TODO: variable lifetime, constant fraction

@@ -2,8 +2,8 @@
 Phasor coordinates from lifetimes
 =================================
 
-An introduction to the :py:func:`phasorpy.phasor.phasor_from_lifetime`
-function to calculate phasor coordinates as a function of frequency,
+The :py:func:`phasorpy.phasor.phasor_from_lifetime` function is used
+to calculate phasor coordinates as a function of frequency,
 single or multiple lifetime components, and the pre-exponential amplitudes
 or fractional intensities of the components.
 
@@ -23,14 +23,14 @@ from phasorpy.phasor import (
 )
 
 
-def phasor_plot(real, imag):
+def phasor_plot(real, imag, fmt='o'):
     """Plot phasor coordinates."""
     fig, ax = pyplot.subplots()
     ax.set(xlabel='real', ylabel='imag')
     ax.axis('equal')
     ax.plot(*phasor_semicircle(), color='k', lw=0.25)
     for re, im in zip(numpy.array(real, ndmin=2), numpy.array(imag, ndmin=2)):
-        ax.scatter(re, im)
+        ax.plot(re, im, fmt)
     pyplot.show()
 
 
@@ -40,10 +40,12 @@ def polar_plot(frequency, phase, modulation):
     ax.set_xscale('log', base=10)
     ax.set_xlabel('frequency (MHz)')
     ax.set_ylabel('phase (°)', color='tab:blue')
-    ax.plot(frequency, numpy.rad2deg(phase), color='tab:blue')
+    for phi in numpy.array(phase, ndmin=2).swapaxes(0, 1):
+        ax.plot(frequency, numpy.rad2deg(phi), color='tab:blue')
     ax = ax.twinx()
     ax.set_ylabel('modulation (%)', color='tab:red')
-    ax.plot(frequency, modulation * 100, color='tab:red')
+    for mod in numpy.array(modulation, ndmin=2).swapaxes(0, 1):
+        ax.plot(frequency, mod * 100, color='tab:red')
     pyplot.show()
 
 
@@ -52,9 +54,11 @@ def polar_plot(frequency, phase, modulation):
 # --------------------------
 #
 # The phasor coordinates of single-component lifetimes are located
-# on the universal circle:
+# on the universal circle.
+# For example, 3.9788735 ns and 0.9947183 ns at a frequency of 80 MHz:
 
 lifetime = numpy.array([3.9788735, 0.9947183])
+
 phasor_plot(*phasor_from_lifetime(80.0, lifetime))
 
 # %%
@@ -68,8 +72,8 @@ phasor_plot(*phasor_from_lifetime(80.0, lifetime))
 fraction = numpy.array(
     [[1, 0], [0.25, 0.75], [0.5, 0.5], [0.75, 0.25], [0, 1]]
 )
-phasor_plot(*phasor_from_lifetime(80.0, lifetime, fraction))
 
+phasor_plot(*phasor_from_lifetime(80.0, lifetime, fraction), fmt='o-')
 
 # %%
 # Pre-exponential amplitudes
@@ -78,45 +82,86 @@ phasor_plot(*phasor_from_lifetime(80.0, lifetime, fraction))
 # The phasor coordinates of two lifetime components with varying
 # pre-exponential amplitudes are also located on a line:
 
-phasor_plot(*phasor_from_lifetime(80.0, lifetime, fraction, is_preexp=True))
-
+phasor_plot(
+    *phasor_from_lifetime(80.0, lifetime, fraction, preexponential=True),
+    fmt='o-',
+)
 
 # %%
 # Lifetime distributions at multiple frequencies
 # ----------------------------------------------
 #
 # Phasor coordinates can be calculated at once for many frequencies,
-# lifetime components, and their fractions:
+# lifetime components, and their fractions.
+# As an example, lifetimes are passed in units of s and frequencies in Hz,
+# requiring to specify a unit_conversion factor:
 
-size = 100
+samples = 100
 rng = numpy.random.default_rng()
-lifetime_distribution = numpy.column_stack(
-    (
-        rng.normal(3.9788735, 0.05, size),
-        rng.normal(1.9894368, 0.05, size),
-        rng.normal(0.9947183, 0.05, size),
+lifetime_distribution = (
+    numpy.column_stack(
+        (
+            rng.normal(3.9788735, 0.05, samples),
+            rng.normal(1.9894368, 0.05, samples),
+            rng.normal(0.9947183, 0.05, samples),
+        )
     )
+    * 1e-9
 )
 fraction_distribution = numpy.column_stack(
-    (rng.random(size), rng.random(size), rng.random(size))
+    (rng.random(samples), rng.random(samples), rng.random(samples))
 )
+
 phasor_plot(
     *phasor_from_lifetime(
-        [40.0, 80.0, 160.0], lifetime_distribution, fraction_distribution
-    )
+        [40e6, 80e6, 160e6],
+        lifetime_distribution,
+        fraction_distribution,
+        unit_conversion=1.0,
+    ),
+    fmt='.',
 )
 
 # %%
-# Classic frequency-domain plots
-# ------------------------------
+# FRET efficiency
+# ---------------
 #
-# Phase-shift and demodulation of multi-component lifetimes can easily
-# be calculated as a function of the excitation light frequency:
+# The phasor coordinates of a fluorescence energy transfer donor
+# with a lifetime of 4.2 ns as a function of FRET efficiency
+# at a frequency of 80 MHz, with 90 % of the donors participating in
+# energy transfer:
+
+samples = 25
+efficiency = numpy.linspace(0.0, 1.0, samples)
+
+phasor_plot(
+    *phasor_from_lifetime(
+        80.0,
+        numpy.column_stack(
+            (
+                numpy.full(samples, 4.2),  # donor-only lifetime
+                4.2 * (1.0 - efficiency),  # donor lifetime with FRET
+            )
+        ),
+        [0.1, 0.9],
+        preexponential=True,
+    ),
+    fmt='o-',
+)
+
+# %%
+# Multi-frequency plot
+# --------------------
+#
+# Phase shift and demodulation of multi-component lifetimes can be calculated
+# as a function of the excitation light frequency and fractional intensities:
 
 frequency = numpy.logspace(-1, 4, 32)
+fraction = numpy.array([[1, 0], [0.5, 0.5], [0, 1]])
+
 polar_plot(
     frequency,
     *phasor_to_polar(
-        *phasor_from_lifetime(frequency, [3.9788735, 0.9947183], [0.8, 0.2])
+        *phasor_from_lifetime(frequency, [3.9788735, 0.9947183], fraction)
     ),
 )
