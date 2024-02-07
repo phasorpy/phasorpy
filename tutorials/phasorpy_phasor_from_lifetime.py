@@ -23,20 +23,31 @@ from phasorpy.phasor import (
 )
 
 
-def phasor_plot(real, imag, fmt='o'):
+def phasor_plot(real, imag, fmt='o', title='', ax=None, show=True):
     """Plot phasor coordinates."""
-    fig, ax = pyplot.subplots()
-    ax.set(xlabel='real', ylabel='imag')
-    ax.axis('equal')
+    # TODO: replace this function with phasorpy.plot once available
+    if ax is None:
+        ax = pyplot.subplots()[1]
+    ax.set(
+        title='Phasor plot' if title is None else title,
+        xlabel='G, real',
+        ylabel='S, imag',
+        aspect='equal',
+        ylim=[-0.05, 0.65],
+    )
     ax.plot(*phasor_semicircle(), color='k', lw=0.25)
     for re, im in zip(numpy.array(real, ndmin=2), numpy.array(imag, ndmin=2)):
         ax.plot(re, im, fmt)
+    if not show:
+        return ax
     pyplot.show()
 
 
-def polar_plot(frequency, phase, modulation):
+def polar_plot(frequency, phase, modulation, title=''):
     """Plot phase and modulation vs frequency."""
-    fig, ax = pyplot.subplots()
+    # TODO: replace this function with phasorpy.plot once available
+    ax = pyplot.subplots()[1]
+    ax.set_title('Multi-frequency plot' if title is None else title)
     ax.set_xscale('log', base=10)
     ax.set_xlabel('frequency (MHz)')
     ax.set_ylabel('phase (°)', color='tab:blue')
@@ -128,11 +139,16 @@ phasor_plot(
 #
 # The phasor coordinates of a fluorescence energy transfer donor
 # with a lifetime of 4.2 ns as a function of FRET efficiency
-# at a frequency of 80 MHz, with 90 % of the donors participating in
-# energy transfer:
+# at a frequency of 80 MHz, with some background signal and about 90 %
+# of the donors participating in energy transfer, are on a curved trajectory:
 
 samples = 25
 efficiency = numpy.linspace(0.0, 1.0, samples)
+
+# for reference, just donor with FRET
+ax = phasor_plot(
+    *phasor_from_lifetime(80.0, 4.2 * (1.0 - efficiency)), fmt='k.', show=False
+)
 
 phasor_plot(
     *phasor_from_lifetime(
@@ -141,12 +157,14 @@ phasor_plot(
             (
                 numpy.full(samples, 4.2),  # donor-only lifetime
                 4.2 * (1.0 - efficiency),  # donor lifetime with FRET
+                numpy.full(samples, 1e9),  # background with long lifetime
             )
         ),
-        [0.1, 0.9],
+        fraction=[0.1, 0.9, 0.1 / 1e9],
         preexponential=True,
     ),
     fmt='o-',
+    ax=ax,
 )
 
 # %%

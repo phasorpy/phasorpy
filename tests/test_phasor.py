@@ -61,11 +61,70 @@ def test_phasor_from_signal_f1():
         (1.1, 0.5, 0.5),
         atol=1e-6,
     )
+    assert_allclose(
+        phasor_from_signal_f1(numpy.zeros(256)), (0.0, 0.0, 0.0), atol=1e-6
+    )
+    assert_allclose(
+        phasor_from_signal_f1(numpy.cos(sample_phase)),
+        (0.0, 0.0, 0.0),
+        atol=1e-6,
+    )
     with pytest.raises(ValueError):
         phasor_from_signal_f1(signal[:2])
     with pytest.raises(ValueError):
         phasor_from_signal_f1(signal, sample_phase=sample_phase[::-2])
-    # TODO: more tests (dimensions, axis, types, NaN, ...)
+    with pytest.raises(TypeError):
+        phasor_from_signal_f1(signal.astype('int8'))
+    with pytest.raises(TypeError):
+        phasor_from_signal_f1(signal, dtype='int8')
+
+
+@pytest.mark.parametrize(
+    "shape, axis, dtype, dtype_out",
+    [
+        ((3,), 0, 'float64', 'float64'),
+        ((1, 3), 1, 'float64', 'float64'),
+        ((1, 3, 1), 1, 'float64', 'float64'),
+        ((5, 2), 0, 'float64', 'float64'),
+        ((2, 5), 1, 'float64', 'float64'),
+        ((5, 2, 2), 0, 'float64', 'float64'),
+        ((2, 5, 2), 1, 'float64', 'float64'),
+        ((2, 2, 5), 2, 'float64', 'float64'),
+        ((2, 2, 5, 2), 2, 'float64', 'float64'),
+        ((2, 5, 2), 1, 'float32', 'float32'),
+        ((2, 5, 2), 1, 'int16', 'float32'),
+        ((2, 5, 2), 1, 'int32', 'float32'),
+        ((64, 128, 128, 2, 32), 4, 'float32', 'float32'),  # 256 MB
+        ((32, 32, 256, 256), 1, 'float32', 'float32'),  # 256 MB
+        # TODO: can't test uint with this
+    ],
+)
+def test_phasor_from_signal_param(shape, axis, dtype, dtype_out):
+    """Test `phasor_from_signal_f1` function parameters."""
+    samples = shape[axis]
+    dtype = numpy.dtype(dtype)
+    signal = numpy.empty(shape, dtype)
+    sample_phase = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
+    sig = 2.1 * (numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1)
+    if dtype.kind != 'f':
+        sig *= 1000
+    sig = sig.astype(dtype)
+    reshape = [1] * len(shape)
+    reshape[axis] = samples
+    signal[:] = sig.reshape(reshape)
+    numthreads = 4 if signal.size > 4096 else 1
+    mean, real, imag = phasor_from_signal_f1(
+        signal, axis=axis, dtype=dtype_out, numthreads=numthreads
+    )  # , sample_phase=sample_phase),
+    if isinstance(mean, numpy.ndarray):
+        assert mean.dtype == dtype_out
+        assert mean.shape == shape[:axis] + shape[axis + 1 :]
+    if dtype.kind == 'f':
+        assert_allclose(numpy.mean(mean), 2.1, 1e-3)
+    else:
+        assert_allclose(numpy.mean(mean), 2100, 1)
+    assert_allclose(numpy.mean(real), 0.5, 1e-3)
+    assert_allclose(numpy.mean(imag), 0.5, 1e-3)
 
 
 def test_phasor_from_polar():

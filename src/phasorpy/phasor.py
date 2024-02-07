@@ -53,11 +53,11 @@ import math
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, NDArray, ArrayLike, Literal
+    from ._typing import Any, NDArray, ArrayLike, DTypeLike, Literal
 
 import numpy
 
-from ._phasor import _phasor_from_lifetime
+from ._phasor import _phasor_from_lifetime, _phasor_from_signal
 
 
 def phasor_from_signal(
@@ -137,6 +137,8 @@ def phasor_from_signal_f1(
     *,
     axis: int = 0,
     sample_phase: ArrayLike | None = None,
+    dtype: DTypeLike = None,
+    numthreads: int = 1,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates of fundamental frequency from signal.
 
@@ -149,6 +151,9 @@ def phasor_from_signal_f1(
     signal : array_like
         Frequency-domain, time-domain, or hyperspectral data.
         A minimum of three `signal` samples are required along the axis.
+        The samples must be uniformly spaced but not necessarily in order.
+        Must be of type uint8, uint16, uint32, uint64, int32, float32, or
+        float64.
     axis : int, optional
         Axis over which to compute phasor coordinates.
         The default is the first axis.
@@ -157,6 +162,12 @@ def phasor_from_signal_f1(
         If None (default), samples are assumed to be uniformly spaced along
         one period.
         The array size must equal the number of samples along `axis`.
+    dtype : dtype_like, optional
+        Data type of output arrays. Either float32 or float64 (default).
+    numthreads:
+        Number of OpenMP threads to use for parallelization.
+        By default, multi-threading is disabled. OpenMP may not be available
+        on all platforms.
 
     Returns
     -------
@@ -172,6 +183,8 @@ def phasor_from_signal_f1(
     ValueError
         The `signal` has less than three samples along `axis` or the
         `sample_phase` size does not equal the number of samples along `axis`.
+    TypeError
+        The `signal` or `dtype` types are not supported.
 
     Examples
     --------
@@ -187,8 +200,9 @@ def phasor_from_signal_f1(
     (1.1, 0.5, 0.5)
 
     """
-    signal = numpy.array(signal, copy=False, ndmin=1)
-    samples = numpy.size(signal, axis)
+    signal = numpy.array(signal, order='C', ndmin=1, copy=False)
+    # assert signal.flags['C_CONTIGUOUS']
+    samples = signal.shape[axis]
     if samples < 3:
         raise ValueError(f'not enough {samples=} along {axis=}')
     if sample_phase is None:
@@ -201,16 +215,36 @@ def phasor_from_signal_f1(
         )
         if sample_phase.ndim != 1 or sample_phase.size != samples:
             raise ValueError(f'{sample_phase.shape=} != ({samples},)')
-    shape = [1] * signal.ndim
-    shape[axis] = sample_phase.size
-    sample_phase = sample_phase.reshape(shape)  # make broadcastable
-    # TODO: cythonize this
-    mean = numpy.mean(signal, axis=axis)
-    real = numpy.mean(signal * numpy.cos(sample_phase), axis=axis)
-    real /= mean
-    imag = numpy.mean(signal * numpy.sin(sample_phase), axis=axis)
-    imag /= mean
-    return mean, real, imag
+
+    axis = axis % signal.ndim
+    shapes = signal.shape[:axis], signal.shape[axis + 1 :]
+    shape0 = numpy.prod(shapes[0], dtype=numpy.int64)
+    shape2 = numpy.prod(shapes[1], dtype=numpy.int64)
+    phasor = numpy.empty((3, shape0, shape2), dtype)
+    signal = signal.reshape((shape0, samples, shape2))
+    sincos = numpy.empty((samples, 2))
+    sincos[:, 0] = numpy.cos(sample_phase)
+    sincos[:, 1] = numpy.sin(sample_phase)
+
+    _phasor_from_signal(phasor, signal, sincos, numthreads)
+
+    shape = shapes[0] + shapes[1]
+    mean = phasor[0].reshape(shape)
+    real = phasor[1].reshape(shape)
+    imag = phasor[2].reshape(shape)
+    if shape:
+        return mean, real, imag
+    return mean.item(), real.item(), real.item()
+    # pure numpy:
+    # shape = [1] * signal.ndim
+    # shape[axis] = sample_phase.size
+    # sample_phase = sample_phase.reshape(shape)  # make broadcastable
+    # mean = numpy.mean(signal, axis=axis)
+    # real = numpy.mean(signal * numpy.cos(sample_phase), axis=axis)
+    # real /= mean
+    # imag = numpy.mean(signal * numpy.sin(sample_phase), axis=axis)
+    # imag /= mean
+    # return mean, real, imag
 
 
 def phasor_semicircle(
@@ -350,6 +384,10 @@ def polar_from_reference_phasor(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return polar coordinates for calibration from reference phasor.
 
+    Return rotation angle and scale factor for calibrating phasor coordinates
+    from measured and known phasor coordinates of a reference, for example,
+    a sample of known lifetime.
+
     Parameters
     ----------
     measured_real : array_like
@@ -404,6 +442,10 @@ def polar_from_reference(
     /,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return polar coordinates for calibration from reference coordinates.
+
+    Return rotation angle and scale factor for calibrating phasor coordinates
+    from measured and known polar coordinates of a reference, for example,
+    a sample of known lifetime.
 
     Parameters
     ----------

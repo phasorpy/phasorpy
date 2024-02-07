@@ -7,11 +7,162 @@
 
 """Cython implementation of low-level functions for the PhasorPy package."""
 
+from cython.parallel import parallel, prange
+
 from libc.math cimport M_PI, NAN, fabs
+from libc.stdint cimport (
+    int16_t,
+    int32_t,
+    uint8_t,
+    uint16_t,
+    uint32_t,
+    uint64_t,
+)
 
 ctypedef fused float_t:
     float
     double
+
+ctypedef fused signal_t:
+    uint8_t
+    uint16_t
+    uint32_t
+    uint64_t
+    int16_t
+    int32_t
+    float
+    double
+
+
+def _phasor_from_signal(
+    float_t[:, :, ::1] phasor,
+    const signal_t[:, :, ::1] signal,
+    const double[:, ::1] sincos,
+    const int numthreads=1
+):
+    """Return phasor coordinates from signal along middle axis.
+
+    This implementation requires contiguous input arrays.
+
+    TODO: use Numpy iterator API?
+    https://numpy.org/devdocs/reference/c-api/iterator.html
+
+    Parameters
+    ----------
+    phasor:
+        Writable buffer of three-dimensions where calculated phasor
+        coordinates are stored:
+            0. mean, real, and imaginary components
+            1. lower dimensions flat
+            2. upper dimensions flat
+    signal:
+        Buffer of three-dimensions containing signal:
+            0. lower dimensions flat
+            1. dimension over which to compute FFT, number samples
+            2. upper dimensions flat
+    sincos:
+        Buffer of two dimensions containing sin and cos terms to be multiplied
+        with signal:
+            0. number samples
+            1. cos and sin
+    numthreads:
+        Number of OpenMP threads to use for parallelization.
+
+    """
+    cdef:
+        # signal_t[::1] signal_row
+        ssize_t samples = signal.shape[1]
+        ssize_t i, j, k
+        double mean
+        double real
+        double imag
+        double sample
+
+    if (
+        samples < 3
+        or phasor.shape[0] != 3
+        or phasor.shape[1] != signal.shape[0]
+        or phasor.shape[2] != signal.shape[2]
+    ):
+        raise ValueError('invalid shape of phasor or signal')
+    if sincos.shape[0] != samples or sincos.shape[1] != 2:
+        raise ValueError('invalid shape of sincos')
+
+    if numthreads > 1 and signal.shape[0] >= numthreads:
+        # parallelize outer dimensions
+        with nogil, parallel(num_threads=numthreads):
+            for i in prange(signal.shape[0]):
+                for j in range(signal.shape[2]):
+                    mean = 0.0
+                    real = 0.0
+                    imag = 0.0
+                    for k in range(samples):
+                        sample = <double> signal[i, k, j]
+                        mean = mean + sample
+                        real = real + sample * sincos[k, 0]
+                        imag = imag + sample * sincos[k, 1]
+                    if mean > 1e-16:
+                        real = real / mean
+                        imag = imag / mean
+                        mean = mean /samples
+                    else:
+                        mean = 0.0
+                        real = 0.0  # inf?
+                        imag = 0.0  # inf?
+                    phasor[0, i, j] = <float_t> mean
+                    phasor[1, i, j] = <float_t> real
+                    phasor[2, i, j] = <float_t> imag
+
+    elif numthreads > 1 and signal.shape[2] >= numthreads:
+        # parallelize inner dimensions
+        with nogil, parallel(num_threads=numthreads):
+            for j in prange(signal.shape[2]):
+                for i in range(signal.shape[0]):
+                    mean = 0.0
+                    real = 0.0
+                    imag = 0.0
+                    for k in range(samples):
+                        sample = <double> signal[i, k, j]
+                        mean = mean + sample
+                        real = real + sample * sincos[k, 0]
+                        imag = imag + sample * sincos[k, 1]
+                    if mean > 1e-16:
+                        real = real / mean
+                        imag = imag / mean
+                        mean = mean /samples
+                    else:
+                        mean = 0.0
+                        real = 0.0  # inf?
+                        imag = 0.0  # inf?
+                    phasor[0, i, j] = <float_t> mean
+                    phasor[1, i, j] = <float_t> real
+                    phasor[2, i, j] = <float_t> imag
+
+    else:
+        # do not parallelize
+        with nogil:
+            for i in range(signal.shape[0]):
+                for j in range(signal.shape[2]):
+                    # signal_row = signal[i, :, j]
+                    mean = 0.0
+                    real = 0.0
+                    imag = 0.0
+                    for k in range(samples):
+                        sample = <double> signal[i, k, j]
+                        mean += sample
+                        real += sample * sincos[k, 0]
+                        imag += sample * sincos[k, 1]
+                    if mean > 1e-16:
+                        real /= mean
+                        imag /= mean
+                        mean /= samples
+                    else:
+                        mean = 0.0
+                        real = 0.0  # inf?
+                        imag = 0.0  # inf?
+                    phasor[0, i, j] = <float_t> mean
+                    phasor[1, i, j] = <float_t> real
+                    phasor[2, i, j] = <float_t> imag
 
 
 def _phasor_from_lifetime(
