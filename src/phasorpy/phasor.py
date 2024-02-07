@@ -4,7 +4,7 @@ The ``phasorpy.phasor`` module provides functions to:
 
 - calculate phasor coordinates from time-resolved and spectral signals:
 
-  - :py:func:`phasor_from_signal` (not implemented yet)
+  - :py:func:`phasor_from_signal`
 
 - calculate phasor coordinates from single- or multi-component fluorescence
   lifetimes:
@@ -40,6 +40,7 @@ __all__ = [
     "phasor_to_polar",
     "phasor_from_lifetime",
     "phasor_center",
+    "phasor_from_signal",
 ]
 
 from typing import TYPE_CHECKING
@@ -50,6 +51,7 @@ if TYPE_CHECKING:
 import math
 
 import numpy
+import warnings
 
 
 def phasor_calibrate(
@@ -514,3 +516,55 @@ def _median(
         return numpy.median(real, axis=included_axes), numpy.median(
             imag, axis=included_axes
         )
+
+
+def phasor_from_signal(
+    signal: NDArray[Any], fft, /
+    , *, harmonic: int = 1, axis: int=0, norm: str=None
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """
+    Return the phasor transform using the
+    fast fourier transform algorithm.
+
+    Parameters
+    ----------
+    signal : array_like
+        description: Input array.
+            dims = ZXY. Where z is along axis 0.
+    fft: fast fouerier function from other dependecies. 
+        ex: numpy.fft.fft.
+    harmonic : int, optional
+        description:, by default 1, correspond to the nth
+            harmonic.
+    axis: int, optional. Axis where to compute the fft. Default 0.
+    norm: string, optional.
+
+    Returns
+    -------
+        dc: nd array or tuple.
+            Contains the sum over the given axis.
+        real: nd array or tuple.
+            Contains the real part of the fft transform.
+        imag: nd array or tuple.
+            Contains the imaginary part of the fft transform.
+
+    Example
+    -------
+    >>> _phasor_from_signal(numpy.random.rand(32, 64, 64), numpy.fft.fft)
+
+    """
+    if harmonic < 1: 
+        raise ValueError("harmonic must be greater than 1")
+    else:
+        if norm: 
+            ft = fft(signal, axis=axis, norm=norm)
+        else:
+            ft = fft(signal, axis=axis)
+        dc = ft[0].real
+        real = ft[harmonic].real
+        imag = ft[harmonic].imag
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            re /= dc
+            im /= -dc
+    return dc, real, imag
