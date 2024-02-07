@@ -40,7 +40,6 @@ __all__ = [
     # 'phasor_from_apparent_lifetime',
     'phasor_from_lifetime',
     'phasor_from_polar',
-    'phasor_from_signal',
     'phasor_from_signal_f1',
     'phasor_semicircle',
     # 'phasor_to_apparent_lifetime',
@@ -58,77 +57,6 @@ if TYPE_CHECKING:
 import numpy
 
 from ._phasor import _phasor_from_lifetime, _phasor_from_signal
-
-
-def phasor_from_signal(
-    signal: ArrayLike,
-    /,
-    *,
-    axis: int = 0,
-    harmonic: int = 1,
-) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-    """Return phasor coordinates from signal using FFT.
-
-    Parameters
-    ----------
-    signal : array_like
-        Frequency-domain, time-domain, or hyperspectral data.
-        A minimum of three uniformly spaced samples are required along `axis`.
-    axis : int, optional
-        Axis over which to compute phasor coordinates.
-        The default is the first axis.
-    harmonic: int, optional
-        Index in FFT result containing real and imag components. Must be >= 1.
-        The default is the first harmonic.
-
-    Returns
-    -------
-    mean : ndarray
-        Average of signal along axis.
-    real : ndarray
-        Real component of phasor coordinates along axis.
-    imag : ndarray
-        Imaginary component of phasor coordinates along axis.
-
-    Raises
-    ------
-    ValueError
-        The `signal` has less than three samples along `axis`.
-        The `sample_phase` size does not match number of samples along `axis`.
-        The `harmonic` is smaller than 1.
-
-    Examples
-    --------
-    Calculate phasor coordinates of a phase-shifted sinusoidal signal:
-
-    >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
-    >>> signal = 1.1 * (
-    ...     numpy.cos(sample_phase - 0.78539816) * 2 *  0.70710678 + 1
-    ... )
-    >>> phasor_from_signal(signal)  # doctest: +NUMBER
-    (1.1, 0.5, 0.5)
-
-    The sinusoidal signal does not have a second harmonic component:
-
-    >>> phasor_from_signal(signal, harmonic=2)  # doctest: +NUMBER
-    (1.1, 0.0, 0.0)
-
-    """
-    signal = numpy.array(signal, copy=False, ndmin=1)
-    samples = numpy.size(signal, axis)
-    if samples < 3:
-        raise ValueError(f'not enough {samples=} along {axis=}')
-    if harmonic < 1:
-        raise ValueError(f'{harmonic=} < 1')
-    fft: NDArray = numpy.fft.fft(signal, axis=axis, norm='forward')
-    mean = fft.take(0, axis=axis).real.copy()
-    fft = fft.take(harmonic, axis=axis)
-    real = fft.real.copy()
-    real /= mean
-    imag = fft.imag.copy()
-    imag /= mean
-    imag *= -1
-    return mean, real, imag
 
 
 def phasor_from_signal_f1(

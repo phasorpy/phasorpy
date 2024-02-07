@@ -30,22 +30,6 @@ SYNTH_PHI = numpy.array([[0.5, 0.5], [0.5, 0.5]])
 SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
 
 
-def test_phasor_from_signal():
-    """Test `phasor_from_signal` function."""
-    sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
-    signal = 1.1 * (numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1)
-    assert_allclose(phasor_from_signal(signal), (1.1, 0.5, 0.5), atol=1e-6)
-    # the sinusoidal signal does not have a second harmonic component
-    assert_allclose(
-        phasor_from_signal(signal, harmonic=2), (1.1, 0.0, 0.0), atol=1e-6
-    )
-    with pytest.raises(ValueError):
-        phasor_from_signal(signal[:2])
-    with pytest.raises(ValueError):
-        phasor_from_signal(signal, harmonic=0)
-    # TODO: more tests (dimensions, axis, types, NaN, ...)
-
-
 def test_phasor_from_signal_f1():
     """Test `phasor_from_signal_f1` function."""
     sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
