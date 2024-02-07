@@ -16,7 +16,6 @@ from phasorpy.phasor import (
     phasor_center,
     phasor_from_lifetime,
     phasor_from_polar,
-    phasor_from_signal,
     phasor_from_signal_f1,
     phasor_semicircle,
     phasor_to_polar,
