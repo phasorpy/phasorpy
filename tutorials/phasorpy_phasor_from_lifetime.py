@@ -13,8 +13,9 @@ or fractional intensities of the components.
 # Import required modules and functions, and define helper functions for
 # plotting phasor or polar coordinates:
 
+import math
+
 import numpy
-from matplotlib import pyplot
 
 from phasorpy.phasor import (
     phasor_from_lifetime,
@@ -23,38 +24,123 @@ from phasorpy.phasor import (
 )
 
 
-def phasor_plot(real, imag, fmt='o', title='', ax=None, show=True):
-    """Plot phasor coordinates."""
-    # TODO: replace this function with phasorpy.plot once available
+def phasor_plot(
+    real,
+    imag,
+    fmt: str = 'o',
+    *,
+    ax=None,
+    mode: str = 'lifetime',
+    style: str | None = None,
+    title: str | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    bins: int | None = None,
+    cmap=None,
+    show: bool = True,
+    return_ax: bool = False,
+):
+    """Plot phasor coordinates using matplotlib."""
+    # TODO: move this function to phasorpy.plot
+    from matplotlib import pyplot
+    from matplotlib.lines import Line2D
+
+    if mode == 'lifetime':
+        xlim = [-0.05, 1.05]
+        ylim = [-0.05, 0.65]
+        ranges = [[0, 1], [0, 0.625]]
+        bins = 256 if bins is None else bins
+        bins_list = [bins, int(bins * 0.625)]
+    elif mode == 'spectral':
+        xlim = [-1.05, 1.05]
+        ylim = [-1.05, 1.05]
+        ranges = [[0, 1], [0, 1]]
+        bins = 256 if bins is None else bins
+        bins_list = [bins, bins]
+    else:
+        raise ValueError(f'unknown {mode=!r}')
     if ax is None:
         ax = pyplot.subplots()[1]
+    if style is None:
+        style = 'scatter' if real.size < 1024 else 'histogram'
+    if real is None or imag is None:
+        pass
+    elif style == 'histogram':
+        ax.hist2d(
+            real,
+            imag,
+            range=ranges,
+            bins=bins_list,
+            cmap='Blues' if cmap is None else cmap,
+            norm='log',
+        )
+    elif style == 'scatter':
+        for re, im in zip(
+            numpy.array(real, ndmin=2), numpy.array(imag, ndmin=2)
+        ):
+            ax.plot(re, im, fmt)
+    if mode == 'lifetime':
+        ax.plot(*phasor_semicircle(100), color='k', lw=0.5)
+        ax.set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+        ax.set_yticks([0.0, 0.2, 0.4, 0.6])
+    elif mode == 'spectral':
+        ax.add_patch(
+            pyplot.Circle((0, 0), 1, color='k', lw=0.5, ls='--', fill=False)
+        )
+        ax.add_patch(
+            pyplot.Circle(
+                (0, 0), 2 / 3, color='0.5', lw=0.25, ls='--', fill=False
+            )
+        )
+        ax.add_patch(
+            pyplot.Circle(
+                (0, 0), 1 / 3, color='0.5', lw=0.25, ls='--', fill=False
+            )
+        )
+        ax.add_line(Line2D([-1, 1], [0, 0], color='k', lw=0.5, ls='--'))
+        ax.add_line(Line2D([0, 0], [-1, 1], color='k', lw=0.5, ls='--'))
+        for a in (3, 6):
+            x = math.cos(math.pi / a)
+            y = math.sin(math.pi / a)
+            ax.add_line(
+                Line2D([-x, x], [-y, y], color='0.5', lw=0.25, ls='--')
+            )
+            ax.add_line(
+                Line2D([-x, x], [y, -y], color='0.5', lw=0.25, ls='--')
+            )
+        ax.set_xticks([-1.0, -0.5, 0.0, 0.5, 1.0])
+        ax.set_yticks([-1.0, -0.5, 0.0, 0.5, 1.0])
+
     ax.set(
         title='Phasor plot' if title is None else title,
-        xlabel='G, real',
-        ylabel='S, imag',
+        xlabel='G, real' if xlabel is None else xlabel,
+        ylabel='S, imag' if ylabel is None else ylabel,
         aspect='equal',
-        ylim=[-0.05, 0.65],
+        xlim=xlim,
+        ylim=ylim,
     )
-    ax.plot(*phasor_semicircle(), color='k', lw=0.25)
-    for re, im in zip(numpy.array(real, ndmin=2), numpy.array(imag, ndmin=2)):
-        ax.plot(re, im, fmt)
-    if not show:
+    if show:
+        pyplot.show()
+    if return_ax:
         return ax
-    pyplot.show()
 
 
-def polar_plot(frequency, phase, modulation, title=''):
+def multi_frequency_plot(frequency, phase, modulation, title=None):
     """Plot phase and modulation vs frequency."""
-    # TODO: replace this function with phasorpy.plot once available
+    # TODO: move this function to phasorpy.plot
+    from matplotlib import pyplot
+
     ax = pyplot.subplots()[1]
     ax.set_title('Multi-frequency plot' if title is None else title)
     ax.set_xscale('log', base=10)
     ax.set_xlabel('frequency (MHz)')
     ax.set_ylabel('phase (°)', color='tab:blue')
+    ax.set_yticks([0.0, 30.0, 60.0, 90.0])
     for phi in numpy.array(phase, ndmin=2).swapaxes(0, 1):
         ax.plot(frequency, numpy.rad2deg(phi), color='tab:blue')
     ax = ax.twinx()
     ax.set_ylabel('modulation (%)', color='tab:red')
+    ax.set_yticks([0.0, 25.0, 50.0, 75.0, 100.0])
     for mod in numpy.array(modulation, ndmin=2).swapaxes(0, 1):
         ax.plot(frequency, mod * 100, color='tab:red')
     pyplot.show()
@@ -147,7 +233,10 @@ efficiency = numpy.linspace(0.0, 1.0, samples)
 
 # for reference, just donor with FRET
 ax = phasor_plot(
-    *phasor_from_lifetime(80.0, 4.2 * (1.0 - efficiency)), fmt='k.', show=False
+    *phasor_from_lifetime(80.0, 4.2 * (1.0 - efficiency)),
+    fmt='k.',
+    show=False,
+    return_ax=True,
 )
 
 phasor_plot(
@@ -177,7 +266,7 @@ phasor_plot(
 frequency = numpy.logspace(-1, 4, 32)
 fraction = numpy.array([[1, 0], [0.5, 0.5], [0, 1]])
 
-polar_plot(
+multi_frequency_plot(
     frequency,
     *phasor_to_polar(
         *phasor_from_lifetime(frequency, [3.9788735, 0.9947183], fraction)

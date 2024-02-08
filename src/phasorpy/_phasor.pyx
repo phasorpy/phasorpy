@@ -38,7 +38,7 @@ def _phasor_from_signal(
     float_t[:, :, ::1] phasor,
     const signal_t[:, :, ::1] signal,
     const double[:, ::1] sincos,
-    const int numthreads=1
+    const int num_threads
 ):
     """Return phasor coordinates from signal along middle axis.
 
@@ -65,7 +65,7 @@ def _phasor_from_signal(
         with signal:
             0. number samples
             1. cos and sin
-    numthreads:
+    num_threads:
         Number of OpenMP threads to use for parallelization.
 
     """
@@ -88,9 +88,9 @@ def _phasor_from_signal(
     if sincos.shape[0] != samples or sincos.shape[1] != 2:
         raise ValueError('invalid shape of sincos')
 
-    if numthreads > 1 and signal.shape[0] >= numthreads:
+    if num_threads > 1 and signal.shape[0] >= num_threads:
         # parallelize outer dimensions
-        with nogil, parallel(num_threads=numthreads):
+        with nogil, parallel(num_threads=num_threads):
             for i in prange(signal.shape[0]):
                 for j in range(signal.shape[2]):
                     mean = 0.0
@@ -113,9 +113,10 @@ def _phasor_from_signal(
                     phasor[1, i, j] = <float_t> real
                     phasor[2, i, j] = <float_t> imag
 
-    elif numthreads > 1 and signal.shape[2] >= numthreads:
+    elif num_threads > 1 and signal.shape[2] >= num_threads:
         # parallelize inner dimensions
-        with nogil, parallel(num_threads=numthreads):
+        # TODO: do not use when not built with OpenMP
+        with nogil, parallel(num_threads=num_threads):
             for j in prange(signal.shape[2]):
                 for i in range(signal.shape[0]):
                     mean = 0.0
@@ -143,7 +144,6 @@ def _phasor_from_signal(
         with nogil:
             for i in range(signal.shape[0]):
                 for j in range(signal.shape[2]):
-                    # signal_row = signal[i, :, j]
                     mean = 0.0
                     real = 0.0
                     imag = 0.0

@@ -49,6 +49,7 @@ __all__ = [
 ]
 
 import math
+import os
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -66,25 +67,26 @@ def phasor_from_signal_f1(
     axis: int = 0,
     sample_phase: ArrayLike | None = None,
     dtype: DTypeLike = None,
-    numthreads: int = 1,
+    num_threads: int | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates of fundamental frequency from signal.
 
-    Compared to :py:func:`phasor_from_signal`, this function does not use FFT,
-    considers only the fundamental frequency (first harmonic), might use
-    less memory, is likely slower, and supports out-of-order samples.
+    Compared to the :py:func:`phasor_from_signal` reference implementation,
+    this function does not use FFT, considers only the fundamental frequency
+    (first harmonic), uses less memory, might be faster, and supports
+    out-of-order samples.
 
     Parameters
     ----------
     signal : array_like
         Frequency-domain, time-domain, or hyperspectral data.
-        A minimum of three `signal` samples are required along the axis.
-        The samples must be uniformly spaced but not necessarily in order.
+        A minimum of three samples are required along `axis`.
+        The samples must be uniformly spaced, but not necessarily in order.
         Must be of type uint8, uint16, uint32, uint64, int32, float32, or
         float64.
     axis : int, optional
         Axis over which to compute phasor coordinates.
-        The default is the first axis.
+        The default is the first axis (0).
     sample_phase : array_like, optional
         Phase values (in radians) of `signal` samples along `axis`.
         If None (default), samples are assumed to be uniformly spaced along
@@ -92,10 +94,11 @@ def phasor_from_signal_f1(
         The array size must equal the number of samples along `axis`.
     dtype : dtype_like, optional
         Data type of output arrays. Either float32 or float64 (default).
-    numthreads:
+    num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
-        By default, multi-threading is disabled. OpenMP may not be available
-        on all platforms.
+        By default, multi-threading is disabled.
+        If zero, up to half of logical CPUs are used.
+        OpenMP may not be available on all platforms.
 
     Returns
     -------
@@ -116,7 +119,7 @@ def phasor_from_signal_f1(
 
     Examples
     --------
-    Calculate phasor coordinates of a phase-shifted sinusoidal signal:
+    Calculate phasor coordinates of a phase-shifted sinusoidal waveform:
 
     >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)[::-1]
     >>> signal = 1.1 * (
@@ -130,7 +133,7 @@ def phasor_from_signal_f1(
     """
     signal = numpy.array(signal, order='C', ndmin=1, copy=False)
     # assert signal.flags['C_CONTIGUOUS']
-    samples = signal.shape[axis]
+    samples = signal.shape[axis]  # this also verifies axis
     if samples < 3:
         raise ValueError(f'not enough {samples=} along {axis=}')
     if sample_phase is None:
@@ -143,27 +146,21 @@ def phasor_from_signal_f1(
         )
         if sample_phase.ndim != 1 or sample_phase.size != samples:
             raise ValueError(f'{sample_phase.shape=} != ({samples},)')
+    if num_threads is None:
+        num_threads = 1
+    elif num_threads == 0:
+        try:
+            num_threads = len(os.sched_getaffinity(0))  # type: ignore
+        except AttributeError:
+            # sched_getaffinity not available on Windows
+            num_threads = os.cpu_count()
+            if num_threads is None:
+                num_threads = 1
+        num_threads = max(num_threads // 2, 1)
+    elif num_threads < 0:
+        raise ValueError(f'{num_threads=} < 0')
 
-    axis = axis % signal.ndim
-    shapes = signal.shape[:axis], signal.shape[axis + 1 :]
-    shape0 = numpy.prod(shapes[0], dtype=numpy.int64)
-    shape2 = numpy.prod(shapes[1], dtype=numpy.int64)
-    phasor = numpy.empty((3, shape0, shape2), dtype)
-    signal = signal.reshape((shape0, samples, shape2))
-    sincos = numpy.empty((samples, 2))
-    sincos[:, 0] = numpy.cos(sample_phase)
-    sincos[:, 1] = numpy.sin(sample_phase)
-
-    _phasor_from_signal(phasor, signal, sincos, numthreads)
-
-    shape = shapes[0] + shapes[1]
-    mean = phasor[0].reshape(shape)
-    real = phasor[1].reshape(shape)
-    imag = phasor[2].reshape(shape)
-    if shape:
-        return mean, real, imag
-    return mean.item(), real.item(), real.item()
-    # pure numpy:
+    # pure numpy implementation for reference:
     # shape = [1] * signal.ndim
     # shape[axis] = sample_phase.size
     # sample_phase = sample_phase.reshape(shape)  # make broadcastable
@@ -173,6 +170,29 @@ def phasor_from_signal_f1(
     # imag = numpy.mean(signal * numpy.sin(sample_phase), axis=axis)
     # imag /= mean
     # return mean, real, imag
+
+    sincos = numpy.empty((samples, 2))
+    sincos[:, 0] = numpy.cos(sample_phase)
+    sincos[:, 1] = numpy.sin(sample_phase)
+    # reshape to 3D with axis in middle
+    axis = axis % signal.ndim
+    shape0 = signal.shape[:axis]
+    shape1 = signal.shape[axis + 1 :]
+    size0 = math.prod(shape0)
+    size1 = math.prod(shape1)
+    phasor = numpy.empty((3, size0, size1), dtype)
+    signal = signal.reshape((size0, samples, size1))
+
+    _phasor_from_signal(phasor, signal, sincos, num_threads)
+
+    # restore original shape
+    shape = shape0 + shape1
+    mean = phasor[0].reshape(shape)
+    real = phasor[1].reshape(shape)
+    imag = phasor[2].reshape(shape)
+    if shape:
+        return mean, real, imag
+    return mean.item(), real.item(), real.item()
 
 
 def phasor_semicircle(

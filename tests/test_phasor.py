@@ -48,10 +48,12 @@ def test_phasor_from_signal_f1():
         phasor_from_signal_f1(numpy.zeros(256)), (0.0, 0.0, 0.0), atol=1e-6
     )
     assert_allclose(
-        phasor_from_signal_f1(numpy.cos(sample_phase)),
+        phasor_from_signal_f1(numpy.cos(sample_phase), num_threads=0),
         (0.0, 0.0, 0.0),
         atol=1e-6,
     )
+    with pytest.raises(ValueError):
+        phasor_from_signal_f1(signal, num_threads=-1)
     with pytest.raises(ValueError):
         phasor_from_signal_f1(signal[:2])
     with pytest.raises(ValueError):
@@ -82,12 +84,14 @@ def test_phasor_from_signal_f1():
         # TODO: can't test uint with this
     ],
 )
-def test_phasor_from_signal_param(shape, axis, dtype, dtype_out):
+def test_phasor_from_signal_f1_param(shape, axis, dtype, dtype_out):
     """Test `phasor_from_signal_f1` function parameters."""
     samples = shape[axis]
     dtype = numpy.dtype(dtype)
     signal = numpy.empty(shape, dtype)
     sample_phase = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
+    sample_phase[0] = sample_phase[-1]  # out of order
+    sample_phase[-1] = 0.0
     sig = 2.1 * (numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1)
     if dtype.kind != 'f':
         sig *= 1000
@@ -95,10 +99,14 @@ def test_phasor_from_signal_param(shape, axis, dtype, dtype_out):
     reshape = [1] * len(shape)
     reshape[axis] = samples
     signal[:] = sig.reshape(reshape)
-    numthreads = 4 if signal.size > 4096 else 1
+    num_threads = 4 if signal.size > 4096 else 1
     mean, real, imag = phasor_from_signal_f1(
-        signal, axis=axis, dtype=dtype_out, numthreads=numthreads
-    )  # , sample_phase=sample_phase),
+        signal,
+        axis=axis,
+        sample_phase=sample_phase,
+        dtype=dtype_out,
+        num_threads=num_threads,
+    )
     if isinstance(mean, numpy.ndarray):
         assert mean.dtype == dtype_out
         assert mean.shape == shape[:axis] + shape[axis + 1 :]
@@ -108,20 +116,6 @@ def test_phasor_from_signal_param(shape, axis, dtype, dtype_out):
         assert_allclose(numpy.mean(mean), 2100, 1)
     assert_allclose(numpy.mean(real), 0.5, 1e-3)
     assert_allclose(numpy.mean(imag), 0.5, 1e-3)
-
-
-def test_phasor_from_polar():
-    """Test `phasor_from_polar` function."""
-    real, imag = phasor_from_polar(
-        [0.0, math.pi / 4, math.pi / 2], [1.0, math.sqrt(0.5), 1.0]
-    )
-    assert_allclose(real, [1, 0.5, 0.0], atol=1e-6)
-    assert_allclose(imag, [0, 0.5, 1], atol=1e-6)
-    with pytest.raises(ValueError):
-        phasor_from_polar(
-            [0.0, math.pi / 4, math.pi / 2], [1.0, math.sqrt(0.5)]
-        )
-    # TODO: more tests (dimensions, types, roundtrip with phasor_to_polar, ...)
 
 
 def test_phasor_semicircle():
@@ -137,6 +131,29 @@ def test_phasor_semicircle():
     assert_allclose(imag, [0.0, 0.5, 0], atol=1e-6)
     with pytest.raises(ValueError):
         phasor_semicircle(0)
+
+
+def test_phasor_from_polar():
+    """Test `phasor_from_polar` function."""
+    real, imag = phasor_from_polar(
+        [0.0, math.pi / 4, math.pi / 2], [1.0, math.sqrt(0.5), 1.0]
+    )
+    assert_allclose(real, [1, 0.5, 0.0], atol=1e-6)
+    assert_allclose(imag, [0, 0.5, 1], atol=1e-6)
+    # roundtrip
+    rng = numpy.random.default_rng()
+    phase = rng.random((63, 65)).astype(numpy.float32) * (2.0 * math.pi)
+    modulation = rng.random((63, 65)).astype(numpy.float32)
+    phase_, modulation_ = phasor_from_polar(
+        *phasor_to_polar(phase, modulation)
+    )
+    assert_allclose(phase, phase_, atol=1e-6)
+    assert_allclose(modulation, modulation_, atol=1e-6)
+    # exceptions
+    with pytest.raises(ValueError):
+        phasor_from_polar(
+            [0.0, math.pi / 4, math.pi / 2], [1.0, math.sqrt(0.5)]
+        )
 
 
 @pytest.mark.parametrize(
@@ -163,7 +180,7 @@ def test_phasor_semicircle():
     ],
 )
 def test_phasor_to_polar(real, imag, expected_phase, expected_modulation):
-    """Test `phasor_to_polar` function with scalar, list and array inputs"""
+    """Test `phasor_to_polar` function with various inputs."""
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
     polar_phase, polar_modulation = phasor_to_polar(real_copy, imag_copy)
@@ -212,8 +229,7 @@ def test_polar_from_reference(
     expected_phase,
     expected_modulation,
 ):
-    """Test `polar_from_reference` function with scalar, list and
-    array inputs"""
+    """Test `polar_from_reference` function with various inputs."""
     measured_phase_copy = copy.deepcopy(measured_phase)
     measured_modulation_copy = copy.deepcopy(measured_modulation)
     known_phase_copy = copy.deepcopy(known_phase)
@@ -275,8 +291,7 @@ def test_polar_from_reference_phasor(
     expected_phase,
     expected_modulation,
 ):
-    """Test `polar_from_reference_phasor` function with scalar, list and
-    array inputs"""
+    """Test `polar_from_reference_phasor` function with various inputs."""
     measured_real_copy = copy.deepcopy(measured_real)
     measured_imag_copy = copy.deepcopy(measured_imag)
     known_real_copy = copy.deepcopy(known_real)
@@ -378,7 +393,7 @@ def test_phasor_calibrate(
     expected_real,
     expected_imag,
 ):
-    """Test `phasor_calibrate` function with scalar, list and array inputs"""
+    """Test `phasor_calibrate` function with various inputs."""
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
     if phase0 is not None and modulation0 is not None:
@@ -451,8 +466,7 @@ def test_phasor_center(
     expected_real_center,
     expected_imag_center,
 ):
-    """Test `phasor_center` function with scalar, list and array inputs with
-    all methods available"""
+    """Test `phasor_center` function with various inputs and methods."""
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
     real_center, imag_center = phasor_center(
@@ -559,21 +573,40 @@ def test_phasor_center_exceptions():
             {'preexponential': True},
             (0.457143, 0.4),
         ),
-        # TODO: variable lifetime, constant fraction
-        # TODO: constant lifetime, variable fraction
-        # TODO: squeeze
+        # variable lifetime, constant fraction
+        (
+            (
+                80.0,
+                [[3.9788735, 1.9894368], [1.9894368, 0.9947183]],
+                [0.25, 0.75],
+            ),
+            {},
+            ([0.425, 0.725], [0.475, 0.425]),
+        ),
+        # constant lifetime, variable fraction
+        (
+            (
+                80.0,
+                [3.9788735, 0.9947183],
+                [[0.0, 1.0], [0.5, 0.5], [1.0, 0.0]],
+            ),
+            {},
+            ([0.8, 0.5, 0.2], [0.4, 0.4, 0.4]),
+        ),
     ],
 )
 def test_phasor_from_lifetime(args, kwargs, expected):
     """Test `phasor_from_lifetime` function."""
-    for actual, desired in zip(
-        phasor_from_lifetime(*args, **kwargs), expected
-    ):
-        assert_allclose(actual, desired, atol=1e-6)
+    result = phasor_from_lifetime(*args, **kwargs, squeeze=False)
+    for actual, desired in zip(result, expected):
+        assert actual.ndim == 2
+        assert_allclose(actual.squeeze(), desired, atol=1e-6)
 
 
 def test_phasor_from_lifetime_exceptions():
     """Test exceptions in `phasor_from_lifetime` function."""
+    with pytest.raises(ValueError):
+        phasor_from_lifetime(80.0, 0.0, unit_conversion=0.0)
     with pytest.raises(ValueError):
         phasor_from_lifetime(80.0, [[0.0]])
     with pytest.raises(ValueError):
