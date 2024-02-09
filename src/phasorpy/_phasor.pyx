@@ -1,7 +1,7 @@
 # distutils: language = c
 # cython: language_level = 3
 # cython: boundscheck = False
-# cython: wraparound = True
+# cython: wraparound = False
 # cython: cdivision = True
 # cython: nonecheck = False
 
@@ -70,7 +70,6 @@ def _phasor_from_signal(
 
     """
     cdef:
-        # signal_t[::1] signal_row
         ssize_t samples = signal.shape[1]
         ssize_t i, j, k
         double mean

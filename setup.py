@@ -1,14 +1,20 @@
 """PhasorPy package Setuptools script."""
 
 # project metadata are defined in pyproject.toml
+import os
 import sys
 
 import numpy
 from setuptools import Extension, setup
 
+DEBUG = bool(os.environ.get('PHASORPY_DEBUG', False))
+
 if sys.platform == 'win32':
     extra_compile_args = ['/openmp']
     extra_link_args: list[str] = []
+    if DEBUG:
+        extra_compile_args += ['/Zi', '/Od']
+        extra_link_args += ['-debug:full']
 elif sys.platform == 'darwin':
     # OpenMP not available in Xcode
     # https://mac.r-project.org/openmp/
