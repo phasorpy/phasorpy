@@ -211,9 +211,9 @@ fraction_distribution = numpy.column_stack(
 
 phasor_plot(
     *phasor_from_lifetime(
-        [40e6, 80e6, 160e6],
-        lifetime_distribution,
-        fraction_distribution,
+        frequency=[40e6, 80e6, 160e6],
+        lifetime=lifetime_distribution,
+        fraction=fraction_distribution,
         unit_conversion=1.0,
     ),
     fmt='.',
@@ -241,8 +241,8 @@ ax = phasor_plot(
 
 phasor_plot(
     *phasor_from_lifetime(
-        80.0,
-        numpy.column_stack(
+        frequency=80.0,
+        lifetime=numpy.column_stack(
             (
                 numpy.full(samples, 4.2),  # donor-only lifetime
                 4.2 * (1.0 - efficiency),  # donor lifetime with FRET

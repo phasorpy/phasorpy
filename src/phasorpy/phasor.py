@@ -532,7 +532,6 @@ def phasor_from_polar(
 def phasor_from_lifetime(
     frequency: ArrayLike,
     lifetime: ArrayLike,
-    /,
     fraction: ArrayLike | None = None,
     *,
     preexponential: bool = False,

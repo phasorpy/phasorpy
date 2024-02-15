@@ -657,7 +657,9 @@ def test_phasor_from_lifetime_modify():
     frequency = 80.0
     lifetime = numpy.array([0.0, 1.9894368, 1e9], dtype=numpy.float64)
     fraction = numpy.array([1.0, 1.0, 1.0], dtype=numpy.float64)
-    real, imag = phasor_from_lifetime(frequency, lifetime, fraction=fraction)
+    real, imag = phasor_from_lifetime(
+        lifetime=lifetime, fraction=fraction, frequency=frequency
+    )
     assert_allclose(real, 0.5)
     assert_allclose(imag, 0.5 / 3)
     assert_array_equal(frequency, 80.0)  # for future revisions
