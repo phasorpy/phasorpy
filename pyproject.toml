@@ -1,7 +1,6 @@
 [build-system]
 requires = [
     "setuptools>=68",
-    "wheel",
     "numpy",
     "Cython",
 ]
@@ -134,7 +133,10 @@ exclude_lines = ["pragma: no cover", "pragma: ${PY_MAJOR_VERSION} no cover"]
 directory = "_htmlcov"
 
 [tool.pytest.ini_options]
-addopts = "--cov=phasorpy --cov-report html --doctest-modules --doctest-glob=*.py --doctest-glob=*.rst"
+minversion = "7"
+log_cli_level = "INFO"
+xfail_strict = true
+addopts = "-ra --strict-config --strict-markers --cov=phasorpy --cov-report html --doctest-modules --doctest-glob=*.py --doctest-glob=*.rst"
 doctest_optionflags = [
     "NORMALIZE_WHITESPACE",
     "ELLIPSIS",

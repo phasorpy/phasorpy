@@ -32,16 +32,20 @@ SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
 def test_phasor_from_signal_f1():
     """Test `phasor_from_signal_f1` function."""
     sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
-    signal = 1.1 * (numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1)
-    assert_allclose(phasor_from_signal_f1(signal), (1.1, 0.5, 0.5), atol=1e-6)
+    signal = 1.1 * (numpy.cos(sample_phase - 0.46364761) * 2 * 0.44721359 + 1)
+    signal_copy = signal.copy()
+    mean, real, imag = phasor_from_signal_f1(signal)
+    assert_array_equal(signal, signal_copy)
+    assert isinstance(real, float)
+    assert_allclose((mean, real, imag), (1.1, 0.4, 0.2), atol=1e-6)
     assert_allclose(
         phasor_from_signal_f1(signal, sample_phase=sample_phase),
-        (1.1, 0.5, 0.5),
+        (1.1, 0.4, 0.2),
         atol=1e-6,
     )
     assert_allclose(
         phasor_from_signal_f1(signal[::-1], sample_phase=sample_phase[::-1]),
-        (1.1, 0.5, 0.5),
+        (1.1, 0.4, 0.2),
         atol=1e-6,
     )
     assert_allclose(
@@ -92,7 +96,7 @@ def test_phasor_from_signal_f1_param(shape, axis, dtype, dtype_out):
     sample_phase = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
     sample_phase[0] = sample_phase[-1]  # out of order
     sample_phase[-1] = 0.0
-    sig = 2.1 * (numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1)
+    sig = 2.1 * (numpy.cos(sample_phase - 0.46364761) * 2 * 0.44721359 + 1)
     if dtype.kind != 'f':
         sig *= 1000
     sig = sig.astype(dtype)
@@ -114,8 +118,31 @@ def test_phasor_from_signal_f1_param(shape, axis, dtype, dtype_out):
         assert_allclose(numpy.mean(mean), 2.1, 1e-3)
     else:
         assert_allclose(numpy.mean(mean), 2100, 1)
-    assert_allclose(numpy.mean(real), 0.5, 1e-3)
-    assert_allclose(numpy.mean(imag), 0.5, 1e-3)
+    assert_allclose(numpy.mean(real), 0.4, 1e-3)
+    assert_allclose(numpy.mean(imag), 0.2, 1e-3)
+
+
+def test_phasor_from_signal_f1_noncontig():
+    """Test `phasor_from_signal_f1` function with non-contiguous input."""
+    dtype = numpy.float64
+    samples = 31
+    signal = numpy.empty((7, 19, samples, 11), dtype)
+    sample_phase = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
+    sig = 2.1 * (numpy.cos(sample_phase - 0.46364761) * 2 * 0.44721359 + 1)
+    sig = sig.astype(dtype)
+    reshape = [1] * 4
+    reshape[2] = samples
+    signal[:] = sig.reshape(reshape)
+    signal = numpy.moveaxis(signal, 1, 2)
+    assert signal.shape == (7, samples, 19, 11)
+    assert not signal.flags['C_CONTIGUOUS']
+    signal_copy = signal.copy()
+    mean, real, imag = phasor_from_signal_f1(signal, axis=1, dtype=dtype)
+    assert_array_equal(signal, signal_copy)
+    assert mean.shape == signal.shape[:1] + signal.shape[1 + 1 :]
+    assert_allclose(numpy.mean(mean), 2.1, 1e-3)
+    assert_allclose(numpy.mean(real), 0.4, 1e-3)
+    assert_allclose(numpy.mean(imag), 0.2, 1e-3)
 
 
 def test_phasor_semicircle():

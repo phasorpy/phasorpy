@@ -132,7 +132,6 @@ def phasor_from_signal_f1(
 
     """
     signal = numpy.array(signal, order='C', ndmin=1, copy=False)
-    # assert signal.flags['C_CONTIGUOUS']
     samples = signal.shape[axis]  # this also verifies axis
     if samples < 3:
         raise ValueError(f'not enough {samples=} along {axis=}')
@@ -192,11 +191,11 @@ def phasor_from_signal_f1(
     imag = phasor[2].reshape(shape)
     if shape:
         return mean, real, imag
-    return mean.item(), real.item(), real.item()
+    return mean.item(), real.item(), imag.item()
 
 
 def phasor_semicircle(
-    samples: int = 33,
+    samples: int = 33, /
 ) -> tuple[NDArray[numpy.float64], NDArray[numpy.float64]]:
     """Return equally spaced phasor coordinates on universal semicircle.
 
@@ -223,8 +222,8 @@ def phasor_semicircle(
     are ``(0, 0)`` and ``(1, 0)``.
     The center coordinate, if any, is ``(0.5, 0.5)``.
 
-    The universal semicircle is composed of phasor coordinates of
-    single-exponential decays, where the relation of polar coordinates
+    The universal semicircle is composed of the phasor coordinates of
+    single lifetime components, where the relation of polar coordinates
     (phase :math:`φ` and modulation :math:`M`) is :math:`M=cos(φ)`.
 
     Examples
