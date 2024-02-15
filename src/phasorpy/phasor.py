@@ -64,7 +64,7 @@ def phasor_from_signal_f1(
     signal: ArrayLike,
     /,
     *,
-    axis: int = 0,
+    axis: int = -1,
     sample_phase: ArrayLike | None = None,
     dtype: DTypeLike = None,
     num_threads: int | None = None,
@@ -86,7 +86,7 @@ def phasor_from_signal_f1(
         float64.
     axis : int, optional
         Axis over which to compute phasor coordinates.
-        The default is the first axis (0).
+        The default is the last axis (-1).
     sample_phase : array_like, optional
         Phase values (in radians) of `signal` samples along `axis`.
         If None (default), samples are assumed to be uniformly spaced along

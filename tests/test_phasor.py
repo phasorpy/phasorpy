@@ -137,7 +137,7 @@ def test_phasor_from_signal_f1_noncontig():
     assert signal.shape == (7, samples, 19, 11)
     assert not signal.flags['C_CONTIGUOUS']
     signal_copy = signal.copy()
-    mean, real, imag = phasor_from_signal_f1(signal, axis=1, dtype=dtype)
+    mean, real, imag = phasor_from_signal_f1(signal, axis=-3, dtype=dtype)
     assert_array_equal(signal, signal_copy)
     assert mean.shape == signal.shape[:1] + signal.shape[1 + 1 :]
     assert_allclose(numpy.mean(mean), 2.1, 1e-3)
