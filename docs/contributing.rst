@@ -109,6 +109,10 @@ Instead of using the git command line application, you may find
 Create a development environment
 ................................
 
+A Python compatible C compiler is required for developing the PhasorPy
+library. For example, `Visual Studio <https://visualstudio.microsoft.com/>`_,
+`Xcode <https://developer.apple.com/xcode/>`_, or gcc.
+
 To work with the PhasorPy source code, it is recommended to set up a Python
 virtual environment and install all PhasorPy dependencies in it.
 For example, to create a `venv <https://docs.python.org/3/library/venv.html>`_

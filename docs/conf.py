@@ -74,6 +74,7 @@ html_theme_options = {
         # 'image_dark': '_static/logo-dark.svg',
     },
     'header_links_before_dropdown': 4,
+    'navigation_with_keys': False,
     'icon_links': [
         {
             'name': 'GitHub',

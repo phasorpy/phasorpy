@@ -1,9 +1,8 @@
 [build-system]
 requires = [
     "setuptools>=68",
-    "wheel",
-    # "numpy",
-    # "Cython",
+    "numpy",
+    "Cython",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -134,7 +133,10 @@ exclude_lines = ["pragma: no cover", "pragma: ${PY_MAJOR_VERSION} no cover"]
 directory = "_htmlcov"
 
 [tool.pytest.ini_options]
-addopts = "--cov=phasorpy --cov-report html --doctest-modules --doctest-glob=*.py --doctest-glob=*.rst"
+minversion = "7"
+log_cli_level = "INFO"
+xfail_strict = true
+addopts = "-ra --strict-config --strict-markers --cov=phasorpy --cov-report html --doctest-modules --doctest-glob=*.py --doctest-glob=*.rst"
 doctest_optionflags = [
     "NORMALIZE_WHITESPACE",
     "ELLIPSIS",
@@ -156,9 +158,11 @@ norecursedirs = [
     "_htmlcov",
     "tutorials",
     "phasorpy.egg-info",
+    "phasorpy_dev",
+    "phasorpy-dev",
 ]
 
 [tool.cibuildwheel]
-skip = "cp37 cp38 cp39 pp*"
-test-requires = ["pytest", "pytest-cov", "coverage"]
-test-command = "pytest tests"
+skip = "pp* cp37* cp38* cp39* *musllinux* *i686 *ppc64le *s390x cp39*win*arm64 cp310*win*arm64"
+test-requires = ["lfdfiles", "sdtfile", "ptufile", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage"]
+test-command = "pytest {project}/tests"
