@@ -16,6 +16,7 @@ from phasorpy.phasor import (
     phasor_center,
     phasor_from_lifetime,
     phasor_from_polar,
+    phasor_from_signal,
     phasor_from_signal_f1,
     phasor_semicircle,
     phasor_to_polar,
@@ -27,6 +28,7 @@ SYNTH_DATA_ARRAY = numpy.array([[50, 1], [1, 1]])
 SYNTH_DATA_LIST = [1, 2, 4]
 SYNTH_PHI = numpy.array([[0.5, 0.5], [0.5, 0.5]])
 SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
+SYNTH_DATA_PHASOR_FROM_SIGNAL = numpy.random.randint(0, 255, size=(32, 64, 64))
 
 
 def test_phasor_from_signal_f1():
@@ -665,3 +667,36 @@ def test_phasor_from_lifetime_modify():
     assert_array_equal(frequency, 80.0)  # for future revisions
     assert_array_equal(lifetime, [0.0, 1.9894368, 1e9])
     assert_array_equal(fraction, [1.0, 1.0, 1.0])
+
+
+def test_phasor_from_signal():
+    """test phasor_from_signal random input"""
+    dc, real, imag = phasor_from_signal(
+        SYNTH_DATA_PHASOR_FROM_SIGNAL, numpy.fft.fft
+    )
+    assert dc.shape == (
+        SYNTH_DATA_PHASOR_FROM_SIGNAL.shape[1],
+        SYNTH_DATA_PHASOR_FROM_SIGNAL.shape[2],
+    )
+    assert real.shape == (
+        SYNTH_DATA_PHASOR_FROM_SIGNAL.shape[1],
+        SYNTH_DATA_PHASOR_FROM_SIGNAL.shape[2],
+    )
+    assert imag.shape == (
+        SYNTH_DATA_PHASOR_FROM_SIGNAL.shape[1],
+        SYNTH_DATA_PHASOR_FROM_SIGNAL.shape[2],
+    )
+    assert numpy.all(dc != 0)
+    assert numpy.all((real >= -1) & (real <= 1))
+    assert numpy.all((imag >= -1) & (imag <= 1))
+
+
+def test_harmonic_error_phasor_from_signal():
+    """Test harmonic value < 1 error"""
+    with pytest.raises(ValueError):
+        phasor_from_signal(SYNTH_DATA_PHASOR_FROM_SIGNAL, numpy.fft.fft, harmonic=0)
+
+
+# TODO
+# Test for scipy.fft and cupy.fft
+# Test harmonic

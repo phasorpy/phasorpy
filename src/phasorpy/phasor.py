@@ -46,6 +46,7 @@ __all__ = [
     'phasor_to_polar',
     'polar_from_reference',
     'polar_from_reference_phasor',
+    'phasor_from_signal',
 ]
 
 import math
@@ -55,8 +56,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ._typing import Any, NDArray, ArrayLike, DTypeLike, Literal
 
-import numpy
 import warnings
+
+import numpy
 
 from ._phasor import _phasor_from_lifetime, _phasor_from_signal
 
@@ -891,9 +893,15 @@ def _median(
             imag, axis=included_axes
         )
 
+
 def phasor_from_signal(
-    signal: NDArray[Any], fft, /
-    , *, harmonic: int = 1, axis: int=0, norm: str=None
+    signal: NDArray[Any],
+    fft,
+    /,
+    *,
+    harmonic: int = 1,
+    axis: int = 0,
+    norm: str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """
     Return the phasor transform using the
@@ -904,7 +912,7 @@ def phasor_from_signal(
     signal : array_like
         description: Input array.
             dims = ZXY. Where z is along axis 0.
-    fft: fast fouerier function from other dependecies. 
+    fft: fast fouerier function from other dependecies.
         ex: numpy.fft.fft.
     harmonic : int, optional
         description:, by default 1, correspond to the nth
@@ -923,22 +931,26 @@ def phasor_from_signal(
 
     Example
     -------
-    >>> phasor_from_signal(numpy.random.rand(32, 64, 64), numpy.fft.fft)
+    >>> phasor_from_signal(numpy.ones([2, 2, 2]), numpy.fft.fft)
+    (array([[2, 2],
+       [2, 2]]), array([[0, 0],
+       [0, 0]]), array([[-0, -0],
+       [-0, -0]]))
 
     """
-    if harmonic < 1: 
+    if harmonic < 1:
         raise ValueError("harmonic must be greater than 1")
     else:
-        if norm: 
+        if norm:
             ft = fft(signal, axis=axis, norm=norm)
         else:
             ft = fft(signal, axis=axis)
         dc = ft[0].real
-        real = ft[harmonic].real
-        imag = ft[harmonic].imag
+        re = ft[harmonic].real
+        im = ft[harmonic].imag
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=RuntimeWarning)
             re /= dc
             im /= dc
-            im =- im
-    return dc, real, imag
+            im = -im
+    return dc, re, im
