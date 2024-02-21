@@ -3,7 +3,7 @@
 # runtime requirements
 matplotlib
 click
-pooch
+pooch==1.8.0
 tqdm
 xarray
 tifffile
