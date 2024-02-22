@@ -52,14 +52,12 @@ def test_phasor_from_signal(fft):
             (1.1, 0.4, 0.2),
             atol=1e-6,
         )
+        assert_allclose(
+            func(numpy.cos(sample_phase)), (0.0, 0.0, 0.0), atol=1e-6
+        )
     assert_allclose(
         func(numpy.zeros(256)),
         (0.0, numpy.nan, numpy.nan) if fft else (0.0, 0.0, 0.0),
-        atol=1e-6,
-    )
-    assert_allclose(
-        func(numpy.cos(sample_phase)),
-        (0.0, -1.125900e16, -1.244949) if fft else (0.0, 0.0, 0.0),
         atol=1e-6,
     )
     assert_allclose(func(signal, harmonic=2), (1.1, 0.0, 0.0), atol=1e-6)
