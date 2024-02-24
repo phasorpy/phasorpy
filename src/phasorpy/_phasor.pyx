@@ -41,7 +41,7 @@ ctypedef fused signal_t:
 def _phasor_from_signal(
     float_t[:, :, ::1] phasor,
     const signal_t[:, :, ::1] signal,
-    const double[:, ::1] sincos,
+    const double[:, :, ::1] sincos,
     const int num_threads
 ):
     """Return phasor coordinates from signal along middle axis.
@@ -67,105 +67,118 @@ def _phasor_from_signal(
     sincos:
         Buffer of two dimensions containing sin and cos terms to be multiplied
         with signal:
-            0. number samples
-            1. cos and sin
+            0. number harmonics
+            1. number samples
+            2. cos and sin
     num_threads:
         Number of OpenMP threads to use for parallelization.
 
     """
     cdef:
+        float_t[:, ::1] mean
+        float_t[:, :, ::1] real, imag
         ssize_t samples = signal.shape[1]
-        ssize_t i, j, k
-        double mean
-        double real
-        double imag
-        double sample
+        ssize_t harmonics = sincos.shape[0]
+        ssize_t i, j, k, h
+        double dc, re, im, sample
 
     if (
         samples < 3
-        or phasor.shape[0] != 3
+        or harmonics > samples // 2
+        or phasor.shape[0] != harmonics * 2 + 1
         or phasor.shape[1] != signal.shape[0]
         or phasor.shape[2] != signal.shape[2]
     ):
         raise ValueError('invalid shape of phasor or signal')
-    if sincos.shape[0] != samples or sincos.shape[1] != 2:
+    if sincos.shape[1] != samples or sincos.shape[2] != 2:
         raise ValueError('invalid shape of sincos')
+
+    mean = phasor[0]
+    real = phasor[1 : 1 + harmonics]
+    imag = phasor[1 + harmonics : 1 + harmonics * 2]
 
     if num_threads > 1 and signal.shape[0] >= num_threads:
         # parallelize outer dimensions
         with nogil, parallel(num_threads=num_threads):
             for i in prange(signal.shape[0]):
-                for j in range(signal.shape[2]):
-                    mean = 0.0
-                    real = 0.0
-                    imag = 0.0
-                    for k in range(samples):
-                        sample = <double> signal[i, k, j]
-                        mean = mean + sample
-                        real = real + sample * sincos[k, 0]
-                        imag = imag + sample * sincos[k, 1]
-                    if mean > 1e-16:
-                        real = real / mean
-                        imag = imag / mean
-                        mean = mean /samples
-                    else:
-                        mean = 0.0
-                        real = 0.0  # inf?
-                        imag = 0.0  # inf?
-                    phasor[0, i, j] = <float_t> mean
-                    phasor[1, i, j] = <float_t> real
-                    phasor[2, i, j] = <float_t> imag
+                for h in range(harmonics):
+                    for j in range(signal.shape[2]):
+                        dc = 0.0
+                        re = 0.0
+                        im = 0.0
+                        for k in range(samples):
+                            sample = <double> signal[i, k, j]
+                            dc = dc + sample
+                            re = re + sample * sincos[h, k, 0]
+                            im = im + sample * sincos[h, k, 1]
+                        if dc > 1e-16:
+                            re = re / dc
+                            im = im / dc
+                            dc = dc /samples
+                        else:
+                            dc = 0.0
+                            re = 0.0  # inf?
+                            im = 0.0  # inf?
+                        if h == 0:
+                            mean[i, j] = <float_t> dc
+                        real[h, i, j] = <float_t> re
+                        imag[h, i, j] = <float_t> im
 
     elif num_threads > 1 and signal.shape[2] >= num_threads:
         # parallelize inner dimensions
         # TODO: do not use when not built with OpenMP
         with nogil, parallel(num_threads=num_threads):
             for j in prange(signal.shape[2]):
-                for i in range(signal.shape[0]):
-                    mean = 0.0
-                    real = 0.0
-                    imag = 0.0
-                    for k in range(samples):
-                        sample = <double> signal[i, k, j]
-                        mean = mean + sample
-                        real = real + sample * sincos[k, 0]
-                        imag = imag + sample * sincos[k, 1]
-                    if mean > 1e-16:
-                        real = real / mean
-                        imag = imag / mean
-                        mean = mean /samples
-                    else:
-                        mean = 0.0
-                        real = 0.0  # inf?
-                        imag = 0.0  # inf?
-                    phasor[0, i, j] = <float_t> mean
-                    phasor[1, i, j] = <float_t> real
-                    phasor[2, i, j] = <float_t> imag
+                for h in range(harmonics):
+                    for i in range(signal.shape[0]):
+                        dc = 0.0
+                        re = 0.0
+                        im = 0.0
+                        for k in range(samples):
+                            sample = <double> signal[i, k, j]
+                            dc = dc + sample
+                            re = re + sample * sincos[h, k, 0]
+                            im = im + sample * sincos[h, k, 1]
+                        if dc > 1e-16:
+                            re = re / dc
+                            im = im / dc
+                            dc = dc /samples
+                        else:
+                            dc = 0.0
+                            re = 0.0  # inf?
+                            im = 0.0  # inf?
+                        if h == 0:
+                            mean[i, j] = <float_t> dc
+                        real[h, i, j] = <float_t> re
+                        imag[h, i, j] = <float_t> im
 
     else:
         # do not parallelize
         with nogil:
-            for i in range(signal.shape[0]):
-                for j in range(signal.shape[2]):
-                    mean = 0.0
-                    real = 0.0
-                    imag = 0.0
-                    for k in range(samples):
-                        sample = <double> signal[i, k, j]
-                        mean += sample
-                        real += sample * sincos[k, 0]
-                        imag += sample * sincos[k, 1]
-                    if mean > 1e-16:
-                        real /= mean
-                        imag /= mean
-                        mean /= samples
-                    else:
-                        mean = 0.0
-                        real = 0.0  # inf?
-                        imag = 0.0  # inf?
-                    phasor[0, i, j] = <float_t> mean
-                    phasor[1, i, j] = <float_t> real
-                    phasor[2, i, j] = <float_t> imag
+            for h in range(harmonics):
+                # TODO: move harmonics to an inner loop?
+                for i in range(signal.shape[0]):
+                    for j in range(signal.shape[2]):
+                            dc = 0.0
+                            re = 0.0
+                            im = 0.0
+                            for k in range(samples):
+                                sample = <double> signal[i, k, j]
+                                dc += sample
+                                re += sample * sincos[h, k, 0]
+                                im += sample * sincos[h, k, 1]
+                            if dc > 1e-16:
+                                re /= dc
+                                im /= dc
+                                dc /= samples
+                            else:
+                                dc = 0.0
+                                re = 0.0  # inf?
+                                im = 0.0  # inf?
+                            if h == 0:
+                                mean[i, j] = <float_t> dc
+                            real[h, i, j] = <float_t> re
+                            imag[h, i, j] = <float_t> im
 
 
 def _phasor_from_lifetime(
