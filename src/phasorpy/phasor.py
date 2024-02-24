@@ -68,6 +68,7 @@ if TYPE_CHECKING:
 import numpy
 
 from ._phasor import _phasor_from_lifetime, _phasor_from_signal
+from .utils import number_threads
 
 
 def phasor_from_signal(
@@ -181,19 +182,7 @@ def phasor_from_signal(
         del a
     num_harmonics = len(harmonics)
 
-    if num_threads is None:
-        num_threads = 1
-    elif num_threads == 0:
-        try:
-            num_threads = len(os.sched_getaffinity(0))  # type: ignore
-        except AttributeError:
-            # sched_getaffinity not available on Windows
-            num_threads = os.cpu_count()
-            if num_threads is None:
-                num_threads = 1
-        num_threads = max(num_threads // 2, 1)
-    elif num_threads < 0:
-        raise ValueError(f'{num_threads=} < 0')
+    num_threads = number_threads(num_threads)
 
     # pure numpy implementation for reference:
     # shape = [1] * signal.ndim

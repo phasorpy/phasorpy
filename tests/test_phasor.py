@@ -95,8 +95,6 @@ def test_phasor_from_signal(fft):
         with pytest.raises(ValueError):
             func(signal, sample_phase=sample_phase, harmonic=1)
         with pytest.raises(ValueError):
-            func(signal, num_threads=-1)
-        with pytest.raises(ValueError):
             func(signal, sample_phase=sample_phase[::-2])
         with pytest.raises(TypeError):
             func(signal.astype('complex64'))
@@ -210,7 +208,7 @@ def test_phasor_from_signal_harmonic(scalar, harmonic):
 @pytest.mark.parametrize('scalar', (True, False))
 @pytest.mark.parametrize('harmonic', (1, [4], [1, 4]))
 def test_phasor_from_signal_fft_func(fft_func, scalar, harmonic):
-    """Test `phasor_from_signal_fft` functions `fft_func` paramter."""
+    """Test `phasor_from_signal_fft` functions `fft_func` parameter."""
     if fft_func is None:
         pytest.skip('fft_func could not be imported')
     rng = numpy.random.default_rng(1)
