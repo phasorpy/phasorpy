@@ -11,6 +11,16 @@ from numpy.testing import (
     assert_array_equal,
 )
 
+try:
+    from scipy.fft import fft as scipy_fft
+except ImportError:
+    scipy_fft = None
+
+try:
+    from mkl_fft._numpy_fft import fft as mkl_fft
+except ImportError:
+    mkl_fft = None
+
 from phasorpy.phasor import (
     phasor_calibrate,
     phasor_center,
@@ -191,6 +201,26 @@ def test_phasor_from_signal_harmonic(scalar, harmonic):
     kwargs = dict(axis=0 if scalar else 1, harmonic=harmonic)
     mean0, real0, imag0 = phasor_from_signal(signal, **kwargs)
     mean1, real1, imag1 = phasor_from_signal_fft(signal, **kwargs)
+    assert_allclose(mean0, mean1, 1e-8)
+    assert_allclose(real0, real1, 1e-8)
+    assert_allclose(imag0, imag1, 1e-8)
+
+
+@pytest.mark.parametrize('fft_func', (scipy_fft, mkl_fft))
+@pytest.mark.parametrize('scalar', (True, False))
+@pytest.mark.parametrize('harmonic', (1, [4], [1, 4]))
+def test_phasor_from_signal_fft_func(fft_func, scalar, harmonic):
+    """Test `phasor_from_signal_fft` functions `fft_func` paramter."""
+    if fft_func is None:
+        pytest.skip('fft_func could not be imported')
+    rng = numpy.random.default_rng(1)
+    signal = rng.random((33,) if scalar else (3, 33, 61, 63))
+    signal += 1.1
+    kwargs = dict(axis=0 if scalar else 1, harmonic=harmonic)
+    mean0, real0, imag0 = phasor_from_signal_fft(signal, **kwargs)
+    mean1, real1, imag1 = phasor_from_signal_fft(
+        signal, fft_func=fft_func, **kwargs
+    )
     assert_allclose(mean0, mean1, 1e-8)
     assert_allclose(real0, real1, 1e-8)
     assert_allclose(imag0, imag1, 1e-8)
