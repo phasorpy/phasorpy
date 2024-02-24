@@ -140,7 +140,7 @@ def test_phasor_from_signal_param(fft, shape, axis, dtype, dtype_out):
     reshape[axis] = samples
     signal[:] = sig.reshape(reshape)
     if fft:
-        mean, real, imag = phasor_from_signal(signal, axis=axis)
+        mean, real, imag = phasor_from_signal_fft(signal, axis=axis)
     else:
         num_threads = 4 if signal.size > 4096 else 1
         mean, real, imag = phasor_from_signal(
