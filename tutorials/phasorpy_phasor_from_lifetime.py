@@ -2,6 +2,8 @@
 Phasor coordinates from lifetimes
 =================================
 
+An introduction to the `phasor_from_lifetime` function.
+
 The :py:func:`phasorpy.phasor.phasor_from_lifetime` function is used
 to calculate phasor coordinates as a function of frequency,
 single or multiple lifetime components, and the pre-exponential amplitudes
@@ -10,141 +12,12 @@ or fractional intensities of the components.
 """
 
 # %%
-# Import required modules and functions, and define helper functions for
-# plotting phasor or polar coordinates:
-
-import math
+# Import required modules and functions:
 
 import numpy
 
-from phasorpy.phasor import (
-    phasor_from_lifetime,
-    phasor_semicircle,
-    phasor_to_polar,
-)
-
-
-def phasor_plot(
-    real,
-    imag,
-    fmt: str = 'o',
-    *,
-    ax=None,
-    mode: str = 'lifetime',
-    style: str | None = None,
-    title: str | None = None,
-    xlabel: str | None = None,
-    ylabel: str | None = None,
-    bins: int | None = None,
-    cmap=None,
-    show: bool = True,
-    return_ax: bool = False,
-):
-    """Plot phasor coordinates using matplotlib."""
-    # TODO: move this function to phasorpy.plot
-    from matplotlib import pyplot
-    from matplotlib.lines import Line2D
-
-    if mode == 'lifetime':
-        xlim = [-0.05, 1.05]
-        ylim = [-0.05, 0.65]
-        ranges = [[0, 1], [0, 0.625]]
-        bins = 256 if bins is None else bins
-        bins_list = [bins, int(bins * 0.625)]
-    elif mode == 'spectral':
-        xlim = [-1.05, 1.05]
-        ylim = [-1.05, 1.05]
-        ranges = [[0, 1], [0, 1]]
-        bins = 256 if bins is None else bins
-        bins_list = [bins, bins]
-    else:
-        raise ValueError(f'unknown {mode=!r}')
-    if ax is None:
-        ax = pyplot.subplots()[1]
-    if style is None:
-        style = 'scatter' if real.size < 1024 else 'histogram'
-    if real is None or imag is None:
-        pass
-    elif style == 'histogram':
-        ax.hist2d(
-            real,
-            imag,
-            range=ranges,
-            bins=bins_list,
-            cmap='Blues' if cmap is None else cmap,
-            norm='log',
-        )
-    elif style == 'scatter':
-        for re, im in zip(
-            numpy.array(real, ndmin=2), numpy.array(imag, ndmin=2)
-        ):
-            ax.plot(re, im, fmt)
-    if mode == 'lifetime':
-        ax.plot(*phasor_semicircle(100), color='k', lw=0.5)
-        ax.set_xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
-        ax.set_yticks([0.0, 0.2, 0.4, 0.6])
-    elif mode == 'spectral':
-        ax.add_patch(
-            pyplot.Circle((0, 0), 1, color='k', lw=0.5, ls='--', fill=False)
-        )
-        ax.add_patch(
-            pyplot.Circle(
-                (0, 0), 2 / 3, color='0.5', lw=0.25, ls='--', fill=False
-            )
-        )
-        ax.add_patch(
-            pyplot.Circle(
-                (0, 0), 1 / 3, color='0.5', lw=0.25, ls='--', fill=False
-            )
-        )
-        ax.add_line(Line2D([-1, 1], [0, 0], color='k', lw=0.5, ls='--'))
-        ax.add_line(Line2D([0, 0], [-1, 1], color='k', lw=0.5, ls='--'))
-        for a in (3, 6):
-            x = math.cos(math.pi / a)
-            y = math.sin(math.pi / a)
-            ax.add_line(
-                Line2D([-x, x], [-y, y], color='0.5', lw=0.25, ls='--')
-            )
-            ax.add_line(
-                Line2D([-x, x], [y, -y], color='0.5', lw=0.25, ls='--')
-            )
-        ax.set_xticks([-1.0, -0.5, 0.0, 0.5, 1.0])
-        ax.set_yticks([-1.0, -0.5, 0.0, 0.5, 1.0])
-
-    ax.set(
-        title='Phasor plot' if title is None else title,
-        xlabel='G, real' if xlabel is None else xlabel,
-        ylabel='S, imag' if ylabel is None else ylabel,
-        aspect='equal',
-        xlim=xlim,
-        ylim=ylim,
-    )
-    if show:
-        pyplot.show()
-    if return_ax:
-        return ax
-
-
-def multi_frequency_plot(frequency, phase, modulation, title=None):
-    """Plot phase and modulation vs frequency."""
-    # TODO: move this function to phasorpy.plot
-    from matplotlib import pyplot
-
-    ax = pyplot.subplots()[1]
-    ax.set_title('Multi-frequency plot' if title is None else title)
-    ax.set_xscale('log', base=10)
-    ax.set_xlabel('frequency (MHz)')
-    ax.set_ylabel('phase (°)', color='tab:blue')
-    ax.set_yticks([0.0, 30.0, 60.0, 90.0])
-    for phi in numpy.array(phase, ndmin=2).swapaxes(0, 1):
-        ax.plot(frequency, numpy.rad2deg(phi), color='tab:blue')
-    ax = ax.twinx()
-    ax.set_ylabel('modulation (%)', color='tab:red')
-    ax.set_yticks([0.0, 25.0, 50.0, 75.0, 100.0])
-    for mod in numpy.array(modulation, ndmin=2).swapaxes(0, 1):
-        ax.plot(frequency, mod * 100, color='tab:red')
-    pyplot.show()
-
+from phasorpy.phasor import phasor_from_lifetime, phasor_to_polar
+from phasorpy.plot import PhasorPlot, multi_frequency_plot, phasor_plot
 
 # %%
 # Single-component lifetimes
@@ -156,7 +29,7 @@ def multi_frequency_plot(frequency, phase, modulation, title=None):
 
 lifetime = numpy.array([3.9788735, 0.9947183])
 
-phasor_plot(*phasor_from_lifetime(80.0, lifetime))
+phasor_plot(*phasor_from_lifetime(80.0, lifetime), frequency=80.0)
 
 # %%
 # Multi-component lifetimes
@@ -170,7 +43,9 @@ fraction = numpy.array(
     [[1, 0], [0.25, 0.75], [0.5, 0.5], [0.75, 0.25], [0, 1]]
 )
 
-phasor_plot(*phasor_from_lifetime(80.0, lifetime, fraction), fmt='o-')
+phasor_plot(
+    *phasor_from_lifetime(80.0, lifetime, fraction), fmt='o-', frequency=80.0
+)
 
 # %%
 # Pre-exponential amplitudes
@@ -182,6 +57,7 @@ phasor_plot(*phasor_from_lifetime(80.0, lifetime, fraction), fmt='o-')
 phasor_plot(
     *phasor_from_lifetime(80.0, lifetime, fraction, preexponential=True),
     fmt='o-',
+    frequency=80.0,
 )
 
 # %%
@@ -189,12 +65,14 @@ phasor_plot(
 # ----------------------------------------------
 #
 # Phasor coordinates can be calculated at once for many frequencies,
-# lifetime components, and their fractions.
-# As an example, lifetimes are passed in units of s and frequencies in Hz,
-# requiring to specify a unit_conversion factor:
+# lifetime components, and their fractions. As an example, random distrinutions
+# of lifetimes and their fractions are plotted at three frequencies.
+# Lifetimes are passed in units of s and frequencies in Hz, requiring to
+# specify a `unit_conversion` factor:
+
+rng = numpy.random.default_rng()
 
 samples = 100
-rng = numpy.random.default_rng()
 lifetime_distribution = (
     numpy.column_stack(
         (
@@ -217,6 +95,7 @@ phasor_plot(
         unit_conversion=1.0,
     ),
     fmt='.',
+    label=('40 MHz', '80 MHz', '160 MHz'),
 )
 
 # %%
@@ -224,24 +103,24 @@ phasor_plot(
 # ---------------
 #
 # The phasor coordinates of a fluorescence energy transfer donor
-# with a lifetime of 4.2 ns as a function of FRET efficiency
+# with a single lifetime component of 4.2 ns as a function of FRET efficiency
 # at a frequency of 80 MHz, with some background signal and about 90 %
-# of the donors participating in energy transfer, are on a curved trajectory:
+# of the donors participating in energy transfer, are on a curved trajectory.
+# For comparison, when 100% donors participate in FRET and there is no
+# background signal, the phasor coordinates lie on the universal semicircle:
 
 samples = 25
 efficiency = numpy.linspace(0.0, 1.0, samples)
 
-# for reference, just donor with FRET
-ax = phasor_plot(
+plot = PhasorPlot(frequency=80.0)
+plot.plot(
     *phasor_from_lifetime(80.0, 4.2 * (1.0 - efficiency)),
+    label='100% Donor in FRET',
     fmt='k.',
-    show=False,
-    return_ax=True,
 )
-
-phasor_plot(
+plot.plot(
     *phasor_from_lifetime(
-        frequency=80.0,
+        80.0,
         lifetime=numpy.column_stack(
             (
                 numpy.full(samples, 4.2),  # donor-only lifetime
@@ -252,9 +131,10 @@ phasor_plot(
         fraction=[0.1, 0.9, 0.1 / 1e9],
         preexponential=True,
     ),
+    label='90% Donor in FRET',
     fmt='o-',
-    ax=ax,
 )
+plot.show()
 
 # %%
 # Multi-frequency plot
@@ -272,3 +152,6 @@ multi_frequency_plot(
         *phasor_from_lifetime(frequency, [3.9788735, 0.9947183], fraction)
     ),
 )
+
+# %%
+# sphinx_gallery_thumbnail_number = -2
