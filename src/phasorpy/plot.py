@@ -325,8 +325,8 @@ class PhasorPlot:
                 bins = (max(int(bins * aspect), 1), bins)
         kwargs['bins'] = bins
 
-        real = numpy.asanyarray(real).flat
-        imag = numpy.asanyarray(imag).flat
+        real = numpy.asanyarray(real).reshape(-1)
+        imag = numpy.asanyarray(imag).reshape(-1)
         self._ax.hist2d(real, imag, **kwargs)
 
         # matplotlib's hist2d sets it's own axes limits, so reset it
