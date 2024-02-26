@@ -96,9 +96,9 @@ pyplot.show()
 # Phasor coordinate are calculated from the signal, a TCSPC histogram in
 # this case. The histogram samples are in the first dimension (`axis=0`):
 
-from phasorpy.phasor import phasor_from_signal_f1
+from phasorpy.phasor import phasor_from_signal
 
-mean, real, imag = phasor_from_signal_f1(signal, axis=0)
+mean, real, imag = phasor_from_signal(signal, axis=0)
 
 # %%
 # Plot the calculated phasor coordinates:
@@ -131,9 +131,7 @@ reference_signal = tifffile.imread(fetch('Fluorescein_Embryo.tif'))
 # %%
 # Calculate phasor coordinates from the measured reference signal:
 
-_, measured_real, measured_imag = phasor_from_signal_f1(
-    reference_signal, axis=0
-)
+_, measured_real, measured_imag = phasor_from_signal(reference_signal, axis=0)
 
 # %%
 # Average the phasor coordinates, assuming there are no spatial aberations:
@@ -213,7 +211,7 @@ plot.show()
 
 plot = PhasorPlot(allquadrants=True, title='Raw phasor coordinates')
 plot.semicircle()
-plot.hist2d(*phasor_from_signal_f1(signal, axis=0)[1:])
+plot.hist2d(*phasor_from_signal(signal, axis=0)[1:])
 plot.show()
 
 # %%
