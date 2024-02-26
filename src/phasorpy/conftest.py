@@ -1,5 +1,7 @@
 """Pytest configuration."""
 
+import math
+
 import numpy
 import pytest
 
@@ -7,9 +9,11 @@ from .datasets import fetch
 
 
 @pytest.fixture(autouse=True)
-def add_fetch(doctest_namespace):
-    """Add datasets.fetch to doctest namespace."""
+def add_doctest_namespace(doctest_namespace):
+    """Add common modules and functions to doctest namespace."""
     doctest_namespace['fetch'] = fetch
+    doctest_namespace['math'] = math
+    doctest_namespace['numpy'] = numpy
 
 
 @pytest.fixture(autouse=True)

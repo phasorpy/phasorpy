@@ -14,7 +14,8 @@ build
 wheel
 twine
 packaging
-# Cython
+cibuildwheel
+Cython
 # meson-python
 #
 # documentation requirements
