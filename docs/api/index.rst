@@ -17,4 +17,5 @@ PhasorPy library version |version|.
     io
     color
     datasets
+    utils
     cli
