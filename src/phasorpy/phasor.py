@@ -23,6 +23,7 @@ The ``phasorpy.phasor`` module provides functions to:
   lifetime:
 
   - :py:func:`phasor_calibrate`
+  - :py:func:`phasor_transform`
   - :py:func:`polar_from_reference`
   - :py:func:`polar_from_reference_phasor`
 
@@ -45,6 +46,7 @@ __all__ = [
     'phasor_semicircle',
     # 'phasor_to_apparent_lifetime',
     'phasor_to_polar',
+    'phasor_transform',
     'polar_from_reference',
     'polar_from_reference_phasor',
 ]
@@ -52,6 +54,7 @@ __all__ = [
 import math
 import os
 import warnings
+import inspect
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -387,34 +390,37 @@ def phasor_semicircle(
     imag *= 0.5
     return real, imag
 
-
-def phasor_calibrate(
-    real: ArrayLike,
-    imag: ArrayLike,
-    phase0: ArrayLike = 0.0,
-    modulation0: ArrayLike = 1.0,
-    /,
-) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return calibrated/referenced phasor coordinates.
+def phasor_calibrate(real, imag, reference_real, reference_imag, frequency, lifetime, fraction, **kwargs):
+    """
+    Return calibrated/referenced phasor coordinates.
 
     Calibration of phasor coordinates in fluorescence lifetime analysis is
     necessary to account for the instrument response function (IRF) and delays
     in the electronics.
 
-    This function can also be used to transform/rotate any phasor coordinate.
-
     Parameters
     ----------
     real : array_like
-        Real component of phasor coordinates to calibrate.
+        Real component of phasor coordinates to be calibrated.
     imag : array_like
-        Imaginary component of phasor coordinates to calibrate.
-    phase0 : array_like, optional
-        Angular component of polar coordinates for calibration in radians.
-        Defaults to 0.0.
-    modulation0 : array_like, optional
-        Radial component of polar coordinates for calibration.
-        Defaults to 1.0.
+        Imaginary component of phasor coordinates to be calibrated.
+    reference_real : array_like
+        Real component of phasor coordinates from reference of known lifetime.
+    reference_imag : array_like
+        Imaginary component of phasor coordinates from reference of known 
+        lifetime.
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+        A scalar or one-dimensional sequence.
+    lifetime : array_like
+        Lifetime components in ns. See notes below for allowed dimensions.
+    fraction : array_like, optional
+        Fractional intensities or pre-exponential amplitudes of the lifetime
+        components. Fractions are normalized to sum to 1.
+        See notes below for allowed dimensions.
+    **kwargs
+        Additional keyword arguments passed to :py:func:`phasor_center`
+        and :py:func:`phasor_from_lifetime`,
 
     Returns
     -------
@@ -426,8 +432,8 @@ def phasor_calibrate(
     Raises
     ------
     ValueError
-        The array shapes of `real` and `imag`, or `phase0` and `modulation0`
-        do not match.
+        The array shapes of `real` and `imag`, or `reference_real` and
+        `reference_imag` do not match.
 
     Examples
     --------
@@ -444,18 +450,87 @@ def phasor_calibrate(
     (array([-1.56, 1.934, 0.3279]), array([5.985, 10.6, 1.986]))
 
     """
-    phi0 = numpy.asarray(phase0)
-    mod0 = numpy.asarray(modulation0)
-    if phi0.shape != mod0.shape:
-        raise ValueError(f'{phi0.shape=} != {mod0.shape=}')
+    re = numpy.asarray(real)
+    im = numpy.asarray(imag)
+    if re.shape != im.shape:
+        raise ValueError(f'{re.shape=} != {im.shape=}')
+    ref_re = numpy.asarray(reference_real)
+    ref_im = numpy.asarray(reference_imag)
+    if ref_re.shape != ref_im.shape:
+        raise ValueError(f'{ref_re.shape=} != {ref_im.shape=}')
+    kwargs_center = {key: value for key, value in kwargs.items() if key in inspect.signature(phasor_center).parameters}
+    measured_re, measured_im = phasor_center(reference_real, reference_imag, **kwargs_center)
+    kwargs_lifetime = {key: value for key, value in kwargs.items() if key in inspect.signature(phasor_from_lifetime).parameters}
+    known_re, known_im = phasor_from_lifetime(frequency, lifetime, fraction, **kwargs_lifetime)
+    phi_shift, mod_ratio = polar_from_reference_phasor(measured_re, measured_im, known_re, known_im)
+    return phasor_transform(re, im, phi_shift, mod_ratio)
+
+def phasor_transform(
+    real: ArrayLike,
+    imag: ArrayLike,
+    phase_shift: ArrayLike = 0.0,
+    modulation_ratio: ArrayLike = 1.0,
+    /,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return transformed/rotated phasor coordinates.
+
+    This function is used for calibration purposes, but can also be used to
+    transform and/or rotate phasor coordinates. The transform is applied in
+    the polar system and returned as phasor coordinates.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates to transform/rotate.
+    imag : array_like
+        Imaginary component of phasor coordinates to transform/rotate.
+    phase_shift : array_like, optional
+        Angular component of polar coordinates for transformation/rotatio in radians.
+        Defaults to 0.0.
+    modulation_ratio : array_like, optional
+        Radial component of polar coordinates for transformation/rotatio.
+        Defaults to 1.0.
+
+    Returns
+    -------
+    real : ndarray
+        Transformed/rotated real component of phasor coordinates.
+    imag : ndarray
+        Transformed/rotated imaginary component of phasor coordinates.
+
+    Raises
+    ------
+    ValueError
+        The array shapes of `real` and `imag`, or `phase_shift` and `modulation_ratio`
+        do not match.
+
+    Examples
+    --------
+    Use scalar reference coordinates to transform/rotate phasor coordinates:
+
+    >>> phasor_trasnform([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], 0.5, 0.2)
+    (array([-0.208, -0.1284, -0.04876]), array([0.798, 1.069, 1.341]))
+
+    Use separate reference coordinates for each phasor coordinate:
+
+    >>> phasor_trasnform(
+    ...     [1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [0.5, 0.2, 0.3], [1.5, 2.0, 0.3]
+    ... )
+    (array([-1.56, 1.934, 0.3279]), array([5.985, 10.6, 1.986]))
+
+    """
+    phi_shift = numpy.asarray(phase_shift)
+    mod_ratio = numpy.asarray(modulation_ratio)
+    if phi_shift.shape != mod_ratio.shape:
+        raise ValueError(f'{phi_shift.shape=} != {mod_ratio.shape=}')
     re = numpy.array(real, copy=True, dtype=float)
     im = numpy.array(imag, copy=True, dtype=float)
     if re.shape != im.shape:
         raise ValueError(f'{re.shape=} != {im.shape=}')
-    cos = numpy.cos(phi0)
-    cos *= mod0
-    sin = numpy.sin(phi0)
-    sin *= mod0
+    cos = numpy.cos(phi_shift)
+    cos *= mod_ratio
+    sin = numpy.sin(phi_shift)
+    sin *= mod_ratio
     re_calibrated = re * cos
     re_calibrated -= im * sin
     im_calibrated = re
@@ -491,9 +566,9 @@ def polar_from_reference_phasor(
 
     Returns
     -------
-    phase0 : ndarray
+    phase_shift : ndarray
         Angular component of polar coordinates for calibration in radians.
-    modulation0 : ndarray
+    modulation_ratio : ndarray
         Radial component of polar coordinates for calibration.
 
     Raises
@@ -518,10 +593,10 @@ def polar_from_reference_phasor(
         raise ValueError(f'{known_real.shape=} != {known_imag.shape=}')
     measured_phi, measured_mod = phasor_to_polar(measured_real, measured_imag)
     known_phi, known_mod = phasor_to_polar(known_real, known_imag)
-    phase0 = known_phi - measured_phi
-    modulation0 = known_mod / measured_mod
-    phase0 = phase0.item() if numpy.isscalar(modulation0) else phase0
-    return phase0, modulation0
+    phase_shift = known_phi - measured_phi
+    modulation_ratio = known_mod / measured_mod
+    phase_shift = phase_shift.item() if numpy.isscalar(modulation_ratio) else phase_shift
+    return phase_shift, modulation_ratio
 
 
 def polar_from_reference(
@@ -550,9 +625,9 @@ def polar_from_reference(
 
     Returns
     -------
-    phase0 : ndarray
+    phase_shift : ndarray
         Angular component of polar coordinates for calibration in radians.
-    modulation0 : ndarray
+    modulation_ratio : ndarray
         Radial component of polar coordinates for calibration.
 
     Raises
@@ -577,9 +652,9 @@ def polar_from_reference(
     known_modulation = numpy.asarray(known_modulation)
     if known_phase.shape != known_modulation.shape:
         raise ValueError(f'{known_phase.shape=} != {known_modulation.shape=}')
-    phase0 = measured_phase - known_phase
-    modulation0 = measured_modulation / known_modulation
-    return phase0, modulation0
+    phase_shift = measured_phase - known_phase
+    modulation_ratio = measured_modulation / known_modulation
+    return phase_shift, modulation_ratio
 
 
 def phasor_to_polar(
