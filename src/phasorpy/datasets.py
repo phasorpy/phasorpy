@@ -371,6 +371,18 @@ class _Unzip(pooch.processors.ExtractorProcessor):
         )
         return os.path.splitext(fname)[0]
 
+    @property
+    def suffix(self):
+        """String appended to unpacked archive folder name."""
+        return '.unzip'
+
+    def _all_members(self, fname):
+        """Return all members from archive."""
+        from zipfile import ZipFile
+
+        with ZipFile(fname, 'r') as zip_file:
+            return zip_file.namelist()
+
     def _extract_file(self, fname, extract_dir):
         """Extract all files from ZIP archive."""
         from zipfile import ZipFile
