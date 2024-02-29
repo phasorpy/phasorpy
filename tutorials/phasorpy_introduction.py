@@ -76,15 +76,9 @@ print(signal.shape, signal.dtype)
 # %%
 # Plot the spatial and histogram averages:
 
-from matplotlib import pyplot
+from phasorpy.plot import plot_signal_image
 
-fig, (ax0, ax1) = pyplot.subplots(1, 2)
-fig.set_size_inches(8, 3)
-ax0.set_title('average image')
-ax0.imshow(signal.mean(axis=0))
-ax1.set_title('average histogram')
-ax1.plot(signal.mean(axis=(1, 2)))
-pyplot.show()
+plot_signal_image(signal, axis=0)
 
 # %%
 # Calculate phasor coordinates
@@ -103,17 +97,9 @@ mean, real, imag = phasor_from_signal(signal, axis=0)
 # %%
 # Plot the calculated phasor coordinates:
 
-import numpy
+from phasorpy.plot import plot_phasor_image
 
-numpy.testing.assert_array_equal(mean, signal.mean(axis=0))
-
-fig, (ax0, ax1) = pyplot.subplots(1, 2)
-fig.set_size_inches(8, 3)
-ax0.set_title('G, real')
-ax0.imshow(real)
-ax1.set_title('S, imag')
-ax1.imshow(imag)
-pyplot.show()
+plot_phasor_image(mean, real, imag)
 
 # %%
 # Calibrate phasor coordinates

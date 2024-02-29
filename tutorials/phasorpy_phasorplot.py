@@ -16,7 +16,7 @@ import math
 import numpy
 from matplotlib import pyplot
 
-from phasorpy.plot import PhasorPlot, phasor_plot
+from phasorpy.plot import PhasorPlot, plot_phasor
 
 # %%
 # Empty phasor plot
@@ -163,13 +163,13 @@ pyplot.show()
 
 
 # %%
-# phasor_plot function
+# plot_phasor function
 # --------------------
 #
-# The :py:func:`phasorpy.plot.phasor_plot` function provides a simpler
+# The :py:func:`phasorpy.plot.plot_phasor` function provides a simpler
 # alternative to plot phasor coordinates in a single statement:
 
-phasor_plot(real[0, :32], imag[0, :32], fmt='.', frequency=80.0)
+plot_phasor(real[0, :32], imag[0, :32], fmt='.', frequency=80.0)
 
 # %%
 # sphinx_gallery_thumbnail_number = 9

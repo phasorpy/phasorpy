@@ -17,7 +17,7 @@ or fractional intensities of the components.
 import numpy
 
 from phasorpy.phasor import phasor_from_lifetime, phasor_to_polar
-from phasorpy.plot import PhasorPlot, multi_frequency_plot, phasor_plot
+from phasorpy.plot import PhasorPlot, plot_phasor, plot_polar_frequency
 
 # %%
 # Single-component lifetimes
@@ -29,7 +29,7 @@ from phasorpy.plot import PhasorPlot, multi_frequency_plot, phasor_plot
 
 lifetime = numpy.array([3.9788735, 0.9947183])
 
-phasor_plot(*phasor_from_lifetime(80.0, lifetime), frequency=80.0)
+plot_phasor(*phasor_from_lifetime(80.0, lifetime), frequency=80.0)
 
 # %%
 # Multi-component lifetimes
@@ -43,7 +43,7 @@ fraction = numpy.array(
     [[1, 0], [0.25, 0.75], [0.5, 0.5], [0.75, 0.25], [0, 1]]
 )
 
-phasor_plot(
+plot_phasor(
     *phasor_from_lifetime(80.0, lifetime, fraction), fmt='o-', frequency=80.0
 )
 
@@ -54,7 +54,7 @@ phasor_plot(
 # The phasor coordinates of two lifetime components with varying
 # pre-exponential amplitudes are also located on a line:
 
-phasor_plot(
+plot_phasor(
     *phasor_from_lifetime(80.0, lifetime, fraction, preexponential=True),
     fmt='o-',
     frequency=80.0,
@@ -87,7 +87,7 @@ fraction_distribution = numpy.column_stack(
     (rng.random(samples), rng.random(samples), rng.random(samples))
 )
 
-phasor_plot(
+plot_phasor(
     *phasor_from_lifetime(
         frequency=[40e6, 80e6, 160e6],
         lifetime=lifetime_distribution,
@@ -146,7 +146,7 @@ plot.show()
 frequency = numpy.logspace(-1, 4, 32)
 fraction = numpy.array([[1, 0], [0.5, 0.5], [0, 1]])
 
-multi_frequency_plot(
+plot_polar_frequency(
     frequency,
     *phasor_to_polar(
         *phasor_from_lifetime(frequency, [3.9788735, 0.9947183], fraction)
