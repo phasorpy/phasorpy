@@ -2,7 +2,8 @@ Contributing
 ============
 
 As a community-maintained project, PhasorPy welcomes contributions in the form
-of bug reports, bug fixes, datasets, documentation, and enhancement proposals.
+of bug reports, bug fixes, feature implementations, documentation, datasets,
+and enhancement proposals.
 This document provides information on how to contribute.
 
 The :doc:`code_of_conduct` should be honored by everyone participating in the
