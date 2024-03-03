@@ -15,13 +15,15 @@ from phasorpy.plot import (
     plot_signal_image,
 )
 
+INTERACTIVE = False  # enable for interactive plotting
+
 
 class TestPhasoPlot:
     """Test the PhasorPlot class."""
 
     def show(self, plot):
         """Show plot."""
-        if False:  # enable for interactive plotting
+        if INTERACTIVE:
             plot.show()
         pyplot.close()
 
@@ -59,13 +61,24 @@ class TestPhasoPlot:
     def test_plot(self):
         """Test plot method."""
         plot = PhasorPlot(title='plot')
-        # plot.plot(...)
+        plot.plot(0.6, 0.4, label='1')
+        plot.plot([0.2, 0.9], [0.4, 0.3], '.-', label='2')
+        plot.plot(
+            [[0.29, 0.3, 0.31], [0.41, 0.29, 0.3]],
+            [[0.31, 0.29, 0.2], [0.49, 0.5, 0.51]],
+            'x',
+            label='3',
+        )
         self.show(plot)
 
-    def test_hist2d(self):
+    @pytest.mark.parametrize('allquadrants', (True, False))
+    def test_hist2d(self, allquadrants):
         """Test hist2d method."""
-        plot = PhasorPlot(title='hist2d')
-        # plot.hist2d(...)
+        real, imag = numpy.random.multivariate_normal(
+            (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
+        ).T
+        plot = PhasorPlot(title='hist2d', allquadrants=allquadrants)
+        plot.hist2d(real, imag)
         self.show(plot)
 
     def test_contour(self):
@@ -82,10 +95,23 @@ class TestPhasoPlot:
             plot.imshow([[0]])
         self.show(plot)
 
-    def test_components(self):
+    @pytest.mark.parametrize('allquadrants', (True, False))
+    def test_components(self, allquadrants):
         """Test components method."""
-        plot = PhasorPlot(title='components')
-        # plot.components(...)
+        real = [0.1, 0.2, 0.5, 0.9]
+        imag = [0.3, 0.4, 0.5, 0.3]
+        weights = [2, 1, 2, 1]
+        plot = PhasorPlot(title='components', allquadrants=allquadrants)
+        with pytest.raises(ValueError):
+            plot.components(0.5, 0.5)
+        plot.components(real, imag, fill=True, facecolor='lightyellow')
+        plot.components(real, imag, weights, linestyle='-', color='tab:blue')
+        self.show(plot)
+
+    def test_line(self):
+        """Test line method."""
+        plot = PhasorPlot(title='line')
+        plot.line([0.8, 0.4], [0.2, 0.3], color='tab:red', linestyle='--')
         self.show(plot)
 
     def test_circle(self):
@@ -94,10 +120,15 @@ class TestPhasoPlot:
         plot.circle(0.5, 0.2, 0.1, color='tab:red', linestyle='-')
         self.show(plot)
 
-    def test_polar_cursor(self):
+    @pytest.mark.parametrize('allquadrants', (True, False))
+    def test_polar_cursor(self, allquadrants):
         """Test polar_cursor method."""
-        plot = PhasorPlot(title='polar_cursor')
-        # plot.polar_cursor(...)
+        plot = PhasorPlot(title='polar_cursor', allquadrants=allquadrants)
+        plot.polar_cursor()
+        plot.polar_cursor(0.6435, 0.5, color='tab:blue', linestyle='-')
+        plot.polar_cursor(0.5236, 0.6, 0.1963, 0.8, color='tab:orange')
+        plot.polar_cursor(0.3233, 0.9482, radius=0.05, color='tab:green')
+        plot.polar_cursor(0.3, color='tab:red', linestyle='--')
         self.show(plot)
 
     def test_polar_grid(self):
@@ -114,6 +145,14 @@ class TestPhasoPlot:
 
         plot = PhasorPlot(grid=False, title='frequency')
         plot.semicircle(frequency=80)
+        self.show(plot)
+
+        plot = PhasorPlot(grid=False, title='no labels')
+        plot.semicircle(frequency=80, labels=())
+        self.show(plot)
+
+        plot = PhasorPlot(grid=False, title='no circle')
+        plot.semicircle(frequency=80, show_circle=False)
         self.show(plot)
 
         plot = PhasorPlot(grid=False, title='red')
@@ -143,32 +182,81 @@ class TestPhasoPlot:
 
 def test_plot_phasor():
     """Test plot_phasor function."""
-    # plot_phasor(...)
-    # pyplot.close()
+    real, imag = numpy.random.multivariate_normal(
+        (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], 32
+    ).T
+    plot_phasor(
+        real,
+        imag,
+        style='plot',
+        title='plot',
+        color='tab:red',
+        frequency=80.0,
+        show=INTERACTIVE,
+    )
+    pyplot.close()
+
+    _, ax = pyplot.subplots()
+    real, imag = numpy.random.multivariate_normal(
+        (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
+    ).T
+    plot_phasor(
+        real,
+        imag,
+        ax=ax,
+        title='hist2d',
+        cmap='Blues',
+        allquadrants=True,
+        grid=False,
+        show=INTERACTIVE,
+    )
+    pyplot.close()
+
+    with pytest.raises(ValueError):
+        plot_phasor(0, 0, style='invalid')
 
 
 def test_plot_polar_frequency():
     """Test plot_polar_frequency function."""
-    # plot_polar_frequency(...)
-    # pyplot.close()
+    plot_polar_frequency(
+        [1, 10, 100],
+        [0, 0.5, 1],
+        [1, 0.5, 0],
+        title='plot_polar_frequency',
+        show=INTERACTIVE,
+    )
+    pyplot.close()
+
+    _, ax = pyplot.subplots()
+    plot_polar_frequency(
+        [1, 10, 100],
+        [[0, 0.1], [0.5, 0.55], [1, 1]],
+        [[[1, 0.9], [0.5, 0.45], [0, 0]]],
+        ax=ax,
+        show=INTERACTIVE,
+    )
+    pyplot.close()
 
 
 def test_plot_signal_image():
     """Test plot_signal_image function."""
-    show = False  # enable interactive plotting
     shape = (7, 31, 33, 11)
     data = numpy.arange(math.prod(shape)).reshape(shape)
     data %= math.prod(shape[-2:])
     data = data / math.prod(shape[-2:])
 
-    plot_signal_image(data, title='default', show=show)
+    plot_signal_image(data, title='default', show=INTERACTIVE)
     pyplot.close()
-    plot_signal_image(data, axis=0, title='axis 0', show=show)
+    plot_signal_image(data, axis=0, title='axis 0', show=INTERACTIVE)
     pyplot.close()
-    plot_signal_image(data, axis=2, title='axis 2', show=show)
+    plot_signal_image(data, axis=2, title='axis 2', show=INTERACTIVE)
     pyplot.close()
     plot_signal_image(
-        data, cmap='hot', percentile=[5, 95], title='percentile', show=show
+        data,
+        cmap='hot',
+        percentile=[5, 95],
+        title='percentile',
+        show=INTERACTIVE,
     )
     pyplot.close()
 
@@ -184,7 +272,6 @@ def test_plot_signal_image():
 
 def test_plot_phasor_image():
     """Test plot_phasor_image function."""
-    show = False  # enable interactive plotting
     shape = (7, 11, 31, 33)
     data = numpy.arange(math.prod(shape)).reshape(shape)
     data %= math.prod(shape[-2:])
@@ -192,16 +279,16 @@ def test_plot_phasor_image():
 
     # 2D data
     d = data[0, 0]
-    plot_phasor_image(d, d, d, title='mean, real, imag', show=show)
+    plot_phasor_image(d, d, d, title='mean, real, imag', show=INTERACTIVE)
     pyplot.close()
-    plot_phasor_image(None, d, d, title='real, imag', show=show)
+    plot_phasor_image(None, d, d, title='real, imag', show=INTERACTIVE)
     pyplot.close()
     # 4D data
     d = data
-    plot_phasor_image(d, d, d, title='4D images', show=show)
+    plot_phasor_image(d, d, d, title='4D images', show=INTERACTIVE)
     pyplot.close()
     # 7 harmonics
-    plot_phasor_image(d[0], d, d, title='harmonics up to 4', show=show)
+    plot_phasor_image(d[0], d, d, title='harmonics up to 4', show=INTERACTIVE)
     pyplot.close()
     plot_phasor_image(
         None,
@@ -209,7 +296,7 @@ def test_plot_phasor_image():
         d,
         harmonics=2,
         title='real and imag harmonics up to 2',
-        show=show,
+        show=INTERACTIVE,
     )
     pyplot.close()
 
@@ -221,7 +308,7 @@ def test_plot_phasor_image():
         percentile=5.0,
         cmap='hot',
         title='5th percentile with colormap',
-        show=show,
+        show=INTERACTIVE,
     )
     pyplot.close()
 

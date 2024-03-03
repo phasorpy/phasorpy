@@ -32,7 +32,7 @@ from matplotlib import patheffects, pyplot
 from matplotlib.font_manager import FontProperties
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
-from matplotlib.patches import Arc, Polygon
+from matplotlib.patches import Arc, Circle, Polygon
 from matplotlib.path import Path
 
 from ._utils import (
@@ -72,7 +72,7 @@ class PhasorPlot:
     grid : bool, optional, default: False
         Display polar grid or semicircle.
     **kwargs
-        ...
+        Additional properties to set on `ax`.
 
     """
 
@@ -94,7 +94,7 @@ class PhasorPlot:
         frequency: float | None = None,
         grid: bool = True,
         **kwargs,
-    ):
+    ) -> None:
         # initialize empty phasor plot
         self._ax = pyplot.subplots()[1] if ax is None else ax
 
@@ -134,16 +134,16 @@ class PhasorPlot:
 
     @property
     def ax(self) -> Axes:
-        """Matplotlib :class:`matplotlib.axes.Axes`."""
+        """Matplotlib :py:class:`matplotlib.axes.Axes`."""
         return self._ax
 
     @property
     def fig(self) -> Figure | None:
-        """Matplotlib :class:`matplotlib.figure.Figure`."""
+        """Matplotlib :py:class:`matplotlib.figure.Figure`."""
         return self._ax.get_figure()
 
     def show(self) -> None:
-        """Display all open figures. Call :meth:`matplotlib.pyplot.show`."""
+        """Display all open figures. Call :py:func:`matplotlib.pyplot.show`."""
         # self.fig.show()
         pyplot.show()
 
@@ -161,7 +161,7 @@ class PhasorPlot:
             Path or Python file-like object to write the current figure to.
         **kwargs
             Additional keyword arguments passed to
-            :meth:`matplotlib:pyplot.savefig`.
+            :py:func:`matplotlib:pyplot.savefig`.
 
         """
         pyplot.savefig(file, **kwargs)
@@ -192,7 +192,8 @@ class PhasorPlot:
             Plot label.
             May be a sequence if phasor coordinates are two dimensional arrays.
         **kwargs
-            Additional parameters passed to :meth:`matplotlib.pyplot.plot`.
+            Additional parameters passed to
+            :py:meth:`matplotlib.axes.Axes.plot`.
 
         """
         ax = self._ax
@@ -210,7 +211,7 @@ class PhasorPlot:
             if label is not None:
                 try:
                     lbl = label[i]
-                except KeyError:
+                except IndexError:
                     pass
             ax.plot(re, im, fmt, label=lbl, **kwargs)
         if label is not None:
@@ -233,7 +234,8 @@ class PhasorPlot:
             Imaginary component of phasor coordinates.
             Must be of same shape as `real`.
         **kwargs
-            Additional parameters passed to :meth:`matplotlib.pyplot.hist2d`.
+            Additional parameters passed to
+            py:meth:`matplotlib.axes.Axes.hist2d`.
 
         """
         update_kwargs(
@@ -251,7 +253,7 @@ class PhasorPlot:
         if isinstance(bins, int):
             assert bins > 0
             aspect = (xmax - xmin) / (ymax - ymin)
-            if aspect >= 1:
+            if aspect > 1:
                 bins = (bins, max(int(bins / aspect), 1))
             else:
                 bins = (max(int(bins * aspect), 1), bins)
@@ -281,7 +283,8 @@ class PhasorPlot:
             Imaginary component of phasor coordinates.
             Must be of same shape as `real`.
         **kwargs
-            Additional parameters passed to :meth:`matplotlib.pyplot.contour`.
+            Additional parameters passed to
+            py:meth:`matplotlib.axes.Axes.contour`.
 
         """
         raise NotImplementedError
@@ -299,7 +302,8 @@ class PhasorPlot:
         image : array_like
             Image to display.
         **kwargs
-            Additional parameters passed to :meth:`matplotlib.pyplot.imshow`.
+            Additional parameters passed to
+            py:meth:`matplotlib.axes.Axes.imshow`.
 
         """
         raise NotImplementedError
@@ -321,10 +325,15 @@ class PhasorPlot:
         imag : sequence of float
             Imaginary component of phasor coordinates.
         fraction: sequence of float, optional
-            ...
+            Weight associated with each component.
+            If None (default), outline the polygon area of possible linear
+            combinations of components.
+            Else, draw lines from the component coordinates to the weighted
+            average.
         **kwargs
-            Additional parameters passed to matplotlib's
-            ``Polygon`` or ``Line``.
+            Additional parameters passed to
+            :py:class:`matplotlib.patches.Polygon` or
+            :py:class:`matplotlib.lines.Line2D`.
 
         """
         if fraction is None:
@@ -339,6 +348,7 @@ class PhasorPlot:
                 Polygon(numpy.vstack(sort_coordinates(real, imag)).T, **kwargs)
             )
             return
+
         update_kwargs(
             kwargs,
             color=GRID_COLOR,
@@ -354,6 +364,34 @@ class PhasorPlot:
             )
             # TODO: add fraction labels?
 
+    def line(
+        self,
+        real: ArrayLike,
+        imag: ArrayLike,
+        /,
+        **kwargs: Any,
+    ) -> None:
+        """Draw grid line.
+
+        Parameters
+        ----------
+        real : array_like
+            Real components of line start and end coordinates.
+        imag : array_like
+            Imaginary components of line start and end coordinates.
+        **kwargs
+            Additional parameters passed to
+            :py:class:`matplotlib.lines.Line2D`.
+
+        """
+        update_kwargs(
+            kwargs,
+            color=GRID_COLOR,
+            linestyle=GRID_LINESTYLE,
+            linewidth=GRID_LINEWIDH,
+        )
+        self._ax.add_line(Line2D(real, imag, **kwargs))
+
     def circle(
         self,
         real: float,
@@ -362,16 +400,19 @@ class PhasorPlot:
         radius: float,
         **kwargs: Any,
     ) -> None:
-        """Draw circle of radius around center.
+        """Draw grid circle of radius around center.
 
         Parameters
         ----------
-        real, imag : float
-            Circle center.
+        real : float
+            Real component of circle center coordinate.
+        imag : float
+            Imaginary component of circle center coordinate.
         radius : float
             Circle radius.
         **kwargs
-            Additional parameters passed to :meth:`matplotlib.pyplot.Circle`.
+            Additional parameters passed to
+            :py:class:`matplotlib.patches.Circle`.
 
         """
         update_kwargs(
@@ -381,8 +422,7 @@ class PhasorPlot:
             linewidth=GRID_LINEWIDH,
             fill=GRID_FILL,
         )
-        ax = self._ax
-        ax.add_patch(pyplot.Circle((real, imag), radius, **kwargs))
+        self._ax.add_patch(Circle((real, imag), radius, **kwargs))
 
     def polar_cursor(
         self,
@@ -393,23 +433,27 @@ class PhasorPlot:
         radius: float | None = None,
         **kwargs: Any,
     ) -> None:
-        """Plot phase and modulation grid lines.
+        """Plot phase and modulation grid lines and arcs.
 
         Parameters
         ----------
         phase : float, optional
-            ...
+            Angular component of polar coordinate in radians.
         modulation : float, optional
-            ...
+            Radial component of polar coordinate.
         phase_limit : float, optional
-            ...
+            Angular component of limiting polar coordinate (in radians).
+            Modulation grid arcs are drawn between `phase` and `phase_limit`.
         modulation_limit : float, optional
-            ...
+            Radial component of limiting polar coordinate.
+            Phase grid lines are drawn from `modulation` to `modulation_limit`.
         radius : float, optional
-            ...
+            Radius of circle limiting phase and modulation grid lines and arcs.
         **kwargs
-            Additional parameters passed to :meth:`matplotlib.pyplot.Circle`
-            or ``Arc``.
+            Additional parameters passed to
+            :py:class:`matplotlib.lines.Line2D`,
+            :py:class:`matplotlib.patches.Circle`, and
+            :py:class:`matplotlib.patches.Arc`.
 
         """
         update_kwargs(
@@ -423,7 +467,7 @@ class PhasorPlot:
         if radius is not None and phase is not None and modulation is not None:
             x = modulation * math.cos(phase)
             y = modulation * math.sin(phase)
-            ax.add_patch(pyplot.Circle((x, y), radius, **kwargs))
+            ax.add_patch(Circle((x, y), radius, **kwargs))
             del kwargs['fill']
             p0, p1 = circle_line_intersection(x, y, radius, 0, 0, x, y)
             ax.add_line(Line2D((p0[0], p1[0]), (p0[1], p1[1]), **kwargs))
@@ -439,8 +483,8 @@ class PhasorPlot:
                     **kwargs,
                 )
             )
-
             return
+
         del kwargs['fill']
         for phi in (phase, phase_limit):
             if phi is not None:
@@ -481,8 +525,9 @@ class PhasorPlot:
         Parameters
         ----------
         **kwargs
-            Additional parameters passed to :meth:`matplotlib.pyplot.Circle`
-            or ``Line2D``.
+            Parameters passed to
+            :py:class:`matplotlib.patches.Circle` and
+            :py:class:`matplotlib.lines.Line2D`.
 
         """
         ax = self._ax
@@ -497,7 +542,7 @@ class PhasorPlot:
         )
         ax.add_line(Line2D([-1, 1], [0, 0], **kwargs))
         ax.add_line(Line2D([0, 0], [-1, 1], **kwargs))
-        ax.add_patch(pyplot.Circle((0, 0), 1, fill=False, **kwargs))
+        ax.add_patch(Circle((0, 0), 1, fill=False, **kwargs))
         # minor gridlines
         kwargs = kwargs_copy
         update_kwargs(
@@ -507,7 +552,7 @@ class PhasorPlot:
             linewidth=GRID_LINEWIDH_MINOR,
         )
         for r in (1 / 3, 2 / 3):
-            ax.add_patch(pyplot.Circle((0, 0), r, fill=False, **kwargs))
+            ax.add_patch(Circle((0, 0), r, fill=False, **kwargs))
         for a in (3, 6):
             x = math.cos(math.pi / a)
             y = math.sin(math.pi / a)
@@ -522,6 +567,7 @@ class PhasorPlot:
         phasor_reference: tuple[float, float] | None = None,
         lifetime: Sequence[float] | None = None,
         labels: Sequence[str] | None = None,
+        show_circle: bool = True,
         **kwargs,
     ) -> None:
         """Draw universal semicircle.
@@ -537,10 +583,16 @@ class PhasorPlot:
             Alternative to `polar_reference`. The default is (1, 0).
         lifetime : sequence of float, optional
             Apparent single lifetimes at which to draw ticks and labels.
+            Only applies when `frequency` is specified.
         labels : sequence of str, optional
             Tick labels. By default, the values of `lifetime`.
+            Only applies when `frequency` and `lifetime` are specified.
+        show_circle : bool, optional
+            Draw universal semicircle.
         **kwargs
-            Additional parameters passed to matplotlib's ``Arc`` or ``plot``.
+            Additional parameters passed to
+            :py:class:`matplotlib.patches.Arc` and
+            :py:meth:`matplotlib.axes.Axes.plot`.
 
         """
         update_kwargs(
@@ -556,18 +608,20 @@ class PhasorPlot:
         if phasor_reference is None:
             phasor_reference = phasor_from_polar_scalar(*polar_reference)
         ax = self._ax
-        # draw circle
-        ax.add_patch(
-            Arc(
-                (phasor_reference[0] / 2, phasor_reference[1] / 2),
-                polar_reference[1],
-                polar_reference[1],
-                theta1=math.degrees(polar_reference[0]),
-                theta2=math.degrees(polar_reference[0]) + 180.0,
-                fill=False,
-                **kwargs,
+
+        if show_circle:
+            ax.add_patch(
+                Arc(
+                    (phasor_reference[0] / 2, phasor_reference[1] / 2),
+                    polar_reference[1],
+                    polar_reference[1],
+                    theta1=math.degrees(polar_reference[0]),
+                    theta2=math.degrees(polar_reference[0]) + 180.0,
+                    fill=False,
+                    **kwargs,
+                )
             )
-        )
+
         if frequency is not None and polar_reference == (0.0, 1.0):
             # draw ticks and labels
             if lifetime is None:
@@ -606,27 +660,28 @@ class SemicircleTicks(patheffects.AbstractPathEffect):
     labels : sequence of str, optional
         Tick labels for each vertex in path.
     **kwargs
-        Extra keywords passed to :meth:`AbstractPathEffect._update_gc`.
+        Extra keywords passed to matplotlib's
+        ``AbstractPathEffect._update_gc``.
 
     """
 
     _size: float  # tick length
     _labels: tuple[str, ...]  # tick labels
-    _gc: dict[str, Any]  # keywords passed to update_gc
+    _gc: dict[str, Any]  # keywords passed to _update_gc
 
     def __init__(
         self,
         size: float | None = None,
         labels: Sequence[str] | None = None,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__((0.0, 0.0))
 
         if size is None:
             self._size = pyplot.rcParams['xtick.major.size']
         else:
             self._size = size
-        if labels is None:
+        if labels is None or not labels:
             self._labels = ()
         else:
             self._labels = tuple(labels)
@@ -798,7 +853,7 @@ def plot_phasor_image(
         If `mean` is None, a nonzero value indicates the presence of harmonics
         in the first axes of `mean` and `real`. Else, the presence of harmonics
         is determined from the shapes of `mean` and `real`.
-        By default, no more than 4 harmonics are displayed.
+        By default, up to 4 harmonics are displayed.
     percentile : float, optional
         The (q, 100-q) percentiles of image data are covered by colormaps.
         By default, the complete value range of `mean` is covered,
@@ -1043,7 +1098,7 @@ def plot_polar_frequency(
     show : bool, optional, default: True
         Display figure.
     **kwargs
-        Additional arguments passed to :func:`matplotlib.pyplot.plot`.
+        Additional arguments passed to :py:func:`matplotlib.pyplot.plot`.
 
     """
     # TODO: make this customizable: labels, colors, ...
@@ -1055,14 +1110,23 @@ def plot_polar_frequency(
         ax.set_title(title)
     ax.set_xscale('log', base=10)
     ax.set_xlabel('frequency (MHz)')
+
+    phase = numpy.asarray(phase)
+    if phase.ndim < 2:
+        phase = phase.reshape(-1, 1)
+    modulation = numpy.asarray(modulation)
+    if modulation.ndim < 2:
+        modulation = modulation.reshape(-1, 1)
+
     ax.set_ylabel('phase (°)', color='tab:blue')
     ax.set_yticks([0.0, 30.0, 60.0, 90.0])
-    for phi in numpy.array(phase, ndmin=2).swapaxes(0, 1):
+    for phi in phase.T:
         ax.plot(frequency, numpy.rad2deg(phi), color='tab:blue', **kwargs)
     ax = ax.twinx()  # type: ignore
+
     ax.set_ylabel('modulation (%)', color='tab:red')
     ax.set_yticks([0.0, 25.0, 50.0, 75.0, 100.0])
-    for mod in numpy.array(modulation, ndmin=2).swapaxes(0, 1):
+    for mod in modulation.T:
         ax.plot(frequency, mod * 100, color='tab:red', **kwargs)
     if show:
         pyplot.show()
@@ -1084,7 +1148,7 @@ def _imshow(
 ) -> AxesImage:
     """Plot image array.
 
-    Convenience wrapper around :func:`matplotlib.pyplot.imshow`.
+    Convenience wrapper around :py:func:`matplotlib.pyplot.imshow`.
 
     """
     update_kwargs(kwargs, interpolation='none')
