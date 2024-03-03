@@ -1,15 +1,11 @@
 """Test the phasorpy.plot module."""
 
+import io
 import math
 
 import numpy
 import pytest
 from matplotlib import pyplot
-from numpy.testing import (
-    assert_allclose,
-    assert_almost_equal,
-    assert_array_equal,
-)
 
 from phasorpy.plot import (
     PhasorPlot,
@@ -20,83 +16,129 @@ from phasorpy.plot import (
 )
 
 
-def test_phasorplot():
-    """Test PhasorPlot init and attributes."""
-    plot = PhasorPlot()
-    ...
-    pyplot.close()
+class TestPhasoPlot:
+    """Test the PhasorPlot class."""
 
+    def show(self, plot):
+        """Show plot."""
+        if False:  # enable for interactive plotting
+            plot.show()
+        pyplot.close()
 
-def test_phasorplot_save():
-    """Test PhasorPlot.save method."""
-    plot = PhasorPlot()
-    # plot.save(...)
-    pyplot.close()
+    def test_init(self):
+        """Test __init__ and attributes."""
+        plot = PhasorPlot(title='default')
+        self.show(plot)
 
+        plot = PhasorPlot(frequency=80.0, title='frequency')
+        self.show(plot)
 
-def test_phasorplot_plot():
-    """Test PhasorPlot.plot method."""
-    plot = PhasorPlot()
-    # plot.plot(...)
-    pyplot.close()
+        plot = PhasorPlot(grid=False, title='no grid')
+        self.show(plot)
 
+        plot = PhasorPlot(allquadrants=True, title='allquadrants')
+        self.show(plot)
 
-def test_phasorplot_hist2d():
-    """Test PhasorPlot.hist2d method."""
-    plot = PhasorPlot()
-    # plot.hist2d(...)
-    pyplot.close()
+        plot = PhasorPlot(title='kwargs', xlim=(-0.1, 1.1), ylim=(-0.1, 0.9))
+        self.show(plot)
 
+        fig, ax = pyplot.subplots()
+        plot = PhasorPlot(ax=ax, title='axes')
+        assert plot.ax == ax
+        assert plot.fig == fig
+        self.show(plot)
 
-def test_phasorplot_contour():
-    """Test PhasorPlot.contour method."""
-    pytest.skip('PhasorPlot.contour not implemented')
-    # plot = PhasorPlot()
-    # plot.contour(...)
-    # pyplot.close()
+    def test_save(self):
+        """Test save method."""
+        fh = io.BytesIO()
+        plot = PhasorPlot(title='save')
+        plot.save(fh, format='png')
+        assert fh.getvalue()[:6] == b'\x89PNG\r\n'
+        pyplot.close()
 
+    def test_plot(self):
+        """Test plot method."""
+        plot = PhasorPlot(title='plot')
+        # plot.plot(...)
+        self.show(plot)
 
-def test_phasorplot_imshow():
-    """Test PhasorPlot.imshow method."""
-    pytest.skip('PhasorPlot.imshow not implemented')
-    # plot = PhasorPlot()
-    # plot.imshow(...)
-    # pyplot.close()
+    def test_hist2d(self):
+        """Test hist2d method."""
+        plot = PhasorPlot(title='hist2d')
+        # plot.hist2d(...)
+        self.show(plot)
 
+    def test_contour(self):
+        """Test contour method."""
+        plot = PhasorPlot(title='contour')
+        with pytest.raises(NotImplementedError):
+            plot.contour([[0]], [[0]])
+        self.show(plot)
 
-def test_phasorplot_components():
-    """Test PhasorPlot.components method."""
-    plot = PhasorPlot()
-    # plot.components(...)
-    pyplot.close()
+    def test_imshow(self):
+        """Test imshow method."""
+        plot = PhasorPlot(title='imshow')
+        with pytest.raises(NotImplementedError):
+            plot.imshow([[0]])
+        self.show(plot)
 
+    def test_components(self):
+        """Test components method."""
+        plot = PhasorPlot(title='components')
+        # plot.components(...)
+        self.show(plot)
 
-def test_phasorplot_circle():
-    """Test PhasorPlot.circle method."""
-    plot = PhasorPlot()
-    # plot.circle(...)
-    pyplot.close()
+    def test_circle(self):
+        """Test circle method."""
+        plot = PhasorPlot(title='circle')
+        plot.circle(0.5, 0.2, 0.1, color='tab:red', linestyle='-')
+        self.show(plot)
 
+    def test_polar_cursor(self):
+        """Test polar_cursor method."""
+        plot = PhasorPlot(title='polar_cursor')
+        # plot.polar_cursor(...)
+        self.show(plot)
 
-def test_phasorplot_polar_cursor():
-    """Test PhasorPlot.polar_cursor method."""
-    plot = PhasorPlot()
-    # plot.polar_cursor(...)
-    pyplot.close()
+    def test_polar_grid(self):
+        """Test polar_grid method."""
+        plot = PhasorPlot(grid=False, allquadrants=True, title='polar_grid')
+        plot.polar_grid(color='tab:red', linestyle='-')
+        self.show(plot)
 
+    def test_semicircle(self):
+        """Test semicircle method."""
+        plot = PhasorPlot(grid=False, title='empty')
+        plot.semicircle()
+        self.show(plot)
 
-def test_phasorplot_polar_grid():
-    """Test PhasorPlot.polar_grid method."""
-    plot = PhasorPlot()
-    # plot.polar_grid(...)
-    pyplot.close()
+        plot = PhasorPlot(grid=False, title='frequency')
+        plot.semicircle(frequency=80)
+        self.show(plot)
 
+        plot = PhasorPlot(grid=False, title='red')
+        plot.semicircle(frequency=80, color='tab:red', linestyle=':')
+        self.show(plot)
 
-def test_phasorplot_semicircle():
-    """Test PhasorPlot.semicircle method."""
-    plot = PhasorPlot()
-    # plot.semicircle(...)
-    pyplot.close()
+        plot = PhasorPlot(grid=False, title='lifetime')
+        plot.semicircle(frequency=80, lifetime=[1, 2])
+        self.show(plot)
+
+        plot = PhasorPlot(grid=False, title='labels')
+        plot.semicircle(
+            frequency=80, lifetime=[1, 2], labels=['label 1', 'label 2']
+        )
+        self.show(plot)
+
+        plot = PhasorPlot(title='polar_reference', xlim=(-0.2, 1.05))
+        plot.semicircle(polar_reference=(0.9852, 0.5526))
+        self.show(plot)
+
+        plot = PhasorPlot(
+            frequency=80.0, title='phasor_reference', xlim=(-0.2, 1.05)
+        )
+        plot.semicircle(frequency=80.0, phasor_reference=(0.2, 0.4))
+        self.show(plot)
 
 
 def test_plot_phasor():

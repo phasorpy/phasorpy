@@ -4,6 +4,9 @@ Introduction to PhasorPy
 
 An introduction to using the PhasorPy library.
 
+PhasorPy is an open-source Python library for the analysis of fluorescence
+lifetime and hyperspectral images using the :doc:`/phasor_approach`.
+
 """
 
 # %%
@@ -58,8 +61,9 @@ print(phasorpy.__version__)
 # files, for example, a TIFF file containing a time-correlated
 # single photon counting (TCSPC) histogram obtained at 80 MHz.
 #
-# The :py:mod:`phasorpy.io` module provides many functions to read image
-# and metadata from file formats used in microscopy. However, here the
+# The :py:mod:`phasorpy.io` module provides many functions to read
+# time-resolved and hyperspectral image and metadata from file formats used
+# in microscopy. However, here the
 # `tifffile <https://pypi.org/project/tifffile/>`_ library is used directly:
 
 # TODO: use phasorpy.io function to read histogram and metadata from PTU file
@@ -196,8 +200,8 @@ plot.show()
 # For comparison, the uncalibrated, unfiltered phasor coordinates:
 
 plot = PhasorPlot(allquadrants=True, title='Raw phasor coordinates')
-plot.semicircle()
 plot.hist2d(*phasor_from_signal(signal, axis=0)[1:])
+plot.semicircle()
 plot.show()
 
 # %%

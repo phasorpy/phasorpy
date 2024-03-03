@@ -28,25 +28,23 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
 import numpy
-from matplotlib import pyplot
+from matplotlib import patheffects, pyplot
+from matplotlib.font_manager import FontProperties
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
 from matplotlib.patches import Arc, Polygon
+from matplotlib.path import Path
 
 from ._utils import (
     circle_circle_intersection,
     circle_line_intersection,
     parse_kwargs,
-    scale_matrix,
+    phasor_from_polar_scalar,
+    phasor_to_polar_scalar,
     sort_coordinates,
     update_kwargs,
 )
-from .phasor import (
-    phasor_calibrate,
-    phasor_from_lifetime,
-    phasor_semicircle,
-    phasor_to_polar,
-)
+from .phasor import phasor_calibrate, phasor_from_lifetime
 
 GRID_COLOR = '0.5'
 GRID_LINESTYLE = ':'
@@ -66,19 +64,20 @@ class PhasorPlot:
     allquadrants : bool, optional
         Show all quandrants of phasor space.
         By default, only the first quadrant with universal semicricle is shown.
-    ax : matplotlib axis, optional
-        ...
+    ax : matplotlib axes, optional
+        Matplotlib axes used for plotting.
+        By default a new subplot axes is created.
     frequency : float, optional
-        ...
-    grid : bool, optional
-        ...
+        Laser pulse or modulation frequency in MHz.
+    grid : bool, optional, default: False
+        Display polar grid or semicircle.
     **kwargs
         ...
 
     """
 
     _ax: Axes
-    """Matplotlib axis."""
+    """Matplotlib axes."""
 
     _limits: tuple[tuple[float, float], tuple[float, float]]
     """Axes limits (xmin, xmax), (ymin, ymax)."""
@@ -270,8 +269,9 @@ class PhasorPlot:
         real: ArrayLike,
         imag: ArrayLike,
         /,
+        **kwargs: Any,
     ) -> None:
-        """Plot contours of imag versus real coordinates.
+        """Plot contours of imag versus real coordinates (not implemented).
 
         Parameters
         ----------
@@ -280,6 +280,8 @@ class PhasorPlot:
         imag : array_like
             Imaginary component of phasor coordinates.
             Must be of same shape as `real`.
+        **kwargs
+            Additional parameters passed to :meth:`matplotlib.pyplot.contour`.
 
         """
         raise NotImplementedError
@@ -288,13 +290,16 @@ class PhasorPlot:
         self,
         image: ArrayLike,
         /,
+        **kwargs: Any,
     ) -> None:
-        """Plot an image, for example, a 2D histogram.
+        """Plot an image, for example, a 2D histogram (not implemented).
 
         Parameters
         ----------
         image : array_like
             Image to display.
+        **kwargs
+            Additional parameters passed to :meth:`matplotlib.pyplot.imshow`.
 
         """
         raise NotImplementedError
@@ -317,6 +322,9 @@ class PhasorPlot:
             Imaginary component of phasor coordinates.
         fraction: sequence of float, optional
             ...
+        **kwargs
+            Additional parameters passed to matplotlib's
+            ``Polygon`` or ``Line``.
 
         """
         if fraction is None:
@@ -354,16 +362,16 @@ class PhasorPlot:
         radius: float,
         **kwargs: Any,
     ) -> None:
-        """Draw circle of radius around center point.
+        """Draw circle of radius around center.
 
         Parameters
         ----------
         real, imag : float
-            ...
+            Circle center.
         radius : float
-            ...
+            Circle radius.
         **kwargs
-            ...
+            Additional parameters passed to :meth:`matplotlib.pyplot.Circle`.
 
         """
         update_kwargs(
@@ -400,7 +408,8 @@ class PhasorPlot:
         radius : float, optional
             ...
         **kwargs
-            ...
+            Additional parameters passed to :meth:`matplotlib.pyplot.Circle`
+            or ``Arc``.
 
         """
         update_kwargs(
@@ -472,7 +481,8 @@ class PhasorPlot:
         Parameters
         ----------
         **kwargs
-            ...
+            Additional parameters passed to :meth:`matplotlib.pyplot.Circle`
+            or ``Line2D``.
 
         """
         ax = self._ax
@@ -511,7 +521,7 @@ class PhasorPlot:
         polar_reference: tuple[float, float] | None = None,
         phasor_reference: tuple[float, float] | None = None,
         lifetime: Sequence[float] | None = None,
-        samples: int = 255,
+        labels: Sequence[str] | None = None,
         **kwargs,
     ) -> None:
         """Draw universal semicircle.
@@ -519,17 +529,18 @@ class PhasorPlot:
         Parameters
         ----------
         frequency : float, optional
-            ...
+            Laser pulse or modulation frequency in MHz.
         polar_reference : (float, float), optional
-            ...
+            Polar coordinates of zero lifetime. The default is (0, 1).
         phasor_reference : (float, float), optional
-            ...
+            Phasor coordinates of zero lifetime.
+            Alternative to `polar_reference`. The default is (1, 0).
         lifetime : sequence of float, optional
-            ...
-        samples : int, optional
-            ...
+            Apparent single lifetimes at which to draw ticks and labels.
+        labels : sequence of str, optional
+            Tick labels. By default, the values of `lifetime`.
         **kwargs
-            ...
+            Additional parameters passed to matplotlib's ``Arc`` or ``plot``.
 
         """
         update_kwargs(
@@ -539,39 +550,145 @@ class PhasorPlot:
             linewidth=GRID_LINEWIDH,
         )
         if phasor_reference is not None:
-            polar_reference = phasor_to_polar(
-                *phasor_reference
-            )  # type: ignore
+            polar_reference = phasor_to_polar_scalar(*phasor_reference)
         if polar_reference is None:
             polar_reference = (0.0, 1.0)
+        if phasor_reference is None:
+            phasor_reference = phasor_from_polar_scalar(*polar_reference)
         ax = self._ax
-        ax.plot(
-            *phasor_calibrate(*phasor_semicircle(samples), *polar_reference),
-            **kwargs,
+        # draw circle
+        ax.add_patch(
+            Arc(
+                (phasor_reference[0] / 2, phasor_reference[1] / 2),
+                polar_reference[1],
+                polar_reference[1],
+                theta1=math.degrees(polar_reference[0]),
+                theta2=math.degrees(polar_reference[0]) + 180.0,
+                fill=False,
+                **kwargs,
+            )
         )
-        if frequency is not None:
+        if frequency is not None and polar_reference == (0.0, 1.0):
+            # draw ticks and labels
             if lifetime is None:
-                # TODO: choose lifetimes based on frequency
-                lifetime = (0.0, 0.5, 1.0, 2.0, 4.0, 8.0)
-            m = scale_matrix(1.05, (0.5, 0))
-            for x, y, t in zip(
+                lifetime = [0] + [
+                    2**t
+                    for t in range(-8, 32)
+                    if phasor_from_lifetime(frequency, 2**t)[1] >= 0.18
+                ]
+                unit = 'ns'
+            else:
+                unit = ''
+            if labels is None:
+                labels = [f'{tau:g}' for tau in lifetime]
+                try:
+                    labels[2] = f'{labels[2]} {unit}'
+                except IndexError:
+                    pass
+            ax.plot(
                 *phasor_calibrate(
                     *phasor_from_lifetime(frequency, lifetime),
                     *polar_reference,
                 ),
-                lifetime,
-            ):
-                # TODO: use real ticks instead of annotation
-                ax.annotate(
-                    f'{t:g}',
-                    xy=(x, y),
-                    xytext=numpy.dot(m, (x, y, 1))[:2],
-                    arrowprops=dict(arrowstyle='-', color=kwargs['color']),
-                    color=kwargs['color'],
-                    size=10,
-                    ha='center',
-                    va='center',
-                )
+                path_effects=[SemicircleTicks(labels=labels)],
+                **kwargs,
+            )
+
+
+class SemicircleTicks(patheffects.AbstractPathEffect):
+    """Draw ticks on universal semicircle.
+
+    Parameters
+    ----------
+    size : float, optional
+        Length of tick in dots.
+        The default is ``rcParams['xtick.major.size']``.
+    labels : sequence of str, optional
+        Tick labels for each vertex in path.
+    **kwargs
+        Extra keywords passed to :meth:`AbstractPathEffect._update_gc`.
+
+    """
+
+    _size: float  # tick length
+    _labels: tuple[str, ...]  # tick labels
+    _gc: dict[str, Any]  # keywords passed to update_gc
+
+    def __init__(
+        self,
+        size: float | None = None,
+        labels: Sequence[str] | None = None,
+        **kwargs,
+    ):
+        super().__init__((0.0, 0.0))
+
+        if size is None:
+            self._size = pyplot.rcParams['xtick.major.size']
+        else:
+            self._size = size
+        if labels is None:
+            self._labels = ()
+        else:
+            self._labels = tuple(labels)
+        self._gc = kwargs
+
+    def draw_path(self, renderer, gc, tpath, affine, rgbFace=None) -> None:
+        """Draw path with updated gc."""
+        gc0 = renderer.new_gc()
+        gc0.copy_properties(gc)
+
+        # TODO: this uses private methods of the base class
+        gc0 = self._update_gc(gc0, self._gc)  # type: ignore
+        trans = affine + self._offset_transform(renderer)  # type: ignore
+
+        font = FontProperties()
+        # approximate half size of 'x'
+        fontsize = renderer.points_to_pixels(font.get_size_in_points()) / 4
+        size = renderer.points_to_pixels(self._size)
+        origin = affine.transform([[0.5, 0.0]])
+
+        transpath = affine.transform_path(tpath)
+        polys = transpath.to_polygons(closed_only=False)
+
+        for p in polys:
+            # coordinates of tick ends
+            t = p - origin
+            t /= numpy.hypot(t[:, 0], t[:, 1])[:, numpy.newaxis]
+            d = t.copy()
+            t *= size
+            t += p
+
+            xyt = numpy.empty((2 * p.shape[0], 2))
+            xyt[0::2] = p
+            xyt[1::2] = t
+
+            renderer.draw_path(
+                gc0,
+                Path(xyt, numpy.tile([Path.MOVETO, Path.LINETO], p.shape[0])),
+                affine.inverted() + trans,
+                rgbFace,
+            )
+
+            if not self._labels:
+                continue
+            # coordinates of labels
+            t = d * size * 2.5
+            t += p
+
+            if renderer.flipy():
+                h = renderer.get_canvas_width_height()[1]
+            else:
+                h = 0.0
+
+            for s, (x, y), (dx, _) in zip(self._labels, t, d):
+                # TODO: get rendered text size from matplotlib.text.Text?
+                # this did not work:
+                # Text(d[i,0], h - d[i,1], label, ha='center', va='center')
+                x = x + fontsize * len(s.split()[0]) * (dx - 1.0)
+                y = h - y + fontsize
+                renderer.draw_text(gc0, x, y, s, font, 0.0)
+
+        gc0.restore()
 
 
 def plot_phasor(
@@ -608,8 +725,8 @@ def plot_phasor(
     frequency: float, optional
         Frequency of phasor plot.
         If provided, the universal circle is labeled with reference lifetimes.
-    show : bool, optional
-        Display figure. The default is True.
+    show : bool, optional, default: True
+        Display figure.
     **kwargs
         Additional parguments passed to :py:class:`PhasorPlot`,
         :py:meth:`PhasorPlot.plot`, or :py:meth:`PhasorPlot.hist2d`
@@ -688,8 +805,8 @@ def plot_phasor_image(
         for `real` and `imag` the range [-1..1].
     title : str, optional
         Figure title.
-    show : bool, optional
-        Display figure. The default is True.
+    show : bool, optional, default: True
+        Display figure.
     **kwargs
         Additional arguments passed to :func:`matplotlib.pyplot.imshow`.
 
@@ -834,17 +951,17 @@ def plot_signal_image(
     ----------
     signal : array_like
         Image stack. Must be three or more dimensional.
-    axis : int, optional
+    axis : int, optional, default: -1
         Axis over which phasor coordinates would be computed.
         The default is the last axis (-1).
-    percentile : float or (min, max), optional
-        The (q, 100-q) percentiles of image data are covered by colormaps.
+    percentile : float or [float, float], optional
+        The [q, 100-q] percentiles of image data are covered by colormaps.
         By default, the complete value range of `mean` is covered,
         for `real` and `imag` the range [-1..1].
     title : str, optional
         Figure title.
-    show : bool, optional
-        Display figure. The default is True.
+    show : bool, optional, default: True
+        Display figure.
     **kwargs
         Additional arguments passed to :func:`matplotlib.pyplot.imshow`.
 
@@ -903,36 +1020,52 @@ def plot_polar_frequency(
     phase: ArrayLike,
     modulation: ArrayLike,
     *,
+    ax: Axes | None = None,
     title: str | None = None,
+    show: bool = True,
+    **kwargs,
 ) -> None:
     """Plot phase and modulation verus frequency.
 
     Parameters
     ----------
-    frequency : array_like
-        ...
+    frequency : array_like, shape (n, )
+        Laser pulse or modulation frequency in MHz.
     phase : array_like
-        ...
+        Angular component of polar coordinates in radians.
     modulation : array_like
-        ...
+        Radial component of polar coordinates.
+    ax : matplotlib axes, optional
+        Matplotlib axes used for plotting.
+        By default a new subplot axes is created.
     title : str, optional
-        ...
+        Figure title.
+    show : bool, optional, default: True
+        Display figure.
+    **kwargs
+        Additional arguments passed to :func:`matplotlib.pyplot.plot`.
 
     """
-    ax = pyplot.subplots()[1]
-    ax.set_title('Multi-frequency plot' if title is None else title)
+    # TODO: make this customizable: labels, colors, ...
+    if ax is None:
+        ax = pyplot.subplots()[1]
+    if title is None:
+        title = 'Multi-frequency plot'
+    if title:
+        ax.set_title(title)
     ax.set_xscale('log', base=10)
     ax.set_xlabel('frequency (MHz)')
     ax.set_ylabel('phase (°)', color='tab:blue')
     ax.set_yticks([0.0, 30.0, 60.0, 90.0])
     for phi in numpy.array(phase, ndmin=2).swapaxes(0, 1):
-        ax.plot(frequency, numpy.rad2deg(phi), color='tab:blue')
-    ax = ax.twinx()
+        ax.plot(frequency, numpy.rad2deg(phi), color='tab:blue', **kwargs)
+    ax = ax.twinx()  # type: ignore
     ax.set_ylabel('modulation (%)', color='tab:red')
     ax.set_yticks([0.0, 25.0, 50.0, 75.0, 100.0])
     for mod in numpy.array(modulation, ndmin=2).swapaxes(0, 1):
-        ax.plot(frequency, mod * 100, color='tab:red')
-    pyplot.show()
+        ax.plot(frequency, mod * 100, color='tab:red', **kwargs)
+    if show:
+        pyplot.show()
 
 
 def _imshow(

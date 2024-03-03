@@ -13,6 +13,8 @@ __all__: list[str] = [
     'kwargs_notnone',
     'scale_matrix',
     'sort_coordinates',
+    'phasor_to_polar_scalar',
+    'phasor_from_polar_scalar',
     'circle_line_intersection',
     'circle_circle_intersection',
 ]
@@ -150,6 +152,52 @@ def sort_coordinates(
         origin = x.mean(), y.mean()
     indices = numpy.argsort(numpy.arctan2(y - origin[1], x - origin[0]))
     return x[indices], y[indices]
+
+
+def phasor_to_polar_scalar(
+    real: float,
+    imag: float,
+    /,
+    *,
+    degree: bool = False,
+    percent: bool = False,
+) -> tuple[float, float]:
+    """Return polar from scalar phasor coordinates.
+
+    >>> phasor_to_polar_scalar(1.0, 0.0, degree=True, percent=True)
+    (0.0, 100.0)
+
+    """
+    phi = math.atan2(imag, real)
+    mod = math.hypot(imag, real)
+    if degree:
+        phi = math.degrees(phi)
+    if percent:
+        mod *= 100.0
+    return phi, mod
+
+
+def phasor_from_polar_scalar(
+    phase: float,
+    modulation: float,
+    /,
+    *,
+    degree: bool = False,
+    percent: bool = False,
+) -> tuple[float, float]:
+    """Return phasor from scalar polar coordinates.
+
+    >>> phasor_from_polar_scalar(0.0, 100.0, degree=True, percent=True)
+    (1.0, 0.0)
+
+    """
+    if degree:
+        phase = math.radians(phase)
+    if percent:
+        modulation /= 100.0
+    real = modulation * math.cos(phase)
+    imag = modulation * math.sin(phase)
+    return real, imag
 
 
 def circle_circle_intersection(

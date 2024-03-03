@@ -121,7 +121,7 @@ real2, imag2 = numpy.random.multivariate_normal(
 ).T
 
 plot = PhasorPlot(
-    frequency=80.0, title='Combined plots', xlim=(0.35, 1.03), ylim=(0.1, 0.59)
+    title='Combined plots', xlim=(0.35, 1.03), ylim=(0.1, 0.59), grid=False
 )
 plot.hist2d(real, imag, bins=64, cmap='Blues')
 plot.hist2d(real2, imag2, bins=64, cmap='Oranges')
@@ -131,6 +131,7 @@ plot.polar_cursor(math.atan(0.4 / 0.6), math.hypot(0.6, 0.4), color='tab:blue')
 plot.polar_cursor(
     math.atan(0.2 / 0.9), math.hypot(0.9, 0.2), color='tab:orange'
 )
+plot.semicircle(frequency=80.0, color='tab:purple')
 plot.show()
 
 # %%
