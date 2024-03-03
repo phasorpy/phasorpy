@@ -10,8 +10,8 @@ lifetime and hyperspectral images using the phasor approach.
 
 PhasorPy is a community-maintained project.
 [Contributions](https://www.phasorpy.org/stable/contributing.html)
-in the form of bug reports, bug fixes, documentation, and enhancement
-proposals are welcome.
+in the form of bug reports, bug fixes, feature implementations, documentation,
+datasets, and enhancement proposals are welcome.
 
 The development of the PhasorPy library is supported by the
 [Chan Zuckerberg Initiative](https://chanzuckerberg.com/eoss/proposals/phasorpy-a-python-library-for-phasor-analysis-of-flim-and-spectral-imaging).
