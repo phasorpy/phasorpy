@@ -770,7 +770,7 @@ def plot_phasor(
     imag: ArrayLike,
     /,
     *,
-    style: Literal['plot', 'hist2d'] | None = None,
+    style: Literal['plot', 'hist2d', 'contour'] | None = None,
     allquadrants: bool | None = None,
     frequency: float | None = None,
     show: bool = True,
@@ -787,9 +787,8 @@ def plot_phasor(
     imag : array_like
         Imaginary component of phasor coordinates.
         Must be of same shape as `real`.
-    style : {'plot', 'hist2d'}, optional
-        Method used to plot phasor coordinates:
-        :py:meth:`PhasorPlot.plot` or :py:meth:`PhasorPlot.hist2d`.
+    style : {'plot', 'hist2d', 'contour'}, optional
+        Method used to plot phasor coordinates.
         By default, if the number of coordinates are less than 65536
         and the arrays are less than three-dimensional, `'plot'` style is used,
         else `'hist2d'`.
@@ -803,8 +802,8 @@ def plot_phasor(
         Display figure.
     **kwargs
         Additional parguments passed to :py:class:`PhasorPlot`,
-        :py:meth:`PhasorPlot.plot`, or :py:meth:`PhasorPlot.hist2d`
-        depending on `style`.
+        :py:meth:`PhasorPlot.plot`, :py:meth:`PhasorPlot.hist2d`, or
+        :py:meth:`PhasorPlot.contour` depending on `style`.
 
     """
     init_kwargs = parse_kwargs(
@@ -831,6 +830,8 @@ def plot_phasor(
         plot.plot(real, imag, **kwargs)
     elif style == 'hist2d':
         plot.hist2d(real, imag, **kwargs)
+    elif style == 'contour':
+        plot.contour(real, imag, **kwargs)
     else:
         raise ValueError(f'invalid {style=}')
     if show:

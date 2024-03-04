@@ -223,6 +223,17 @@ def test_plot_phasor():
     )
     pyplot.close()
 
+    plot_phasor(
+        real,
+        imag,
+        style='contour',
+        title='contour',
+        cmap='viridis',
+        levels=4,
+        show=INTERACTIVE,
+    )
+    pyplot.close()
+
     with pytest.raises(ValueError):
         plot_phasor(0, 0, style='invalid')
 
