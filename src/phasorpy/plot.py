@@ -217,6 +217,32 @@ class PhasorPlot:
         if label is not None:
             ax.legend()
 
+    def _histogram2d(
+        self,
+        real: ArrayLike,
+        imag: ArrayLike,
+        /,
+        **kwargs: Any,
+    ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+        """Return 2D histogram of imag versus real coordinates."""
+        update_kwargs(kwargs, range=self._limits)
+        (xmin, xmax), (ymin, ymax) = kwargs['range']
+        assert xmax > xmin and ymax > ymin
+        bins = kwargs.get('bins', 128)
+        if isinstance(bins, int):
+            assert bins > 0
+            aspect = (xmax - xmin) / (ymax - ymin)
+            if aspect > 1:
+                bins = (bins, max(int(bins / aspect), 1))
+            else:
+                bins = (max(int(bins * aspect), 1), bins)
+        kwargs['bins'] = bins
+        return numpy.histogram2d(
+            numpy.asanyarray(real).reshape(-1),
+            numpy.asanyarray(imag).reshape(-1),
+            **kwargs,
+        )
+
     def hist2d(
         self,
         real: ArrayLike,
@@ -234,37 +260,23 @@ class PhasorPlot:
             Imaginary component of phasor coordinates.
             Must be of same shape as `real`.
         **kwargs
-            Additional parameters passed to
-            py:meth:`matplotlib.axes.Axes.hist2d`.
+            Additional parameters passed to :py:meth:`numpy.histogram2d`
+            and :py:meth:`matplotlib.axes.Axes.pcolormesh`.
 
         """
-        update_kwargs(
-            kwargs,
-            range=self._limits,
-            cmap='Blues',
-            norm='log',
-            cmin=1,
+        kwargs_hist2d = parse_kwargs(
+            kwargs, 'bins', 'range', 'density', 'weights'
         )
+        h, xedges, yedges = self._histogram2d(real, imag, **kwargs_hist2d)
 
-        (xmin, xmax), (ymin, ymax) = kwargs['range']
-        assert xmax > xmin and ymax > ymin
-
-        bins = kwargs.get('bins', 128)
-        if isinstance(bins, int):
-            assert bins > 0
-            aspect = (xmax - xmin) / (ymax - ymin)
-            if aspect > 1:
-                bins = (bins, max(int(bins / aspect), 1))
-            else:
-                bins = (max(int(bins * aspect), 1), bins)
-        kwargs['bins'] = bins
-
-        real = numpy.asanyarray(real).reshape(-1)
-        imag = numpy.asanyarray(imag).reshape(-1)
-        self._ax.hist2d(real, imag, **kwargs)
-
-        # matplotlib's hist2d sets it's own axes limits, so reset it
-        self._ax.set(xlim=self._limits[0], ylim=self._limits[1])
+        update_kwargs(kwargs, cmap='Blues', norm='log')
+        cmin = kwargs.pop('cmin', 1)
+        cmax = kwargs.pop('cmax', None)
+        if cmin is not None:
+            h[h < cmin] = None
+        if cmax is not None:
+            h[h > cmax] = None
+        self._ax.pcolormesh(xedges, yedges, h.T, **kwargs)
 
     def contour(
         self,
@@ -283,11 +295,18 @@ class PhasorPlot:
             Imaginary component of phasor coordinates.
             Must be of same shape as `real`.
         **kwargs
-            Additional parameters passed to
-            py:meth:`matplotlib.axes.Axes.contour`.
+            Additional parameters passed to :py:func:`numpy.histogram2d`
+            and :py:meth:`matplotlib.axes.Axes.contour`.
 
         """
-        raise NotImplementedError
+        update_kwargs(kwargs, cmap='Blues', norm='log')
+        kwargs_hist2d = parse_kwargs(
+            kwargs, 'bins', 'range', 'density', 'weights'
+        )
+        h, xedges, yedges = self._histogram2d(real, imag, **kwargs_hist2d)
+        xedges = xedges[:-1] + (xedges[1] - xedges[0])
+        yedges = yedges[:-1] + (yedges[1] - yedges[0])
+        self._ax.contour(xedges, yedges, h.T, **kwargs)
 
     def imshow(
         self,
@@ -303,7 +322,7 @@ class PhasorPlot:
             Image to display.
         **kwargs
             Additional parameters passed to
-            py:meth:`matplotlib.axes.Axes.imshow`.
+            :py:meth:`matplotlib.axes.Axes.imshow`.
 
         """
         raise NotImplementedError

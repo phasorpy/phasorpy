@@ -95,8 +95,8 @@ plot.show()
 #
 # Plot the contours of the density of phasor coordinates:
 
-plot = PhasorPlot(frequency=80.0, title='Contours (not implemented yet)')
-# plot.contour(real, imag)
+plot = PhasorPlot(frequency=80.0, title='Contours')
+plot.contour(real, imag)
 plot.show()
 
 
@@ -124,6 +124,7 @@ plot = PhasorPlot(
     title='Combined plots', xlim=(0.35, 1.03), ylim=(0.1, 0.59), grid=False
 )
 plot.hist2d(real, imag, bins=64, cmap='Blues')
+plot.contour(real, imag, bins=48, levels=3, cmap='summer_r', norm='log')
 plot.hist2d(real2, imag2, bins=64, cmap='Oranges')
 plot.plot(0.6, 0.4, '.', color='tab:blue')
 plot.plot(0.9, 0.2, '.', color='tab:orange')

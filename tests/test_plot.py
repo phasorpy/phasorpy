@@ -71,21 +71,32 @@ class TestPhasoPlot:
         )
         self.show(plot)
 
-    @pytest.mark.parametrize('allquadrants', (True, False))
-    def test_hist2d(self, allquadrants):
+    def test_hist2d(self):
         """Test hist2d method."""
         real, imag = numpy.random.multivariate_normal(
             (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
         ).T
-        plot = PhasorPlot(title='hist2d', allquadrants=allquadrants)
+        plot = PhasorPlot(title='hist2d')
         plot.hist2d(real, imag)
+        self.show(plot)
+
+        plot = PhasorPlot(title='hist2d parameters', allquadrants=True)
+        plot.hist2d(
+            real, imag, bins=100, cmax=500, cmap='viridis', norm='linear'
+        )
         self.show(plot)
 
     def test_contour(self):
         """Test contour method."""
+        real, imag = numpy.random.multivariate_normal(
+            (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
+        ).T
         plot = PhasorPlot(title='contour')
-        with pytest.raises(NotImplementedError):
-            plot.contour([[0]], [[0]])
+        plot.contour(real, imag)
+        self.show(plot)
+
+        plot = PhasorPlot(title='contour parameters', allquadrants=True)
+        plot.contour(real, imag, bins=200, cmap='viridis', norm='linear')
         self.show(plot)
 
     def test_imshow(self):
