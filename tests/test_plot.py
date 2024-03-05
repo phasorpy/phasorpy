@@ -18,8 +18,8 @@ from phasorpy.plot import (
 INTERACTIVE = False  # enable for interactive plotting
 
 
-class TestPhasoPlot:
-    """Test the PhasorPlot class."""
+class TestPhasorPlot:
+    """Test PhasorPlot class."""
 
     def show(self, plot):
         """Show plot."""

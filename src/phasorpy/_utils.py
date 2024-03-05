@@ -37,7 +37,7 @@ def parse_kwargs(
 ) -> dict[str, Any]:
     """Return dict with keys from keys|keyvals and values from kwargs|keyvals.
 
-    If `_delete`, existing keys are deleted from `kwargs`.
+    If `_del` is true (default), existing keys are deleted from `kwargs`.
 
     >>> kwargs = {'one': 1, 'two': 2, 'four': 4}
     >>> kwargs2 = parse_kwargs(kwargs, 'two', 'three', four=None, five=5)
@@ -129,7 +129,7 @@ def sort_coordinates(
     real, imag : array_like
         Coordinates to be sorted.
     origin : (float, float)
-        ...
+        Coordinates around which to sort by angle.
 
     Returns
     -------

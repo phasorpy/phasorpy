@@ -28,12 +28,13 @@ if TYPE_CHECKING:
     from matplotlib.figure import Figure
 
 import numpy
-from matplotlib import patheffects, pyplot
+from matplotlib import pyplot
 from matplotlib.font_manager import FontProperties
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
 from matplotlib.patches import Arc, Circle, Polygon
 from matplotlib.path import Path
+from matplotlib.patheffects import AbstractPathEffect
 
 from ._utils import (
     circle_circle_intersection,
@@ -66,10 +67,10 @@ class PhasorPlot:
         By default, only the first quadrant with universal semicricle is shown.
     ax : matplotlib axes, optional
         Matplotlib axes used for plotting.
-        By default a new subplot axes is created.
+        By default, a new subplot axes is created.
     frequency : float, optional
         Laser pulse or modulation frequency in MHz.
-    grid : bool, optional, default: False
+    grid : bool, optional, default: True
         Display polar grid or semicircle.
     **kwargs
         Additional properties to set on `ax`.
@@ -89,7 +90,7 @@ class PhasorPlot:
         self,
         /,
         allquadrants: bool | None = None,
-        ax: Any = None,
+        ax: Axes | None = None,
         *,
         frequency: float | None = None,
         grid: bool = True,
@@ -186,8 +187,8 @@ class PhasorPlot:
         imag : array_like
             Imaginary component of phasor coordinates.
             Must be of same shape as `real`.
-        fmt : str, optional
-            Matplotlib style format string. The default is 'o'.
+        fmt : str, optional, default: 'o'
+            Matplotlib style format string.
         label : str or sequence of str, optional
             Plot label.
             May be a sequence if phasor coordinates are two dimensional arrays.
@@ -394,9 +395,9 @@ class PhasorPlot:
 
         Parameters
         ----------
-        real : array_like
+        real : array_like, shape (n, )
             Real components of line start and end coordinates.
-        imag : array_like
+        imag : array_like, shape (n, )
             Imaginary components of line start and end coordinates.
         **kwargs
             Additional parameters passed to
@@ -595,18 +596,18 @@ class PhasorPlot:
         ----------
         frequency : float, optional
             Laser pulse or modulation frequency in MHz.
-        polar_reference : (float, float), optional
-            Polar coordinates of zero lifetime. The default is (0, 1).
-        phasor_reference : (float, float), optional
+        polar_reference : (float, float), optional, default: (0, 1)
+            Polar coordinates of zero lifetime.
+        phasor_reference : (float, float), optional, default: (1, 0)
             Phasor coordinates of zero lifetime.
-            Alternative to `polar_reference`. The default is (1, 0).
+            Alternative to `polar_reference`.
         lifetime : sequence of float, optional
             Apparent single lifetimes at which to draw ticks and labels.
             Only applies when `frequency` is specified.
         labels : sequence of str, optional
             Tick labels. By default, the values of `lifetime`.
             Only applies when `frequency` and `lifetime` are specified.
-        show_circle : bool, optional
+        show_circle : bool, optional, default: True
             Draw universal semicircle.
         **kwargs
             Additional parameters passed to
@@ -668,7 +669,7 @@ class PhasorPlot:
             )
 
 
-class SemicircleTicks(patheffects.AbstractPathEffect):
+class SemicircleTicks(AbstractPathEffect):
     """Draw ticks on universal semicircle.
 
     Parameters
@@ -680,7 +681,7 @@ class SemicircleTicks(patheffects.AbstractPathEffect):
         Tick labels for each vertex in path.
     **kwargs
         Extra keywords passed to matplotlib's
-        ``AbstractPathEffect._update_gc``.
+        :py:meth:`matplotlib.patheffects.AbstractPathEffect._update_gc`.
 
     """
 
@@ -1112,9 +1113,9 @@ def plot_polar_frequency(
         Radial component of polar coordinates.
     ax : matplotlib axes, optional
         Matplotlib axes used for plotting.
-        By default a new subplot axes is created.
+        By default, a new subplot axes is created.
     title : str, optional
-        Figure title.
+        Figure title. The default is "Multi-frequency plot".
     show : bool, optional, default: True
         Display figure.
     **kwargs
