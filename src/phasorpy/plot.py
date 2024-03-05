@@ -668,6 +668,12 @@ class PhasorPlot:
                 **kwargs,
             )
 
+        # somehow above code changes the axes limits, so reset them
+        try:
+            self._ax.set(xlim=self._limits[0], ylim=self._limits[1])
+        except AttributeError:
+            pass
+
 
 class SemicircleTicks(AbstractPathEffect):
     """Draw ticks on universal semicircle.
