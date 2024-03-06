@@ -244,6 +244,13 @@ class PhasorPlot:
             **kwargs,
         )
 
+    def _reset_limits(self) -> None:
+        """Reset axes limits."""
+        try:
+            self._ax.set(xlim=self._limits[0], ylim=self._limits[1])
+        except AttributeError:
+            pass
+
     def hist2d(
         self,
         real: ArrayLike,
@@ -278,6 +285,7 @@ class PhasorPlot:
         if cmax is not None:
             h[h > cmax] = None
         self._ax.pcolormesh(xedges, yedges, h.T, **kwargs)
+        self._reset_limits()
 
     def contour(
         self,
@@ -305,9 +313,10 @@ class PhasorPlot:
             kwargs, 'bins', 'range', 'density', 'weights'
         )
         h, xedges, yedges = self._histogram2d(real, imag, **kwargs_hist2d)
-        xedges = xedges[:-1] + (xedges[1] - xedges[0])
-        yedges = yedges[:-1] + (yedges[1] - yedges[0])
+        xedges = xedges[:-1] + ((xedges[1] - xedges[0]) / 2.0)
+        yedges = yedges[:-1] + ((yedges[1] - yedges[0]) / 2.0)
         self._ax.contour(xedges, yedges, h.T, **kwargs)
+        self._reset_limits()
 
     def imshow(
         self,
@@ -667,12 +676,7 @@ class PhasorPlot:
                 path_effects=[SemicircleTicks(labels=labels)],
                 **kwargs,
             )
-
-        # somehow above code changes the axes limits, so reset them
-        try:
-            self._ax.set(xlim=self._limits[0], ylim=self._limits[1])
-        except AttributeError:
-            pass
+        self._reset_limits()
 
 
 class SemicircleTicks(AbstractPathEffect):
