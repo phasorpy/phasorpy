@@ -190,6 +190,10 @@ class TestPhasorPlot:
         plot.semicircle(frequency=80.0, phasor_reference=(0.2, 0.4))
         self.show(plot)
 
+        plot = PhasorPlot(title='limits', xlim=(0.4, 0.6), ylim=(0.4, 0.6))
+        plot.semicircle(frequency=80.0)
+        self.show(plot)
+
 
 def test_plot_phasor():
     """Test plot_phasor function."""
