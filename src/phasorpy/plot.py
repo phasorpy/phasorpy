@@ -45,7 +45,7 @@ from ._utils import (
     sort_coordinates,
     update_kwargs,
 )
-from .phasor import phasor_calibrate, phasor_from_lifetime
+from .phasor import phasor_transform, phasor_from_lifetime
 
 GRID_COLOR = '0.5'
 GRID_LINESTYLE = ':'
@@ -660,7 +660,7 @@ class PhasorPlot:
                 except IndexError:
                     pass
             ax.plot(
-                *phasor_calibrate(
+                *phasor_transform(
                     *phasor_from_lifetime(frequency, lifetime),
                     *polar_reference,
                 ),

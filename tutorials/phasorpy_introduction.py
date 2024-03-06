@@ -124,36 +124,14 @@ reference_signal = tifffile.imread(fetch('Fluorescein_Embryo.tif'))
 _, measured_real, measured_imag = phasor_from_signal(reference_signal, axis=0)
 
 # %%
-# Average the phasor coordinates, assuming there are no spatial aberations:
-
-from phasorpy.phasor import phasor_center
-
-measured_real, measured_imag = phasor_center(measured_real, measured_imag)
-
-# %%
-# Calculate absolute phasor coordinates from the known lifetime of the
-# reference (Fluorescein, 4.2 ns):
-
-from phasorpy.phasor import phasor_from_lifetime
-
-known_real, known_imag = phasor_from_lifetime(frequency, 4.2)
-
-# %%
-# Calculate polar coordinates (phase shift and relative modulation) to
-# correct phasor coordinates:
-
-from phasorpy.phasor import polar_from_reference_phasor
-
-phase0, modulation0 = polar_from_reference_phasor(
-    measured_real, measured_imag, known_real, known_imag
-)
-
-# %%
-# Finally, calibrate the raw phasor coordinates obtained from the signal:
+# Calibrate the raw phasor coordinates obtained from the signal to be
+# calibrated and the reference of known lifetime (Fluorescein, 4.2 ns):
 
 from phasorpy.phasor import phasor_calibrate
 
-real, imag = phasor_calibrate(real, imag, phase0, modulation0)
+real, imag = phasor_calibrate(
+    real, imag, measured_real, measured_imag, frequency=frequency, lifetime=4.2
+)
 
 # %%
 # Filter phasor coordinates

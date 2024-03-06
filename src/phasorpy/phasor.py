@@ -394,14 +394,13 @@ def phasor_calibrate(
     imag: ArrayLike,
     reference_real: ArrayLike,
     reference_imag: ArrayLike,
+    /,
     frequency: ArrayLike,
     lifetime: ArrayLike,
-    /,
     *,
     fraction: ArrayLike | None = None,
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
-    squeeze: bool = True,
     method: Literal['mean', 'median'] = 'mean',
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """
@@ -442,9 +441,6 @@ def phasor_calibrate(
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
-    squeeze : bool, optional
-        If true (default), length-one dimensions are removed from phasor
-        coordinates.
     method : str, optional
         Method used for center calculation:
 
@@ -468,32 +464,34 @@ def phasor_calibrate(
     -----
     This function is a convenience wrapper for the following operations:
 
-    phasor_transform(
-        real,
-        imag,
-        *polar_from_reference_phasor(
-            *phasor_center(
-                reference_real,
-                reference_imag,
-                skip_axes,
-                method,
+    .. code-block:: python
+
+        phasor_transform(
+            real,
+            imag,
+            *polar_from_reference_phasor(
+                *phasor_center(
+                    reference_real,
+                    reference_imag,
+                    skip_axes,
+                    method,
+                ),
+                *phasor_from_lifetime(
+                    frequency,
+                    lifetime,
+                    fraction,
+                    preexponential,
+                    unit_conversion,
+                ),
             ),
-            *phasor_from_lifetime(
-                frequency,
-                lifetime,
-                fraction,
-                preexponential,
-                unit_conversion,
-            ),
-        ),
-    )
+        )
 
     Examples
     --------
     >>> phasor_calibrate(
     ...    [0.1, 0.2, 0.3], [0.4, 0.5, 0.6],
     ...    [0.2, 0.3, 0.4], [0.5, 0.6, 0.7],
-    ...    80, 4
+    ...    frequency=80, lifetime=4
     ... ) # doctest: +NUMBER
     (array([0.0658, 0.132, 0.198]), array([0.2657, 0.332, 0.399]))
 
@@ -518,7 +516,6 @@ def phasor_calibrate(
         fraction,
         preexponential=preexponential,
         unit_conversion=unit_conversion,
-        squeeze=squeeze,
     )
     phi_zero, mod_zero = polar_from_reference_phasor(
         measured_re, measured_im, known_re, known_im
@@ -533,7 +530,7 @@ def phasor_transform(
     modulation_zero: ArrayLike = 1.0,
     /,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return rotated and scaled phasor coordinates.
+    r"""Return rotated and scaled phasor coordinates.
 
     This function rotates and uniformly scales phasor coordinates around the
     origin.
@@ -557,13 +554,29 @@ def phasor_transform(
     real : ndarray
         Real component of rotated and scaled phasor coordinates..
     imag : ndarray
-        Imaginary component of rotated and scaled phasor coordinates..
+        Imaginary component of rotated and scaled phasor coordinates.
 
     Raises
     ------
     ValueError
         The array shapes of `real` and `imag`, or `phase_zero` and
         `modulation_zero` do not match.
+
+    Notes
+    -----
+    The rotation is performed in the polar system by addition of the
+    `phase_zero` (:math:`\phi_{0}`) parameter to the calculated phase
+    (:math:`\phi`) from the real and imaginary components of phasor
+    coordinates:
+    .. math::
+        \phi' &= \phi + \phi_{0}
+
+    The scaling is performed in the polar system by taking the product of the
+    `modulation_zero` (:math:`M_{0}`) parameter with the calculated modulation
+    (:math:`M`) from the real and imaginary components of phasor coordinates:
+    .. math::
+        M' &= M \cdot M_{0}
+
 
     Examples
     --------
@@ -603,7 +616,7 @@ def phasor_transform(
     im_calibrated *= sin
     im *= cos
     im_calibrated += im
-    return re_calibrated, im_calibrated
+    return numpy.asarray(re_calibrated), numpy.asarray(im_calibrated)
 
 
 def polar_from_reference_phasor(
