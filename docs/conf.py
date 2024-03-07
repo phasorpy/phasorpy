@@ -113,3 +113,6 @@ intersphinx_mapping = {
 }
 
 intersphinx_disabled_reftypes = ['*']
+
+# do not show typehints
+autodoc_typehints = 'none'
