@@ -110,9 +110,8 @@ plot_phasor_image(mean, real, imag)
 # ----------------------------
 #
 # Phasor coordinates from time-resolved measurements must be calibrated
-# with the polar coordinates (phase and modulation) obtained from a
-# reference standard of known lifetime, acquired with the same instrument
-# settings.
+# with measurements obtained from a reference standard of known lifetime,
+# acquired with the same instrument settings.
 #
 # Read the signal of the reference measurement from a file:
 
@@ -121,16 +120,23 @@ reference_signal = tifffile.imread(fetch('Fluorescein_Embryo.tif'))
 # %%
 # Calculate phasor coordinates from the measured reference signal:
 
-_, measured_real, measured_imag = phasor_from_signal(reference_signal, axis=0)
+_, reference_real, reference_imag = phasor_from_signal(
+    reference_signal, axis=0
+)
 
 # %%
-# Calibrate the raw phasor coordinates obtained from the signal to be
-# calibrated and the reference of known lifetime (Fluorescein, 4.2 ns):
+# Calibrate the raw phasor coordinates with the reference coordinates of known
+# lifetime (Fluorescein, 4.2 ns):
 
 from phasorpy.phasor import phasor_calibrate
 
 real, imag = phasor_calibrate(
-    real, imag, measured_real, measured_imag, frequency=frequency, lifetime=4.2
+    real,
+    imag,
+    reference_real,
+    reference_imag,
+    frequency=frequency,
+    lifetime=4.2,
 )
 
 # %%

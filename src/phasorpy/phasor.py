@@ -406,7 +406,7 @@ def phasor_calibrate(
     """
     Return calibrated/referenced phasor coordinates.
 
-    Calibration of phasor coordinates in fluorescence lifetime analysis is
+    Calibration of phasor coordinates from time-resolved measurements is
     necessary to account for the instrument response function (IRF) and delays
     in the electronics.
 
@@ -429,11 +429,11 @@ def phasor_calibrate(
         Laser pulse or modulation frequency in MHz.
         A scalar or one-dimensional sequence.
     lifetime : array_like
-        Lifetime components in ns. See notes below for allowed dimensions.
+        Lifetime components in ns. Must be scalar or one dimensional.
     fraction : array_like, optional
         Fractional intensities or pre-exponential amplitudes of the lifetime
         components. Fractions are normalized to sum to 1.
-        See notes below for allowed dimensions.
+        Must be same size as `lifetime`.
     preexponential : bool, optional
         If true, `fraction` values are pre-exponential amplitudes,
         else fractional intensities (default).
@@ -442,7 +442,8 @@ def phasor_calibrate(
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
     method : str, optional
-        Method used for center calculation:
+        Method used for calculating center of `reference_real` and
+        `reference_imag`:
 
         - ``'mean'``: Arithmetic mean of phasor coordinates.
         - ``'median'``: Spatial median of phasor coordinates.
@@ -552,7 +553,7 @@ def phasor_transform(
     Returns
     -------
     real : ndarray
-        Real component of rotated and scaled phasor coordinates..
+        Real component of rotated and scaled phasor coordinates.
     imag : ndarray
         Imaginary component of rotated and scaled phasor coordinates.
 
@@ -564,23 +565,19 @@ def phasor_transform(
 
     Notes
     -----
-    The rotation is performed in the polar system by addition of the
-    `phase_zero` (:math:`\phi_{0}`) parameter to the calculated phase
-    (:math:`\phi`) from the real and imaginary components of phasor
-    coordinates:
+    Rotation and scaling are performed in the polar system by adding
+    `phase_zero` (:math:`\phi_{0}`) to, and multiplying `modulation_zero`
+    (:math:`M_{0}`) with the phase (:math:`\phi`) and modulation (:math:`M`)
+    respectively, calculated from `real` and `imag`:
+
     .. math::
         \phi' &= \phi + \phi_{0}
 
-    The scaling is performed in the polar system by taking the product of the
-    `modulation_zero` (:math:`M_{0}`) parameter with the calculated modulation
-    (:math:`M`) from the real and imaginary components of phasor coordinates:
-    .. math::
         M' &= M \cdot M_{0}
-
 
     Examples
     --------
-    Use scalar reference coordinates to transform/rotate phasor coordinates:
+    Use scalar reference coordinates to rotate and scale phasor coordinates:
 
     >>> phasor_transform(
     ...     [0.1, 0.2, 0.3],
