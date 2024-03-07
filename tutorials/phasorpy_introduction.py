@@ -110,9 +110,8 @@ plot_phasor_image(mean, real, imag)
 # ----------------------------
 #
 # Phasor coordinates from time-resolved measurements must be calibrated
-# with the polar coordinates (phase and modulation) obtained from a
-# reference standard of known lifetime, acquired with the same instrument
-# settings.
+# with coordinates obtained from a reference standard of known lifetime,
+# acquired with the same instrument settings.
 #
 # Read the signal of the reference measurement from a file:
 
@@ -121,39 +120,24 @@ reference_signal = tifffile.imread(fetch('Fluorescein_Embryo.tif'))
 # %%
 # Calculate phasor coordinates from the measured reference signal:
 
-_, measured_real, measured_imag = phasor_from_signal(reference_signal, axis=0)
-
-# %%
-# Average the phasor coordinates, assuming there are no spatial aberations:
-
-from phasorpy.phasor import phasor_center
-
-measured_real, measured_imag = phasor_center(measured_real, measured_imag)
-
-# %%
-# Calculate absolute phasor coordinates from the known lifetime of the
-# reference (Fluorescein, 4.2 ns):
-
-from phasorpy.phasor import phasor_from_lifetime
-
-known_real, known_imag = phasor_from_lifetime(frequency, 4.2)
-
-# %%
-# Calculate polar coordinates (phase shift and relative modulation) to
-# correct phasor coordinates:
-
-from phasorpy.phasor import polar_from_reference_phasor
-
-phase0, modulation0 = polar_from_reference_phasor(
-    measured_real, measured_imag, known_real, known_imag
+_, reference_real, reference_imag = phasor_from_signal(
+    reference_signal, axis=0
 )
 
 # %%
-# Finally, calibrate the raw phasor coordinates obtained from the signal:
+# Calibrate the raw phasor coordinates with the reference coordinates of known
+# lifetime (Fluorescein, 4.2 ns):
 
 from phasorpy.phasor import phasor_calibrate
 
-real, imag = phasor_calibrate(real, imag, phase0, modulation0)
+real, imag = phasor_calibrate(
+    real,
+    imag,
+    reference_real,
+    reference_imag,
+    frequency=frequency,
+    lifetime=4.2,
+)
 
 # %%
 # Filter phasor coordinates

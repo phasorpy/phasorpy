@@ -30,6 +30,7 @@ from phasorpy.phasor import (
     phasor_from_signal_fft,
     phasor_semicircle,
     phasor_to_polar,
+    phasor_transform,
     polar_from_reference,
     polar_from_reference_phasor,
 )
@@ -426,7 +427,7 @@ def test_polar_from_reference_phasor_exceptions():
 
 @pytest.mark.parametrize(
     """real, imag,
-    phase0, modulation0,
+    phase_zero, modulation_zero,
     expected_real, expected_imag""",
     [
         (2, 2, None, None, 2, 2),
@@ -488,29 +489,29 @@ def test_polar_from_reference_phasor_exceptions():
             SYNTH_MOD,
             numpy.array([[39.81570233, 0.79631405], [0.79631405, 0.79631405]]),
             numpy.array([[135.70081005, 2.7140162], [2.7140162, 2.7140162]]),
-        ),  # test with phase0 and modulation0 as arrays
+        ),  # test with phase_zero and modulation_zero as arrays
     ],
 )
-def test_phasor_calibrate(
+def test_phasor_transform(
     real,
     imag,
-    phase0,
-    modulation0,
+    phase_zero,
+    modulation_zero,
     expected_real,
     expected_imag,
 ):
-    """Test `phasor_calibrate` function with various inputs."""
+    """Test `phasor_transform` function with various inputs."""
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
-    if phase0 is not None and modulation0 is not None:
-        calibrated_real, calibrated_imag = phasor_calibrate(
+    if phase_zero is not None and modulation_zero is not None:
+        calibrated_real, calibrated_imag = phasor_transform(
             real_copy,
             imag_copy,
-            phase0,
-            modulation0,
+            phase_zero,
+            modulation_zero,
         )
     else:
-        calibrated_real, calibrated_imag = phasor_calibrate(
+        calibrated_real, calibrated_imag = phasor_transform(
             real_copy, imag_copy
         )
     assert_array_equal(real, real_copy)
@@ -519,12 +520,12 @@ def test_phasor_calibrate(
     assert_almost_equal(calibrated_imag, expected_imag)
 
 
-def test_phasor_calibrate_exceptions():
-    """Test exceptions in `phasor_calibrate` function."""
+def test_phasor_transform_exceptions():
+    """Test exceptions in `phasor_transform` function."""
     with pytest.raises(ValueError):
-        phasor_calibrate(0, 0, [0], [0, 0])
+        phasor_transform(0, 0, [0], [0, 0])
     with pytest.raises(ValueError):
-        phasor_calibrate([0], [0, 0], 0, 0)
+        phasor_transform([0], [0, 0], 0, 0)
 
 
 @pytest.mark.parametrize(
@@ -744,3 +745,175 @@ def test_phasor_from_lifetime_modify():
     assert_array_equal(frequency, 80.0)  # for future revisions
     assert_array_equal(lifetime, [0.0, 1.9894368, 1e9])
     assert_array_equal(fraction, [1.0, 1.0, 1.0])
+
+
+@pytest.mark.parametrize(
+    'args, kwargs, expected',
+    [
+        # scalar data
+        (
+            (2, 2, 2, 2),
+            {'frequency': 80, 'lifetime': 1.9894368},
+            (numpy.array(0.5), numpy.array(0.5)),
+        ),  # single lifetime
+        (
+            (0.5, 0.7, 0.4, 0.3),
+            {'frequency': 80, 'lifetime': 4},
+            (numpy.array(0.11789139), numpy.array(0.75703471)),
+        ),
+        (
+            (-0.5, -0.7, -0.4, -0.3),
+            {'frequency': 80, 'lifetime': 4},
+            (numpy.array(0.11789139), numpy.array(0.75703471)),
+        ),
+        (
+            (2, 2, 2, 2),
+            {
+                'frequency': 80,
+                'lifetime': [3.9788735, 0.9947183],
+                'fraction': [0.25, 0.75],
+            },
+            (numpy.array(0.65), numpy.array(0.4)),
+        ),  # two lifetimes with fractions
+        (
+            (0.5, 0.7, 0.4, 0.3),
+            {
+                'frequency': 80,
+                'lifetime': [3.9788735, 0.9947183],
+                'fraction': [0.25, 0.75],
+            },
+            (numpy.array(0.85800005), numpy.array(0.99399999)),
+        ),
+        (
+            (-0.5, -0.7, -0.4, -0.3),
+            {
+                'frequency': 80,
+                'lifetime': [3.9788735, 0.9947183],
+                'fraction': [0.25, 0.75],
+            },
+            (numpy.array(0.85800005), numpy.array(0.99399999)),
+        ),
+        # list data
+        (
+            (
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+            ),
+            {'frequency': 80, 'lifetime': 4},
+            (
+                numpy.array([0.08499034, 0.16998068, 0.33996135]),
+                numpy.array([0.17088322, 0.34176643, 0.68353286]),
+            ),
+        ),  # single lifetime
+        (
+            (
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+            ),
+            {
+                'frequency': 80,
+                'lifetime': [3.9788735, 0.9947183],
+                'fraction': [0.25, 0.75],
+            },
+            (
+                numpy.array([0.27857144, 0.55714288, 1.11428576]),
+                numpy.array([0.17142856, 0.34285713, 0.68571426]),
+            ),
+        ),  # multiple lifetime
+        (
+            (
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+            ),
+            {
+                'frequency': 80,
+                'lifetime': [3.9788735, 0.9947183],
+                'fraction': [0.25, 0.75],
+                'method': 'median',
+            },
+            (
+                numpy.array([0.32500001, 0.65000002, 1.30000005]),
+                numpy.array([0.19999999, 0.39999998, 0.79999997]),
+            ),
+        ),  # multiple lifetime with median method
+        # array data
+        (
+            (
+                SYNTH_DATA_ARRAY,
+                SYNTH_DATA_ARRAY,
+                SYNTH_DATA_ARRAY,
+                SYNTH_DATA_ARRAY,
+            ),
+            {'frequency': 80, 'lifetime': 4},
+            (
+                numpy.array(
+                    [[0.7483426, 0.01496685], [0.01496685, 0.01496685]]
+                ),
+                numpy.array(
+                    [[1.50463208, 0.03009264], [0.03009264, 0.03009264]]
+                ),
+            ),
+        ),  # single lifetime
+        (
+            (
+                SYNTH_DATA_ARRAY,
+                SYNTH_DATA_ARRAY,
+                SYNTH_DATA_ARRAY,
+                SYNTH_DATA_ARRAY,
+            ),
+            {
+                'frequency': 80,
+                'lifetime': [3.9788735, 0.9947183],
+                'fraction': [0.25, 0.75],
+            },
+            (
+                numpy.array(
+                    [[2.45283028, 0.04905661], [0.04905661, 0.04905661]]
+                ),
+                numpy.array(
+                    [[1.5094339, 0.03018868], [0.03018868, 0.03018868]]
+                ),
+            ),
+        ),  # multiple lifetime
+        (
+            (
+                SYNTH_DATA_ARRAY,
+                SYNTH_DATA_ARRAY,
+                SYNTH_DATA_ARRAY,
+                SYNTH_DATA_ARRAY,
+            ),
+            {
+                'frequency': 80,
+                'lifetime': [3.9788735, 0.9947183],
+                'fraction': [0.25, 0.75],
+                'method': 'median',
+            },
+            (
+                numpy.array(
+                    [[32.50000122, 0.65000002], [0.65000002, 0.65000002]]
+                ),
+                numpy.array(
+                    [[19.9999992, 0.39999998], [0.39999998, 0.39999998]]
+                ),
+            ),
+        ),  # multiple lifetime with median method
+    ],
+)
+def test_phasor_calibrate(args, kwargs, expected):
+    """Test `phasor_calibrate` function with various inputs."""
+    result = phasor_calibrate(*args, **kwargs)
+    assert_almost_equal(result, expected)
+
+
+def test_phasor_calibrate_exceptions():
+    """Test exceptions in `phasor_calibrate` function."""
+    with pytest.raises(ValueError):
+        phasor_calibrate(0, 0, [0], [0, 0], frequency=1, lifetime=1)
+    with pytest.raises(ValueError):
+        phasor_calibrate([0], [0, 0], 0, 0, frequency=1, lifetime=1)
