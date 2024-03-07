@@ -69,6 +69,7 @@ class TestPhasorPlot:
             'x',
             label='3',
         )
+        plot.plot(-0.5, -0.5, label='4')
         self.show(plot)
 
     def test_hist2d(self):
@@ -97,6 +98,18 @@ class TestPhasorPlot:
 
         plot = PhasorPlot(title='contour parameters', allquadrants=True)
         plot.contour(real, imag, bins=200, cmap='viridis', norm='linear')
+        self.show(plot)
+
+    def test_histogram_contour(self):
+        """Test histogram and contour match."""
+        real, imag = numpy.random.multivariate_normal(
+            (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
+        ).T
+        plot = PhasorPlot(
+            title='histogram and contour', xlim=(0.4, 0.8), ylim=(0.25, 0.55)
+        )
+        plot.hist2d(real, imag, bins=32, cmap='Blues')
+        plot.contour(real, imag, bins=32, levels=4, cmap='Reds')
         self.show(plot)
 
     def test_imshow(self):
@@ -188,6 +201,10 @@ class TestPhasorPlot:
             frequency=80.0, title='phasor_reference', xlim=(-0.2, 1.05)
         )
         plot.semicircle(frequency=80.0, phasor_reference=(0.2, 0.4))
+        self.show(plot)
+
+        plot = PhasorPlot(title='limits', xlim=(0.4, 0.6), ylim=(0.4, 0.6))
+        plot.semicircle(frequency=80.0)
         self.show(plot)
 
 
