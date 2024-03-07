@@ -402,6 +402,7 @@ def phasor_calibrate(
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
     method: Literal['mean', 'median'] = 'mean',
+    skip_axes: tuple[int, ...] | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """
     Return calibrated/referenced phasor coordinates.
@@ -447,6 +448,9 @@ def phasor_calibrate(
 
         - ``'mean'``: Arithmetic mean of phasor coordinates.
         - ``'median'``: Spatial median of phasor coordinates.
+    skip_axes : tuple of int, optional
+        Axes to be excluded during center calculation. If None, all
+        axes are considered.
 
     Returns
     -------
@@ -509,7 +513,7 @@ def phasor_calibrate(
             f'!= reference_imag.shape{ref_im.shape}'
         )
     measured_re, measured_im = phasor_center(
-        reference_real, reference_imag, method=method
+        reference_real, reference_imag, skip_axes=skip_axes, method=method
     )
     known_re, known_im = phasor_from_lifetime(
         frequency,
