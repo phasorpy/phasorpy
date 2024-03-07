@@ -110,7 +110,7 @@ plot_phasor_image(mean, real, imag)
 # ----------------------------
 #
 # Phasor coordinates from time-resolved measurements must be calibrated
-# with measurements obtained from a reference standard of known lifetime,
+# with coordinates obtained from a reference standard of known lifetime,
 # acquired with the same instrument settings.
 #
 # Read the signal of the reference measurement from a file:
