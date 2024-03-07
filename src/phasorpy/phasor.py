@@ -513,7 +513,7 @@ def phasor_calibrate(
             f'!= reference_imag.shape{ref_im.shape}'
         )
     measured_re, measured_im = phasor_center(
-        reference_real, reference_imag, skip_axes=skip_axes,method=method
+        reference_real, reference_imag, skip_axes=skip_axes, method=method
     )
     known_re, known_im = phasor_from_lifetime(
         frequency,
