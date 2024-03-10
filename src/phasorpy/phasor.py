@@ -7,17 +7,19 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_from_signal`
   - :py:func:`phasor_from_signal_fft`
 
-- calculate phasor coordinates from single- or multi-component fluorescence
-  lifetimes:
+- convert between phasor coordinates and single- or multi-component
+  fluorescence lifetimes:
 
   - :py:func:`phasor_from_lifetime`
-  - :py:func:`phasor_from_apparent_lifetime` (not implemented yet)
-  - :py:func:`phasor_to_apparent_lifetime` (not implemented yet)
+  - :py:func:`phasor_from_apparent_lifetime`
+  - :py:func:`phasor_to_apparent_lifetime`
 
-- convert between phasor and polar (phase and modulation) coordinates:
+- convert to and from polar coordinates (phase and modulation):
 
   - :py:func:`phasor_from_polar`
   - :py:func:`phasor_to_polar`
+  - :py:func:`polar_from_apparent_lifetime`
+  - :py:func:`polar_to_apparent_lifetime`
 
 - calibrate phasor coordinates with reference of known fluorescence
   lifetime:
@@ -38,17 +40,19 @@ from __future__ import annotations
 __all__ = [
     'phasor_calibrate',
     'phasor_center',
-    # 'phasor_from_apparent_lifetime',
+    'phasor_from_apparent_lifetime',
     'phasor_from_lifetime',
     'phasor_from_polar',
     'phasor_from_signal',
     'phasor_from_signal_fft',
     'phasor_semicircle',
-    # 'phasor_to_apparent_lifetime',
+    'phasor_to_apparent_lifetime',
     'phasor_to_polar',
     'phasor_transform',
     'polar_from_reference',
     'polar_from_reference_phasor',
+    'polar_from_apparent_lifetime',
+    'polar_to_apparent_lifetime',
 ]
 
 import math
@@ -68,7 +72,21 @@ if TYPE_CHECKING:
 
 import numpy
 
-from ._phasor import _phasor_from_lifetime, _phasor_from_signal
+from ._phasor import (
+    _phasor_from_apparent_lifetime,
+    _phasor_from_lifetime,
+    _phasor_from_polar,
+    _phasor_from_signal,
+    _phasor_from_single_lifetime,
+    _phasor_to_apparent_lifetime,
+    _phasor_to_polar,
+    _phasor_transform,
+    _polar_from_apparent_lifetime,
+    _polar_from_reference,
+    _polar_from_reference_phasor,
+    _polar_from_single_lifetime,
+    _polar_to_apparent_lifetime,
+)
 from .utils import number_threads
 
 
@@ -82,7 +100,7 @@ def phasor_from_signal(
     dtype: DTypeLike = None,
     num_threads: int | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-    """Return phasor coordinates from signal.
+    r"""Return phasor coordinates from signal.
 
     Parameters
     ----------
@@ -125,6 +143,20 @@ def phasor_from_signal(
     this function does not use FFT, uses less memory, should be faster for
     few harmonics, supports out-of-order samples, and returns zeros instead
     of nan, inf, or excessively large values.
+
+    The phasor coordinates `real` (:math:`G`), `imag` (:math:`S`), and
+    `mean` (:math:`F_{DC}`) are calculated from :math:`K` samples of the
+    signal :math:`F` af `harmonic` :math:`h` according to:
+
+    .. math::
+
+        F_{DC} &= \frac{1}{K} \sum_{k=0}^{K-1} F_{k}
+
+        G &= \frac{1}{K} \sum_{k=0}^{K-1} F_{k}
+        \cos{\left (2 \pi h \frac{k}{K} \right )} \cdot \frac{1}{F_{DC}}
+
+        S &= \frac{1}{K} \sum_{k=0}^{K-1} F_{k}
+        \sin{\left (2 \pi h \frac{k}{K} \right )} \cdot \frac{1}{F_{DC}}
 
     Raises
     ------
@@ -341,7 +373,7 @@ def phasor_from_signal_fft(
 def phasor_semicircle(
     samples: int = 33, /
 ) -> tuple[NDArray[numpy.float64], NDArray[numpy.float64]]:
-    """Return equally spaced phasor coordinates on universal semicircle.
+    r"""Return equally spaced phasor coordinates on universal semicircle.
 
     Parameters
     ----------
@@ -368,7 +400,11 @@ def phasor_semicircle(
 
     The universal semicircle is composed of the phasor coordinates of
     single lifetime components, where the relation of polar coordinates
-    (phase :math:`φ` and modulation :math:`M`) is :math:`M=cos(φ)`.
+    (phase :math:`\phi` and modulation :math:`M`) is:
+
+    .. math::
+
+        M = \cos{\phi}
 
     Examples
     --------
@@ -438,7 +474,7 @@ def phasor_calibrate(
     preexponential : bool, optional
         If true, `fraction` values are pre-exponential amplitudes,
         else fractional intensities (default).
-    unit_conversion : float
+    unit_conversion : float, optional
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
@@ -534,6 +570,7 @@ def phasor_transform(
     phase_zero: ArrayLike = 0.0,
     modulation_zero: ArrayLike = 1.0,
     /,
+    **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     r"""Return rotated and scaled phasor coordinates.
 
@@ -547,12 +584,13 @@ def phasor_transform(
         Real component of phasor coordinates to transform.
     imag : array_like
         Imaginary component of phasor coordinates to transform.
-    phase_zero : array_like, optional
+    phase_zero : array_like, optional, default: 0.0
         Rotation angle in radians.
-        Defaults to 0.0.
-    modulation_zero : array_like, optional
+    modulation_zero : array_like, optional, default: 1.0
         Uniform scale factor.
-        Defaults to 1.0.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
     -------
@@ -560,24 +598,26 @@ def phasor_transform(
         Real component of rotated and scaled phasor coordinates.
     imag : ndarray
         Imaginary component of rotated and scaled phasor coordinates.
-
-    Raises
-    ------
-    ValueError
-        The array shapes of `real` and `imag`, or `phase_zero` and
-        `modulation_zero` do not match.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Notes
     -----
-    Rotation and scaling are performed in the polar system by adding
-    `phase_zero` (:math:`\phi_{0}`) to, and multiplying `modulation_zero`
-    (:math:`M_{0}`) with the phase (:math:`\phi`) and modulation (:math:`M`)
-    respectively, calculated from `real` and `imag`:
+    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`) are
+    rotated by `phase_zero` (:math:`\phi_{0}`) and scaled by
+    `modulation_zero` (:math:`M_{0}`) around the origin according to:
 
     .. math::
-        \phi' &= \phi + \phi_{0}
 
-        M' &= M \cdot M_{0}
+        g &= M_{0} \cdot \cos{\phi_{0}}
+
+        s &= M_{0} \cdot \sin{\phi_{0}}
+
+        G' &= G \cdot g - S \cdot s
+
+        S' &= G \cdot s + S \cdot g
+
 
     Examples
     --------
@@ -599,25 +639,7 @@ def phasor_transform(
     (array([0.00927, 0.0193, 0.0328]), array([0.206, 0.106, 0.1986]))
 
     """
-    phi_zero = numpy.asarray(phase_zero)
-    mod_zero = numpy.asarray(modulation_zero)
-    if phi_zero.shape != mod_zero.shape:
-        raise ValueError(f'{phi_zero.shape=} != {mod_zero.shape=}')
-    re = numpy.array(real, copy=True, dtype=float)
-    im = numpy.array(imag, copy=True, dtype=float)
-    if re.shape != im.shape:
-        raise ValueError(f'{re.shape=} != {im.shape=}')
-    cos = numpy.cos(phi_zero)
-    cos *= mod_zero
-    sin = numpy.sin(phi_zero)
-    sin *= mod_zero
-    re_calibrated = re * cos
-    re_calibrated -= im * sin
-    im_calibrated = re
-    im_calibrated *= sin
-    im *= cos
-    im_calibrated += im
-    return numpy.asarray(re_calibrated), numpy.asarray(im_calibrated)
+    return _phasor_transform(real, imag, phase_zero, modulation_zero, **kwargs)
 
 
 def polar_from_reference_phasor(
@@ -626,8 +648,9 @@ def polar_from_reference_phasor(
     known_real: ArrayLike,
     known_imag: ArrayLike,
     /,
+    **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return polar coordinates for calibration from reference phasor.
+    r"""Return polar coordinates for calibration from reference phasor.
 
     Return rotation angle and scale factor for calibrating phasor coordinates
     from measured and known phasor coordinates of a reference, for example,
@@ -643,6 +666,9 @@ def polar_from_reference_phasor(
         Real component of reference phasor coordinates.
     known_imag : array_like
         Imaginary component of reference phasor coordinates.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
     -------
@@ -651,11 +677,16 @@ def polar_from_reference_phasor(
     modulation_zero : ndarray
         Radial component of polar coordinates for calibration.
 
-    Raises
-    ------
-    ValueError
-        The array shapes of `measured_real` and `measured_imag`, or
-        `known_real` and `known_imag` do not match.
+    Notes
+    -----
+    This function performs the following operations:
+
+    .. code-block:: python
+
+        polar_from_reference(
+            *phasor_to_polar(measured_real, measured_imag),
+            *phasor_to_polar(known_real, known_imag)
+        )
 
     Examples
     --------
@@ -663,22 +694,9 @@ def polar_from_reference_phasor(
     (0.0, 2.0)
 
     """
-    measured_real = numpy.asarray(measured_real)
-    measured_imag = numpy.asarray(measured_imag)
-    if measured_real.shape != measured_imag.shape:
-        raise ValueError(f'{measured_real.shape=} != {measured_imag.shape=}')
-    known_real = numpy.asarray(known_real)
-    known_imag = numpy.asarray(known_imag)
-    if known_real.shape != known_imag.shape:
-        raise ValueError(f'{known_real.shape=} != {known_imag.shape=}')
-    measured_phi, measured_mod = phasor_to_polar(measured_real, measured_imag)
-    known_phi, known_mod = phasor_to_polar(known_real, known_imag)
-    phase_zero = known_phi - measured_phi
-    modulation_zero = known_mod / measured_mod
-    phase_zero = (
-        phase_zero.item() if numpy.isscalar(modulation_zero) else phase_zero
+    return _polar_from_reference_phasor(
+        measured_real, measured_imag, known_real, known_imag, **kwargs
     )
-    return phase_zero, modulation_zero
 
 
 def polar_from_reference(
@@ -687,8 +705,9 @@ def polar_from_reference(
     known_phase: ArrayLike,
     known_modulation: ArrayLike,
     /,
+    **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return polar coordinates for calibration from reference coordinates.
+    r"""Return polar coordinates for calibration from reference coordinates.
 
     Return rotation angle and scale factor for calibrating phasor coordinates
     from measured and known polar coordinates of a reference, for example,
@@ -704,6 +723,9 @@ def polar_from_reference(
         Angular component of reference polar coordinates in radians.
     known_modulation : array_like
         Radial component of reference polar coordinates.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
     -------
@@ -712,39 +734,28 @@ def polar_from_reference(
     modulation_zero : ndarray
         Radial component of polar coordinates for calibration.
 
-    Raises
-    ------
-    ValueError
-        The array shapes of `measured_phase` and `measured_modulation`, or
-        `known_phase` and `known_modulation` do not match.
-
     Examples
     --------
-    >>> polar_from_reference(0.4, 1.3, 0.2, 0.4)
+    >>> polar_from_reference(0.2, 0.4, 0.4, 1.3)
     (0.2, 3.25)
 
     """
-    measured_phase = numpy.asarray(measured_phase)
-    measured_modulation = numpy.asarray(measured_modulation)
-    if measured_phase.shape != measured_modulation.shape:
-        raise ValueError(
-            f'{measured_phase.shape=} != {measured_modulation.shape=}'
-        )
-    known_phase = numpy.asarray(known_phase)
-    known_modulation = numpy.asarray(known_modulation)
-    if known_phase.shape != known_modulation.shape:
-        raise ValueError(f'{known_phase.shape=} != {known_modulation.shape=}')
-    phase_zero = measured_phase - known_phase
-    modulation_zero = measured_modulation / known_modulation
-    return phase_zero, modulation_zero
+    return _polar_from_reference(
+        measured_phase,
+        measured_modulation,
+        known_phase,
+        known_modulation,
+        **kwargs,
+    )
 
 
 def phasor_to_polar(
     real: ArrayLike,
     imag: ArrayLike,
     /,
+    **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return polar coordinates from phasor coordinates.
+    r"""Return polar coordinates from phasor coordinates.
 
     Parameters
     ----------
@@ -752,6 +763,21 @@ def phasor_to_polar(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Notes
+    -----
+    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
+    are converted to polar coordinates `phase` (:math:`\phi`) and
+    `modulation` (:math:`M`) according to:
+
+    .. math::
+
+        \phi &= \arctan(S / G)
+
+        M &= \sqrt{G^2 + S^2}
 
     Returns
     -------
@@ -759,11 +785,6 @@ def phasor_to_polar(
         Angular component of polar coordinates in radians.
     modulation : ndarray
         Radial component of polar coordinates.
-
-    Raises
-    ------
-    ValueError
-        The shapes of the `real` and `imag` do not match.
 
     Examples
     --------
@@ -773,21 +794,16 @@ def phasor_to_polar(
     (array([0, 0.7854, 1.571]), array([1, 0.7071, 1]))
 
     """
-    real = numpy.asarray(real)
-    imag = numpy.asarray(imag)
-    if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
-    phase = numpy.arctan2(imag, real)
-    modulation = numpy.hypot(real, imag)
-    return phase, modulation
+    return _phasor_to_polar(real, imag, **kwargs)
 
 
 def phasor_from_polar(
     phase: ArrayLike,
     modulation: ArrayLike,
     /,
+    **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return phasor coordinates from polar coordinates.
+    r"""Return phasor coordinates from polar coordinates.
 
     Parameters
     ----------
@@ -795,6 +811,9 @@ def phasor_from_polar(
         Angular component of polar coordinates in radians.
     modulation : array_like
         Radial component of polar coordinates.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
     -------
@@ -803,10 +822,17 @@ def phasor_from_polar(
     imag : ndarray
         Imaginary component of phasor coordinates.
 
-    Raises
-    ------
-    ValueError
-        The shapes of `phase` and `modulation` do not match.
+    Notes
+    -----
+    The polar coordinates `phase` (:math:`\phi`) and `modulation` (:math:`M`)
+    are converted to phasor coordinates `real` (:math:`G`) and
+    `imag` (:math:`S`) according to:
+
+    .. math::
+
+        G &= M \cdot \cos{\phi}
+
+        S &= M \cdot \sin{\phi}
 
     Examples
     --------
@@ -818,15 +844,167 @@ def phasor_from_polar(
     (array([1, 0.5, 0.0]), array([0, 0.5, 1]))
 
     """
-    phase = numpy.asarray(phase)
-    modulation = numpy.asarray(modulation)
-    if phase.shape != modulation.shape:
-        raise ValueError(f'{phase.shape=} != {modulation.shape=}')
-    real = numpy.cos(phase)
-    real *= modulation
-    imag = numpy.sin(phase)
-    imag *= modulation
-    return real, imag
+    return _phasor_from_polar(phase, modulation, **kwargs)
+
+
+def phasor_to_apparent_lifetime(
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    frequency: ArrayLike,
+    *,
+    unit_conversion: float = 1e-3,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    r"""Return single apparent lifetimes from phasor coordinates.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+    unit_conversion : float, optional
+        Product of `frequency` and returned `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    phase_lifetime : ndarray
+        Apparent single lifetime from angular component of phasor coordinates.
+    modulation_lifetime : ndarray
+        Apparent single lifetime from radial component of phasor coordinates.
+
+    Notes
+    -----
+    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
+    are converted to apparent single lifetimes
+    `phase_lifetime` (:math:`\tau_{\phi}`) and
+    `modulation_lifetime` (:math:`\tau_{M}`) at frequency :math:`f`
+    according to:
+
+    .. math::
+
+        \omega &= 2 \pi f
+
+        \tau_{\phi} &= \omega^{-1} \cdot S / G
+
+        \tau_{M} &= \omega^{-1} \cdot \sqrt{1 / (S^2 + G^2) - 1}
+
+    Examples
+    --------
+    The apparent single lifetimes from phase and modulation are equal
+    only if the phasor coordinates lie on the universal circle:
+
+    >>> phasor_to_apparent_lifetime(
+    ...    0.5, [0.5, 0.45], frequency=80
+    ... )  # doctest: +NUMBER
+    (array([1.989, 1.79]), array([1.989, 2.188]))
+
+    Apparent single lifetimes of phasor coordinates outside the universal
+    circle are undefined:
+
+    >>> phasor_to_apparent_lifetime(-0.1, 1.1, 80)  # doctest: +NUMBER
+    (-21.8, 0.0)
+
+    Apparent single lifetimes at the universal circle endpoints are
+    infinite and zero:
+
+    >>> phasor_to_apparent_lifetime([0, 1], [0, 0], 80)  # doctest: +NUMBER
+    (array([inf, 0]), array([inf, 0]))
+
+    """
+    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega *= math.pi * 2 * unit_conversion
+    return _phasor_to_apparent_lifetime(real, imag, omega, **kwargs)
+
+
+def phasor_from_apparent_lifetime(
+    phase_lifetime: ArrayLike,
+    modulation_lifetime: ArrayLike | None,
+    /,
+    frequency: ArrayLike,
+    *,
+    unit_conversion: float = 1e-3,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    r"""Return phasor coordinates from apparent single lifetimes.
+
+    Parameters
+    ----------
+    phase_lifetime : ndarray
+        Apparent single lifetime from phase.
+    modulation_lifetime : ndarray, optional
+        Apparent single lifetime from modulation.
+        If None, `modulation_lifetime` is same as `phase_lifetime`.
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+    unit_conversion : float, optional
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+
+    Notes
+    -----
+    The apparent single lifetimes `phase_lifetime` (:math:`\tau_{\phi}`)
+    and `modulation_lifetime` (:math:`\tau_{M}`) are converted to phasor
+    coordinates `real` (:math:`G`) and `imag` (:math:`S`) at
+    frequency :math:`f` according to:
+
+    .. math::
+
+        \omega &= 2 \pi f
+
+        \phi & = \arctan(\omega \tau_{\phi})
+
+        M &= 1 / \sqrt{1 + (\omega \tau_{M})^2}
+
+        G &= M \cdot \cos{\phi}
+
+        S &= M \cdot \sin{\phi}
+
+    Examples
+    --------
+    If the apparent single lifetimes from phase and modulation are equal,
+    the phasor coordinates lie on the universal circle, else inside:
+
+    >>> phasor_from_apparent_lifetime(
+    ...     1.9894, [1.9894, 2.4113], frequency=80.0
+    ... )  # doctest: +NUMBER
+    (array([0.5, 0.45]), array([0.5, 0.45]))
+
+    Zero and infinite apparent single lifetimes define the endpoints of the
+    universal circle:
+
+    >>> phasor_from_apparent_lifetime(
+    ...     [0.0, 1e9], [0.0, 1e9], frequency=80
+    ... )  # doctest: +NUMBER
+    (array([1, 0.0]), array([0, 0.0]))
+
+    """
+    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega *= math.pi * 2 * unit_conversion
+    if modulation_lifetime is None:
+        return _phasor_from_single_lifetime(phase_lifetime, omega, **kwargs)
+    return _phasor_from_apparent_lifetime(
+        phase_lifetime, modulation_lifetime, omega, **kwargs
+    )
 
 
 def phasor_from_lifetime(
@@ -836,7 +1014,7 @@ def phasor_from_lifetime(
     *,
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
-    squeeze: bool = True,
+    keepdims: bool = False,
 ) -> tuple[NDArray[numpy.float64], NDArray[numpy.float64]]:
     r"""Return phasor coordinates from lifetime components.
 
@@ -855,16 +1033,15 @@ def phasor_from_lifetime(
         Fractional intensities or pre-exponential amplitudes of the lifetime
         components. Fractions are normalized to sum to 1.
         See notes below for allowed dimensions.
-    preexponential : bool, optional
+    preexponential : bool, optional, default: False
         If true, `fraction` values are pre-exponential amplitudes,
-        else fractional intensities (default).
-    unit_conversion : float
+        else fractional intensities.
+    unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
-    squeeze : bool, optional
-        If true (default), length-one dimensions are removed from phasor
-        coordinates.
+    keepdims : bool, optional, default: False
+        If true, length-one dimensions are left in phasor coordinates.
 
     Returns
     -------
@@ -883,23 +1060,26 @@ def phasor_from_lifetime(
     Notes
     -----
     The phasor coordinates :math:`G` (`real`) and :math:`S` (`imag`) for
-    many lifetime components :math:`j` with lifetimes :math:`𝜏` and
-    pre-exponential amplitudes :math:`α` at radial frequency :math:`ω` are:
+    many lifetime components :math:`j` with lifetimes :math:`\tau` and
+    pre-exponential amplitudes :math:`\alpha` at frequency :math:`f` are:
 
     .. math::
-        g_{j} &= a_{j} / (1 + (ω𝜏_{j})^2)
+
+        \omega &= 2 \pi f
+
+        g_{j} &= a_{j} / (1 + (\omega \tau_{j})^2)
 
         G &= \sum_{j} g_{j}
 
-        S &= \sum_{j} ω𝜏_{j}g_{j}
+        S &= \sum_{j} \omega \tau_{j} g_{j}
 
-    The relation between pre-exponential amplitudes :math:`α` and
+    The relation between pre-exponential amplitudes :math:`\alpha` and
     fractional intensities :math:`a` is:
 
     .. math::
-        F_{DC} &= \sum_{j} a_{j}𝜏_{j}
+        F_{DC} &= \sum_{j} a_{j} \tau_{j}
 
-        α_{j} &= a_{j}𝜏_{j} / F_{DC}
+        \alpha_{j} &= a_{j} \tau_{j} / F_{DC}
 
     The following combinations of `lifetime` and `fraction` parameters are
     supported:
@@ -922,8 +1102,8 @@ def phasor_from_lifetime(
       The last dimensions holding lifetime components and their fractions.
       Return arrays of shape `(frequency.size, lifetime.shape[0])`.
 
-    Length-one dimensions are removed from returned arrays if `squeeze` is
-    true.
+    Length-one dimensions are removed from returned arrays
+    if `keepdims` is false (default).
 
     Examples
     --------
@@ -1037,9 +1217,145 @@ def phasor_from_lifetime(
         phasor, frequency, lifetime, fraction, unit_conversion, preexponential
     )
 
-    if squeeze:
+    if not keepdims:
         phasor = phasor.squeeze()
     return phasor[0], phasor[1]
+
+
+def polar_to_apparent_lifetime(
+    phase: ArrayLike,
+    modulation: ArrayLike,
+    /,
+    frequency: ArrayLike,
+    *,
+    unit_conversion: float = 1e-3,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    r"""Return single apparent lifetimes from polar coordinates.
+
+    Parameters
+    ----------
+    phase : array_like
+        Angular component of polar coordinates.
+    imag : array_like
+        Radial component of pholar coordinates.
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+    unit_conversion : float, optional
+        Product of `frequency` and returned `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    phase_lifetime : ndarray
+        Apparent single lifetime from `phase`.
+    modulation_lifetime : ndarray
+        Apparent single lifetime from `modulation`.
+
+    Notes
+    -----
+    The polar coordinates `phase` (:math:`\phi`) and `modulation` (:math:`M`)
+    are converted to apparent single lifetimes
+    `phase_lifetime` (:math:`\tau_{\phi}`) and
+    `modulation_lifetime` (:math:`\tau_{M}`) at frequency :math:`f`
+    according to:
+
+    .. math::
+
+        \omega &= 2 \pi f
+
+        \tau_{\phi} &= \omega^{-1} \cdot \tan{\phi}
+
+        \tau_{M} &= \omega^{-1} \cdot \sqrt{1 / M^2 - 1}
+
+    Examples
+    --------
+    The apparent single lifetimes from phase and modulation are equal
+    only if the polar coordinates lie on the universal circle:
+
+    >>> polar_to_apparent_lifetime(
+    ...     math.pi / 4, numpy.hypot([0.5, 0.45], [0.5, 0.45]), frequency=80
+    ... )  # doctest: +NUMBER
+    (array([1.989, 1.989]), array([1.989, 2.411]))
+
+    """
+    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega *= math.pi * 2 * unit_conversion
+    return _polar_to_apparent_lifetime(phase, modulation, omega, **kwargs)
+
+
+def polar_from_apparent_lifetime(
+    phase_lifetime: ArrayLike,
+    modulation_lifetime: ArrayLike | None,
+    /,
+    frequency: ArrayLike,
+    *,
+    unit_conversion: float = 1e-3,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    r"""Return polar coordinates from apparent single lifetimes.
+
+    Parameters
+    ----------
+    phase_lifetime : ndarray
+        Apparent single lifetime from phase.
+    modulation_lifetime : ndarray, optional
+        Apparent single lifetime from modulation.
+        If None, `modulation_lifetime` is same as `phase_lifetime`.
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+    unit_conversion : float, optional
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    phase : array_like
+        Angular component of polar coordinates.
+    modulation : array_like
+        Radial component of polar coordinates.
+
+    Notes
+    -----
+    The apparent single lifetimes `phase_lifetime` (:math:`\tau_{\phi}`)
+    and `modulation_lifetime` (:math:`\tau_{M}`) are converted to polar
+    coordinates `phase` (:math:`\phi`) and `modulation` (:math:`M`) at
+    frequency :math:`f` according to:
+
+    .. math::
+
+        \omega &= 2 \pi f
+
+        \phi & = \arctan(\omega \tau_{\phi})
+
+        M &= 1 / \sqrt{1 + (\omega \tau_{M})^2}
+
+    Examples
+    --------
+    If the apparent single lifetimes from phase and modulation are equal,
+    the polar coordinates lie on the universal circle, else inside:
+
+    >>> polar_from_apparent_lifetime(
+    ...     1.9894, [1.9894, 2.4113], frequency=80.0
+    ... )  # doctest: +NUMBER
+    (array([0.7854, 0.7854]), array([0.7071, 0.6364]))
+
+    """
+    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega *= math.pi * 2 * unit_conversion
+    if modulation_lifetime is None:
+        return _polar_from_single_lifetime(phase_lifetime, omega, **kwargs)
+    return _polar_from_apparent_lifetime(
+        phase_lifetime, modulation_lifetime, omega, **kwargs
+    )
 
 
 def phasor_center(

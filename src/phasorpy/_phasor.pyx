@@ -7,9 +7,30 @@
 
 """Cython implementation of low-level functions for the PhasorPy package."""
 
+# these lines must be at top of module
+# TODO: https://github.com/cython/cython/issues/6064
+
+cimport numpy
+
+numpy.import_array()
+numpy.import_ufunc()
+
+cimport cython
+
 from cython.parallel import parallel, prange
 
-from libc.math cimport M_PI, NAN, fabs
+from libc.math cimport (
+    INFINITY,
+    M_PI,
+    NAN,
+    atan,
+    atan2,
+    cos,
+    fabs,
+    sin,
+    sqrt,
+    tan,
+)
 from libc.stdint cimport (
     int8_t,
     int16_t,
@@ -348,3 +369,194 @@ def _phasor_from_lifetime(
     raise ValueError(
         f'{lifetime.shape[0]=} and {fraction.shape[0]=} do not match'
     )
+
+
+@cython.ufunc
+cdef (double, double) _phasor_transform(
+    float_t real,
+    float_t imag,
+    float_t angle,
+    float_t scale,
+) noexcept nogil:
+    """Return rotated and scaled phasor coordinates."""
+    cdef:
+        double g = scale * cos(angle)
+        double s = scale * sin(angle)
+
+    return real * g - imag * s, real * s + imag * g
+
+
+@cython.ufunc
+cdef (double, double) _phasor_to_polar(
+    float_t real,
+    float_t imag,
+) noexcept nogil:
+    """Return polar from phasor coordinates."""
+    return atan2(imag, real), sqrt(real * real + imag * imag)
+
+
+@cython.ufunc
+cdef (double, double) _phasor_from_polar(
+    float_t phase,
+    float_t modulation,
+) noexcept nogil:
+    """Return phasor from polar coordinates."""
+    return modulation * cos(phase), modulation * sin(phase)
+
+
+@cython.ufunc
+cdef (double, double) _phasor_to_apparent_lifetime(
+    float_t real,
+    float_t imag,
+    float_t omega,
+) noexcept nogil:
+    """Return apparent single lifetimes from phasor coordinates."""
+    cdef:
+        double tauphi = INFINITY
+        double taumod = INFINITY
+        double t = real * real + imag * imag
+
+    if omega > 0.0 and t > 0:
+        if fabs(real * omega) > 0.0:
+            tauphi = imag / (real * omega)
+        if t <= 1.0:
+            taumod = sqrt(1.0 / t - 1.0) / omega
+        else:
+            taumod = 0.0
+
+    return tauphi, taumod
+
+
+@cython.ufunc
+cdef (double, double) _phasor_from_apparent_lifetime(
+    float_t tauphi,
+    float_t taumod,
+    float_t omega,
+) noexcept nogil:
+    """Return phasor coordinates from apparent single lifetimes."""
+    cdef:
+        double t = omega * taumod
+        double phi = atan(omega * tauphi)
+        double mod = 1.0 / sqrt(1.0 + t * t)
+
+    return mod * cos(phi), mod * sin(phi)
+
+
+@cython.ufunc
+cdef (double, double) _phasor_from_single_lifetime(
+    float_t lifetime,
+    float_t omega,
+) noexcept nogil:
+    """Return phasor coordinates from single lifetime component."""
+    cdef:
+        double t = omega * lifetime
+        double phi = atan(t)
+        double mod = 1.0 / sqrt(1.0 + t * t)
+
+    return mod * cos(phi), mod * sin(phi)
+
+
+@cython.ufunc
+cdef (double, double) _polar_from_single_lifetime(
+    float_t lifetime,
+    float_t omega,
+) noexcept nogil:
+    """Return polar coordinates from single lifetime component."""
+    cdef:
+        double t = omega * lifetime
+
+    return atan(t), 1.0 / sqrt(1.0 + t * t)
+
+
+@cython.ufunc
+cdef (double, double) _polar_to_apparent_lifetime(
+    float_t phase,
+    float_t modulation,
+    float_t omega,
+) noexcept nogil:
+    """Return apparent single lifetimes from polar coordinates."""
+    cdef:
+        double tauphi = INFINITY
+        double taumod = INFINITY
+        double t = modulation * modulation
+
+    if omega > 0.0 and t > 0:
+        tauphi = tan(phase) / omega
+        if t <= 1.0:
+            taumod = sqrt(1.0 / t - 1.0) / omega
+        else:
+            taumod = 0.0
+    return tauphi, taumod
+
+
+@cython.ufunc
+cdef (double, double) _polar_from_apparent_lifetime(
+    float_t tauphi,
+    float_t taumod,
+    float_t omega,
+) noexcept nogil:
+    """Return polar coordinates from apparent single lifetimes."""
+    cdef:
+        double t = omega * taumod
+
+    return atan(omega * tauphi), 1.0 / sqrt(1.0 + t * t)
+
+
+@cython.ufunc
+cdef (double, double) _polar_from_reference(
+    float_t measured_phase,
+    float_t measured_modulation,
+    float_t known_phase,
+    float_t known_modulation,
+) noexcept nogil:
+    """Return polar coordinates for calibration from reference coordinates."""
+    if fabs(measured_modulation) == 0.0:
+        return known_phase - measured_phase, INFINITY
+    return known_phase - measured_phase, known_modulation / measured_modulation
+
+
+@cython.ufunc
+cdef (double, double) _polar_from_reference_phasor(
+    float_t measured_real,
+    float_t measured_imag,
+    float_t known_real,
+    float_t known_imag,
+) noexcept nogil:
+    """Return polar coordinates for calibration from reference phasor."""
+    cdef:
+        double measured_phase = atan2(measured_imag, measured_real)
+        double known_phase = atan2(known_imag, known_real)
+        double measured_modulation = sqrt(
+            measured_real * measured_real + measured_imag * measured_imag
+        )
+        double known_modulation = sqrt(
+            known_real * known_real + known_imag * known_imag
+        )
+
+    if fabs(measured_modulation) == 0.0:
+        return known_phase - measured_phase, INFINITY
+    return known_phase - measured_phase, known_modulation / measured_modulation
+
+
+@cython.ufunc
+cdef float_t _fractional_intensity_to_preexponential_amplitude(
+    float_t fractional_intensity,
+    float_t lifetime,
+    float_t mean,
+) noexcept nogil:
+    """Return preexponential amplitude from fractional intensity."""
+    if fabs(mean) == 0.0:
+        return INFINITY
+    return fractional_intensity * lifetime / mean
+
+
+@cython.ufunc
+cdef float_t _fractional_intensity_from_preexponential_amplitude(
+    float_t preexponential_amplitude,
+    float_t lifetime,
+    float_t mean,
+) noexcept nogil:
+    """Return fractional intensity from preexponential amplitude."""
+    if fabs(lifetime) == 0.0:
+        return INFINITY
+    return preexponential_amplitude / lifetime * mean
