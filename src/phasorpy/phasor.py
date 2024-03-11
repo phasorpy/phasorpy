@@ -81,6 +81,7 @@ from ._phasor import (
     _phasor_to_apparent_lifetime,
     _phasor_to_polar,
     _phasor_transform,
+    _phasor_transform_const,
     _polar_from_apparent_lifetime,
     _polar_from_reference,
     _polar_from_reference_phasor,
@@ -639,6 +640,13 @@ def phasor_transform(
     (array([0.00927, 0.0193, 0.0328]), array([0.206, 0.106, 0.1986]))
 
     """
+    if numpy.ndim(phase_zero) == 0 and numpy.ndim(modulation_zero) == 0:
+        return _phasor_transform_const(
+            real,
+            imag,
+            modulation_zero * numpy.cos(phase_zero),
+            modulation_zero * numpy.sin(phase_zero),
+        )
     return _phasor_transform(real, imag, phase_zero, modulation_zero, **kwargs)
 
 

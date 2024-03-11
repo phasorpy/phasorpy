@@ -387,6 +387,17 @@ cdef (double, double) _phasor_transform(
 
 
 @cython.ufunc
+cdef (double, double) _phasor_transform_const(
+    float_t real,
+    float_t imag,
+    float_t real2,
+    float_t imag2,
+) noexcept nogil:
+    """Return rotated and scaled phasor coordinates."""
+    return real * real2 - imag * imag2, real * imag2 + imag * real2
+
+
+@cython.ufunc
 cdef (double, double) _phasor_to_polar(
     float_t real,
     float_t imag,
@@ -416,7 +427,7 @@ cdef (double, double) _phasor_to_apparent_lifetime(
         double taumod = INFINITY
         double t = real * real + imag * imag
 
-    if omega > 0.0 and t > 0:
+    if omega > 0.0 and t > 0.0:
         if fabs(real * omega) > 0.0:
             tauphi = imag / (real * omega)
         if t <= 1.0:
@@ -436,8 +447,8 @@ cdef (double, double) _phasor_from_apparent_lifetime(
     """Return phasor coordinates from apparent single lifetimes."""
     cdef:
         double t = omega * taumod
-        double phi = atan(omega * tauphi)
         double mod = 1.0 / sqrt(1.0 + t * t)
+        double phi = atan(omega * tauphi)
 
     return mod * cos(phi), mod * sin(phi)
 
@@ -480,7 +491,7 @@ cdef (double, double) _polar_to_apparent_lifetime(
         double taumod = INFINITY
         double t = modulation * modulation
 
-    if omega > 0.0 and t > 0:
+    if omega > 0.0 and t > 0.0:
         tauphi = tan(phase) / omega
         if t <= 1.0:
             taumod = sqrt(1.0 / t - 1.0) / omega
