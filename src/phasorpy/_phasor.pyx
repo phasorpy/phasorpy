@@ -4,6 +4,7 @@
 # cython: wraparound = False
 # cython: cdivision = True
 # cython: nonecheck = False
+# cython: linetrace = True
 
 """Cython implementation of low-level functions for the PhasorPy package."""
 
