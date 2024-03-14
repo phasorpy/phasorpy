@@ -599,9 +599,6 @@ def phasor_transform(
         Real component of rotated and scaled phasor coordinates.
     imag : ndarray
         Imaginary component of rotated and scaled phasor coordinates.
-    **kwargs
-        Optional `arguments passed to numpy universal functions
-        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Notes
     -----

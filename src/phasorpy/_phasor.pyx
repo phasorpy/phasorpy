@@ -305,8 +305,8 @@ def _phasor_from_lifetime(
         with nogil:
             for f in range(nfreq):
                 freq = frequency[f] * twopi  # omega
+                sum = 0.0
                 if not preexponential:
-                    sum = 0.0
                     for s in range(ncomp):
                         sum += fraction[0, s]
                 for t in range(ntau):
