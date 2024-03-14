@@ -126,6 +126,9 @@ ignore_missing_imports = true
 packages = ["phasorpy"]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
 
+[tool.coverage.run]
+plugins = ["Cython.Coverage"]
+
 [tool.coverage.report]
 exclude_lines = ["pragma: no cover", "pragma: ${PY_MAJOR_VERSION} no cover"]
 
