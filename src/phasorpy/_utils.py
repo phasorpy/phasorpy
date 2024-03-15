@@ -23,7 +23,7 @@ import math
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, Sequence, NDArray
+    from ._typing import Any, Sequence, ArrayLike, NDArray
 
 import numpy
 
@@ -117,8 +117,8 @@ def scale_matrix(factor: float, origin: Sequence[float]) -> NDArray[Any]:
 
 
 def sort_coordinates(
-    real: Sequence[float],
-    imag: Sequence[float],
+    real: ArrayLike,
+    imag: ArrayLike,
     /,
     origin: tuple[float, float] | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any]]:

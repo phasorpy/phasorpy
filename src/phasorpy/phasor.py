@@ -57,6 +57,7 @@ __all__ = [
 
 import math
 import warnings
+from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -67,7 +68,6 @@ if TYPE_CHECKING:
         DTypeLike,
         Callable,
         Literal,
-        Sequence,
     )
 
 import numpy
@@ -439,7 +439,7 @@ def phasor_calibrate(
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
     method: Literal['mean', 'median'] = 'mean',
-    skip_axes: tuple[int, ...] | None = None,
+    skip_axes: int | Sequence[int] | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """
     Return calibrated/referenced phasor coordinates.
@@ -485,7 +485,7 @@ def phasor_calibrate(
 
         - ``'mean'``: Arithmetic mean of phasor coordinates.
         - ``'median'``: Spatial median of phasor coordinates.
-    skip_axes : tuple of int, optional
+    skip_axes : int or sequence of int, optional
         Axes to be excluded during center calculation. If None, all
         axes are considered.
 
@@ -1368,7 +1368,7 @@ def phasor_center(
     imag: ArrayLike,
     /,
     *,
-    skip_axes: tuple[int, ...] | None = None,
+    skip_axes: int | Sequence[int] | None = None,
     method: Literal['mean', 'median'] = 'mean',
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return center of phasor coordinates.
@@ -1379,7 +1379,7 @@ def phasor_center(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    skip_axes : tuple of int, optional
+    skip_axes : int or sequence of int, optional
         Axes to be excluded during center calculation. If None, all
         axes are considered.
     method : str, optional
@@ -1399,7 +1399,7 @@ def phasor_center(
     ------
     ValueError
         If the specified method is not supported.
-        If the shapes of the 'real' and 'imag' do not match.
+        If the shapes of the `real` and `imag` do not match.
 
     Examples
     --------
@@ -1424,19 +1424,27 @@ def phasor_center(
     imag = numpy.asarray(imag)
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
+
+    if skip_axes is None:
+        axis = None
+    else:
+        if not isinstance(skip_axes, Sequence):
+            skip_axes = (skip_axes,)
+        if any(i >= real.ndim for i in skip_axes):
+            raise IndexError(f'{skip_axes=} out of range {real.ndim=}')
+        skip_axes = tuple(i % real.ndim for i in skip_axes)
+        axis = tuple(i for i in range(real.ndim) if i not in skip_axes)
+
     return {
         'mean': _mean,
         'median': _median,
     }[
         method
-    ](real, imag, skip_axes)
+    ](real, imag, axis=axis)
 
 
 def _mean(
-    real: NDArray[Any],
-    imag: NDArray[Any],
-    skip_axes: tuple[int, ...] | None = None,
-    /,
+    real: NDArray[Any], imag: NDArray[Any], /, **kwargs: Any
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return the mean center of phasor coordinates.
 
@@ -1446,9 +1454,8 @@ def _mean(
         Real components of phasor coordinates.
     imag : numpy.ndarray
         Imaginary components of phasor coordinates.
-    skip_axes : tuple of int, optional
-        Axes to be excluded during center calculation. If None, all
-        axes are considered.
+    **kwargs
+        Optional arguments passed to :py:func:`numpy.mean`.
 
     Returns
     -------
@@ -1463,20 +1470,11 @@ def _mean(
     (2.0, 5.0)
 
     """
-    if skip_axes is None:
-        return numpy.mean(real), numpy.mean(imag)
-    else:
-        included_axes = tuple(set(range(real.ndim)) - set(skip_axes))
-        return numpy.mean(real, axis=included_axes), numpy.mean(
-            imag, axis=included_axes
-        )
+    return numpy.mean(real, **kwargs), numpy.mean(imag, **kwargs)
 
 
 def _median(
-    real: NDArray[Any],
-    imag: NDArray[Any],
-    skip_axes: tuple[int, ...] | None = None,
-    /,
+    real: NDArray[Any], imag: NDArray[Any], /, **kwargs: Any
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return the spatial median center of phasor coordinates.
 
@@ -1486,9 +1484,8 @@ def _median(
         Real components of the phasor coordinates.
     imag : numpy.ndarray
         Imaginary components of the phasor coordinates.
-    skip_axes : tuple of int, optional
-        Axes to be excluded during center calculation. If None, all
-        axes are considered.
+    **kwargs
+        Optional arguments passed to :py:func:`numpy.median`.
 
     Returns
     -------
@@ -1503,10 +1500,4 @@ def _median(
     (2.0, 5.0)
 
     """
-    if skip_axes is None:
-        return numpy.median(real), numpy.median(imag)
-    else:
-        included_axes = tuple(set(range(real.ndim)) - set(skip_axes))
-        return numpy.median(real, axis=included_axes), numpy.median(
-            imag, axis=included_axes
-        )
+    return numpy.median(real, **kwargs), numpy.median(imag, **kwargs)

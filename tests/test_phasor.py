@@ -614,7 +614,7 @@ def test_phasor_transform_more():
         (
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
-            (0,),
+            0,
             'mean',
             numpy.asarray([25.5, 1.0]),
             numpy.asarray([25.5, 1.0]),
@@ -622,7 +622,7 @@ def test_phasor_transform_more():
         (
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
-            (0,),
+            (-2,),
             'median',
             numpy.asarray([25.5, 1.0]),
             numpy.asarray([25.5, 1.0]),
@@ -655,6 +655,8 @@ def test_phasor_center_exceptions():
         phasor_center(0, 0, method='method_not_supported')
     with pytest.raises(ValueError):
         phasor_center([0], [0, 0])
+    with pytest.raises(IndexError):
+        phasor_center([0, 0], [0, 0], skip_axes=1)
 
 
 @pytest.mark.parametrize(
@@ -1118,3 +1120,11 @@ def test_polar_from_apparent_lifetime():
     )
     assert_allclose(real, real2, atol=1e-3)
     assert_allclose(imag, imag2, atol=1e-3)
+
+    # modulation_lifetime is None
+    phase, modulation = polar_from_apparent_lifetime(
+        [1.989437, 1.790493, 1e9, 0.0], None, frequency=80
+    )
+    real, imag = phasor_from_polar(phase, modulation)
+    assert_allclose(real, [0.5, 0.55248, 0.0, 1.0], atol=1e-3)
+    assert_allclose(imag, [0.5, 0.49723, 0.0, 0.0], atol=1e-3)
