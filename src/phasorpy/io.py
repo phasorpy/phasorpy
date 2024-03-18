@@ -549,6 +549,7 @@ def read_ptu(
     dtype: DTypeLike | None = None,
     frame: int | None = None,
     channel: int | None = None,
+    dtime: int | None = 0,
     keepdims: bool = True,
 ) -> DataArray:
     """Return image histogram and metadata from PicoQuant PTU T3 mode file.
@@ -560,7 +561,7 @@ def read_ptu(
     ----------
     filename : str or Path
         Name of PTU file to read.
-    selection : sequence of index types
+    selection : sequence of index types, optional
         Indices for all dimensions:
 
         - ``None``: return all items along axis (default).
@@ -570,19 +571,24 @@ def read_ptu(
           ``slice.step`` is binning factor.
           If ``slice.step=-1``, integrate all items along axis.
 
-    trimdims : str
-        Axes to trim. The default is ``'TCH'``.
-    dtype : dtype-like
+    trimdims : str, optional, default: 'TCH'
+        Axes to trim.
+    dtype : dtype-like, optional, default: uint16
         Unsigned integer type of image histogram array.
-        The default is ``uint16``. Increase the bit depth to avoid
-        overflows when integrating.
-    frame : int
+        Increase the bit depth to avoid overflows when integrating.
+    frame : int, optional
         If < 0, integrate time axis, else return specified frame.
-        Overrides ``selection`` for axis ``T``.
-    channel : int
+        Overrides `selection` for axis ``T``.
+    channel : int, optional
         If < 0, integrate channel axis, else return specified channel.
-        Overrides ``selection`` for axis ``C``.
-    keepdims :
+        Overrides `selection` for axis ``C``.
+    dtime : int, optional, default: 0
+        Specifies number of bins in image histogram.
+        If 0 (default), return number of bins in one period.
+        If < 0, integrate delay time axis.
+        If > 0, return up to specified bin.
+        Overrides `selection` for axis ``H``.
+    keepdims : bool, optional, default: True
         If true (default), reduced axes are left as size-one dimension.
 
     Returns
@@ -611,7 +617,7 @@ def read_ptu(
     >>> data.dtype
     dtype('uint16')
     >>> data.shape
-    (5, 256, 256, 1, 139)
+    (5, 256, 256, 1, 132)
     >>> data.dims
     ('T', 'Y', 'X', 'C', 'H')
     >>> data.coords['H'].data
@@ -633,11 +639,12 @@ def read_ptu(
             dtype=dtype,
             frame=frame,
             channel=channel,
+            dtime=dtime,
             keepdims=keepdims,
             asxarray=True,
         )
         assert isinstance(data, DataArray)
-        data.attrs['frequency'] = ptu.syncrate * 1e-6  # MHz
+        data.attrs['frequency'] = ptu.frequency * 1e-6  # MHz
 
     return data
 
