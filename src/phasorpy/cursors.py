@@ -125,8 +125,7 @@ def range_cursor(
         values = numpy.array([[3.3, 6, 8], [15, 20, 7]]) 
         ranges = numpy.array([(2, 8), (10, 15), (20, 25)])
         >>> range_cursor(values, ranges)
-        array([[1, 1, 1],
-       [2, 3, 1]])
+        array([[1, 1, 1], [2, 3, 1]])
     """
     values = numpy.asarray(values)
     ranges = numpy.asarray(ranges)
