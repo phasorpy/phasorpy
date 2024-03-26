@@ -10,10 +10,6 @@ The ``phasorpy.cursors`` module provides functions to:
 
 """
 
-# TODO add:
-#   - phase cursors
-#   - rectangular cursos
-
 from __future__ import annotations
 
 __all__ = [
@@ -29,10 +25,12 @@ if TYPE_CHECKING:
 
 import numpy
 
+import warnings
+
 def circular_cursor(
         real: ArrayLike,
         imag: ArrayLike,
-        center: ArrayLike, 
+        center: ArrayLike,
         *,
         radius: ArrayLike=[0.1, 0.1],
         components: int = 2):
@@ -64,14 +62,16 @@ def circular_cursor(
     ValueError
         radius must be greater than zero.
     ValueError
-        components must be at leat 1.
+        components must be at least 1.
 
     Examples
     --------
-    Calculate phasor coordinates of a phase-shifted sinusoidal waveform:
-
-    >>> real = numpy.array([])
-
+    real = numpy.array([-0.5, -0.5, 0.5, 0.5])
+    imag = numpy.array([-0.5, 0.5, -0.5, 0.5])
+    center = numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]])
+    radius = [0.1, 0.1, 0.1, 0.1]
+    >>> circular_cursor(real, imag, center, radius=radius, components=4)
+    array([1., 2., 3., 4.])  
     """
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
@@ -90,60 +90,77 @@ def circular_cursor(
         raise ValueError(f'center lenth array and components must be equal')
 
 
-def rectangular(
-        real: ArrayLike,
-        imag: ArrayLike,
-        
-)
+def range_cursor(
+        value: ArrayLike,
+        range: ArrayLike):
+
+    """Return the labeled mask for each range.
+
+        Parameters
+        ----------
+        value : ndarray
+            An n-dimensional array of values.
+        range : ndarray
+            Represents ranges as (start, end).  
+
+        Returns
+        -------
+        label : ndarray
+            A mask indicating the index of the range each value belongs to.
+
+        Raises
+        ------
+        Warning:
+            Overlapping ranges not recomended.  
+
+        Examples
+        --------
+        Compute the range cursor: 
+        values = numpy.array([[3.3, 6, 8], [15, 20, 7]]) 
+        ranges = numpy.array([(2, 8), (10, 15), (20, 25)])
+        >>> range_cursor(values, ranges)
+        array([[1 1 1] [2 3 1]])
+    """
+    if _overlapping_ranges(range):
+        warnings.warn("Overlapping ranges", UserWarning)
+    mask = numpy.zeros_like(value, dtype=int)
+    # Iterate over each value in the array
+    for index, value in numpy.ndenumerate(value):
+        # Iterate over each range
+        for range_index, (start, end) in enumerate(range):
+            # Check if the value falls within the current range
+            if start <= value <= end:
+                mask[index] = range_index + 1  # Set the index of the current range
+                break
+    return mask
+
+
+def _overlapping_ranges(
+        ranges: ArrayLike):
     
+    """Check if there are overlapping ranges in an array of ranges.
 
+    Parameters
+    ----------
+        ranges : ndarray
+            Represents ranges as (start, end).
 
+    Returns
+    -------
+        bool: True if there are overlapping ranges, False otherwise.
 
-
-tests = False # Prueba gratis
-if tests:
-    
-    caso_base = False
-    if caso_base:
-        real = numpy.array([-0.5, -0.5, 0.5, 0.5])
-        imag = numpy.array([-0.5, 0.5, -0.5, 0.5])
-        center = numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]])
-        radius = [0.1, 0.1, 0.1, 0.1]
-        mask = circular_cursor(real, imag, center, radius=radius, components=4)
-
-    prueba_img = False
-    if prueba_img:
-        real = numpy.random.rand(100, 100)
-        imag = numpy.random.rand(100, 100)
-        center = numpy.transpose([numpy.random.rand(10), numpy.random.rand(10)])
-        radius = numpy.ones(10) * 0.1
-        mask = circular_cursor(real, imag, center, radius=radius, components=10)
-
-        import matplotlib.pyplot as plt
-        plt.imshow(mask, cmap="gray")
-        plt.show()
-
-    testim = False
-    if testim:
-        import tifffile
-        from phasorpy.phasor import phasor_from_signal
-
-        im = tifffile.imread("SP_paramecium.lsm")
-        _, real, imag = phasor_from_signal(im, axis=0)
-        center = numpy.array([[0.5, -0.65], [0.17, -0.77], [0.44, -0.8], [0.7, -0.67]])
-        radius = numpy.ones(4) * 0.15
-        mask = circular_cursor(real, imag, center, radius=radius, components=4)
-
-        plotty = True
-        if plotty:
-            import matplotlib.pyplot as plt
-            plt.imshow(mask, cmap="nipy_spectral")
-            plt.show()
-
-        from phasorpy.plot import plot_phasor, PhasorPlot
-        import matplotlib.pyplot as plt
-
-        ax = plt.subplot(1, 1, 1)
-        plot = PhasorPlot(ax=ax, allquadrants=True, title='Matplotlib axes')
-        plot.hist2d(real, imag, cmap="RdYlGn_r")
-        plt.show()
+    Example
+    -------
+        ranges = [(1, 5), (3, 8), (6, 10), (9, 12)]
+        >>> _overlapping_ranges(ranges)
+        True
+    """
+    # Sort the ranges based on their start values
+    sorted_ranges = sorted(ranges, key=lambda x: x[0])
+    # Iterate through the sorted ranges and check for overlaps
+    for i in range(len(sorted_ranges) - 1):
+        if sorted_ranges[i][1] >= sorted_ranges[i + 1][0]:
+            # Ranges overlap
+            return True
+    # No overlaps found
+    return False
