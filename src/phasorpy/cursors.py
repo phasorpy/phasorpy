@@ -70,7 +70,7 @@ def circular_cursor(
     ...     numpy.array([-0.5, 0.5, -0.5, 0.5]), 
     ...     numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]), 
     ...     radius=[0.1, 0.1, 0.1, 0.1], components=4)
-    array([1., 2., 3., 4.])
+    array([1, 2, 3, 4])
     """
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
@@ -87,8 +87,10 @@ def circular_cursor(
     if len(center) == components:
         label = numpy.zeros(real.shape)
         for i in range (components):
-            condition = (real - center[i][0]) ** 2 + (imag - center[i][1]) ** 2 - radius[i] ** 2
-            label = numpy.where(condition > 0, label, numpy.ones(label.shape) * (i + 1))
+            condition = ((real - center[i][0]) ** 2 
+                         + (imag - center[i][1]) ** 2 - radius[i] ** 2)
+            label = numpy.where(condition > 0, label, 
+                                numpy.ones(label.shape) * (i + 1))
         return label
     else: 
         raise ValueError(f'center length array and components must be equal')
@@ -136,7 +138,8 @@ def range_cursor(
         for range_index, (start, end) in enumerate(ranges):
             # Check if the value falls within the current range
             if start <= value <= end:
-                label[index] = range_index + 1  # Set the index of the current range
+                # Set the index of the current range
+                label[index] = range_index + 1
                 break
     return label
 
