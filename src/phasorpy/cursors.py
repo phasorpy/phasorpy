@@ -70,7 +70,7 @@ def circular_cursor(
     center = numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]])
     radius = [0.1, 0.1, 0.1, 0.1]
     >>> circular_cursor(real, imag, center, radius=radius, components=4)
-    array([1., 2., 3., 4.])  
+    array([1., 2., 3., 4.])
     """
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
@@ -118,7 +118,8 @@ def range_cursor(
         values = numpy.array([[3.3, 6, 8], [15, 20, 7]]) 
         ranges = numpy.array([(2, 8), (10, 15), (20, 25)])
         >>> range_cursor(values, ranges)
-        array([[1 1 1] [2 3 1]])
+        array([[1, 1, 1],
+       [2, 3, 1]])
     """
     if _overlapping_ranges(range):
         warnings.warn("Overlapping ranges", UserWarning)
