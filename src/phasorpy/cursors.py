@@ -55,7 +55,6 @@ def circular_cursor(
     label : ndarray
         Labeled matrix for all components. 
 
-
     Raises
     ------
     ValueError
@@ -67,11 +66,10 @@ def circular_cursor(
 
     Examples
     --------
-    real = numpy.array([-0.5, -0.5, 0.5, 0.5])
-    imag = numpy.array([-0.5, 0.5, -0.5, 0.5])
-    center = numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]])
-    radius = [0.1, 0.1, 0.1, 0.1]
-    >>> circular_cursor(real, imag, center, radius=radius, components=4)
+    >>> circular_cursor(numpy.array([-0.5, -0.5, 0.5, 0.5]),
+    ...     numpy.array([-0.5, 0.5, -0.5, 0.5]), 
+    ...     numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]), 
+    ...     radius=[0.1, 0.1, 0.1, 0.1], components=4)
     array([1., 2., 3., 4.])
     """
     real = numpy.asarray(real)
@@ -104,9 +102,9 @@ def range_cursor(
 
         Parameters
         ----------
-        value : ndarray
+        values : ndarray
             An n-dimensional array of values.
-        range : ndarray
+        ranges : ndarray
             Represents ranges as (start, end).  
 
         Returns
@@ -122,9 +120,8 @@ def range_cursor(
         Examples
         --------
         Compute the range cursor: 
-        values = numpy.array([[3.3, 6, 8], [15, 20, 7]]) 
-        ranges = numpy.array([(2, 8), (10, 15), (20, 25)])
-        >>> range_cursor(values, ranges)
+        >>> range_cursor(numpy.array([[3.3, 6, 8], [15, 20, 7]]), 
+        ...     numpy.array([(2, 8), (10, 15), (20, 25)]))
         array([[1, 1, 1], [2, 3, 1]])
     """
     values = numpy.asarray(values)
@@ -132,16 +129,16 @@ def range_cursor(
 
     if _overlapping_ranges(ranges):
         warnings.warn("Overlapping ranges", UserWarning)
-    mask = numpy.zeros_like(values, dtype=int)
+    label = numpy.zeros_like(values, dtype=int)
     # Iterate over each value in the array
     for index, value in numpy.ndenumerate(values):
         # Iterate over each range
         for range_index, (start, end) in enumerate(ranges):
             # Check if the value falls within the current range
             if start <= value <= end:
-                mask[index] = range_index + 1  # Set the index of the current range
+                label[index] = range_index + 1  # Set the index of the current range
                 break
-    return mask
+    return label
 
 
 def _overlapping_ranges(
@@ -160,8 +157,7 @@ def _overlapping_ranges(
 
     Example
     -------
-        ranges = [(1, 5), (3, 8), (6, 10), (9, 12)]
-        >>> _overlapping_ranges(ranges)
+        >>> _overlapping_ranges([(1, 5), (3, 8), (6, 10), (9, 12)])
         True
     """
     ranges = numpy.asarray(ranges)
