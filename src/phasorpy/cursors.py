@@ -1,6 +1,4 @@
-"""cursors.
-
-The ``phasorpy.cursors`` module provides functions to:
+"""The ``phasorpy.cursors`` module provides functions to:
 
 - use cursors to select region of interest in the phasor:
 
