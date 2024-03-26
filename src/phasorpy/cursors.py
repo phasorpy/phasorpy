@@ -4,8 +4,8 @@ The ``phasorpy.cursors`` module provides functions to:
 
 - use cursors to select region of interest in the phasor:
 
-  - :py:func:`circle`
-  - :py:func:`rectangular`
+  - :py:func:`circular_cursor`
+  - :py:func:`range_cursor`
 
 
 """
@@ -14,8 +14,7 @@ from __future__ import annotations
 
 __all__ = [
     'circular_cursor',
-    'rectangular_cursor',
-    'phase_cursor',
+    'range_cursor',
 ]
 
 from typing import TYPE_CHECKING
