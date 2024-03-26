@@ -120,7 +120,7 @@ reference_signal = tifffile.imread(fetch('Fluorescein_Embryo.tif'))
 # %%
 # Calculate phasor coordinates from the measured reference signal:
 
-_, reference_real, reference_imag = phasor_from_signal(
+reference_mean, reference_real, reference_imag = phasor_from_signal(
     reference_signal, axis=0
 )
 

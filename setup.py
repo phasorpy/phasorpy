@@ -13,7 +13,12 @@ if sys.platform == 'win32':
     extra_compile_args = ['/openmp']
     extra_link_args: list[str] = []
     if DEBUG:
-        extra_compile_args += ['/Zi', '/Od']
+        extra_compile_args += [
+            '/Zi',
+            '/Od',
+            '/DCYTHON_TRACE=1',
+            # '/DCYTHON_TRACE_NOGIL=1',  # too slow
+        ]
         extra_link_args += ['-debug:full']
 elif sys.platform == 'darwin':
     # OpenMP not available in Xcode

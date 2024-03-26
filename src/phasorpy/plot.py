@@ -339,21 +339,21 @@ class PhasorPlot:
 
     def components(
         self,
-        real: Sequence[float],
-        imag: Sequence[float],
+        real: ArrayLike,
+        imag: ArrayLike,
         /,
-        fraction: Sequence[float] | None = None,
+        fraction: ArrayLike | None = None,
         **kwargs: Any,
     ) -> None:
         """Plot linear combinations of phasor coordinates or ranges thereof.
 
         Parameters
         ----------
-        real : sequence of float
+        real : (N,) array_like
             Real component of phasor coordinates.
-        imag : sequence of float
+        imag : (N,) array_like
             Imaginary component of phasor coordinates.
-        fraction: sequence of float, optional
+        fraction : (N,) array_like, optional
             Weight associated with each component.
             If None (default), outline the polygon area of possible linear
             combinations of components.
@@ -365,6 +365,10 @@ class PhasorPlot:
             :py:class:`matplotlib.lines.Line2D`.
 
         """
+        real = numpy.asanyarray(real)
+        imag = numpy.asanyarray(imag)
+        if real.ndim != 1 or real.shape != imag.shape:
+            raise ValueError(f'invalid {real.shape=} or {imag.shape=}')
         if fraction is None:
             update_kwargs(
                 kwargs,
@@ -611,7 +615,7 @@ class PhasorPlot:
             Phasor coordinates of zero lifetime.
             Alternative to `polar_reference`.
         lifetime : sequence of float, optional
-            Apparent single lifetimes at which to draw ticks and labels.
+            Single component lifetimes at which to draw ticks and labels.
             Only applies when `frequency` is specified.
         labels : sequence of str, optional
             Tick labels. By default, the values of `lifetime`.
@@ -806,7 +810,7 @@ def plot_phasor(
     allquadrants : bool, optional
         Show all quadrants of phasor space.
         By default, only the first quadrant is shown.
-    frequency: float, optional
+    frequency : float, optional
         Frequency of phasor plot.
         If provided, the universal circle is labeled with reference lifetimes.
     show : bool, optional, default: True

@@ -189,13 +189,28 @@ def test_read_flif():
 def test_read_ptu():
     """Test read PicoQuant PTU file."""
     filename = fetch('hazelnut_FLIM_single_image.ptu')
+    data = read_ptu(filename, frame=-1, channel=0, dtime=0, keepdims=False)
+    assert data.values.sum(dtype=numpy.uint64) == 6064854
+    assert data.dtype == numpy.uint16
+    assert data.shape == (256, 256, 132)
+    assert data.dims == ('Y', 'X', 'H')
+    assert_almost_equal(
+        data.coords['H'].data[[1, -1]], [9.69696970e-11, 1.2703030e-08]
+    )
+    assert data.attrs['frequency'] == 78.02
+
     data = read_ptu(
-        filename, frame=-1, channel=0, keepdims=False, trimdims='TC'
+        filename,
+        frame=-1,
+        channel=0,
+        dtime=None,
+        keepdims=True,
+        trimdims='TC',
     )
     assert data.values.sum(dtype=numpy.uint64) == 6065123
     assert data.dtype == numpy.uint16
-    assert data.shape == (256, 256, 4096)
-    assert data.dims == ('Y', 'X', 'H')
+    assert data.shape == (1, 256, 256, 1, 4096)
+    assert data.dims == ('T', 'Y', 'X', 'C', 'H')
     assert_almost_equal(
         data.coords['H'].data[[1, -1]], [9.69696970e-11, 3.97090909e-07]
     )

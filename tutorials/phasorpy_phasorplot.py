@@ -2,9 +2,12 @@
 Phasor plot
 ===========
 
-An introduction to the `PhasorPlot` class.
+An introduction to plotting phasor coordinates.
 
-The :py:class:`phasorpy.plot.PhasorPlot` class is used to ...
+The :py:class:`phasorpy.plot.PhasorPlot` class is used to plot phasor
+coordinates as scattered points, lines, 2D histograms, and contours.
+The plots are supplemented with universal circles, polar grids, polar cursors,
+component mixture indicators, and manual annotations.
 
 """
 
@@ -14,9 +17,8 @@ The :py:class:`phasorpy.plot.PhasorPlot` class is used to ...
 import math
 
 import numpy
-from matplotlib import pyplot
 
-from phasorpy.plot import PhasorPlot, plot_phasor
+from phasorpy.plot import PhasorPlot
 
 # %%
 # Empty phasor plot
@@ -69,7 +71,9 @@ plot.show()
 #
 # Show linear combinations of phasor coordinates or ranges thereof:
 
-real, imag, weights = [0.1, 0.2, 0.5, 0.9], [0.3, 0.4, 0.5, 0.3], [2, 1, 2, 1]
+real, imag, weights = numpy.array(
+    [[0.1, 0.2, 0.5, 0.9], [0.3, 0.4, 0.5, 0.3], [2, 1, 2, 1]]
+)
 
 plot = PhasorPlot(frequency=80.0, title='Component mixtures')
 plot.components(real, imag, linestyle='', fill=True, facecolor='lightyellow')
@@ -148,9 +152,11 @@ plot.show()
 # Matplotlib axes
 # ---------------
 #
-# The PhasorPlot class can use an existing matlotlib axis.
+# The PhasorPlot class can use an existing matlotlib axes.
 # The `PhasorPlot.ax` attribute provides access to the underlying
-# matplotlib axis, for example, to add annotations:
+# matplotlib axes, for example, to add annotations:
+
+from matplotlib import pyplot
 
 ax = pyplot.subplot(1, 1, 1)
 plot = PhasorPlot(ax=ax, allquadrants=True, title='Matplotlib axes')
@@ -170,6 +176,8 @@ pyplot.show()
 #
 # The :py:func:`phasorpy.plot.plot_phasor` function provides a simpler
 # alternative to plot phasor coordinates in a single statement:
+
+from phasorpy.plot import plot_phasor
 
 plot_phasor(real[0, :32], imag[0, :32], fmt='.', frequency=80.0)
 
