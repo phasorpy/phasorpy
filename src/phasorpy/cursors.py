@@ -12,6 +12,8 @@ The ``phasorpy.cursors`` module provides functions to:
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 __all__ = [
     'circular_cursor',
     'range_cursor',
@@ -22,17 +24,17 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ._typing import ArrayLike
 
+import warnings
+
 import numpy
 
-import warnings
 
 def circular_cursor(
         real: ArrayLike,
         imag: ArrayLike,
         center: ArrayLike,
-        *,
-        radius: ArrayLike=[0.1, 0.1],
-        components: int = 2):
+        radius: ArrayLike,
+        components: int):
     """Return labeled mask with components for each circle.
 
     Parameters
@@ -72,6 +74,11 @@ def circular_cursor(
     >>> circular_cursor(real, imag, center, radius=radius, components=4)
     array([1., 2., 3., 4.])
     """
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    center = numpy.asarray(center)
+    radius = numpy.asarray(radius)
+
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
     for i in range(len(radius)):
@@ -86,12 +93,12 @@ def circular_cursor(
             label = numpy.where(condition > 0, label, numpy.ones(label.shape) * (i + 1))
         return label
     else: 
-        raise ValueError(f'center lenth array and components must be equal')
+        raise ValueError(f'center length array and components must be equal')
 
 
 def range_cursor(
-        value: ArrayLike,
-        range: ArrayLike):
+        values: ArrayLike,
+        ranges: ArrayLike):
 
     """Return the labeled mask for each range.
 
@@ -110,7 +117,7 @@ def range_cursor(
         Raises
         ------
         Warning:
-            Overlapping ranges not recomended.  
+            Overlapping ranges not recommended.  
 
         Examples
         --------
@@ -121,13 +128,16 @@ def range_cursor(
         array([[1, 1, 1],
        [2, 3, 1]])
     """
-    if _overlapping_ranges(range):
+    values = numpy.asarray(values)
+    ranges = numpy.asarray(ranges)
+
+    if _overlapping_ranges(ranges):
         warnings.warn("Overlapping ranges", UserWarning)
-    mask = numpy.zeros_like(value, dtype=int)
+    mask = numpy.zeros_like(values, dtype=int)
     # Iterate over each value in the array
-    for index, value in numpy.ndenumerate(value):
+    for index, value in numpy.ndenumerate(values):
         # Iterate over each range
-        for range_index, (start, end) in enumerate(range):
+        for range_index, (start, end) in enumerate(ranges):
             # Check if the value falls within the current range
             if start <= value <= end:
                 mask[index] = range_index + 1  # Set the index of the current range
@@ -155,12 +165,10 @@ def _overlapping_ranges(
         >>> _overlapping_ranges(ranges)
         True
     """
-    # Sort the ranges based on their start values
-    sorted_ranges = sorted(ranges, key=lambda x: x[0])
-    # Iterate through the sorted ranges and check for overlaps
-    for i in range(len(sorted_ranges) - 1):
-        if sorted_ranges[i][1] >= sorted_ranges[i + 1][0]:
-            # Ranges overlap
-            return True
-    # No overlaps found
-    return False
+    ranges = numpy.asarray(ranges)
+    for i in range(len(ranges)):
+        for j in range(i + 1, len(ranges)):
+            # Check if the ranges overlap
+            if ranges[i][0] <= ranges[j][1] and ranges[j][0] <= ranges[i][1]:
+                return True  # Ranges overlap
+    return False  # No overlaps found

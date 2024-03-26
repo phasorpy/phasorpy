@@ -2,15 +2,9 @@
 
 import numpy
 import pytest
+from numpy.testing import assert_array_equal
 
-from numpy.testing import (
-    assert_array_equal,
-)
-
-from phasorpy.cursors import (
-    circular_cursor,
-    range_cursor,
-)
+from phasorpy.cursors import circular_cursor, range_cursor
 
 
 def test_circular_cursor():
