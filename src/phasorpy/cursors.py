@@ -28,11 +28,12 @@ import numpy
 
 
 def circular_cursor(
-        real: ArrayLike,
-        imag: ArrayLike,
-        center: ArrayLike,
-        radius: ArrayLike,
-        components: int):
+    real: ArrayLike,
+    imag: ArrayLike,
+    center: ArrayLike,
+    radius: ArrayLike,
+    components: int,
+):
     """Return labeled mask with components for each circle.
 
     Parameters
@@ -46,12 +47,12 @@ def circular_cursor(
     radius : ndarray
         Radius for each circle.
     components : int
-        Amount of components, default 2. 
+        Amount of components, default 2.
 
     Returns
     -------
     label : ndarray
-        Labeled matrix for all components. 
+        Labeled matrix for all components.
 
     Raises
     ------
@@ -65,8 +66,8 @@ def circular_cursor(
     Examples
     --------
     >>> circular_cursor(numpy.array([-0.5, -0.5, 0.5, 0.5]),
-    ...     numpy.array([-0.5, 0.5, -0.5, 0.5]), 
-    ...     numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]), 
+    ...     numpy.array([-0.5, 0.5, -0.5, 0.5]),
+    ...     numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]),
     ...     radius=[0.1, 0.1, 0.1, 0.1], components=4)
     array([1, 2, 3, 4])
     """
@@ -84,45 +85,46 @@ def circular_cursor(
         raise ValueError(f'components is {components}, must be at least 1')
     if len(center) == components:
         label = numpy.zeros(real.shape)
-        for i in range (components):
-            condition = ((real - center[i][0]) ** 2 
-                         + (imag - center[i][1]) ** 2 - radius[i] ** 2)
-            label = numpy.where(condition > 0, label, 
-                                numpy.ones(label.shape) * (i + 1))
+        for i in range(components):
+            condition = (
+                (real - center[i][0]) ** 2
+                + (imag - center[i][1]) ** 2
+                - radius[i] ** 2
+            )
+            label = numpy.where(
+                condition > 0, label, numpy.ones(label.shape) * (i + 1)
+            )
         return label
-    else: 
+    else:
         raise ValueError(f'center length array and components must be equal')
 
 
-def range_cursor(
-        values: ArrayLike,
-        ranges: ArrayLike):
-
+def range_cursor(values: ArrayLike, ranges: ArrayLike):
     """Return the labeled mask for each range.
 
-        Parameters
-        ----------
-        values : ndarray
-            An n-dimensional array of values.
-        ranges : ndarray
-            Represents ranges as (start, end).  
+    Parameters
+    ----------
+    values : ndarray
+        An n-dimensional array of values.
+    ranges : ndarray
+        Represents ranges as (start, end).
 
-        Returns
-        -------
-        label : ndarray
-            A mask indicating the index of the range each value belongs to.
+    Returns
+    -------
+    label : ndarray
+        A mask indicating the index of the range each value belongs to.
 
-        Raises
-        ------
-        Warning:
-            Overlapping ranges not recommended.  
+    Raises
+    ------
+    Warning:
+        Overlapping ranges not recommended.
 
-        Examples
-        --------
-        Compute the range cursor: 
-        >>> range_cursor(numpy.array([[3.3, 6, 8], [15, 20, 7]]), 
-        ...     numpy.array([(2, 8), (10, 15), (20, 25)]))
-        array([[1, 1, 1], [2, 3, 1]])
+    Examples
+    --------
+    Compute the range cursor:
+    >>> range_cursor(numpy.array([[3.3, 6, 8], [15, 20, 7]]),
+    ...     numpy.array([(2, 8), (10, 15), (20, 25)]))
+    array([[1, 1, 1], [2, 3, 1]])
     """
     values = numpy.asarray(values)
     ranges = numpy.asarray(ranges)
@@ -142,9 +144,7 @@ def range_cursor(
     return label
 
 
-def _overlapping_ranges(
-        ranges: ArrayLike):
-    
+def _overlapping_ranges(ranges: ArrayLike):
     """Check if there are overlapping ranges in an array of ranges.
 
     Parameters
