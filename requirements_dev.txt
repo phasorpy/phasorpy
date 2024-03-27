@@ -24,6 +24,7 @@ sphinx-issues
 sphinx_gallery
 sphinx-copybutton
 sphinx_click
+sphinx-inline-tabs
 numpydoc
 pydata-sphinx-theme
 #
@@ -44,8 +45,8 @@ codespell
 # pre-commit
 #
 # optional requirements
-# scipy
-# scikit-image
+scipy
+scikit-image
 # scikit-learn
 # pandas
 # zarr

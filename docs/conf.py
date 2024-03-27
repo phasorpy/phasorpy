@@ -35,8 +35,10 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.viewcode',
     'sphinx.ext.todo',
+    # don't enable intersphinx since tutorials are getting littered with links
     # 'sphinx.ext.intersphinx',
     # 'numpydoc',
+    'sphinx_inline_tabs',
     'sphinx_copybutton',
     'sphinx_click',
     'sphinx_issues',
@@ -59,7 +61,6 @@ html_logo = '_static/logo.png'
 # html_favicon = ''
 
 pygments_style = 'sphinx'
-intersphinx_mapping = {'https://docs.python.org/': None}
 
 # extension configurations
 
@@ -93,9 +94,25 @@ sphinx_gallery_conf = {
     'filename_pattern': 'phasorpy_',
     'examples_dirs': '../tutorials',
     'gallery_dirs': 'tutorials',
+    'reference_url': {'phasorpy': None},
 }
 
 copybutton_prompt_text = (
     r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
 )
 copybutton_prompt_is_regexp = True
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference/', None),
+    'pandas': ('https://pandas.pydata.org/docs/', None),
+    'sklearn': ('https://scikit-learn.org/stable/', None),
+    'skimage': ('https://scikit-image.org/docs/stable/', None),
+}
+
+intersphinx_disabled_reftypes = ['*']
+
+# do not show typehints
+autodoc_typehints = 'none'
