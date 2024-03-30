@@ -33,6 +33,11 @@ The ``phasorpy.phasor`` module provides functions to:
 
   - :py:func:`phasor_center`
 
+- calculate phasor coordinates for FRET donor and acceptor channels:
+
+  - :py:func:`phasor_from_fret_donor`
+  - :py:func:`phasor_from_fret_acceptor`
+
 """
 
 from __future__ import annotations
@@ -41,6 +46,8 @@ __all__ = [
     'phasor_calibrate',
     'phasor_center',
     'phasor_from_apparent_lifetime',
+    'phasor_from_fret_acceptor',
+    'phasor_from_fret_donor',
     'phasor_from_lifetime',
     'phasor_from_polar',
     'phasor_from_signal',
@@ -74,6 +81,8 @@ import numpy
 
 from ._phasor import (
     _phasor_from_apparent_lifetime,
+    _phasor_from_fret_acceptor,
+    _phasor_from_fret_donor,
     _phasor_from_lifetime,
     _phasor_from_polar,
     _phasor_from_signal,
@@ -238,7 +247,7 @@ def phasor_from_signal(
         if sample_phase is None:
             phase = numpy.linspace(
                 0,
-                h * math.pi * 2,
+                h * math.pi * 2.0,
                 samples,
                 endpoint=False,
                 dtype=numpy.float64,
@@ -861,7 +870,7 @@ def phasor_to_apparent_lifetime(
     unit_conversion: float = 1e-3,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    r"""Return single apparent lifetimes from phasor coordinates.
+    r"""Return apparent single lifetimes from phasor coordinates.
 
     Parameters
     ----------
@@ -926,7 +935,7 @@ def phasor_to_apparent_lifetime(
 
     """
     omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
-    omega *= math.pi * 2 * unit_conversion
+    omega *= math.pi * 2.0 * unit_conversion
     return _phasor_to_apparent_lifetime(real, imag, omega, **kwargs)
 
 
@@ -960,9 +969,9 @@ def phasor_from_apparent_lifetime(
 
     Returns
     -------
-    real : array_like
+    real : ndarray
         Real component of phasor coordinates.
-    imag : array_like
+    imag : ndarray
         Imaginary component of phasor coordinates.
 
     Notes
@@ -1004,7 +1013,7 @@ def phasor_from_apparent_lifetime(
 
     """
     omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
-    omega *= math.pi * 2 * unit_conversion
+    omega *= math.pi * 2.0 * unit_conversion
     if modulation_lifetime is None:
         return _phasor_from_single_lifetime(phase_lifetime, omega, **kwargs)
     return _phasor_from_apparent_lifetime(
@@ -1236,7 +1245,7 @@ def polar_to_apparent_lifetime(
     unit_conversion: float = 1e-3,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    r"""Return single apparent lifetimes from polar coordinates.
+    r"""Return apparent single lifetimes from polar coordinates.
 
     Parameters
     ----------
@@ -1289,7 +1298,7 @@ def polar_to_apparent_lifetime(
 
     """
     omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
-    omega *= math.pi * 2 * unit_conversion
+    omega *= math.pi * 2.0 * unit_conversion
     return _polar_to_apparent_lifetime(phase, modulation, omega, **kwargs)
 
 
@@ -1323,9 +1332,9 @@ def polar_from_apparent_lifetime(
 
     Returns
     -------
-    phase : array_like
+    phase : ndarray
         Angular component of polar coordinates.
-    modulation : array_like
+    modulation : ndarray
         Radial component of polar coordinates.
 
     Notes
@@ -1355,11 +1364,205 @@ def polar_from_apparent_lifetime(
 
     """
     omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
-    omega *= math.pi * 2 * unit_conversion
+    omega *= math.pi * 2.0 * unit_conversion
     if modulation_lifetime is None:
         return _polar_from_single_lifetime(phase_lifetime, omega, **kwargs)
     return _polar_from_apparent_lifetime(
         phase_lifetime, modulation_lifetime, omega, **kwargs
+    )
+
+
+def phasor_from_fret_donor(
+    frequency: ArrayLike,
+    donor_lifetime: ArrayLike,
+    *,
+    fret_efficiency: ArrayLike = 0.0,
+    donor_freting: ArrayLike = 1.0,
+    donor_background: ArrayLike = 0.0,
+    background_real: ArrayLike = 0.0,
+    background_imag: ArrayLike = 0.0,
+    unit_conversion: float = 1e-3,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return phasor coordinates of FRET donor channel.
+
+    Calculate phasor coordinates of a FRET donor channel as a function of
+    frequency, donor lifetime, FRET efficiency, fraction of donors undergoing
+    FRET, and background fluorescence.
+
+    The phasor coordinates of the donor channel contain fractions of:
+
+    - donor not undergoing energy transfer
+    - donor quenched by energy transfer
+    - background fluorescence
+
+    Parameters
+    ----------
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+    donor_lifetime : array_like
+        Lifetime of donor without FRET in ns.
+    fret_efficiency : array_like, optional, default 0
+        FRET efficiency in range [0..1].
+    donor_freting : array_like, optional, default 1
+        Fraction of donors participating in FRET. Range [0..1].
+    donor_background : array_like, optional, default 0
+        Fraction of background fluorescence in unquenched donor channel.
+        Range [0..1].
+    background_real : array_like, optional, default 0
+        Real component of phasor coordinate of background fluorescence
+        at `frequency`.
+    background_imag : array_like, optional, default 0
+        Imaginary component of phasor coordinate of background fluorescence
+        at `frequency`.
+    unit_conversion : float, optional
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    real : ndarray
+        Real component of donor channel phasor coordinates.
+    imag : ndarray
+        Imaginary component of donor channel phasor coordinates.
+
+    Examples
+    --------
+    Compute a donor channel FRET efficiency trajectory of a FRET donor
+    with 4.2 ns lifetime at 80 MHz:
+
+    >>> phasor_from_fret_donor(
+    ...     frequency=80,
+    ...     donor_lifetime=4.2,
+    ...     fret_efficiency=[0.0, 0.3, 1.0],
+    ...     donor_freting=0.9,
+    ...     donor_background=0.1,
+    ...     background_real=0.11,
+    ...     background_imag=0.12,
+    ... )  # doctest: +NUMBER
+    (array([0.1759, 0.2716, 0.1447]), array([0.3602, 0.4095, 0.2464]))
+
+    """
+    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega *= math.pi * 2.0 * unit_conversion
+    return _phasor_from_fret_donor(
+        omega,
+        donor_lifetime,
+        fret_efficiency,
+        donor_freting,
+        donor_background,
+        background_real,
+        background_imag,
+        **kwargs,
+    )
+
+
+def phasor_from_fret_acceptor(
+    frequency: ArrayLike,
+    donor_lifetime: ArrayLike,
+    acceptor_lifetime: ArrayLike,
+    *,
+    fret_efficiency: ArrayLike = 0.0,
+    donor_freting: ArrayLike = 1.0,
+    donor_bleedthrough: ArrayLike = 0.0,
+    acceptor_excitation: ArrayLike = 0.0,
+    acceptor_background: ArrayLike = 0.0,
+    background_real: ArrayLike = 0.0,
+    background_imag: ArrayLike = 0.0,
+    unit_conversion: float = 1e-3,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return phasor coordinates of FRET acceptor channel.
+
+    Calculate phasor coordinates of a FRET acceptor channel as a function of
+    frequency, donor and acceptor lifetimes, FRET efficiency,
+    fraction of donors undergoing FRET, fraction of directly excited acceptors,
+    fraction of donor channel in acceptor channel, and background fluorescence.
+
+    The phasor coordinates of the acceptor channel contain fractions of:
+
+    - acceptor sensitized by energy transfer
+    - directly excited acceptor
+    - donor bleedthrough
+    - background fluorescence
+
+    Parameters
+    ----------
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+    donor_lifetime : array_like
+        Lifetime of donor without FRET in ns.
+    acceptor_lifetime : array_like
+        Lifetime of acceptor in ns.
+    fret_efficiency : array_like, optional, default 0
+        FRET efficiency in range [0..1].
+    donor_freting : array_like, optional, default 1
+        Fraction of donors participating in FRET. Range [0..1].
+    donor_bleedthrough : array_like, optional, default 0
+        Fraction of donor fluorescence in acceptor channel. Range [0..1].
+    acceptor_excitation : array_like, optional, default 0
+        Fraction of acceptor that is directly excited. Range [0..1].
+    acceptor_background : array_like, optional, default 0
+        Fraction of background fluorescence in acceptor channel. Range [0..1].
+    background_real : array_like, optional, default 0
+        Real component of phasor coordinate of background fluorescence
+        at `frequency`.
+    background_imag : array_like, optional, default 0
+        Imaginary component of phasor coordinate of background fluorescence
+        at `frequency`.
+    unit_conversion : float, optional
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    real : ndarray
+        Real component of acceptor channel phasor coordinates.
+    imag : ndarray
+        Imaginary component of acceptor channel phasor coordinates.
+
+    Examples
+    --------
+    Compute an acceptor channel FRET efficiency trajectory of a FRET donor and
+    acceptor pair with 4.2 ns and 3.0 ns lifetimes at 80 MHz:
+
+    >>> phasor_from_fret_acceptor(
+    ...     frequency=80,
+    ...     donor_lifetime=4.2,
+    ...     acceptor_lifetime=3.0,
+    ...     fret_efficiency=[0.0, 0.3, 1.0],
+    ...     donor_freting=0.9,
+    ...     donor_bleedthrough=0.1,
+    ...     acceptor_excitation=0.1,
+    ...     acceptor_background=0.1,
+    ...     background_real=0.11,
+    ...     background_imag=0.12,
+    ... )  # doctest: +NUMBER
+    (array([0.1957, 0.0689, 0.2849]), array([0.319, 0.3116, 0.4261]))
+
+    """
+    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega *= math.pi * 2.0 * unit_conversion
+    return _phasor_from_fret_acceptor(
+        omega,
+        donor_lifetime,
+        acceptor_lifetime,
+        fret_efficiency,
+        donor_freting,
+        donor_bleedthrough,
+        acceptor_excitation,
+        acceptor_background,
+        background_real,
+        background_imag,
+        **kwargs,
     )
 
 
