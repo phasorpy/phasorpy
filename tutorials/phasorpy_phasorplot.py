@@ -6,8 +6,8 @@ An introduction to plotting phasor coordinates.
 
 The :py:class:`phasorpy.plot.PhasorPlot` class is used to plot phasor
 coordinates as scattered points, lines, 2D histograms, and contours.
-The plots are supplemented with universal circles, polar grids, polar cursors,
-component mixture indicators, and manual annotations.
+The plots are supplemented with universal semicircles, polar grids,
+polar cursors, component mixture indicators, and manual annotations.
 
 """
 
@@ -25,7 +25,7 @@ from phasorpy.plot import PhasorPlot
 # -----------------
 #
 # Create an empty phasor plot, showing the first quadrant and the
-# universal semicricle:
+# universal semicircle:
 
 plot = PhasorPlot()
 plot.show()

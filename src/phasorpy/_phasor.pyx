@@ -524,7 +524,7 @@ cdef (double, double) _phasor_from_fret_acceptor(
         sensitized_imag,
         acceptor_real,
         acceptor_imag,
-        donor_freting * fret_efficiency,
+        donor_freting * fret_efficiency,  # SimFCS uses 1.0
         1.0,
         1.0 - acceptor_excitation
     )
@@ -538,6 +538,7 @@ cdef (double, double) _phasor_from_fret_acceptor(
             acceptor_imag,
             background_real,
             background_imag,
+            # SimFCS uses 1.0
             donor_freting * fret_efficiency + acceptor_excitation,
             1.0,
             1.0 - acceptor_background
@@ -545,6 +546,7 @@ cdef (double, double) _phasor_from_fret_acceptor(
 
     # phasor of excited acceptor with background and donor bleedthrough
     if donor_bleedthrough > 0.0:
+        # SimFCS also includes donor channel background in donor bleedthrough
         acceptor_real, acceptor_imag = linear_combination(
             acceptor_real,
             acceptor_imag,
@@ -555,7 +557,7 @@ cdef (double, double) _phasor_from_fret_acceptor(
             (
                 donor_freting * fret_efficiency
                 + acceptor_excitation + acceptor_background
-            ),
+            ),  # SimFCS uses 1.0
             1.0 - donor_freting * fret_efficiency,
             1.0 - donor_bleedthrough
         )

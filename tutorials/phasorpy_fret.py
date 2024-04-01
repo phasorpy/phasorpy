@@ -7,9 +7,10 @@ Calculate phasor coordinates of FRET donor and acceptor channels.
 The :py:func:`phasorpy.phasor.phasor_from_fret_donor`
 and :py:func:`phasorpy.phasor.phasor_from_fret_acceptor`
 functions are used to calculate phasor coordinates of
-FRET donor and acceptor channels as a function of
+FRET (Förster Resonance Energy Transfer) donor and acceptor channels
+as a function of:
 
-- frequency
+- laser pulse or modulation frequency
 - donor and acceptor lifetimes
 - FRET efficiency
 - fraction of donors undergoing FRET
@@ -20,8 +21,8 @@ FRET donor and acceptor channels as a function of
 """
 
 # %%
-# Define a utility function to compute and plot phasor coordinates of
-# FRET donor and acceptor channels:
+# Define a helper function to compute and plot phasor coordinates of
+# FRET donor and acceptor channels over a range of FRET efficiencies:
 
 import numpy
 
@@ -37,17 +38,18 @@ def plot_fret_trajectories(
     frequency=60.0,  # MHz
     donor_lifetime=4.2,  # ns
     acceptor_lifetime=3.0,  # ns
-    fret_efficiency=numpy.linspace(0.0, 1.0, 101),  # 1% steps
+    fret_efficiency=numpy.linspace(0.0, 1.0, 101),  # 0%..100%, 1% steps
     *,
-    donor_freting=1.0,
-    donor_bleedthrough=0.0,
-    acceptor_excitation=0.0,
-    acceptor_background=0.0,
-    donor_background=0.0,
+    donor_freting=1.0,  # all donors participating in FRET
+    donor_bleedthrough=0.0,  # no donor fluorescence in acceptor channel
+    acceptor_excitation=0.0,  # no directly excited acceptor
+    acceptor_background=0.0,  # no background in acceptor channel
+    donor_background=0.0,  # no background in donor channel
     background_real=0.0,
     background_imag=0.0,
     title=None,
 ):
+    """Plot phasor coordinates of FRET donor and acceptor channels."""
     # phasor of donor channel
     donor_fret_real, donor_fret_imag = phasor_from_fret_donor(
         frequency,
@@ -146,7 +148,7 @@ def plot_fret_trajectories(
 #
 # Hence, in the absence of background fluorescence and donors not undergoing
 # energy transfer, the phasor coordinates of the donor channel at different
-# FRET efficiencies lie on the universal circle.
+# FRET efficiencies lie on the universal semicircle.
 # At 100% energy transfer, the donor lifetime and fluorescence intensity are
 # zero.
 #
@@ -155,7 +157,8 @@ def plot_fret_trajectories(
 # during, relaxation and energy transfer processes.
 # Hence, in the absence of directly excited acceptor, donor bleedthrough,
 # and background fluorescence, the phasor coordinates of the acceptor channel
-# at different FRET efficiencies lie outside the universal circle of the donor.
+# at different FRET efficiencies lie outside the universal semicircle of
+# the donor.
 
 plot_fret_trajectories(title='FRET efficiency trajectories')
 
@@ -164,10 +167,10 @@ plot_fret_trajectories(title='FRET efficiency trajectories')
 # Fractions not FRETing
 # ----------------------
 #
-# Adding fractions of donors not participating in FRET, and fractions
-# of directly excited acceptors, pulls the FRET trajectories of the donor
+# Adding fractions of donors not participating in FRET and fractions
+# of directly excited acceptors pulls the FRET trajectories of the donor
 # and acceptor channels towards the phasor coordinates of the donor and
-# acceptor without FRET.
+# acceptor without FRET:
 
 plot_fret_trajectories(
     title='FRET efficiency trajectories with fractions not FRETing',
@@ -182,7 +185,7 @@ plot_fret_trajectories(
 #
 # If the acceptor channel contains fractions of donor fluorescence,
 # the FRET efficiency trajectory of the acceptor channel is pulled towards
-# the phasor coordinates of the donor channel.
+# the phasor coordinates of the donor channel:
 
 plot_fret_trajectories(
     title='FRET efficiency trajectories with donor bleedthrough',
@@ -196,10 +199,10 @@ plot_fret_trajectories(
 #
 # In the presence of background fluorescence, the FRET efficiency trajectories
 # are linear combinations with the background phasor coordinates.
-# At 0% energy transfer, the acceptor channel only contains background
-# fluorescence.
 # At 100% energy transfer, the donor channel only contains background
 # fluorescence.
+# At 0% energy transfer, in the absence of donor bleedthrough and directly
+# excited acceptor, the acceptor channel only contains background fluorescence:
 
 plot_fret_trajectories(
     title='FRET efficiency trajectories with background',
@@ -214,13 +217,13 @@ plot_fret_trajectories(
 # Many parameters
 # ---------------
 #
-# The phasor coordinates of the donor channel may contain fractions of
+# The phasor coordinates of the donor channel may contain fractions of:
 #
 # - donor not undergoing energy transfer
 # - donor quenched by energy transfer
 # - background fluorescence
 #
-# The phasor coordinates of the acceptor channel may contain fractions of
+# The phasor coordinates of the acceptor channel may contain fractions of:
 #
 # - acceptor sensitized by energy transfer
 # - directly excited acceptor

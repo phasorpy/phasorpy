@@ -1134,10 +1134,11 @@ def test_polar_from_apparent_lifetime():
 
 def test_phasor_from_fret_donor():
     """Test phasor_from_fret_donor function."""
+    re, im = phasor_from_lifetime(80, 4.2)
     # no FRET
     assert_allclose(
         phasor_from_fret_donor(80, 4.2, fret_efficiency=0),
-        phasor_from_lifetime(80, 4.2),
+        [re, im],
         atol=1e-3,
     )
     # fret_efficiency
@@ -1153,7 +1154,6 @@ def test_phasor_from_fret_donor():
         atol=1e-3,
     )
     # donor_freting
-    re, im = phasor_from_lifetime(80, 4.2)
     assert_allclose(
         phasor_from_fret_donor(
             80, 4.2, fret_efficiency=[0.0, 0.3, 1.0], donor_freting=0.9

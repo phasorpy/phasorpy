@@ -914,7 +914,7 @@ def phasor_to_apparent_lifetime(
     Examples
     --------
     The apparent single lifetimes from phase and modulation are equal
-    only if the phasor coordinates lie on the universal circle:
+    only if the phasor coordinates lie on the universal semicircle:
 
     >>> phasor_to_apparent_lifetime(
     ...    0.5, [0.5, 0.45], frequency=80
@@ -922,12 +922,12 @@ def phasor_to_apparent_lifetime(
     (array([1.989, 1.79]), array([1.989, 2.188]))
 
     Apparent single lifetimes of phasor coordinates outside the universal
-    circle are undefined:
+    semicircle are undefined:
 
     >>> phasor_to_apparent_lifetime(-0.1, 1.1, 80)  # doctest: +NUMBER
     (-21.8, 0.0)
 
-    Apparent single lifetimes at the universal circle endpoints are
+    Apparent single lifetimes at the universal semicircle endpoints are
     infinite and zero:
 
     >>> phasor_to_apparent_lifetime([0, 1], [0, 0], 80)  # doctest: +NUMBER
@@ -996,7 +996,7 @@ def phasor_from_apparent_lifetime(
     Examples
     --------
     If the apparent single lifetimes from phase and modulation are equal,
-    the phasor coordinates lie on the universal circle, else inside:
+    the phasor coordinates lie on the universal semicircle, else inside:
 
     >>> phasor_from_apparent_lifetime(
     ...     1.9894, [1.9894, 2.4113], frequency=80.0
@@ -1004,7 +1004,7 @@ def phasor_from_apparent_lifetime(
     (array([0.5, 0.45]), array([0.5, 0.45]))
 
     Zero and infinite apparent single lifetimes define the endpoints of the
-    universal circle:
+    universal semicircle:
 
     >>> phasor_from_apparent_lifetime(
     ...     [0.0, 1e9], [0.0, 1e9], frequency=80
@@ -1289,7 +1289,7 @@ def polar_to_apparent_lifetime(
     Examples
     --------
     The apparent single lifetimes from phase and modulation are equal
-    only if the polar coordinates lie on the universal circle:
+    only if the polar coordinates lie on the universal semicircle:
 
     >>> polar_to_apparent_lifetime(
     ...     math.pi / 4, numpy.hypot([0.5, 0.45], [0.5, 0.45]), frequency=80
@@ -1355,7 +1355,7 @@ def polar_from_apparent_lifetime(
     Examples
     --------
     If the apparent single lifetimes from phase and modulation are equal,
-    the polar coordinates lie on the universal circle, else inside:
+    the polar coordinates lie on the universal semicircle, else inside:
 
     >>> polar_from_apparent_lifetime(
     ...     1.9894, [1.9894, 2.4113], frequency=80.0
@@ -1386,9 +1386,9 @@ def phasor_from_fret_donor(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates of FRET donor channel.
 
-    Calculate phasor coordinates of a FRET donor channel as a function of
-    frequency, donor lifetime, FRET efficiency, fraction of donors undergoing
-    FRET, and background fluorescence.
+    Calculate phasor coordinates of a FRET (Förster Resonance Energy Transfer)
+    donor channel as a function of frequency, donor lifetime, FRET efficiency,
+    fraction of donors undergoing FRET, and background fluorescence.
 
     The phasor coordinates of the donor channel contain fractions of:
 
@@ -1432,8 +1432,8 @@ def phasor_from_fret_donor(
 
     Examples
     --------
-    Compute a donor channel FRET efficiency trajectory of a FRET donor
-    with 4.2 ns lifetime at 80 MHz:
+    Compute the phasor coordinates of a FRET donor channel at three
+    FRET efficiencies:
 
     >>> phasor_from_fret_donor(
     ...     frequency=80,
@@ -1478,10 +1478,11 @@ def phasor_from_fret_acceptor(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates of FRET acceptor channel.
 
-    Calculate phasor coordinates of a FRET acceptor channel as a function of
-    frequency, donor and acceptor lifetimes, FRET efficiency,
-    fraction of donors undergoing FRET, fraction of directly excited acceptors,
-    fraction of donor channel in acceptor channel, and background fluorescence.
+    Calculate phasor coordinates of a FRET (Förster Resonance Energy Transfer)
+    acceptor channel as a function of frequency, donor and acceptor lifetimes,
+    FRET efficiency, fraction of donors undergoing FRET, fraction of directly
+    excited acceptors, fraction of donor fluorescence in acceptor channel,
+    and background fluorescence.
 
     The phasor coordinates of the acceptor channel contain fractions of:
 
@@ -1531,8 +1532,8 @@ def phasor_from_fret_acceptor(
 
     Examples
     --------
-    Compute an acceptor channel FRET efficiency trajectory of a FRET donor and
-    acceptor pair with 4.2 ns and 3.0 ns lifetimes at 80 MHz:
+    Compute the phasor coordinates of a FRET acceptor channel at three
+    FRET efficiencies:
 
     >>> phasor_from_fret_acceptor(
     ...     frequency=80,

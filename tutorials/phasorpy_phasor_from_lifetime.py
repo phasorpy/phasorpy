@@ -24,7 +24,7 @@ from phasorpy.plot import PhasorPlot, plot_phasor, plot_polar_frequency
 # --------------------------
 #
 # The phasor coordinates of single-component lifetimes are located
-# on the universal circle.
+# on the universal semicircle.
 # For example, 3.9788735 ns and 0.9947183 ns at a frequency of 80 MHz:
 
 lifetime = numpy.array([3.9788735, 0.9947183])
