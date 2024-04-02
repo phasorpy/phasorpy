@@ -20,7 +20,7 @@ jobs:
         os: [ubuntu-22.04, macos-12, windows-2019]
     steps:
       - uses: actions/checkout@v4
-      - uses: pypa/cibuildwheel@v2.16.5
+      - uses: pypa/cibuildwheel@v2.17.0
         env:
           CIBW_ARCHS_LINUX: auto
           CIBW_ARCHS_MACOS: x86_64 arm64
