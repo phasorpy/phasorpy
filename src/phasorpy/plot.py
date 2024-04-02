@@ -64,7 +64,7 @@ class PhasorPlot:
     ----------
     allquadrants : bool, optional
         Show all quandrants of phasor space.
-        By default, only the first quadrant with universal semicricle is shown.
+        By default, only the first quadrant with universal semicircle is shown.
     ax : matplotlib axes, optional
         Matplotlib axes used for plotting.
         By default, a new subplot axes is created.
@@ -812,7 +812,8 @@ def plot_phasor(
         By default, only the first quadrant is shown.
     frequency : float, optional
         Frequency of phasor plot.
-        If provided, the universal circle is labeled with reference lifetimes.
+        If provided, the universal semicircle is labeled with reference
+        lifetimes.
     show : bool, optional, default: True
         Display figure.
     **kwargs
