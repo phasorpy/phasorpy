@@ -1,16 +1,14 @@
-"""The ``phasorpy.cursors`` module provides functions to:
+""" Select phasor coordinates.
+    The ``phasorpy.cursors`` module provides functions to:
 
-- use cursors to select region of interest in the phasor:
+- create labels for region of interests in the phasor space:
 
   - :py:func:`circular_cursor`
   - :py:func:`range_cursor`
 
-
 """
 
 from __future__ import annotations
-
-from collections.abc import Sequence
 
 __all__ = [
     'circular_cursor',
@@ -20,7 +18,11 @@ __all__ = [
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import ArrayLike
+    from ._typing import (
+        Any,
+        ArrayLike,
+        NDArray,
+    )
 
 import warnings
 
@@ -28,43 +30,39 @@ import numpy
 
 
 def circular_cursor(
-    real: ArrayLike,
-    imag: ArrayLike,
+    real,
+    imag,
     center: ArrayLike,
     radius: ArrayLike,
-    components: int,
-):
-    """Return labeled mask with components for each circle.
+) -> tuple[NDArray[Any]]:
+    """Return indices of circle to which each phasor coordinate belongs.
+    Phasor coordinates that do not fall in a circle have an index of zero.
 
     Parameters
     ----------
-    real : ndarray
-        Real component of phasor coordinates along axis.
-    imag : ndarray
-        Imaginary component of phasor coordinates along axis.
-    center : float
-        Circle center.
-    radius : ndarray
-        Radius for each circle.
-    components : int
-        Amount of components, default 2.
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    center : array_like, shape (M, 2)
+        Phasor coordinates of circle centers.
+    radius : array_like, shape (M,)
+        Radii of circles.
 
     Returns
     -------
     label : ndarray
-        Labeled matrix for all components.
+        Indices of circle to which each phasor coordinate belongs.
 
     Raises
     ------
     ValueError
-        real and imag must have the same dimensions.
-    ValueError
-        radius must be greater than zero.
-    ValueError
-        components must be at least 1.
+        `real` and `imag` must have the same dimensions.
+        `radius` must be greater than zero.
 
     Examples
     --------
+    Compute label array for four circles:
     >>> circular_cursor(numpy.array([-0.5, -0.5, 0.5, 0.5]),
     ...     numpy.array([-0.5, 0.5, -0.5, 0.5]),
     ...     numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]),
@@ -78,36 +76,30 @@ def circular_cursor(
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
-    for i in range(len(radius)):
-        if radius[i] < 0:
-            raise ValueError(f'radius is < 0 for index {i}')
-    if components < 1:
-        raise ValueError(f'components is {components}, must be at least 1')
-    if len(center) == components:
-        label = numpy.zeros(real.shape)
-        for i in range(components):
-            condition = (
-                (real - center[i][0]) ** 2
-                + (imag - center[i][1]) ** 2
-                - radius[i] ** 2
-            )
-            label = numpy.where(
-                condition > 0, label, numpy.ones(label.shape) * (i + 1)
-            )
-        return label
-    else:
-        raise ValueError(f'center length array and components must be equal')
+    if numpy.any(radius < 0):
+        raise ValueError('radius is < 0')
+    label = numpy.zeros(real.shape, dtype=numpy.int8)
+    for i in range(len(center)):
+        condition = (
+            (real - center[i][0]) ** 2
+            + (imag - center[i][1]) ** 2
+            - radius[i] ** 2
+        )
+        label = numpy.where(
+            condition > 0, label, numpy.ones(label.shape) * (i + 1)
+        )
+    return label
 
 
-def range_cursor(values: ArrayLike, ranges: ArrayLike):
-    """Return the labeled mask for each range.
+def range_cursor(values, ranges: ArrayLike) -> tuple[NDArray[Any]]:
+    """Return indices of range to which each value belongs.
+    Values that do not fall in any range have an index of zero.
 
     Parameters
     ----------
-    values : ndarray
-        An n-dimensional array of values.
-    ranges : ndarray
-        Represents ranges as (start, end).
+    values : array_like, shape (M, 2)
+    ranges : array_like
+        Start and stop values of ranges.
 
     Returns
     -------
@@ -144,13 +136,13 @@ def range_cursor(values: ArrayLike, ranges: ArrayLike):
     return label
 
 
-def _overlapping_ranges(ranges: ArrayLike):
+def _overlapping_ranges(ranges) -> bool:
     """Check if there are overlapping ranges in an array of ranges.
 
     Parameters
     ----------
-        ranges : ndarray
-            Represents ranges as (start, end).
+        ranges : array_like
+            Start and stop values of ranges.
 
     Returns
     -------
@@ -158,6 +150,7 @@ def _overlapping_ranges(ranges: ArrayLike):
 
     Example
     -------
+    Compute for some range with overlapping.
         >>> _overlapping_ranges([(1, 5), (3, 8), (6, 10), (9, 12)])
         True
     """
