@@ -13,6 +13,7 @@ __all__ = [
     'plot_phasor_image',
     'plot_signal_image',
     'plot_polar_frequency',
+    'two_components_histogram',
 ]
 
 import math
@@ -42,6 +43,7 @@ from ._utils import (
     parse_kwargs,
     phasor_from_polar_scalar,
     phasor_to_polar_scalar,
+    project_phasor_to_line,
     sort_coordinates,
     update_kwargs,
 )
@@ -1165,6 +1167,40 @@ def plot_polar_frequency(
         ax.plot(frequency, mod * 100, color='tab:red', **kwargs)
     if show:
         pyplot.show()
+
+def two_components_histogram(
+    real: ArrayLike, imag: ArrayLike, first_component_phasor: ArrayLike, second_component_phasor: ArrayLike, show: bool = True, **kwargs: Any,
+) -> tuple:
+    """
+    Creates a histogram of distribution of points along the line between two components.
+
+    Parameters:
+        real (array): Array of x coordinates.
+        imag (array): Array of y coordinates.
+        first_component_phasor (tuple): Phasor coordinates of first component.
+        second_component_phasor (tuple): Phasorcoordinates of second component.
+        bins (int): Number of bins for the histogram.
+
+    Returns:
+        tuple: Histogram values and bin edges.
+        
+    """
+    projected_real, projected_imag = project_phasor_to_line(
+        real, imag, first_component_phasor, second_component_phasor
+    )
+    distances_from_first_component = numpy.sqrt(
+        (projected_real - first_component_phasor[0]) ** 2
+        + (projected_imag - first_component_phasor[1]) ** 2
+    )
+    bins = kwargs.get('bins', 128)
+    histogram_values, bin_edges, _ = pyplot.hist(
+        distances_from_first_component, bins=bins
+    )
+    pyplot.xlabel('Distance from first component')
+    pyplot.ylabel('Frequency')
+    pyplot.title('Distribution along components')
+    pyplot.show()
+    return histogram_values, bin_edges
 
 
 def _imshow(

@@ -17,6 +17,7 @@ __all__: list[str] = [
     'phasor_from_polar_scalar',
     'circle_line_intersection',
     'circle_circle_intersection',
+    'project_phasor_to_line',
 ]
 
 import math
@@ -260,3 +261,33 @@ def circle_line_intersection(
             y + (-dd * dx - abs(dy) * rdd) / dr,
         ),
     )
+
+
+def project_phasor_to_line(
+    real: ArrayLike, imag: ArrayLike, first_component_phasor: ArrayLike, second_component_phasor: ArrayLike, /
+) -> tuple[NDArray, NDArray]:
+    """Return projected phasor coordinates to the line that joins two components based on their phasor location.
+
+    >>> project_phasor_to_line(
+    ...     [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.4], [0.9, 0.3]
+    ... )  # doctest: +NUMBER
+    (array([0.592, 0.508, 0.424]), array([0.344, 0.356, 0.368]))
+
+    """
+    real = numpy.copy(real)
+    imag = numpy.copy(imag)
+    first_component_phasor = numpy.array(first_component_phasor)
+    second_component_phasor = numpy.array(second_component_phasor)
+    line_between_components = second_component_phasor - first_component_phasor
+    line_between_components /= numpy.linalg.norm(line_between_components)
+    real -= first_component_phasor[0]
+    imag -= first_component_phasor[1]
+    projection_lengths = (
+        real * line_between_components[0] + imag * line_between_components[1]
+    )
+    projected_points = first_component_phasor + numpy.outer(
+        projection_lengths, line_between_components
+    )
+    projected_points_real = projected_points[:, 0].reshape(real.shape)
+    projected_points_imag = projected_points[:, 1].reshape(imag.shape)
+    return projected_points_real, projected_points_imag
