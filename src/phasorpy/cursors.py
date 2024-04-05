@@ -35,7 +35,7 @@ def circular_cursor(
     center: ArrayLike,
     radius: ArrayLike,
 ) -> tuple[NDArray[Any]]:
-    """Return indices of circle to which each phasor coordinate belongs.
+    r"""Return indices of circle to which each phasor coordinate belongs.
     Phasor coordinates that do not fall in a circle have an index of zero.
 
     Parameters
@@ -66,7 +66,7 @@ def circular_cursor(
     >>> circular_cursor(numpy.array([-0.5, -0.5, 0.5, 0.5]),
     ...     numpy.array([-0.5, 0.5, -0.5, 0.5]),
     ...     numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]),
-    ...     radius=[0.1, 0.1, 0.1, 0.1], components=4)
+    ...     radius=[0.1, 0.1, 0.1, 0.1])
     array([1, 2, 3, 4])
     """
     real = numpy.asarray(real)
@@ -92,7 +92,7 @@ def circular_cursor(
 
 
 def range_cursor(values, ranges: ArrayLike) -> tuple[NDArray[Any]]:
-    """Return indices of range to which each value belongs.
+    r"""Return indices of range to which each value belongs.
     Values that do not fall in any range have an index of zero.
 
     Parameters
@@ -137,7 +137,7 @@ def range_cursor(values, ranges: ArrayLike) -> tuple[NDArray[Any]]:
 
 
 def _overlapping_ranges(ranges) -> bool:
-    """Check if there are overlapping ranges in an array of ranges.
+    r"""Check if there are overlapping ranges in an array of ranges.
 
     Parameters
     ----------
