@@ -266,7 +266,7 @@ def circle_line_intersection(
 def project_phasor_to_line(
     real: ArrayLike, imag: ArrayLike, first_component_phasor: ArrayLike, second_component_phasor: ArrayLike, /
 ) -> tuple[NDArray, NDArray]:
-    """Return projected phasor coordinates to the line that joins two components based on their phasor location.
+    """Return projected phasor coordinates to the line that joins two phasors.
 
     >>> project_phasor_to_line(
     ...     [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.4], [0.9, 0.3]

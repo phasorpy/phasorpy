@@ -18,12 +18,11 @@ if TYPE_CHECKING:
 
 import numpy
 import math
-import matplotlib.pyplot as plt
 
 from ._utils import project_phasor_to_line
 
 
-def two_components_fractions_from_phasor(
+def linear_fractions_from_phasor(
     real: ArrayLike, imag: ArrayLike, first_component_phasor: ArrayLike, second_component_phasor: ArrayLike, /,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
    """Return fractions of two components from phasor coordinates.
@@ -53,7 +52,7 @@ def two_components_fractions_from_phasor(
 
     Examples
     --------
-    >>> two_components_fractions_from_phasor(...)  # doctest: +NUMBER
+    >>> component_fractions_from_phasor(...)  # doctest: +NUMBER
     (...)
 
     """
