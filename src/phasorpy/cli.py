@@ -47,6 +47,29 @@ def fetch(files, hideprogress):
     click.echo(f'Cached at {os.path.commonpath(files)}')
 
 
+@main.command(help='Start interactive FRET phasor plot.')
+@click.option(
+    '--hide',
+    default=False,
+    is_flag=True,
+    type=click.BOOL,
+    help='Do not show interactive plot.',
+)
+def fret(hide):
+    """FRET command group."""
+    from .plot import PhasorPlotFret
+
+    plot = PhasorPlotFret(
+        frequency=60.0,
+        donor_lifetime=4.2,
+        acceptor_lifetime=3.0,
+        fret_efficiency=0.5,
+        interactive=True,
+    )
+    if not hide:
+        plot.show()
+
+
 if __name__ == '__main__':
     import sys
 

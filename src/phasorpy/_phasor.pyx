@@ -390,47 +390,48 @@ cdef (double, double) _phasor_from_fret_donor(
     cdef:
         double real, imag
         double quenched_real, quenched_imag  # quenched donor
+        double f_pure, f_quenched, sum
 
-    # clamp fractions to 0..1
-    fret_efficiency = clamp(fret_efficiency)
-    donor_freting = clamp(donor_freting)
-    donor_background = clamp(donor_background)
+    if fret_efficiency < 0.0:
+        fret_efficiency = 0.0
+    elif fret_efficiency > 1.0:
+        fret_efficiency = 1.0
+
+    if donor_freting < 0.0:
+        donor_freting = 0.0
+    elif donor_freting > 1.0:
+        donor_freting = 1.0
+
+    if donor_background < 0.0:
+        donor_background = 0.0
+
+    f_pure = 1.0 - donor_freting
+    f_quenched = (1.0 - fret_efficiency) * donor_freting
+    sum = f_pure + f_quenched + donor_background
+    if sum < 1e-9:
+        # no signal in donor channel
+        return 1.0, 0.0
 
     # phasor of pure donor at frequency
     real, imag = phasor_from_lifetime(donor_lifetime, omega)
 
-    if fret_efficiency > 0.0:
-        # phasor of quenched donor
-        quenched_real, quenched_imag = phasor_from_lifetime(
-            donor_lifetime * (1.0 -  fret_efficiency), omega
-        )
+    # phasor of quenched donor
+    quenched_real, quenched_imag = phasor_from_lifetime(
+        donor_lifetime * (1.0 -  fret_efficiency), omega
+    )
 
-        # phasor of pure and quenched donor
-        real, imag = linear_combination(
-            1.0,
-            0.0,
-            real,
-            imag,
-            quenched_real,
-            quenched_imag,
-            1.0,
-            1.0 - fret_efficiency,
-            1.0 - donor_freting
-        )
+    # weighted average
+    real = (
+        real * f_pure
+        + quenched_real * f_quenched
+        + donor_background * background_real
+    ) / sum
 
-    if donor_background > 0.0:
-        # phasor of pure and quenched donor with background
-        real, imag = linear_combination(
-            real,
-            imag,
-            real,
-            imag,
-            background_real,
-            background_imag,
-            1.0 - donor_freting * fret_efficiency,
-            1.0,
-            1.0 - donor_background
-        )
+    imag = (
+        imag * f_pure
+        + quenched_imag * f_quenched
+        + background_imag * donor_background
+    ) / sum
 
     return real, imag
 
@@ -443,7 +444,7 @@ cdef (double, double) _phasor_from_fret_acceptor(
     double fret_efficiency,
     double donor_freting,
     double donor_bleedthrough,
-    double acceptor_excitation,
+    double acceptor_bleedthrough,
     double acceptor_background,
     double background_real,
     double background_imag,
@@ -459,13 +460,24 @@ cdef (double, double) _phasor_from_fret_acceptor(
         double acceptor_real, acceptor_imag
         double quenched_real, quenched_imag  # quenched donor
         double sensitized_real, sensitized_imag  # sensitized acceptor
+        double sum, f_donor, f_acceptor
 
-    # clamp fractions to 0..1
-    fret_efficiency = clamp(fret_efficiency)
-    donor_freting = clamp(donor_freting)
-    donor_bleedthrough = clamp(donor_bleedthrough)
-    acceptor_excitation = clamp(acceptor_excitation)
-    acceptor_background = clamp(acceptor_background)
+    if fret_efficiency < 0.0:
+        fret_efficiency = 0.0
+    elif fret_efficiency > 1.0:
+        fret_efficiency = 1.0
+
+    if donor_freting < 0.0:
+        donor_freting = 0.0
+    elif donor_freting > 1.0:
+        donor_freting = 1.0
+
+    if donor_bleedthrough < 0.0:
+        donor_bleedthrough = 0.0
+    if acceptor_bleedthrough < 0.0:
+        acceptor_bleedthrough = 0.0
+    if acceptor_background < 0.0:
+        acceptor_background = 0.0
 
     # phasor of pure donor at frequency
     donor_real, donor_imag = phasor_from_lifetime(donor_lifetime, omega)
@@ -516,62 +528,30 @@ cdef (double, double) _phasor_from_fret_acceptor(
     sensitized_real = mod * cos(phi)
     sensitized_imag = mod * sin(phi)
 
-    # phasor of acceptor excited by quenched donor and directly
-    acceptor_real, acceptor_imag = linear_combination(
-        sensitized_real,
-        sensitized_imag,
-        sensitized_real,
-        sensitized_imag,
-        acceptor_real,
-        acceptor_imag,
-        donor_freting * fret_efficiency,  # SimFCS uses 1.0
-        1.0,
-        1.0 - acceptor_excitation
-    )
+    # weighted average
+    f_donor = donor_bleedthrough * (1.0 - donor_freting * fret_efficiency)
+    f_acceptor = donor_freting * fret_efficiency
+    sum = f_donor + f_acceptor + acceptor_bleedthrough + acceptor_background
+    if sum < 1e-9:
+        # no signal in acceptor channel
+        # do not return 0, 0 to avoid discontinuities
+        return sensitized_real, sensitized_imag
 
-    # phasor of excited acceptor with background
-    if acceptor_background > 0.0:
-        acceptor_real, acceptor_imag = linear_combination(
-            acceptor_real,
-            acceptor_imag,
-            acceptor_real,
-            acceptor_imag,
-            background_real,
-            background_imag,
-            # SimFCS uses 1.0
-            donor_freting * fret_efficiency + acceptor_excitation,
-            1.0,
-            1.0 - acceptor_background
-        )
+    acceptor_real = (
+        donor_real * f_donor
+        + sensitized_real * f_acceptor
+        + acceptor_real * acceptor_bleedthrough
+        + background_real * acceptor_background
+    ) / sum
 
-    # phasor of excited acceptor with background and donor bleedthrough
-    if donor_bleedthrough > 0.0:
-        # SimFCS also includes donor channel background in donor bleedthrough
-        acceptor_real, acceptor_imag = linear_combination(
-            acceptor_real,
-            acceptor_imag,
-            acceptor_real,
-            acceptor_imag,
-            donor_real,
-            donor_imag,
-            (
-                donor_freting * fret_efficiency
-                + acceptor_excitation + acceptor_background
-            ),  # SimFCS uses 1.0
-            1.0 - donor_freting * fret_efficiency,
-            1.0 - donor_bleedthrough
-        )
+    acceptor_imag = (
+        donor_imag * f_donor
+        + sensitized_imag * f_acceptor
+        + acceptor_imag * acceptor_bleedthrough
+        + background_imag * acceptor_background
+    ) / sum
 
     return acceptor_real, acceptor_imag
-
-
-cdef inline double clamp(const double value) noexcept nogil:
-    """Return value between 0.0 and 1.0."""
-    if value < 0.0:
-        return 0.0
-    if value > 1.0:
-        return 1.0
-    return value
 
 
 cdef inline (double, double) linear_combination(

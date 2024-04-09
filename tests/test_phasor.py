@@ -242,6 +242,8 @@ def test_phasor_semicircle():
     real, imag = phasor_semicircle(3)
     assert_allclose(real, [0, 0.5, 1], atol=1e-6)
     assert_allclose(imag, [0.0, 0.5, 0], atol=1e-6)
+    real, imag = phasor_semicircle()
+    assert len(real) == 101
     with pytest.raises(ValueError):
         phasor_semicircle(0)
 
@@ -1171,7 +1173,7 @@ def test_phasor_from_fret_donor():
             background_real=0.11,
             background_imag=0.12,
         ),
-        [[0.175927, 0.286123, 0.11], [0.360186, 0.417005, 0.12]],
+        [[0.176593, 0.288569, 0.11], [0.362612, 0.42113, 0.12]],
         atol=1e-3,
     )
     # complex
@@ -1185,7 +1187,7 @@ def test_phasor_from_fret_donor():
             background_real=0.11,
             background_imag=0.12,
         ),
-        [[0.175927, 0.271566, 0.144698], [0.360186, 0.409499, 0.246414]],
+        [[0.176593, 0.273729, 0.146626], [0.362612, 0.413374, 0.253437]],
         atol=1e-3,
     )
 
@@ -1213,16 +1215,16 @@ def test_phasor_from_fret_acceptor():
         [[0.182643, -0.117851], [0.615661, 0.286433]],
         atol=1e-3,
     )
-    # acceptor_excitation
+    # acceptor_bleedthrough
     assert_allclose(
         phasor_from_fret_acceptor(
             80,
             4.2,
             3.0,
             fret_efficiency=[0.0, 0.3, 1.0],
-            acceptor_excitation=0.1,
+            acceptor_bleedthrough=0.1,
         ),
-        [[re, -0.003448, re], [im, 0.333503, im]],
+        [[re, -0.012028, re], [im, 0.329973, im]],
         atol=1e-3,
     )
     # donor_bleedthrough
@@ -1235,7 +1237,7 @@ def test_phasor_from_fret_acceptor():
             fret_efficiency=[0.0, 0.3, 1.0],
             donor_bleedthrough=0.1,
         ),
-        [[dre, -0.028924, re], [dim, 0.323021, im]],
+        [[dre, -0.036135, re], [dim, 0.320055, im]],
         atol=1e-3,
     )
     # donor_fretting
@@ -1248,7 +1250,7 @@ def test_phasor_from_fret_acceptor():
             donor_bleedthrough=0.1,
             donor_freting=0.9,
         ),
-        [[dre, -0.02221, 0.303951], [dim, 0.325042, 0.459695]],
+        [[dre, -0.02974, 0.3041], [dim, 0.322, 0.4598]],
         atol=1e-3,
     )
     # background
@@ -1262,7 +1264,7 @@ def test_phasor_from_fret_acceptor():
             background_real=0.11,
             background_imag=0.12,
         ),
-        [[0.11, -0.05627, 0.285897], [0.12, 0.241451, 0.426534]],
+        [[0.11, -0.060888, 0.287673], [0.12, 0.244825, 0.429631]],
         atol=1e-3,
     )
     # complex
@@ -1274,11 +1276,11 @@ def test_phasor_from_fret_acceptor():
             fret_efficiency=[0.0, 0.3, 1.0],
             donor_freting=0.9,
             donor_bleedthrough=0.1,
-            acceptor_excitation=0.1,
+            acceptor_bleedthrough=0.1,
             acceptor_background=0.1,
             background_real=0.11,
             background_imag=0.12,
         ),
-        [[0.195675, 0.068898, 0.28487], [0.319027, 0.311553, 0.426138]],
+        [[0.199564, 0.057723, 0.286733], [0.322489, 0.310325, 0.429246]],
         atol=1e-3,
     )
