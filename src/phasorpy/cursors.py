@@ -58,11 +58,12 @@ def circular_cursor(
     ------
     ValueError
         `real` and `imag` must have the same dimensions.
-        `radius` must be greater than zero.
+        `radius` must be positive.
 
     Examples
     --------
     Compute label array for four circles:
+
     >>> circular_cursor(numpy.array([-0.5, -0.5, 0.5, 0.5]),
     ...     numpy.array([-0.5, 0.5, -0.5, 0.5]),
     ...     numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]),
@@ -114,6 +115,7 @@ def range_cursor(values, ranges: ArrayLike) -> tuple[NDArray[Any]]:
     Examples
     --------
     Compute the range cursor:
+
     >>> range_cursor(numpy.array([[3.3, 6, 8], [15, 20, 7]]),
     ...     numpy.array([(2, 8), (10, 15), (20, 25)]))
     array([[1, 1, 1], [2, 3, 1]])

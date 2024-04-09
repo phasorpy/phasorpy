@@ -8,12 +8,12 @@ from phasorpy.cursors import circular_cursor, range_cursor
 
 
 def test_circular_cursor():
-    # real, imag, center, radius=radius, components=4
+    # real, imag, center, radius=radius
     real = numpy.array([-0.5, -0.5, 0.5, 0.5])
     imag = numpy.array([-0.5, 0.5, -0.5, 0.5])
     center = numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]])
     radius = [0.1, 0.1, 0.1, 0.1]
-    mask = circular_cursor(real, imag, center, radius=radius, components=4)
+    mask = circular_cursor(real, imag, center, radius=radius)
     assert_array_equal(mask, [1., 2., 3., 4.])
 
 

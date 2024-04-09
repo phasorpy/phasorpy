@@ -20,3 +20,4 @@ PhasorPy library version |version|.
     datasets
     utils
     cli
+    cursors
