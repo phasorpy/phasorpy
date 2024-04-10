@@ -9,6 +9,7 @@ from __future__ import annotations
 
 __all__ = [
     'PhasorPlot',
+    'PhasorPlotFret',
     'plot_phasor',
     'plot_phasor_image',
     'plot_signal_image',
@@ -35,6 +36,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Arc, Circle, Polygon
 from matplotlib.path import Path
 from matplotlib.patheffects import AbstractPathEffect
+from matplotlib.widgets import Slider
 
 from ._utils import (
     circle_circle_intersection,
@@ -45,7 +47,15 @@ from ._utils import (
     sort_coordinates,
     update_kwargs,
 )
-from .phasor import phasor_from_lifetime, phasor_transform
+from .phasor import (
+    phasor_from_fret_acceptor,
+    phasor_from_fret_donor,
+    phasor_from_lifetime,
+    phasor_semicircle,
+    phasor_to_apparent_lifetime,
+    phasor_to_polar,
+    phasor_transform,
+)
 
 GRID_COLOR = '0.5'
 GRID_LINESTYLE = ':'
@@ -75,6 +85,11 @@ class PhasorPlot:
     **kwargs
         Additional properties to set on `ax`.
 
+    See Also
+    --------
+    phasorpy.plot.plot_phasor
+    :ref:`sphx_glr_tutorials_phasorpy_phasorplot.py`
+
     """
 
     _ax: Axes
@@ -85,6 +100,15 @@ class PhasorPlot:
 
     _full: bool
     """Show all quadrants of phasor space."""
+
+    _lines: list[Line2D]
+    """Last lines created."""
+
+    _semicircle_ticks: SemicircleTicks | None
+    """Last SemicircleTicks instance created."""
+
+    _frequency: float
+    """Laser pulse or modulation frequency in MHz."""
 
     def __init__(
         self,
@@ -98,6 +122,10 @@ class PhasorPlot:
     ) -> None:
         # initialize empty phasor plot
         self._ax = pyplot.subplots()[1] if ax is None else ax
+        self._ax.format_coord = self._on_format_coord  # type: ignore
+
+        self._lines = []
+        self._semicircle_ticks = None
 
         self._full = bool(allquadrants)
         if self._full:
@@ -117,7 +145,10 @@ class PhasorPlot:
 
         title = 'Phasor plot'
         if frequency is not None:
+            self._frequency = float(frequency)
             title += f' ({frequency:g} MHz)'
+        else:
+            self._frequency = 0.0
 
         update_kwargs(
             kwargs,
@@ -214,7 +245,7 @@ class PhasorPlot:
                     lbl = label[i]
                 except IndexError:
                     pass
-            ax.plot(re, im, fmt, label=lbl, **kwargs)
+            self._lines = ax.plot(re, im, fmt, label=lbl, **kwargs)
         if label is not None:
             ax.legend()
 
@@ -423,7 +454,7 @@ class PhasorPlot:
             linestyle=GRID_LINESTYLE,
             linewidth=GRID_LINEWIDH,
         )
-        self._ax.add_line(Line2D(real, imag, **kwargs))
+        self._lines = [self._ax.add_line(Line2D(real, imag, **kwargs))]
 
     def circle(
         self,
@@ -601,6 +632,7 @@ class PhasorPlot:
         lifetime: Sequence[float] | None = None,
         labels: Sequence[str] | None = None,
         show_circle: bool = True,
+        use_lines: bool = False,
         **kwargs,
     ) -> None:
         """Draw universal semicircle.
@@ -622,12 +654,18 @@ class PhasorPlot:
             Only applies when `frequency` and `lifetime` are specified.
         show_circle : bool, optional, default: True
             Draw universal semicircle.
+        use_lines : bool, optional, default: False
+            Draw universal semicircle using lines instead of arc.
         **kwargs
             Additional parameters passed to
+            :py:class:`matplotlib.lines.Line2D` or
             :py:class:`matplotlib.patches.Arc` and
             :py:meth:`matplotlib.axes.Axes.plot`.
 
         """
+        if frequency is not None:
+            self._frequency = float(frequency)
+
         update_kwargs(
             kwargs,
             color=GRID_COLOR,
@@ -643,44 +681,584 @@ class PhasorPlot:
         ax = self._ax
 
         if show_circle:
-            ax.add_patch(
-                Arc(
-                    (phasor_reference[0] / 2, phasor_reference[1] / 2),
-                    polar_reference[1],
-                    polar_reference[1],
-                    theta1=math.degrees(polar_reference[0]),
-                    theta2=math.degrees(polar_reference[0]) + 180.0,
-                    fill=False,
-                    **kwargs,
+            if use_lines:
+                self._lines = [
+                    ax.add_line(
+                        Line2D(
+                            *phasor_transform(
+                                *phasor_semicircle(), *polar_reference
+                            ),
+                            **kwargs,
+                        )
+                    )
+                ]
+            else:
+                ax.add_patch(
+                    Arc(
+                        (phasor_reference[0] / 2, phasor_reference[1] / 2),
+                        polar_reference[1],
+                        polar_reference[1],
+                        theta1=math.degrees(polar_reference[0]),
+                        theta2=math.degrees(polar_reference[0]) + 180.0,
+                        fill=False,
+                        **kwargs,
+                    )
                 )
-            )
 
         if frequency is not None and polar_reference == (0.0, 1.0):
             # draw ticks and labels
-            if lifetime is None:
-                lifetime = [0] + [
-                    2**t
-                    for t in range(-8, 32)
-                    if phasor_from_lifetime(frequency, 2**t)[1] >= 0.18
-                ]
-                unit = 'ns'
-            else:
-                unit = ''
-            if labels is None:
-                labels = [f'{tau:g}' for tau in lifetime]
-                try:
-                    labels[2] = f'{labels[2]} {unit}'
-                except IndexError:
-                    pass
-            ax.plot(
+            lifetime, labels = _semicircle_ticks(frequency, lifetime, labels)
+            self._semicircle_ticks = SemicircleTicks(labels=labels)
+            self._lines = ax.plot(
                 *phasor_transform(
                     *phasor_from_lifetime(frequency, lifetime),
                     *polar_reference,
                 ),
-                path_effects=[SemicircleTicks(labels=labels)],
+                path_effects=[self._semicircle_ticks],
                 **kwargs,
             )
         self._reset_limits()
+
+    def _on_format_coord(self, x: float, y: float, /) -> str:
+        """Callback function to update coordinates displayed in toolbar."""
+        phi, mod = phasor_to_polar_scalar(x, y)
+        ret = [
+            f'[{x:4.2f}, {y:4.2f}]',
+            f'[{math.degrees(phi):.0f}°, {mod * 100:.0f}%]',
+        ]
+        if x > 0.0 and y > 0.0 and self._frequency > 0.0:
+            tp, tm = phasor_to_apparent_lifetime(x, y, self._frequency)
+            ret.append(f'[{tp:.2f}, {tm:.2f} ns]')
+        return '  '.join(reversed(ret))
+
+
+class PhasorPlotFret(PhasorPlot):
+    """FRET phasor plot.
+
+    Plot Förster Resonance Energy Transfer efficiency trajectories
+    of donor and acceptor channels in phasor space.
+
+    Parameters
+    ----------
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+    donor_lifetime : array_like
+        Lifetime of donor without FRET in ns.
+    acceptor_lifetime : array_like
+        Lifetime of acceptor in ns.
+    fret_efficiency : array_like, optional, default 0
+        FRET efficiency in range [0..1].
+    donor_freting : array_like, optional, default 1
+        Fraction of donors participating in FRET. Range [0..1].
+    donor_bleedthrough : array_like, optional, default 0
+        Weight of donor fluorescence in acceptor channel
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence from donor and fully sensitized
+        acceptor are equal.
+        The background in the donor channel does not bleed through.
+    acceptor_bleedthrough : array_like, optional, default 0
+        Weight of fluorescence from directly excited acceptor
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence from directly excited acceptor
+        and fully sensitized acceptor are equal.
+    acceptor_background : array_like, optional, default 0
+        Weight of background fluorescence in acceptor channel
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence of background and fully
+        sensitized acceptor are equal.
+    donor_background : array_like, optional, default 0
+        Weight of background fluorescence in donor channel
+        relative to fluorescence of donor without FRET.
+        A weight of 1 means the fluorescence of background and donor
+        without FRET are equal.
+    background_real : array_like, optional, default 0
+        Real component of background fluorescence phasor coordinate
+        at `frequency`.
+    background_imag : array_like, optional, default 0
+        Imaginary component of background fluorescence phasor coordinate
+        at `frequency`.
+    ax : matplotlib axes, optional
+        Matplotlib axes used for plotting.
+        By default, a new subplot axes is created.
+        Cannot be used with `interactive` mode.
+    interactive : bool, optional, default: False
+        Use matplotlib slider widgets to interactively control parameters.
+    **kwargs
+        Additional parameters passed to :py:class:`phasorpy.plot.PhasorPlot`.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_fret_donor
+    phasorpy.phasor.phasor_from_fret_acceptor
+    :ref:`sphx_glr_tutorials_phasorpy_fret.py`
+
+    """
+
+    _fret_efficiencies: NDArray[Any]
+
+    _frequency_slider: Slider
+    _donor_lifetime_slider: Slider
+    _acceptor_lifetime_slider: Slider
+    _fret_efficiency_slider: Slider
+    _donor_freting_slider: Slider
+    _donor_bleedthrough_slider: Slider
+    _acceptor_bleedthrough_slider: Slider
+    _acceptor_background_slider: Slider
+    _donor_background_slider: Slider
+    _background_real_slider: Slider
+    _background_imag_slider: Slider
+
+    _donor_line: Line2D
+    _donor_only_line: Line2D
+    _donor_fret_line: Line2D
+    _donor_trajectory_line: Line2D
+    _donor_semicircle_line: Line2D
+    _donor_donor_line: Line2D
+    _donor_background_line: Line2D
+    _acceptor_line: Line2D
+    _acceptor_only_line: Line2D
+    _acceptor_trajectory_line: Line2D
+    _acceptor_semicircle_line: Line2D
+    _acceptor_background_line: Line2D
+    _background_line: Line2D
+
+    _donor_semicircle_ticks: SemicircleTicks | None
+
+    def __init__(
+        self,
+        *,
+        frequency: float = 60.0,
+        donor_lifetime: float = 4.2,
+        acceptor_lifetime: float = 3.0,
+        fret_efficiency: float = 0.5,
+        donor_freting: float = 1.0,
+        donor_bleedthrough: float = 0.0,
+        acceptor_bleedthrough: float = 0.0,
+        acceptor_background: float = 0.0,
+        donor_background: float = 0.0,
+        background_real: float = 0.0,
+        background_imag: float = 0.0,
+        ax: Axes | None = None,
+        interactive: bool = False,
+        **kwargs,
+    ) -> None:
+        update_kwargs(
+            kwargs,
+            title='FRET phasor plot',
+            xlim=[-0.2, 1.1],
+            ylim=[-0.1, 0.8],
+        )
+        kwargs['allquadrants'] = False
+        kwargs['grid'] = False
+
+        if ax is not None:
+            interactive = False
+        else:
+            fig = pyplot.figure()
+            ax = fig.add_subplot()
+            if interactive:
+                w, h = fig.get_size_inches()
+                fig.set_size_inches(w, h * 1.66)
+                fig.subplots_adjust(bottom=0.45)
+                fcm = fig.canvas.manager
+                if fcm is not None:
+                    fcm.set_window_title(kwargs['title'])
+
+        super().__init__(ax=ax, **kwargs)
+
+        self._fret_efficiencies = numpy.linspace(0.0, 1.0, 101)
+
+        donor_real, donor_imag = phasor_from_lifetime(
+            frequency, donor_lifetime
+        )
+        donor_fret_real, donor_fret_imag = phasor_from_lifetime(
+            frequency, donor_lifetime * (1.0 - fret_efficiency)
+        )
+        acceptor_real, acceptor_imag = phasor_from_lifetime(
+            frequency, acceptor_lifetime
+        )
+        donor_trajectory_real, donor_trajectory_imag = phasor_from_fret_donor(
+            frequency,
+            donor_lifetime,
+            fret_efficiency=self._fret_efficiencies,
+            donor_freting=donor_freting,
+            donor_background=donor_background,
+            background_real=background_real,
+            background_imag=background_imag,
+        )
+        acceptor_trajectory_real, acceptor_trajectory_imag = (
+            phasor_from_fret_acceptor(
+                frequency,
+                donor_lifetime,
+                acceptor_lifetime,
+                fret_efficiency=self._fret_efficiencies,
+                donor_freting=donor_freting,
+                donor_bleedthrough=donor_bleedthrough,
+                acceptor_bleedthrough=acceptor_bleedthrough,
+                acceptor_background=acceptor_background,
+                background_real=background_real,
+                background_imag=background_imag,
+            )
+        )
+
+        # add plots
+        self.semicircle(frequency=frequency)
+        self._donor_semicircle_line = self._lines[0]
+        self._donor_semicircle_ticks = self._semicircle_ticks
+
+        self.semicircle(
+            phasor_reference=(float(acceptor_real), float(acceptor_imag)),
+            use_lines=True,
+        )
+        self._acceptor_semicircle_line = self._lines[0]
+
+        if donor_freting < 1.0 and donor_background == 0.0:
+            self.line(
+                [donor_real, donor_fret_real],
+                [donor_imag, donor_fret_imag],
+            )
+        else:
+            self.line([0.0, 0.0], [0.0, 0.0])
+        self._donor_donor_line = self._lines[0]
+
+        if acceptor_background > 0.0:
+            self.line(
+                [float(acceptor_real), float(background_real)],
+                [float(acceptor_imag), float(background_imag)],
+            )
+        else:
+            self.line([0.0, 0.0], [0.0, 0.0])
+        self._acceptor_background_line = self._lines[0]
+
+        if donor_background > 0.0:
+            self.line(
+                [float(donor_real), float(background_real)],
+                [float(donor_imag), float(background_imag)],
+            )
+        else:
+            self.line([0.0, 0.0], [0.0, 0.0])
+        self._donor_background_line = self._lines[0]
+
+        self.plot(
+            donor_trajectory_real,
+            donor_trajectory_imag,
+            fmt='-',
+            color='tab:green',
+        )
+        self._donor_trajectory_line = self._lines[0]
+
+        self.plot(
+            acceptor_trajectory_real,
+            acceptor_trajectory_imag,
+            fmt='-',
+            color='tab:red',
+        )
+        self._acceptor_trajectory_line = self._lines[0]
+
+        self.plot(
+            donor_real,
+            donor_imag,
+            fmt='.',
+            color='tab:green',
+        )
+        self._donor_only_line = self._lines[0]
+
+        self.plot(
+            donor_real,
+            donor_imag,
+            fmt='.',
+            color='tab:green',
+        )
+        self._donor_fret_line = self._lines[0]
+
+        self.plot(
+            acceptor_real,
+            acceptor_imag,
+            fmt='.',
+            color='tab:red',
+        )
+        self._acceptor_only_line = self._lines[0]
+
+        self.plot(
+            donor_trajectory_real[int(fret_efficiency * 100.0)],
+            donor_trajectory_imag[int(fret_efficiency * 100.0)],
+            fmt='o',
+            color='tab:green',
+            label='Donor',
+        )
+        self._donor_line = self._lines[0]
+
+        self.plot(
+            acceptor_trajectory_real[int(fret_efficiency * 100.0)],
+            acceptor_trajectory_imag[int(fret_efficiency * 100.0)],
+            fmt='o',
+            color='tab:red',
+            label='Acceptor',
+        )
+        self._acceptor_line = self._lines[0]
+
+        self.plot(
+            background_real,
+            background_imag,
+            fmt='o',
+            color='black',
+            label='Background',
+        )
+        self._background_line = self._lines[0]
+
+        if not interactive:
+            return
+
+        # add sliders
+        axes = []
+        for i in range(11):
+            axes.append(fig.add_axes((0.33, 0.05 + i * 0.03, 0.45, 0.01)))
+
+        self._frequency_slider = Slider(
+            ax=axes[10],
+            label='Frequency ',
+            valfmt=' %.0f MHz',
+            valmin=10,
+            valmax=200,
+            valstep=1,
+            valinit=frequency,
+        )
+        self._frequency_slider.on_changed(self._on_semicircle_changed)
+
+        self._donor_lifetime_slider = Slider(
+            ax=axes[9],
+            label='Donor lifetime ',
+            valfmt=' %.1f ns',
+            valmin=0.1,
+            valmax=16.0,
+            valstep=0.1,
+            valinit=donor_lifetime,
+            # facecolor='tab:green',
+            handle_style={'edgecolor': 'tab:green'},
+        )
+        self._donor_lifetime_slider.on_changed(self._on_changed)
+
+        self._acceptor_lifetime_slider = Slider(
+            ax=axes[8],
+            label='Acceptor lifetime ',
+            valfmt=' %.1f ns',
+            valmin=0.1,
+            valmax=16.0,
+            valstep=0.1,
+            valinit=acceptor_lifetime,
+            # facecolor='tab:red',
+            handle_style={'edgecolor': 'tab:red'},
+        )
+        self._acceptor_lifetime_slider.on_changed(self._on_semicircle_changed)
+
+        self._fret_efficiency_slider = Slider(
+            ax=axes[7],
+            label='FRET efficiency ',
+            valfmt=' %.2f',
+            valmin=0.0,
+            valmax=1.0,
+            valstep=0.01,
+            valinit=fret_efficiency,
+        )
+        self._fret_efficiency_slider.on_changed(self._on_changed)
+
+        self._donor_freting_slider = Slider(
+            ax=axes[6],
+            label='Donors FRETing ',
+            valfmt=' %.2f',
+            valmin=0.0,
+            valmax=1.0,
+            valstep=0.01,
+            valinit=donor_freting,
+            # facecolor='tab:green',
+            handle_style={'edgecolor': 'tab:green'},
+        )
+        self._donor_freting_slider.on_changed(self._on_changed)
+
+        self._donor_bleedthrough_slider = Slider(
+            ax=axes[5],
+            label='Donor bleedthrough ',
+            valfmt=' %.2f',
+            valmin=0.0,
+            valmax=5.0,
+            valstep=0.01,
+            valinit=donor_bleedthrough,
+            # facecolor='tab:red',
+            handle_style={'edgecolor': 'tab:red'},
+        )
+        self._donor_bleedthrough_slider.on_changed(self._on_changed)
+
+        self._acceptor_bleedthrough_slider = Slider(
+            ax=axes[4],
+            label='Acceptor bleedthrough ',
+            valfmt=' %.2f',
+            valmin=0.0,
+            valmax=5.0,
+            valstep=0.01,
+            valinit=acceptor_bleedthrough,
+            # facecolor='tab:red',
+            handle_style={'edgecolor': 'tab:red'},
+        )
+        self._acceptor_bleedthrough_slider.on_changed(self._on_changed)
+
+        self._acceptor_background_slider = Slider(
+            ax=axes[3],
+            label='Acceptor background ',
+            valfmt=' %.2f',
+            valmin=0.0,
+            valmax=5.0,
+            valstep=0.01,
+            valinit=acceptor_background,
+            # facecolor='tab:red',
+            handle_style={'edgecolor': 'tab:red'},
+        )
+        self._acceptor_background_slider.on_changed(self._on_changed)
+
+        self._donor_background_slider = Slider(
+            ax=axes[2],
+            label='Donor background ',
+            valfmt=' %.2f',
+            valmin=0.0,
+            valmax=5.0,
+            valstep=0.01,
+            valinit=donor_background,
+            # facecolor='tab:green',
+            handle_style={'edgecolor': 'tab:green'},
+        )
+        self._donor_background_slider.on_changed(self._on_changed)
+
+        self._background_real_slider = Slider(
+            ax=axes[1],
+            label='Background real ',
+            valfmt=' %.2f',
+            valmin=0.0,
+            valmax=1.0,
+            valstep=0.01,
+            valinit=background_real,
+        )
+        self._background_real_slider.on_changed(self._on_changed)
+
+        self._background_imag_slider = Slider(
+            ax=axes[0],
+            label='Background imag ',
+            valfmt=' %.2f',
+            valmin=0.0,
+            valmax=0.6,
+            valstep=0.01,
+            valinit=background_imag,
+        )
+        self._background_imag_slider.on_changed(self._on_changed)
+
+    def _on_semicircle_changed(self, value: Any) -> None:
+        """Callback function to update semicircles."""
+        self._frequency = frequency = self._frequency_slider.val
+        acceptor_lifetime = self._acceptor_lifetime_slider.val
+        if self._donor_semicircle_ticks is not None:
+            lifetime, labels = _semicircle_ticks(frequency)
+            self._donor_semicircle_ticks.labels = labels
+            self._donor_semicircle_line.set_data(
+                *phasor_transform(*phasor_from_lifetime(frequency, lifetime))
+            )
+        self._acceptor_semicircle_line.set_data(
+            *phasor_transform(
+                *phasor_semicircle(),
+                *phasor_to_polar(
+                    *phasor_from_lifetime(frequency, acceptor_lifetime)
+                ),
+            )
+        )
+        self._on_changed(value)
+
+    def _on_changed(self, value: Any) -> None:
+        """Callback function to update plot with current slider values."""
+        frequency = self._frequency_slider.val
+        donor_lifetime = self._donor_lifetime_slider.val
+        acceptor_lifetime = self._acceptor_lifetime_slider.val
+        fret_efficiency = self._fret_efficiency_slider.val
+        donor_freting = self._donor_freting_slider.val
+        donor_bleedthrough = self._donor_bleedthrough_slider.val
+        acceptor_bleedthrough = self._acceptor_bleedthrough_slider.val
+        acceptor_background = self._acceptor_background_slider.val
+        donor_background = self._donor_background_slider.val
+        background_real = self._background_real_slider.val
+        background_imag = self._background_imag_slider.val
+        e = int(self._fret_efficiency_slider.val * 100)
+
+        donor_real, donor_imag = phasor_from_lifetime(
+            frequency, donor_lifetime
+        )
+        donor_fret_real, donor_fret_imag = phasor_from_lifetime(
+            frequency, donor_lifetime * (1.0 - fret_efficiency)
+        )
+        acceptor_real, acceptor_imag = phasor_from_lifetime(
+            frequency, acceptor_lifetime
+        )
+        donor_trajectory_real, donor_trajectory_imag = phasor_from_fret_donor(
+            frequency,
+            donor_lifetime,
+            fret_efficiency=self._fret_efficiencies,
+            donor_freting=donor_freting,
+            donor_background=donor_background,
+            background_real=background_real,
+            background_imag=background_imag,
+        )
+        acceptor_trajectory_real, acceptor_trajectory_imag = (
+            phasor_from_fret_acceptor(
+                frequency,
+                donor_lifetime,
+                acceptor_lifetime,
+                fret_efficiency=self._fret_efficiencies,
+                donor_freting=donor_freting,
+                donor_bleedthrough=donor_bleedthrough,
+                acceptor_bleedthrough=acceptor_bleedthrough,
+                acceptor_background=acceptor_background,
+                background_real=background_real,
+                background_imag=background_imag,
+            )
+        )
+
+        if donor_background > 0.0:
+            self._donor_background_line.set_data(
+                [float(donor_real), float(background_real)],
+                [float(donor_imag), float(background_imag)],
+            )
+        else:
+            self._donor_background_line.set_data([0.0, 0.0], [0.0, 0.0])
+
+        if donor_freting < 1.0 and donor_background == 0.0:
+            self._donor_donor_line.set_data(
+                [donor_real, donor_fret_real],
+                [donor_imag, donor_fret_imag],
+            )
+        else:
+            self._donor_donor_line.set_data([0.0, 0.0], [0.0, 0.0])
+
+        if acceptor_background > 0.0:
+            self._acceptor_background_line.set_data(
+                [float(acceptor_real), float(background_real)],
+                [float(acceptor_imag), float(background_imag)],
+            )
+        else:
+            self._acceptor_background_line.set_data([0.0, 0.0], [0.0, 0.0])
+
+        self._background_line.set_data([background_real], [background_imag])
+
+        self._donor_only_line.set_data([donor_real], [donor_imag])
+        self._donor_fret_line.set_data([donor_fret_real], [donor_fret_imag])
+        self._donor_trajectory_line.set_data(
+            donor_trajectory_real, donor_trajectory_imag
+        )
+        self._donor_line.set_data(
+            [donor_trajectory_real[e]], [donor_trajectory_imag[e]]
+        )
+
+        self._acceptor_only_line.set_data([acceptor_real], [acceptor_imag])
+        self._acceptor_trajectory_line.set_data(
+            acceptor_trajectory_real, acceptor_trajectory_imag
+        )
+        self._acceptor_line.set_data(
+            [acceptor_trajectory_real[e]], [acceptor_trajectory_imag[e]]
+        )
 
 
 class SemicircleTicks(AbstractPathEffect):
@@ -721,6 +1299,18 @@ class SemicircleTicks(AbstractPathEffect):
             self._labels = tuple(labels)
         self._gc = kwargs
 
+    @property
+    def labels(self) -> tuple[str, ...]:
+        """Tick labels."""
+        return self._labels
+
+    @labels.setter
+    def labels(self, value: Sequence[str] | None, /) -> None:
+        if value is None or not value:
+            self._labels = ()
+        else:
+            self._labels = tuple(value)
+
     def draw_path(self, renderer, gc, tpath, affine, rgbFace=None) -> None:
         """Draw path with updated gc."""
         gc0 = renderer.new_gc()
@@ -757,7 +1347,6 @@ class SemicircleTicks(AbstractPathEffect):
                 affine.inverted() + trans,
                 rgbFace,
             )
-
             if not self._labels:
                 continue
             # coordinates of labels
@@ -820,6 +1409,11 @@ def plot_phasor(
         Additional parguments passed to :py:class:`PhasorPlot`,
         :py:meth:`PhasorPlot.plot`, :py:meth:`PhasorPlot.hist2d`, or
         :py:meth:`PhasorPlot.contour` depending on `style`.
+
+    See Also
+    --------
+    phasorpy.plot.PhasorPlot
+    :ref:`sphx_glr_tutorials_phasorpy_phasorplot.py`
 
     """
     init_kwargs = parse_kwargs(
@@ -1145,7 +1739,7 @@ def plot_polar_frequency(
     if title:
         ax.set_title(title)
     ax.set_xscale('log', base=10)
-    ax.set_xlabel('frequency (MHz)')
+    ax.set_xlabel('Frequency (MHz)')
 
     phase = numpy.asarray(phase)
     if phase.ndim < 2:
@@ -1154,13 +1748,13 @@ def plot_polar_frequency(
     if modulation.ndim < 2:
         modulation = modulation.reshape(-1, 1)
 
-    ax.set_ylabel('phase (°)', color='tab:blue')
+    ax.set_ylabel('Phase (°)', color='tab:blue')
     ax.set_yticks([0.0, 30.0, 60.0, 90.0])
     for phi in phase.T:
         ax.plot(frequency, numpy.rad2deg(phi), color='tab:blue', **kwargs)
     ax = ax.twinx()  # type: ignore
 
-    ax.set_ylabel('modulation (%)', color='tab:red')
+    ax.set_ylabel('Modulation (%)', color='tab:red')
     ax.set_yticks([0.0, 25.0, 50.0, 75.0, 100.0])
     for mod in modulation.T:
         ax.plot(frequency, mod * 100, color='tab:red', **kwargs)
@@ -1218,3 +1812,27 @@ def _imshow(
         ax.set_axis_off()
     # ax.set_anchor('C')
     return pos
+
+
+def _semicircle_ticks(
+    frequency: float,
+    lifetime: Sequence[float] | None = None,
+    labels: Sequence[str] | None = None,
+) -> tuple[tuple[float, ...], tuple[str, ...]]:
+    """Return semicircle tick lifetimes and labels at frequency."""
+    if lifetime is None:
+        lifetime = [0.0] + [
+            2**t
+            for t in range(-8, 32)
+            if phasor_from_lifetime(frequency, 2**t)[1] >= 0.18
+        ]
+        unit = 'ns'
+    else:
+        unit = ''
+    if labels is None:
+        labels = [f'{tau:g}' for tau in lifetime]
+        try:
+            labels[2] = f'{labels[2]} {unit}'
+        except IndexError:
+            pass
+    return tuple(lifetime), tuple(labels)

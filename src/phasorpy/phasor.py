@@ -147,6 +147,11 @@ def phasor_from_signal(
     imag : ndarray
         Imaginary component of phasor coordinates at `harmonic` along `axis`.
 
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_signal_fft
+    :ref:`sphx_glr_tutorials_benchmarks_phasorpy_phasor_from_signal.py`
+
     Notes
     -----
     Compared to the :py:func:`phasor_from_signal_fft` reference implementation,
@@ -303,6 +308,7 @@ def phasor_from_signal_fft(
         The default is the first harmonic (fundamental frequency).
     fft_func : callable, optional
         A drop-in replacement function for ``numpy.fft.fft``.
+        For example, ``scipy.fft.fft`` or ``mkl_fft._numpy_fft.fft``.
 
     Returns
     -------
@@ -320,6 +326,11 @@ def phasor_from_signal_fft(
     IndexError
         `harmonic` is smaller than 1 or greater than half the samples along
         `axis`.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_signal
+    :ref:`sphx_glr_tutorials_benchmarks_phasorpy_phasor_from_signal.py`
 
     Examples
     --------
@@ -381,21 +392,21 @@ def phasor_from_signal_fft(
 
 
 def phasor_semicircle(
-    samples: int = 33, /
+    samples: int = 101, /
 ) -> tuple[NDArray[numpy.float64], NDArray[numpy.float64]]:
     r"""Return equally spaced phasor coordinates on universal semicircle.
 
     Parameters
     ----------
-    samples : int, optional
-        Number of coordinates to return. The default is 33.
+    samples : int, optional, default: 101
+        Number of coordinates to return.
 
     Returns
     -------
     real : ndarray
-        Real component of phasor coordinates.
+        Real component of semicircle phasor coordinates.
     imag : ndarray
-        Imaginary component of phasor coordinates.
+        Imaginary component of semicircle phasor coordinates.
 
     Raises
     ------
@@ -510,6 +521,13 @@ def phasor_calibrate(
     ValueError
         The array shapes of `real` and `imag`, or `reference_real` and
         `reference_imag` do not match.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_transform
+    phasorpy.phasor.polar_from_reference_phasor
+    phasorpy.phasor.phasor_center
+    phasorpy.phasor.phasor_from_lifetime
 
     Notes
     -----
@@ -691,6 +709,10 @@ def polar_from_reference_phasor(
     modulation_zero : ndarray
         Radial component of polar coordinates for calibration.
 
+    See Also
+    --------
+    phasorpy.phasor.polar_from_reference
+
     Notes
     -----
     This function performs the following operations:
@@ -748,6 +770,10 @@ def polar_from_reference(
     modulation_zero : ndarray
         Radial component of polar coordinates for calibration.
 
+    See Also
+    --------
+    phasorpy.phasor.polar_from_reference_phasor
+
     Examples
     --------
     >>> polar_from_reference(0.2, 0.4, 0.4, 1.3)
@@ -800,6 +826,10 @@ def phasor_to_polar(
     modulation : ndarray
         Radial component of polar coordinates.
 
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_polar
+
     Examples
     --------
     Calculate polar coordinates from three phasor coordinates:
@@ -835,6 +865,10 @@ def phasor_from_polar(
         Real component of phasor coordinates.
     imag : ndarray
         Imaginary component of phasor coordinates.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_to_polar
 
     Notes
     -----
@@ -894,6 +928,10 @@ def phasor_to_apparent_lifetime(
         Apparent single lifetime from angular component of phasor coordinates.
     modulation_lifetime : ndarray
         Apparent single lifetime from radial component of phasor coordinates.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_apparent_lifetime
 
     Notes
     -----
@@ -973,6 +1011,10 @@ def phasor_from_apparent_lifetime(
         Real component of phasor coordinates.
     imag : ndarray
         Imaginary component of phasor coordinates.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_to_apparent_lifetime
 
     Notes
     -----
@@ -1081,14 +1123,14 @@ def phasor_from_lifetime(
 
         \omega &= 2 \pi f
 
-        g_{j} &= a_{j} / (1 + (\omega \tau_{j})^2)
+        g_{j} &= \alpha_{j} / (1 + (\omega \tau_{j})^2)
 
         G &= \sum_{j} g_{j}
 
         S &= \sum_{j} \omega \tau_{j} g_{j}
 
-    The relation between pre-exponential amplitudes :math:`\alpha` and
-    fractional intensities :math:`a` is:
+    The relation between pre-exponential amplitudes :math:`a` and
+    fractional intensities :math:`\alpha` is:
 
     .. math::
         F_{DC} &= \sum_{j} a_{j} \tau_{j}
@@ -1270,6 +1312,10 @@ def polar_to_apparent_lifetime(
     modulation_lifetime : ndarray
         Apparent single lifetime from `modulation`.
 
+    See Also
+    --------
+    phasorpy.phasor.polar_from_apparent_lifetime
+
     Notes
     -----
     The polar coordinates `phase` (:math:`\phi`) and `modulation` (:math:`M`)
@@ -1336,6 +1382,10 @@ def polar_from_apparent_lifetime(
         Angular component of polar coordinates.
     modulation : ndarray
         Radial component of polar coordinates.
+
+    See Also
+    --------
+    phasorpy.phasor.polar_to_apparent_lifetime
 
     Notes
     -----
@@ -1407,13 +1457,15 @@ def phasor_from_fret_donor(
     donor_freting : array_like, optional, default 1
         Fraction of donors participating in FRET. Range [0..1].
     donor_background : array_like, optional, default 0
-        Fraction of background fluorescence in unquenched donor channel.
-        Range [0..1].
+        Weight of background fluorescence in donor channel
+        relative to fluorescence of donor without FRET.
+        A weight of 1 means the fluorescence of background and donor
+        without FRET are equal.
     background_real : array_like, optional, default 0
-        Real component of phasor coordinate of background fluorescence
+        Real component of background fluorescence phasor coordinate
         at `frequency`.
     background_imag : array_like, optional, default 0
-        Imaginary component of phasor coordinate of background fluorescence
+        Imaginary component of background fluorescence phasor coordinate
         at `frequency`.
     unit_conversion : float, optional
         Product of `frequency` and `lifetime` units' prefix factors.
@@ -1430,6 +1482,11 @@ def phasor_from_fret_donor(
     imag : ndarray
         Imaginary component of donor channel phasor coordinates.
 
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_fret_acceptor
+    :ref:`sphx_glr_tutorials_phasorpy_fret.py`
+
     Examples
     --------
     Compute the phasor coordinates of a FRET donor channel at three
@@ -1444,7 +1501,7 @@ def phasor_from_fret_donor(
     ...     background_real=0.11,
     ...     background_imag=0.12,
     ... )  # doctest: +NUMBER
-    (array([0.1759, 0.2716, 0.1447]), array([0.3602, 0.4095, 0.2464]))
+    (array([0.1766, 0.2737, 0.1466]), array([0.3626, 0.4134, 0.2534]))
 
     """
     omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
@@ -1469,7 +1526,7 @@ def phasor_from_fret_acceptor(
     fret_efficiency: ArrayLike = 0.0,
     donor_freting: ArrayLike = 1.0,
     donor_bleedthrough: ArrayLike = 0.0,
-    acceptor_excitation: ArrayLike = 0.0,
+    acceptor_bleedthrough: ArrayLike = 0.0,
     acceptor_background: ArrayLike = 0.0,
     background_real: ArrayLike = 0.0,
     background_imag: ArrayLike = 0.0,
@@ -1504,16 +1561,26 @@ def phasor_from_fret_acceptor(
     donor_freting : array_like, optional, default 1
         Fraction of donors participating in FRET. Range [0..1].
     donor_bleedthrough : array_like, optional, default 0
-        Fraction of donor fluorescence in acceptor channel. Range [0..1].
-    acceptor_excitation : array_like, optional, default 0
-        Fraction of acceptor that is directly excited. Range [0..1].
+        Weight of donor fluorescence in acceptor channel
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence from donor and fully sensitized
+        acceptor are equal.
+        The background in the donor channel does not bleed through.
+    acceptor_bleedthrough : array_like, optional, default 0
+        Weight of fluorescence from directly excited acceptor
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence from directly excited acceptor
+        and fully sensitized acceptor are equal.
     acceptor_background : array_like, optional, default 0
-        Fraction of background fluorescence in acceptor channel. Range [0..1].
+        Weight of background fluorescence in acceptor channel
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence of background and fully
+        sensitized acceptor are equal.
     background_real : array_like, optional, default 0
-        Real component of phasor coordinate of background fluorescence
+        Real component of background fluorescence phasor coordinate
         at `frequency`.
     background_imag : array_like, optional, default 0
-        Imaginary component of phasor coordinate of background fluorescence
+        Imaginary component of background fluorescence phasor coordinate
         at `frequency`.
     unit_conversion : float, optional
         Product of `frequency` and `lifetime` units' prefix factors.
@@ -1530,6 +1597,11 @@ def phasor_from_fret_acceptor(
     imag : ndarray
         Imaginary component of acceptor channel phasor coordinates.
 
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_fret_donor
+    :ref:`sphx_glr_tutorials_phasorpy_fret.py`
+
     Examples
     --------
     Compute the phasor coordinates of a FRET acceptor channel at three
@@ -1542,12 +1614,12 @@ def phasor_from_fret_acceptor(
     ...     fret_efficiency=[0.0, 0.3, 1.0],
     ...     donor_freting=0.9,
     ...     donor_bleedthrough=0.1,
-    ...     acceptor_excitation=0.1,
+    ...     acceptor_bleedthrough=0.1,
     ...     acceptor_background=0.1,
     ...     background_real=0.11,
     ...     background_imag=0.12,
     ... )  # doctest: +NUMBER
-    (array([0.1957, 0.0689, 0.2849]), array([0.319, 0.3116, 0.4261]))
+    (array([0.1996, 0.05772, 0.2867]), array([0.3225, 0.3103, 0.4292]))
 
     """
     omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
@@ -1559,7 +1631,7 @@ def phasor_from_fret_acceptor(
         fret_efficiency,
         donor_freting,
         donor_bleedthrough,
-        acceptor_excitation,
+        acceptor_bleedthrough,
         acceptor_background,
         background_real,
         background_imag,

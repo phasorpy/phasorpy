@@ -9,6 +9,7 @@ from matplotlib import pyplot
 
 from phasorpy.plot import (
     PhasorPlot,
+    PhasorPlotFret,
     plot_phasor,
     plot_phasor_image,
     plot_polar_frequency,
@@ -48,6 +49,14 @@ class TestPhasorPlot:
         plot = PhasorPlot(ax=ax, title='axes')
         assert plot.ax == ax
         assert plot.fig == fig
+        self.show(plot)
+
+    def test_on_format_coord(self):
+        """Test on_format_coord callback."""
+        plot = PhasorPlot(frequency=80.0, title='on_format_coord')
+        coords = plot._on_format_coord(0.5, 0.5)
+        assert '0.5' in coords
+        assert 'ns' in coords
         self.show(plot)
 
     def test_save(self):
@@ -206,6 +215,52 @@ class TestPhasorPlot:
         plot = PhasorPlot(title='limits', xlim=(0.4, 0.6), ylim=(0.4, 0.6))
         plot.semicircle(frequency=80.0)
         self.show(plot)
+
+        plot = PhasorPlot(grid=False, title='use_lines')
+        plot.semicircle(frequency=80, use_lines=True)
+        self.show(plot)
+
+
+def test_fret_phasorplot():
+    """Test PhasorPlotFret."""
+    plot = PhasorPlotFret(
+        frequency=60.0,
+        donor_lifetime=4.2,
+        acceptor_lifetime=3.0,
+        fret_efficiency=0.5,
+        donor_freting=0.9,
+        donor_bleedthrough=0.1,
+        title='PhasorPlotFret',
+    )
+    if INTERACTIVE:
+        plot.show()
+    pyplot.close()
+
+
+def test_fret_phasorplot_interactive():
+    """Test PhasorPlotFret interactive."""
+    plot = PhasorPlotFret(
+        frequency=60.0,
+        donor_lifetime=4.2,
+        acceptor_lifetime=3.0,
+        fret_efficiency=0.5,
+        donor_background=0.1,
+        acceptor_background=0.1,
+        interactive=True,
+        title='PhasorPlotFret interactive',
+    )
+    plot._frequency_slider.set_val(80.0)
+    plot._donor_freting_slider.set_val(0.9)
+    plot._donor_bleedthrough_slider.set_val(0.1)
+    plot._donor_bleedthrough_slider.set_val(0.0)
+    plot._donor_background_slider.set_val(0.1)
+    plot._acceptor_background_slider.set_val(0.1)
+    plot._donor_background_slider.set_val(0.0)
+    plot._acceptor_background_slider.set_val(0.0)
+    plot._donor_freting_slider.set_val(0.0)
+    if INTERACTIVE:
+        plot.show()
+    pyplot.close()
 
 
 def test_plot_phasor():
