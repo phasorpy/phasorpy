@@ -153,15 +153,46 @@ class TestPhasorPlot:
         plot.circle(0.5, 0.2, 0.1, color='tab:red', linestyle='-')
         self.show(plot)
 
-    @pytest.mark.parametrize('allquadrants', (True, False))
-    def test_polar_cursor(self, allquadrants):
+    def test_cursor(self):
+        """Test cursor method."""
+        plot = PhasorPlot(title='cursor')
+        plot.cursor(0.4, 0.3, color='tab:blue', linestyle='-')
+        plot.cursor(0.52, 0.3, 0.78, 0.16, color='tab:orange')
+        plot.cursor(0.9, 0.3, radius=0.05, color='tab:green')
+        self.show(plot)
+
+    def test_cursor_allquadrants(self):
+        """Test cursor method with allquadrants."""
+        plot = PhasorPlot(title='cursor allquadrants', allquadrants=True)
+        plot.cursor(-0.4, -0.3, color='tab:blue', linestyle='-')
+        plot.cursor(-0.52, -0.3, -0.78, -0.16, color='tab:orange')
+        plot.cursor(-0.9, -0.3, radius=0.1, color='tab:green')
+        self.show(plot)
+
+    def test_polar_cursor(self):
         """Test polar_cursor method."""
-        plot = PhasorPlot(title='polar_cursor', allquadrants=allquadrants)
+        plot = PhasorPlot(title='polar_cursor')
         plot.polar_cursor()
         plot.polar_cursor(0.6435, 0.5, color='tab:blue', linestyle='-')
         plot.polar_cursor(0.5236, 0.6, 0.1963, 0.8, color='tab:orange')
         plot.polar_cursor(0.3233, 0.9482, radius=0.05, color='tab:green')
         plot.polar_cursor(0.3, color='tab:red', linestyle='--')
+        self.show(plot)
+
+    def test_polar_cursor_allquadrants(self):
+        """Test polar_cursor method with allquadrants."""
+        plot = PhasorPlot(title='polar_cursor allquadrants', allquadrants=True)
+        plot.polar_cursor()
+        plot.polar_cursor(
+            0.6435 + math.pi, 0.5, color='tab:blue', linestyle='-'
+        )
+        plot.polar_cursor(
+            0.5236 + math.pi, 0.6, 0.1963 + math.pi, 0.8, color='tab:orange'
+        )
+        plot.polar_cursor(
+            0.3233 + math.pi, 0.9482, radius=0.1, color='tab:green'
+        )
+        plot.polar_cursor(0.3 + math.pi, color='tab:red', linestyle='--')
         self.show(plot)
 
     def test_polar_grid(self):

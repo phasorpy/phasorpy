@@ -488,6 +488,55 @@ class PhasorPlot:
         )
         self._ax.add_patch(Circle((real, imag), radius, **kwargs))
 
+    def cursor(
+        self,
+        real: float,
+        imag: float,
+        /,
+        real_limit: float | None = None,
+        imag_limit: float | None = None,
+        radius: float | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Plot phase and modulation grid lines and arcs at phasor coordinates.
+
+        Parameters
+        ----------
+        real : float
+            Real component of phasor coordinate.
+        imag : float
+            Imaginary component of phasor coordinate.
+        real_limit : float, optional
+            Real component of limiting phasor coordinate.
+        imag_limit : float, optional
+            Imaginary component of limiting phasor coordinate.
+        radius : float, optional
+            Radius of circle limiting phase and modulation grid lines and arcs.
+        **kwargs
+            Additional parameters passed to
+            :py:class:`matplotlib.lines.Line2D`,
+            :py:class:`matplotlib.patches.Circle`, and
+            :py:class:`matplotlib.patches.Arc`.
+
+        See Also
+        --------
+        phasorpy.plot.PhasorPlot.polar_cursor
+
+        """
+        if real_limit is not None and imag_limit is not None:
+            return self.polar_cursor(
+                *phasor_to_polar_scalar(real, imag),
+                *phasor_to_polar_scalar(real_limit, imag_limit),
+                radius=radius,
+                **kwargs,
+            )
+        return self.polar_cursor(
+            *phasor_to_polar_scalar(real, imag),
+            radius=radius,
+            # _circle_only=True,
+            **kwargs,
+        )
+
     def polar_cursor(
         self,
         phase: float | None = None,
@@ -519,6 +568,10 @@ class PhasorPlot:
             :py:class:`matplotlib.patches.Circle`, and
             :py:class:`matplotlib.patches.Arc`.
 
+        See Also
+        --------
+        phasorpy.plot.PhasorPlot.cursor
+
         """
         update_kwargs(
             kwargs,
@@ -527,11 +580,14 @@ class PhasorPlot:
             linewidth=GRID_LINEWIDH,
             fill=GRID_FILL,
         )
+        _circle_only = kwargs.pop('_circle_only', False)
         ax = self._ax
         if radius is not None and phase is not None and modulation is not None:
             x = modulation * math.cos(phase)
             y = modulation * math.sin(phase)
             ax.add_patch(Circle((x, y), radius, **kwargs))
+            if _circle_only:
+                return
             del kwargs['fill']
             p0, p1 = circle_line_intersection(x, y, radius, 0, 0, x, y)
             ax.add_line(Line2D((p0[0], p1[0]), (p0[1], p1[1]), **kwargs))
@@ -541,8 +597,8 @@ class PhasorPlot:
                     (0, 0),
                     modulation * 2,
                     modulation * 2,
-                    theta1=math.degrees(math.atan(p0[1] / p0[0])),
-                    theta2=math.degrees(math.atan(p1[1] / p1[0])),
+                    theta1=math.degrees(math.atan2(p0[1], p0[0])),
+                    theta2=math.degrees(math.atan2(p1[1], p1[0])),
                     fill=False,
                     **kwargs,
                 )

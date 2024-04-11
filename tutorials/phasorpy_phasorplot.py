@@ -53,16 +53,27 @@ plot.plot([0.2, 0.9], [0.4, 0.3], '.-', label='2')
 plot.plot([0.39, 0.4, 0.41], [0.21, 0.19, 0.2], 'x', label='3')
 plot.show()
 
+
 # %%
-# Polar cursors
-# -------------
+# Cursors
+# -------
 #
-# Point out certain polar coordinates, and ranges thereof:
+# Point out certain polar coordinates, and ranges thereof,
+# using phasor coordinates:
+
+plot = PhasorPlot(frequency=80.0, title='Cursors')
+plot.cursor(0.4, 0.3)
+plot.cursor(0.5, 0.3, 0.8, 0.15)
+plot.cursor(0.9, 0.3, radius=0.05)
+plot.show()
+
+# %%
+# Alternatively, use polar coordinates:
 
 plot = PhasorPlot(frequency=80.0, title='Polar cursors')
-plot.polar_cursor(0.6435, 0.5)
-plot.polar_cursor(0.5236, 0.6, 0.1963, 0.8)
-plot.polar_cursor(0.3233, 0.9482, radius=0.05)
+plot.polar_cursor(0.6435, 0.5, linestyle='-')
+plot.polar_cursor(0.5236, 0.6, 0.1963, 0.8, linewidth=2)
+plot.polar_cursor(0.3233, 0.9482, radius=0.05, color='tab:red')
 plot.show()
 
 # %%
@@ -132,10 +143,8 @@ plot.contour(real, imag, bins=48, levels=3, cmap='summer_r', norm='log')
 plot.hist2d(real2, imag2, bins=64, cmap='Oranges')
 plot.plot(0.6, 0.4, '.', color='tab:blue')
 plot.plot(0.9, 0.2, '.', color='tab:orange')
-plot.polar_cursor(math.atan(0.4 / 0.6), math.hypot(0.6, 0.4), color='tab:blue')
-plot.polar_cursor(
-    math.atan(0.2 / 0.9), math.hypot(0.9, 0.2), color='tab:orange'
-)
+plot.cursor(0.9, 0.2, color='tab:orange')
+plot.polar_cursor(math.atan2(0.4, 0.6), math.hypot(0.6, 0.4), color='tab:blue')
 plot.semicircle(frequency=80.0, color='tab:purple')
 plot.show()
 
@@ -182,4 +191,4 @@ from phasorpy.plot import plot_phasor
 plot_phasor(real[0, :32], imag[0, :32], fmt='.', frequency=80.0)
 
 # %%
-# sphinx_gallery_thumbnail_number = 9
+# sphinx_gallery_thumbnail_number = 10
