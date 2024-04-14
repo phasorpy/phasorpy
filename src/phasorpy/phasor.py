@@ -38,11 +38,18 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_from_fret_donor`
   - :py:func:`phasor_from_fret_acceptor`
 
+- convert between single component lifetimes and optimal frequency:
+
+  - :py:func:`frequency_from_lifetime`
+  - :py:func:`frequency_to_lifetime`
+
 """
 
 from __future__ import annotations
 
 __all__ = [
+    'frequency_from_lifetime',
+    'frequency_to_lifetime',
     'phasor_calibrate',
     'phasor_center',
     'phasor_from_apparent_lifetime',
@@ -1061,6 +1068,97 @@ def phasor_from_apparent_lifetime(
     return _phasor_from_apparent_lifetime(
         phase_lifetime, modulation_lifetime, omega, **kwargs
     )
+
+
+def frequency_from_lifetime(
+    lifetime: ArrayLike,
+    *,
+    unit_conversion: float = 1e-3,
+) -> NDArray[numpy.float64]:
+    r"""Return optimal frequency for resolving single component lifetime.
+
+    Parameters
+    ----------
+    lifetime : array_like
+        Single component lifetime.
+    unit_conversion : float, optional, default: 1e-3
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+
+    Returns
+    -------
+    frequency : ndarray
+        Optimal laser pulse or modulation frequency for resolving `lifetime`.
+
+    Notes
+    -----
+    The optimal frequency :math:`f` to resolve a single component lifetime
+    :math:`\tau` is:
+
+    .. math::
+
+        \omega &= 2 \pi f
+
+        \omega^2 &= \frac{1 + \sqrt{3}}{2 \tau^2}
+
+    Examples
+    --------
+    Measurements of a lifetime near 4 ns should be made at 47 MHz,
+    near 1 ns at 186 MHz:
+
+    >>> frequency_from_lifetime([4.0, 1.0])  # doctest: +NUMBER
+    array([46.5, 186])
+
+    """
+    t = numpy.reciprocal(lifetime, dtype=numpy.float64)
+    t *= 0.18601566519848653 / unit_conversion
+    return t
+
+
+def frequency_to_lifetime(
+    frequency: ArrayLike,
+    *,
+    unit_conversion: float = 1e-3,
+) -> NDArray[numpy.float64]:
+    r"""Return single component lifetime best resolved at frequency.
+
+    Parameters
+    ----------
+    frequency : array_like
+        Laser pulse or modulation frequency.
+    unit_conversion : float, optional, default: 1e-3
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+
+    Returns
+    -------
+    lifetime : ndarray
+        Single component lifetime best resolved at `frequency`.
+
+    Notes
+    -----
+    The lifetime :math:`\tau` that is best resolved at frequency :math:`f` is:
+
+    .. math::
+
+        \omega &= 2 \pi f
+
+        \tau^2 &=  \frac{1 + \sqrt{3}}{2 \omega^2}
+
+    Examples
+    --------
+    Measurements at frequencies of 47 and 186 MHz are best for measuring
+    lifetimes near 4 and 1 ns respectively:
+
+    >>> frequency_to_lifetime([46.5, 186])  # doctest: +NUMBER
+    array([4, 1])
+
+    """
+    t = numpy.reciprocal(frequency, dtype=numpy.float64)
+    t *= 0.18601566519848653 / unit_conversion
+    return t
 
 
 def phasor_from_lifetime(
