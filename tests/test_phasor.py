@@ -22,6 +22,8 @@ except ImportError:
     mkl_fft = None
 
 from phasorpy.phasor import (
+    frequency_from_lifetime,
+    frequency_to_lifetime,
     phasor_calibrate,
     phasor_center,
     phasor_from_apparent_lifetime,
@@ -1283,4 +1285,22 @@ def test_phasor_from_fret_acceptor():
         ),
         [[0.199564, 0.057723, 0.286733], [0.322489, 0.310325, 0.429246]],
         atol=1e-3,
+    )
+
+
+def test_frequency_from_lifetime():
+    """Test frequency_from_lifetime function."""
+    assert isinstance(frequency_from_lifetime(1.0), float)
+    assert frequency_from_lifetime(1.0) == pytest.approx(186.015665)
+    assert_allclose(
+        frequency_from_lifetime([4.0, 1.0]), [46.503916, 186.015665], atol=1e-3
+    )
+
+
+def test_frequency_to_lifetime():
+    """Test frequency_to_lifetime function."""
+    assert isinstance(frequency_to_lifetime(186.015665), float)
+    assert frequency_to_lifetime(186.015665) == pytest.approx(1.0)
+    assert_allclose(
+        frequency_to_lifetime([46.503916, 186.015665]), [4.0, 1.0], atol=1e-3
     )
