@@ -1094,7 +1094,8 @@ def frequency_from_lifetime(
     Notes
     -----
     The optimal frequency :math:`f` to resolve a single component lifetime
-    :math:`\tau` is:
+    :math:`\tau` is
+    (:ref:`Redford & Clegg 2005 <redford-clegg-2005>`. Eq. B.6):
 
     .. math::
 
@@ -1139,7 +1140,8 @@ def frequency_to_lifetime(
 
     Notes
     -----
-    The lifetime :math:`\tau` that is best resolved at frequency :math:`f` is:
+    The lifetime :math:`\tau` that is best resolved at frequency :math:`f` is
+    (:ref:`Redford & Clegg 2005 <redford-clegg-2005>`. Eq. B.6):
 
     .. math::
 
