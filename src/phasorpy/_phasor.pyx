@@ -181,26 +181,26 @@ def _phasor_from_signal(
                 # TODO: move harmonics to an inner loop?
                 for i in range(signal.shape[0]):
                     for j in range(signal.shape[2]):
+                        dc = 0.0
+                        re = 0.0
+                        im = 0.0
+                        for k in range(samples):
+                            sample = <double> signal[i, k, j]
+                            dc += sample
+                            re += sample * sincos[h, k, 0]
+                            im += sample * sincos[h, k, 1]
+                        if dc > 1e-16:
+                            re /= dc
+                            im /= dc
+                            dc /= samples
+                        else:
                             dc = 0.0
-                            re = 0.0
-                            im = 0.0
-                            for k in range(samples):
-                                sample = <double> signal[i, k, j]
-                                dc += sample
-                                re += sample * sincos[h, k, 0]
-                                im += sample * sincos[h, k, 1]
-                            if dc > 1e-16:
-                                re /= dc
-                                im /= dc
-                                dc /= samples
-                            else:
-                                dc = 0.0
-                                re = 0.0  # inf?
-                                im = 0.0  # inf?
-                            if h == 0:
-                                mean[i, j] = <float_t> dc
-                            real[h, i, j] = <float_t> re
-                            imag[h, i, j] = <float_t> im
+                            re = 0.0  # inf?
+                            im = 0.0  # inf?
+                        if h == 0:
+                            mean[i, j] = <float_t> dc
+                        real[h, i, j] = <float_t> re
+                        imag[h, i, j] = <float_t> im
 
 
 def _phasor_from_lifetime(
@@ -417,7 +417,7 @@ cdef (double, double) _phasor_from_fret_donor(
 
     # phasor of quenched donor
     quenched_real, quenched_imag = phasor_from_lifetime(
-        donor_lifetime * (1.0 -  fret_efficiency), omega
+        donor_lifetime * (1.0 - fret_efficiency), omega
     )
 
     # weighted average
@@ -488,7 +488,7 @@ cdef (double, double) _phasor_from_fret_acceptor(
     else:
         # phasor of quenched donor
         quenched_real, quenched_imag = phasor_from_lifetime(
-            donor_lifetime * (1.0 -  fret_efficiency), omega
+            donor_lifetime * (1.0 - fret_efficiency), omega
         )
 
         # phasor of pure and quenched donor
