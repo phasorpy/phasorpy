@@ -248,6 +248,7 @@ class PhasorPlot:
             self._lines = ax.plot(re, im, fmt, label=lbl, **kwargs)
         if label is not None:
             ax.legend()
+        self._reset_limits()
 
     def _histogram2d(
         self,
