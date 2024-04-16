@@ -61,17 +61,33 @@ def fractional_intensities_from_phasor(
         real, imag, real_components, imaginary_components
     )
     components_coordinates = numpy.array([real_components, imaginary_components])
-    fraction1 = []
-    fraction2 = []
+    # fraction1 = []
+    # fraction2 = []
+    # projected_real = numpy.atleast_1d(projected_real)
+    # projected_imag = numpy.atleast_1d(projected_imag)
+    # for element in zip(projected_real,projected_imag):
+    #     fractions = numpy.linalg.solve(components_coordinates, element)
+    #     fraction1.append(fractions[0])
+    #     fraction2.append(fractions[1])
+    # fraction1 = numpy.asarray(fraction1)
+    # fraction2 = numpy.asarray(fraction2)
+    # fraction1 = numpy.clip(fraction1, 0, 1)
+    # fraction2 = numpy.clip(fraction2, 0, 1)
+    # return fraction1.reshape(projected_real.shape), fraction2.reshape(projected_real.shape)
     projected_real = numpy.atleast_1d(projected_real)
     projected_imag = numpy.atleast_1d(projected_imag)
+    i = 0
+    fractions = []
     for element in zip(projected_real,projected_imag):
-        fractions = numpy.linalg.solve(components_coordinates, element)
-        fraction1.append(fractions[0])
-        fraction2.append(fractions[1])
-    fraction1 = numpy.asarray(fraction1)
-    fraction2 = numpy.asarray(fraction2)
-    return fraction1.reshape(projected_real.shape), fraction2.reshape(projected_real.shape)
+        row_fractions = numpy.linalg.solve(components_coordinates, element)
+        fractions.append(row_fractions)
+        i += 1
+    print('i=',i)
+    fractions = numpy.stack(fractions, axis=2)
+    return fractions
+    
+
+
 
 def fractional_intensities_from_phasor_old(
     real: ArrayLike, imag: ArrayLike, real_components: ArrayLike, imaginary_components: ArrayLike, /,
@@ -120,7 +136,8 @@ def fractional_intensities_from_phasor_old(
         (numpy.array(projected_real) - first_component_phasor[0]) ** 2
         + (numpy.array(projected_imag) - first_component_phasor[1]) ** 2
     )
-    fraction_of_first_component = (
+    fraction_of_second_component = (
         distances_to_first_component / total_distance_between_components
     )
-    return fraction_of_first_component, 1 - fraction_of_first_component
+    fraction_of_second_component = numpy.clip(fraction_of_second_component, 0 , 1)
+    return 1 - fraction_of_second_component, fraction_of_second_component

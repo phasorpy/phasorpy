@@ -23,9 +23,9 @@ print (fractions)
 real, imag = numpy.random.multivariate_normal(
     (0.6, 0.35), [[8e-3, 1e-3], [1e-3, 1e-3]], (10, 10)
 ).T
-plot = PhasorPlot(frequency=frequency, title = 'Point lying on the line between components')
-plot.plot(*phasor_from_lifetime(frequency, components_lifetimes), fmt= 'o-')
-plot.plot(real, imag, c='orange', fmt='.')
+# plot = PhasorPlot(frequency=frequency, title = 'Point lying on the line between components')
+# plot.plot(*phasor_from_lifetime(frequency, components_lifetimes), fmt= 'o-')
+# plot.plot(real, imag, c='orange', fmt='.')
 start = time.time()
 fractions = fractional_intensities_from_phasor(real, imag, *phasor_from_lifetime(frequency, components_lifetimes))
 end = time.time()
@@ -34,7 +34,7 @@ print(end-start)
 print (fractions) 
 import matplotlib.pyplot as plt
 plt.figure()
-plt.hist(fractions[0].flatten(), range=(-1,1.5), bins=100)
+plt.hist(fractions[1].flatten(), range=(0,1), bins=100)
 plt.title('Histogram of 1D array')
 plt.xlabel('Value')
 plt.ylabel('Frequency')
@@ -60,9 +60,9 @@ end = time.time()
 print(end-start)
 print (fractions) 
 # %%
-real, imag = numpy.random.multivariate_normal(
-    (0.6, 0.35), [[8e-3, 1e-3], [1e-3, 1e-3]], (20000, 20000)
-).T
+# real, imag = numpy.random.multivariate_normal(
+#     (0.6, 0.35), [[8e-3, 1e-3], [1e-3, 1e-3]], (1000, 1000)
+# ).T
 # plot = PhasorPlot(frequency=frequency, title = 'Point lying on the line between components')
 # plot.plot(*phasor_from_lifetime(frequency, components_lifetimes), fmt= 'o-')
 # plot.plot(real, imag, c='orange')
@@ -74,7 +74,7 @@ print(end-start)
 print (fractions) 
 import matplotlib.pyplot as plt
 plt.figure()
-plt.hist(fractions[0].flatten(), range=(0,1), bins=100)
+plt.hist(fractions[1].flatten(), range=(0,1), bins=100)
 plt.title('Histogram of 1D array')
 plt.xlabel('Value')
 plt.ylabel('Frequency')
