@@ -264,7 +264,7 @@ def circle_line_intersection(
 
 
 def project_phasor_to_line(
-    real: ArrayLike, imag: ArrayLike, first_component_phasor: ArrayLike, second_component_phasor: ArrayLike, /
+    real: ArrayLike, imag: ArrayLike, real_components: ArrayLike, imaginary_components: ArrayLike, /
 ) -> tuple[NDArray, NDArray]:
     """Return projected phasor coordinates to the line that joins two phasors.
 
@@ -276,9 +276,11 @@ def project_phasor_to_line(
     """
     real = numpy.copy(real)
     imag = numpy.copy(imag)
-    first_component_phasor = numpy.array(first_component_phasor)
-    second_component_phasor = numpy.array(second_component_phasor)
-    line_between_components = second_component_phasor - first_component_phasor
+    first_component_phasor = numpy.array([real_components[0], imaginary_components[0]])
+    second_component_phasor = numpy.array([real_components[1], imaginary_components[1]])
+    if numpy.all(first_component_phasor == second_component_phasor):
+        raise ValueError('The two components must have different coordinates')
+    line_between_components = second_component_phasor.astype(float) - first_component_phasor.astype(float)
     line_between_components /= numpy.linalg.norm(line_between_components)
     real -= first_component_phasor[0]
     imag -= first_component_phasor[1]
@@ -290,4 +292,4 @@ def project_phasor_to_line(
     )
     projected_points_real = projected_points[:, 0].reshape(real.shape)
     projected_points_imag = projected_points[:, 1].reshape(imag.shape)
-    return projected_points_real, projected_points_imag
+    return numpy.asarray(projected_points_real), numpy.asarray(projected_points_imag)

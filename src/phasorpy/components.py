@@ -8,7 +8,8 @@ The ``phasorpy.components`` module provides functions to:
 from __future__ import annotations
 
 __all__ = [
-    'component_fractions_from_phasor'
+    'fractional_intensities_from_phasor'
+    'fractional_intensities_from_phasor_old'
 ]
 
 from typing import TYPE_CHECKING
@@ -22,10 +23,10 @@ import math
 from ._utils import project_phasor_to_line
 
 
-def linear_fractions_from_phasor(
-    real: ArrayLike, imag: ArrayLike, first_component_phasor: ArrayLike, second_component_phasor: ArrayLike, /,
+def fractional_intensities_from_phasor(
+    real: ArrayLike, imag: ArrayLike, real_components: ArrayLike, imaginary_components: ArrayLike, /,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-   """Return fractions of two components from phasor coordinates.
+    """Return fractions of two components from phasor coordinates.
 
     Parameters
     ----------
@@ -33,17 +34,15 @@ def linear_fractions_from_phasor(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    first_component_phasor: array_like
-        Coordinates from the first component
-    second_component_phasor: array_like
-        Coordinates from the second component
+    real_components: array_like
+        Real coordinates of the components.
+    imaginary_components: array_like
+        Imaginary coordinates of the components.
 
     Returns
     -------
-    fractions_of_first_component : ndarray
-        Fractions of the first component.
-    fractions_of_second_component : ndarray
-        Fractions of the second component
+    fractions : ndarray
+        Fractions for all components.
 
     Raises
     ------
@@ -52,13 +51,67 @@ def linear_fractions_from_phasor(
 
     Examples
     --------
-    >>> component_fractions_from_phasor(...)  # doctest: +NUMBER
+    >>> fractional_intensities_from_phasor(
+    ...     [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.4], [0.9, 0.3]
+    ... ) # doctest: +NUMBER
     (...)
 
     """
     projected_real, projected_imag = project_phasor_to_line(
-        real, imag, first_component_phasor, second_component_phasor
+        real, imag, real_components, imaginary_components
     )
+    components_coordinates = numpy.array([real_components, imaginary_components])
+    fraction1 = []
+    fraction2 = []
+    projected_real = numpy.atleast_1d(projected_real)
+    projected_imag = numpy.atleast_1d(projected_imag)
+    for element in zip(projected_real,projected_imag):
+        fractions = numpy.linalg.solve(components_coordinates, element)
+        fraction1.append(fractions[0])
+        fraction2.append(fractions[1])
+    fraction1 = numpy.asarray(fraction1)
+    fraction2 = numpy.asarray(fraction2)
+    return fraction1.reshape(projected_real.shape), fraction2.reshape(projected_real.shape)
+
+def fractional_intensities_from_phasor_old(
+    real: ArrayLike, imag: ArrayLike, real_components: ArrayLike, imaginary_components: ArrayLike, /,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return fractions of two components from phasor coordinates.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    real_components: array_like
+        Real coordinates of the components.
+    imaginary_components: array_like
+        Imaginary coordinates of the components.
+
+    Returns
+    -------
+    fractions : ndarray
+        Fractions for all components.
+
+    Raises
+    ------
+    ValueError
+        The `signal` has less than three samples along `axis`.
+
+    Examples
+    --------
+    >>> fractional_intensities_from_phasor(
+    ...     [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.4], [0.9, 0.3]
+    ... ) # doctest: +NUMBER
+    (...)
+
+    """
+    projected_real, projected_imag = project_phasor_to_line(
+        real, imag, real_components, imaginary_components
+    )
+    first_component_phasor = numpy.array([real_components[0], imaginary_components[0]])
+    second_component_phasor = numpy.array([real_components[1], imaginary_components[1]])
     total_distance_between_components = math.sqrt(
         (second_component_phasor[0] - first_component_phasor[0]) ** 2
         + (second_component_phasor[1] - first_component_phasor[1]) ** 2
@@ -71,5 +124,3 @@ def linear_fractions_from_phasor(
         distances_to_first_component / total_distance_between_components
     )
     return fraction_of_first_component, 1 - fraction_of_first_component
-
-

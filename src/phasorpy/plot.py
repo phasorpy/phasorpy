@@ -1168,7 +1168,7 @@ def plot_polar_frequency(
     if show:
         pyplot.show()
 
-def two_components_histogram(
+def components_histogram(
     real: ArrayLike, imag: ArrayLike, first_component_phasor: ArrayLike, second_component_phasor: ArrayLike, show: bool = True, **kwargs: Any,
 ) -> tuple:
     """
