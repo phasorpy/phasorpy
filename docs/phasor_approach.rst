@@ -167,6 +167,10 @@ approach to analyze fluorescence time-resolved or spectral images:
   is a napari plugin to interactively load and show raw FLIM single images
   and series and generate phasor plots.
 
+- `Napari-live-flim <https://github.com/uw-loci/napari-live-flim>`_
+  is a napari plugin for real-time TCSPC-FLIM analysis based on FLIMLib.
+  The plugin is distributed under the GPLv3 license.
+
 - `FLUTE <https://github.com/LaboratoryOpticsBiosciences/FLUTE>`_,
   the Fluorescence Lifetime Ultimate Explorer, is an open-source Python GUI
   for interactive phasor analysis of FLIM data developed by Chiara Stringari
