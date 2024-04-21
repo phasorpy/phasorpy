@@ -171,6 +171,11 @@ approach to analyze fluorescence time-resolved or spectral images:
   is a napari plugin for real-time TCSPC-FLIM analysis based on FLIMLib.
   The plugin is distributed under the GPLv3 license.
 
+- `HySP <https://bioimage.usc.edu/software.html#HySP>`_
+  is a free, closed-source, multi-platform desktop application developed by
+  Francesco Cutrale for the analysis of multi-dimensional, hyper- and
+  multi-spectral data using the phasor approach.
+
 - `FLUTE <https://github.com/LaboratoryOpticsBiosciences/FLUTE>`_,
   the Fluorescence Lifetime Ultimate Explorer, is an open-source Python GUI
   for interactive phasor analysis of FLIM data developed by Chiara Stringari
