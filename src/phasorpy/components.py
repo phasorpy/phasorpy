@@ -37,36 +37,39 @@ def two_fractions_from_phasor(
     imag : array_like
         Imaginary component of phasor coordinates.
     real_components: array_like
-        Real coordinates of the pair of components.
+        Real coordinates of the first and second components.
     imag_components: array_like
-        Imaginary coordinates of the pair of components.
+        Imaginary coordinates of the first and second components.
 
     Returns
     -------
-    fractions : ndarray
-        Fractions for all components.
+    fraction_of_first_component : ndarray
+        Fractions of the first component.
+    fraction_of_second_component : ndarray
+        Fractions of the second component.
 
     Raises
     ------
     ValueError
-        If the real and/or imaginary coordinates of the known components are not of size 2.
-        If the 
-        
+        If the real and/or imaginary coordinates of the known components are
+        not of size 2.
+        If the two components have the same coordinates.
+
     Examples
     --------
     >>> two_fractions_from_phasor(
-    ...     [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.4], [0.9, 0.3]
+    ...     [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.9], [0.4, 0.3]
     ... ) # doctest: +NUMBER
-    (...)
+    (array([0.44, 0.56, 0.68]), array([0.56, 0.44, 0.32]))
 
     """
     real_components = numpy.asarray(real_components)
     imag_components = numpy.asarray(imag_components)
-    if real_components.size < 2:
-        raise ValueError(f'{real_components.size=} must have at least two coordinates')
-    if imag_components.size < 2:
-        raise ValueError(f'{imag_components.size=} must have at least two coordinates')
-    if real_components.all == imag_components.all:
+    if real_components.size != 2:
+        raise ValueError(f'{real_components.size=} must have two coordinates')
+    if imag_components.size != 2:
+        raise ValueError(f'{imag_components.size=} must have two coordinates')
+    if numpy.all(real_components == imag_components):
         raise ValueError('components must have different coordinates')
     projected_real, projected_imag = project_phasor_to_line(
         real, imag, real_components, imag_components
@@ -87,8 +90,5 @@ def two_fractions_from_phasor(
     )
     fraction_of_second_component = (
         distances_to_first_component / total_distance_between_components
-    )
-    fraction_of_second_component = numpy.clip(
-        fraction_of_second_component, 0, 1
     )
     return 1 - fraction_of_second_component, fraction_of_second_component

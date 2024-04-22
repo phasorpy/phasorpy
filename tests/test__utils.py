@@ -3,6 +3,7 @@
 import math
 
 import pytest
+import numpy
 from numpy.testing import assert_allclose
 
 from phasorpy._utils import (
@@ -15,6 +16,7 @@ from phasorpy._utils import (
     scale_matrix,
     sort_coordinates,
     update_kwargs,
+    project_phasor_to_line,
 )
 
 
@@ -132,3 +134,29 @@ def test_circle_circle_intersection():
         1e-3,
     )
     assert not circle_line_intersection(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.1)
+
+
+def test_project_phasor_to_line():
+    """Test project_phasor_to_line function."""
+    assert_allclose(
+        project_phasor_to_line([0.7, 0.5, 0.3],[0.3, 0.4, 0.3],[0.2, 0.9],[0.4, 0.3]),
+        (numpy.array([0.704, 0.494, 0.312]), numpy.array([0.328, 0.358, 0.384]))
+    )
+    assert_allclose(
+        project_phasor_to_line([0.1, 1.0],[0.5, 0.5],[0.2, 0.9],[0.4, 0.3]),
+        (numpy.array([0.2, 0.9]), numpy.array([0.4, 0.3]))
+    )
+    assert_allclose(
+        project_phasor_to_line([0.1, 1.0],[0.5, 0.5],[0.2, 0.9],[0.4, 0.3], clip=False),
+        (numpy.array([0.088, 0.97 ]), numpy.array([0.416, 0.29 ]))
+    )
+    with pytest.raises(ValueError):
+        project_phasor_to_line([0],[0],[0.1, 0.2],[0.1, 0.2])
+    with pytest.raises(ValueError):
+        project_phasor_to_line([0],[0],[0.3],[0.1, 0.2])
+    with pytest.raises(ValueError):
+        project_phasor_to_line([0],[0],[0.1, 0.2],[0.3])
+    with pytest.raises(ValueError):
+        project_phasor_to_line([0],[0],[0.1],[0.3])
+    with pytest.raises(ValueError):
+        project_phasor_to_line([0],[0],[0.1, 0.1, 0,1],[0.1, 0,2])
