@@ -42,6 +42,7 @@ flake8
 isort
 mypy
 codespell
+cython_lint
 # pre-commit
 #
 # optional requirements
