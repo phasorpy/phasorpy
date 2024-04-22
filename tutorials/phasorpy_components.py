@@ -2,137 +2,100 @@
 Component analysis
 ===========
 
-An introduction to component analysis in the phasor space.
-
-
+An introduction to component analysis in the phasor space. The
+:py:func:`phasorpy.phasor.phasor_from_lifetime` function is used to calculate
+phasor coordinates as a function of frequency, single or multiple lifetime
+components, and the pre-exponential amplitudes or fractional intensities of the
+components.
 
 """
 
 # %%
 # Import required modules, functions, and classes:
 
-import math
-
+import matplotlib.pyplot as plt
 import numpy
 
 from phasorpy.components import two_fractions_from_phasor
-from phasorpy.plot import PhasorPlot, components_histogram
+from phasorpy.phasor import phasor_from_lifetime
+from phasorpy.plot import PhasorPlot
 
 # %%
-# Component mixtures
+# Fractions of combination of two components
 # ------------------
 #
-# Show linear combinations of phasor coordinates or ranges thereof:
+# A phasor that lies in the line between two components with 0.25 contribution
+# of the first components and 0.75 contribution of the second component:
 
-real, imag, weights = numpy.array(
-    [[0.1, 0.2, 0.5, 0.9], [0.3, 0.4, 0.5, 0.3], [2, 1, 2, 1]]
+frequency = 80.0
+components_lifetimes = [8.0, 1.0]
+real, imag = phasor_from_lifetime(
+    frequency, components_lifetimes, [0.25, 0.75]
 )
-
-plot = PhasorPlot(frequency=80.0, title='Component mixtures')
-plot.components(real, imag, linestyle='', fill=True, facecolor='lightyellow')
-plot.components(real, imag, weights)
+components_real, components_imag = phasor_from_lifetime(
+    frequency, components_lifetimes
+)
+plot = PhasorPlot(
+    frequency=frequency, title='Phasor lying on the line between components'
+)
+plot.plot(components_real, components_imag, fmt='o-')
+plot.plot(real, imag)
 plot.show()
 
 # %%
-# 2D Histogram
-# ------------
+
+# If we know the location of both components, we can compute the contribution
+# of both components to the phasor point that lies in the line between the two
+# components:
+
+(
+    fraction_of_first_component,
+    fraction_of_second_component,
+) = two_fractions_from_phasor(real, imag, components_real, components_imag)
+print('Fraction of first component: ', fraction_of_first_component)
+print('Fraction of second component: ', fraction_of_second_component)
+
+# %%
+# Contribution of two known components in multiple phasors
+# ------------------
 #
-# Plot large number of phasor coordinates as a 2D histogram:
+# Phasors can have different contributions of two components with known phasor
+# coordinates:
 
 real, imag = numpy.random.multivariate_normal(
-    (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
+    (0.6, 0.35), [[8e-3, 1e-3], [1e-3, 1e-3]], (100, 100)
 ).T
-plot = PhasorPlot(frequency=80.0, title='2D Histogram')
-plot.hist2d(real, imag)
-plot.show()
-
-# %%
-# Contours
-# --------
-#
-# Plot the contours of the density of phasor coordinates:
-
-plot = PhasorPlot(frequency=80.0, title='Contours')
-plot.contour(real, imag)
-plot.show()
-
-
-# %%
-# Image
-# -----
-#
-# Plot the image of a custom-colored 2D histogram:
-
-plot = PhasorPlot(frequency=80.0, title='Image (not implemented yet)')
-# plot.imshow(image)
-plot.show()
-
-# %%
-# Combined plots
-# --------------
-#
-# Multiple plots can be combined:
-
-real2, imag2 = numpy.random.multivariate_normal(
-    (0.9, 0.2), [[2e-4, -1e-4], [-1e-4, 2e-4]], 4096
-).T
-
 plot = PhasorPlot(
-    title='Combined plots', xlim=(0.35, 1.03), ylim=(0.1, 0.59), grid=False
+    frequency=frequency,
+    title='Phasor with contibution of two known components',
 )
-plot.hist2d(real, imag, bins=64, cmap='Blues')
-plot.contour(real, imag, bins=48, levels=3, cmap='summer_r', norm='log')
-plot.hist2d(real2, imag2, bins=64, cmap='Oranges')
-plot.plot(0.6, 0.4, '.', color='tab:blue')
-plot.plot(0.9, 0.2, '.', color='tab:orange')
-plot.polar_cursor(math.atan(0.4 / 0.6), math.hypot(0.6, 0.4), color='tab:blue')
-plot.polar_cursor(
-    math.atan(0.2 / 0.9), math.hypot(0.9, 0.2), color='tab:orange'
-)
-plot.semicircle(frequency=80.0, color='tab:purple')
+plot.hist2d(real, imag, cmap='plasma')
+plot.plot(*phasor_from_lifetime(frequency, components_lifetimes), fmt='o-')
 plot.show()
 
 # %%
-# All quadrants
-# -------------
-#
-# Create an empty phasor plot showing all four quadrants:
+# If we know the phasor coordinates of two components that contribute to
+# multiple phasors, we can compute the contribution of both components for each
+# phasor and plot the distributions:
 
-plot = PhasorPlot(allquadrants=True, title='All quadrants')
-plot.show()
+(
+    fraction_from_first_component,
+    fraction_from_second_component,
+) = two_fractions_from_phasor(real, imag, components_real, components_imag)
 
-# %%
-# Matplotlib axes
-# ---------------
-#
-# The PhasorPlot class can use an existing matlotlib axes.
-# The `PhasorPlot.ax` attribute provides access to the underlying
-# matplotlib axes, for example, to add annotations:
+plt.figure()
+plt.hist(fraction_from_first_component.flatten(), range=(0, 1), bins=100)
+plt.title('Histogram of fractions of first component')
+plt.xlabel('Fraction of first component')
+plt.ylabel('Counts')
+plt.show()
 
-from matplotlib import pyplot
-
-ax = pyplot.subplot(1, 1, 1)
-plot = PhasorPlot(ax=ax, allquadrants=True, title='Matplotlib axes')
-plot.hist2d(real, imag, cmap='Blues')
-plot.ax.annotate(
-    '0.6, 0.4',
-    xy=(0.6, 0.4),
-    xytext=(0.2, 0.2),
-    arrowprops=dict(arrowstyle='->'),
-)
-pyplot.show()
-
+plt.figure()
+plt.hist(fraction_from_second_component.flatten(), range=(0, 1), bins=100)
+plt.title('Histogram of fractions of second component')
+plt.xlabel('Fraction of second component')
+plt.ylabel('Counts')
+plt.show()
 
 # %%
-# plot_phasor function
-# --------------------
-#
-# The :py:func:`phasorpy.plot.plot_phasor` function provides a simpler
-# alternative to plot phasor coordinates in a single statement:
-
-from phasorpy.plot import plot_phasor
-
-plot_phasor(real[0, :32], imag[0, :32], fmt='.', frequency=80.0)
-
-# %%
-# sphinx_gallery_thumbnail_number = 9
+# sphinx_gallery_thumbnail_number = 2

@@ -276,14 +276,21 @@ def project_phasor_to_line(
     """
     real = numpy.copy(real)
     imag = numpy.copy(imag)
-    first_component_phasor = numpy.array([real_components[0], imaginary_components[0]])
-    second_component_phasor = numpy.array([real_components[1], imaginary_components[1]])
+    diff_dims = len(real.shape) - len(real_components[0].shape)
+    axis=tuple(range(len(real_components[0].shape), len(real_components[0].shape)+diff_dims))
+    # Expand dimensions for the first component phasor
+    first_component_phasor = numpy.array([numpy.expand_dims(real_components[0], axis=axis), 
+                                    numpy.expand_dims(imaginary_components[0], axis=axis)])
+
+    # Expand dimensions for the second component phasor
+    second_component_phasor = numpy.array([numpy.expand_dims(real_components[1], axis=axis), 
+                                        numpy.expand_dims(imaginary_components[1], axis=axis)])
     if numpy.all(first_component_phasor == second_component_phasor):
         raise ValueError('The two components must have different coordinates')
-    line_between_components = second_component_phasor.astype(float) - first_component_phasor.astype(float)
-    line_between_components /= numpy.linalg.norm(line_between_components)
     real -= first_component_phasor[0]
     imag -= first_component_phasor[1]
+    line_between_components = second_component_phasor.astype(float) - first_component_phasor.astype(float)
+    line_between_components /= numpy.linalg.norm(line_between_components)
     projection_lengths = (
         real * line_between_components[0] + imag * line_between_components[1]
     )
