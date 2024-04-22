@@ -22,9 +22,13 @@ except ImportError:
     mkl_fft = None
 
 from phasorpy.phasor import (
+    frequency_from_lifetime,
+    frequency_to_lifetime,
     phasor_calibrate,
     phasor_center,
     phasor_from_apparent_lifetime,
+    phasor_from_fret_acceptor,
+    phasor_from_fret_donor,
     phasor_from_lifetime,
     phasor_from_polar,
     phasor_from_signal,
@@ -240,6 +244,8 @@ def test_phasor_semicircle():
     real, imag = phasor_semicircle(3)
     assert_allclose(real, [0, 0.5, 1], atol=1e-6)
     assert_allclose(imag, [0.0, 0.5, 0], atol=1e-6)
+    real, imag = phasor_semicircle()
+    assert len(real) == 101
     with pytest.raises(ValueError):
         phasor_semicircle(0)
 
@@ -1128,3 +1134,173 @@ def test_polar_from_apparent_lifetime():
     real, imag = phasor_from_polar(phase, modulation)
     assert_allclose(real, [0.5, 0.55248, 0.0, 1.0], atol=1e-3)
     assert_allclose(imag, [0.5, 0.49723, 0.0, 0.0], atol=1e-3)
+
+
+def test_phasor_from_fret_donor():
+    """Test phasor_from_fret_donor function."""
+    re, im = phasor_from_lifetime(80, 4.2)
+    # no FRET
+    assert_allclose(
+        phasor_from_fret_donor(80, 4.2, fret_efficiency=0),
+        [re, im],
+        atol=1e-3,
+    )
+    # fret_efficiency
+    assert_allclose(
+        phasor_from_fret_donor(80, 4.2, fret_efficiency=[0.0, 0.3, 1.0]),
+        phasor_from_lifetime(80, [4.2, 4.2 * 0.7, 0.0]),
+        atol=1e-3,
+    )
+    # frequency
+    assert_allclose(
+        phasor_from_fret_donor([40, 80], 4.2, fret_efficiency=0.3),
+        phasor_from_lifetime([40, 80], 4.2 * 0.7),
+        atol=1e-3,
+    )
+    # donor_freting
+    assert_allclose(
+        phasor_from_fret_donor(
+            80, 4.2, fret_efficiency=[0.0, 0.3, 1.0], donor_freting=0.9
+        ),
+        [[re, 0.296158, re], [im, 0.453563, im]],
+        atol=1e-3,
+    )
+    # background
+    assert_allclose(
+        phasor_from_fret_donor(
+            80,
+            4.2,
+            fret_efficiency=[0.0, 0.3, 1.0],
+            donor_background=0.1,
+            background_real=0.11,
+            background_imag=0.12,
+        ),
+        [[0.176593, 0.288569, 0.11], [0.362612, 0.42113, 0.12]],
+        atol=1e-3,
+    )
+    # complex
+    assert_allclose(
+        phasor_from_fret_donor(
+            80,
+            4.2,
+            fret_efficiency=[0.0, 0.3, 1.0],
+            donor_freting=0.9,
+            donor_background=0.1,
+            background_real=0.11,
+            background_imag=0.12,
+        ),
+        [[0.176593, 0.273729, 0.146626], [0.362612, 0.413374, 0.253437]],
+        atol=1e-3,
+    )
+
+
+def test_phasor_from_fret_acceptor():
+    """Test phasor_from_fret_acceptor function."""
+    re, im = phasor_from_lifetime(80, 3.0)
+    # no FRET
+    assert_allclose(
+        phasor_from_fret_acceptor(80, 4.2, 3.0, fret_efficiency=1),
+        [re, im],
+        atol=1e-3,
+    )
+    # fret_efficiency
+    assert_allclose(
+        phasor_from_fret_acceptor(
+            80, 4.2, 3.0, fret_efficiency=[0.0, 0.3, 1.0]
+        ),
+        [[-0.122219, -0.117851, re], [0.202572, 0.286433, im]],
+        atol=1e-3,
+    )
+    # frequency
+    assert_allclose(
+        phasor_from_fret_acceptor([40, 80], 4.2, 3.0, fret_efficiency=0.3),
+        [[0.182643, -0.117851], [0.615661, 0.286433]],
+        atol=1e-3,
+    )
+    # acceptor_bleedthrough
+    assert_allclose(
+        phasor_from_fret_acceptor(
+            80,
+            4.2,
+            3.0,
+            fret_efficiency=[0.0, 0.3, 1.0],
+            acceptor_bleedthrough=0.1,
+        ),
+        [[re, -0.012028, re], [im, 0.329973, im]],
+        atol=1e-3,
+    )
+    # donor_bleedthrough
+    dre, dim = phasor_from_lifetime(80, 4.2)
+    assert_allclose(
+        phasor_from_fret_acceptor(
+            80,
+            4.2,
+            3.0,
+            fret_efficiency=[0.0, 0.3, 1.0],
+            donor_bleedthrough=0.1,
+        ),
+        [[dre, -0.036135, re], [dim, 0.320055, im]],
+        atol=1e-3,
+    )
+    # donor_fretting
+    assert_allclose(
+        phasor_from_fret_acceptor(
+            80,
+            4.2,
+            3.0,
+            fret_efficiency=[0.0, 0.3, 1.0],
+            donor_bleedthrough=0.1,
+            donor_freting=0.9,
+        ),
+        [[dre, -0.02974, 0.3041], [dim, 0.322, 0.4598]],
+        atol=1e-3,
+    )
+    # background
+    assert_allclose(
+        phasor_from_fret_acceptor(
+            80,
+            4.2,
+            3.0,
+            fret_efficiency=[0.0, 0.3, 1.0],
+            acceptor_background=0.1,
+            background_real=0.11,
+            background_imag=0.12,
+        ),
+        [[0.11, -0.060888, 0.287673], [0.12, 0.244825, 0.429631]],
+        atol=1e-3,
+    )
+    # complex
+    assert_allclose(
+        phasor_from_fret_acceptor(
+            80,
+            4.2,
+            3.0,
+            fret_efficiency=[0.0, 0.3, 1.0],
+            donor_freting=0.9,
+            donor_bleedthrough=0.1,
+            acceptor_bleedthrough=0.1,
+            acceptor_background=0.1,
+            background_real=0.11,
+            background_imag=0.12,
+        ),
+        [[0.199564, 0.057723, 0.286733], [0.322489, 0.310325, 0.429246]],
+        atol=1e-3,
+    )
+
+
+def test_frequency_from_lifetime():
+    """Test frequency_from_lifetime function."""
+    assert isinstance(frequency_from_lifetime(1.0), float)
+    assert frequency_from_lifetime(1.0) == pytest.approx(186.015665)
+    assert_allclose(
+        frequency_from_lifetime([4.0, 1.0]), [46.503916, 186.015665], atol=1e-3
+    )
+
+
+def test_frequency_to_lifetime():
+    """Test frequency_to_lifetime function."""
+    assert isinstance(frequency_to_lifetime(186.015665), float)
+    assert frequency_to_lifetime(186.015665) == pytest.approx(1.0)
+    assert_allclose(
+        frequency_to_lifetime([46.503916, 186.015665]), [4.0, 1.0], atol=1e-3
+    )

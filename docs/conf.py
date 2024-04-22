@@ -67,6 +67,7 @@ pygments_style = 'sphinx'
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 todo_include_todos = True
+napoleon_use_param = True
 
 html_theme_options = {
     'logo': {

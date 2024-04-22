@@ -63,49 +63,75 @@ Talks
 Articles
 --------
 
-- Vallmitjana A, Lepanto P, Irigoin F, Malacrida L.
+-
+  .. _vallmitjana-2022:
+
+  Vallmitjana A, Lepanto P, Irigoin F, Malacrida L.
   `Phasor-based multi-harmonic unmixing for in-vivo hyperspectral imaging
   <https://doi.org/10.1088/2050-6120/ac9ae9>`_.
   *Methods Appl Fluoresc*. 11(1): 014001 (2022)
 
-- Torrado B, Malacrida L, Ranjit S.
+-
+  .. _torrado-2022:
+
+  Torrado B, Malacrida L, Ranjit S.
   `Linear combination properties of the phasor space in fluorescence imaging
   <https://doi.org/10.3390/s22030999>`_.
   *Sensors*. 22(3): 999 (2022)
 
+-
   .. _malacrida-2021:
-- Malacrida L, Ranjit S, Jameson DM, Gratton E.
+
+  Malacrida L, Ranjit S, Jameson DM, Gratton E.
   `The phasor plot: a universal circle to advance fluorescence lifetime
   analysis and interpretation
   <https://doi.org/10.1146/annurev-biophys-062920-063631>`_.
   *Annu Rev Biophys*. 50:575-593 (2021)
 
-- Ranjit S, Malacrida L, Jameson DM, Gratton E.
+-
+  .. _ranjit-2018:
+
+  Ranjit S, Malacrida L, Jameson DM, Gratton E.
   `Fit-free analysis of fluorescence lifetime imaging data using the phasor
   approach <https://doi.org/10.1038/s41596-018-0026-5>`_.
   *Nat Protoc*. 13(9): 1979-2004 (2018)
 
-- Malacrida L, Jameson DM, Gratton E.
+-
+  .. _malacrida-2017:
+
+  Malacrida L, Jameson DM, Gratton E.
   `A multidimensional phasor approach reveals LAURDAN photophysics in NIH-3T3
   cell membranes <https://doi.org/10.1038/s41598-017-08564-z>`_.
   *Sci Rep*. 7(1): 9215 (2017)
 
-- Fereidouni F, Bader AN, Gerritsen HC.
+-
+  .. _fereidouni-2012:
+
+  Fereidouni F, Bader AN, Gerritsen HC.
   `Spectral phasor analysis allows rapid and reliable unmixing of fluorescence
   microscopy spectral images <https://doi.org/10.1364/OE.20.012729>`_.
   *Opt Express*. 20(12): 12729-41 (2012)
 
-- Digman MA, Caiolfa VR, Zamai M, Gratton E.
+-
+  .. _digman-2008:
+
+  Digman MA, Caiolfa VR, Zamai M, Gratton E.
   `The phasor approach to fluorescence lifetime imaging analysis
   <https://doi.org/10.1529/biophysj.107.120154>`_.
   *Biophys J*. 94(2): L14-16 (2008)
 
-- Redford GI, Clegg RM.
+-
+  .. _redford-clegg-2005:
+
+  Redford GI, Clegg RM.
   `Polar plot representation for frequency-domain analysis of fluorescence
   lifetimes <https://doi.org/10.1007/s10895-005-2990-8>`_.
   *J Fluoresc*. 15(5): 805-15 (2005)
 
-- Clayton AHA, Hanley QS, Verveer PJ.
+-
+  .. _clayton-2004:
+
+  Clayton AHA, Hanley QS, Verveer PJ.
   `Graphical representation and multicomponent analysis of single-frequency
   fluorescence lifetime imaging microscopy data
   <https://doi.org/10.1111/j.1365-2818.2004.01265.x>`_.
@@ -117,7 +143,10 @@ Software
 Besides the PhasorPy library, several other software implemented the phasor
 approach to analyze fluorescence time-resolved or spectral images:
 
-- `Globals for Images · SimFCS <https://www.lfd.uci.edu/globals/>`_
+-
+  .. _simfcs:
+
+  `Globals for Images · SimFCS <https://www.lfd.uci.edu/globals/>`_
   is a free, closed-source, Windows desktop application for fluorescence image
   analysis, visualization, simulation, and acquisition.
   The software was developed by Enrico Gratton during 1998-2022 at the
@@ -137,6 +166,15 @@ approach to analyze fluorescence time-resolved or spectral images:
 - `Napari-flim-phasor-plotter <https://github.com/zoccoler/napari-flim-phasor-plotter>`_
   is a napari plugin to interactively load and show raw FLIM single images
   and series and generate phasor plots.
+
+- `Napari-live-flim <https://github.com/uw-loci/napari-live-flim>`_
+  is a napari plugin for real-time TCSPC-FLIM analysis based on FLIMLib.
+  The plugin is distributed under the GPLv3 license.
+
+- `HySP <https://bioimage.usc.edu/software.html#HySP>`_
+  is a free, closed-source, multi-platform desktop application developed by
+  Francesco Cutrale for the analysis of multi-dimensional, hyper- and
+  multi-spectral data using the phasor approach.
 
 - `FLUTE <https://github.com/LaboratoryOpticsBiosciences/FLUTE>`_,
   the Fluorescence Lifetime Ultimate Explorer, is an open-source Python GUI

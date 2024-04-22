@@ -83,9 +83,10 @@ All contributions to the PhasorPy source code and documentation should
 be developed in personal forks/copies of the code, and then submitted as
 `pull requests <https://github.com/phasorpy/phasorpy/pulls>`_ (PRs).
 
-The PhasorPy package structure follows the `pyOpenSci
-<https://www.pyopensci.org/python-package-guide/package-structure-code/intro.html>`_
-recommendations.
+The PhasorPy project loosely follows the
+`Scientific Python <https://learn.scientific-python.org/development/>`_ and
+`pyOpenSci <https://www.pyopensci.org/python-package-guide/>`_
+development guidelines.
 
 Fork the repository
 ...................
@@ -193,7 +194,7 @@ standard and be formatted with
 `black <https://black.readthedocs.io/en/stable/>`_
 (single quotes and lines up to 79 characters are allowed)::
 
-    python -m black --check src/phasorpy tutorials tests
+    $ python -m black .
 
 User-facing classes and functions must use
 `type hints <https://peps.python.org/pep-0484/>`_
@@ -212,10 +213,10 @@ Check for common misspellings in text files::
 
     $ python -m codespell_lib
 
-The PhasorPy project follows numpy's
-`NEP 29 <https://numpy.org/neps/nep-0029-deprecation_policy.html>`_
-for Python and NumPy version support.
-However, the initial requirements are Python 3.10+ and numpy 1.23+.
+The PhasorPy project follows the Scientific Python
+`SPEC 0 — Minimum Supported Dependencies
+<https://scientific-python.org/specs/spec-0000/>`_ recommendation
+for Python, NumPy, and other dependencies.
 
 Documentation
 .............
