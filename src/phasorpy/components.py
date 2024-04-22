@@ -2,7 +2,22 @@
 
 The ``phasorpy.components`` module provides functions to:
 
+    - calculate fractions of two components of known location by projecting to
+      line between components:
 
+        - :py:func:`two_fractions_from_phasor`
+
+    - calculate phasor coordinates of second component if only one is
+      known (not implemented)
+        
+    - calculate fractions of three or four known components by using higher
+      harmonic information (not implemented)
+
+    - calculate fractions of two or three components of known location by
+      resolving graphically with histogram (not implemented)
+
+    - blindly resolve fractions of n components by using harmonic
+      information (not implemented)
 """
 
 from __future__ import annotations
