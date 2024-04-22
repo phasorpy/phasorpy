@@ -14,7 +14,6 @@ __all__ = [
     'plot_phasor_image',
     'plot_signal_image',
     'plot_polar_frequency',
-    'two_components_histogram',
 ]
 
 import math
@@ -45,7 +44,6 @@ from ._utils import (
     parse_kwargs,
     phasor_from_polar_scalar,
     phasor_to_polar_scalar,
-    project_phasor_to_line,
     sort_coordinates,
     update_kwargs,
 )
@@ -1819,6 +1817,7 @@ def plot_polar_frequency(
         ax.plot(frequency, mod * 100, color='tab:red', **kwargs)
     if show:
         pyplot.show()
+
 
 def _imshow(
     ax: Axes,
