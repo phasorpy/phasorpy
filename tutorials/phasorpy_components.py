@@ -27,8 +27,9 @@ from phasorpy.plot import PhasorPlot
 
 frequency = 80.0
 components_lifetimes = [8.0, 1.0]
+component_fractions = [0.25, 0.75]
 real, imag = phasor_from_lifetime(
-    frequency, components_lifetimes, [0.25, 0.75]
+    frequency, components_lifetimes, component_fractions
 )
 components_real, components_imag = phasor_from_lifetime(
     frequency, components_lifetimes
@@ -47,7 +48,7 @@ plot.show()
     fraction_of_first_component,
     fraction_of_second_component,
 ) = two_fractions_from_phasor(real, imag, components_real, components_imag)
-print(f'Fraction of first component: {fraction_of_first_component:.3f}')
+print(f'Fraction of first component:  {fraction_of_first_component:.3f}')
 print(f'Fraction of second component: {fraction_of_second_component:.3f}')
 
 # %%
@@ -62,7 +63,7 @@ real, imag = numpy.random.multivariate_normal(
 ).T
 plot = PhasorPlot(
     frequency=frequency,
-    title='Phasor with contibution of two known components',
+    title='Phasor with contribution of two known components',
 )
 plot.hist2d(real, imag, cmap='plasma')
 plot.plot(*phasor_from_lifetime(frequency, components_lifetimes), fmt='o-')
@@ -77,15 +78,25 @@ plot.show()
     fraction_from_first_component,
     fraction_from_second_component,
 ) = two_fractions_from_phasor(real, imag, components_real, components_imag)
-fig, ax = plt.subplots(2, 1, figsize=(8, 8))
-ax[0].hist(fraction_from_first_component.flatten(), range=(0, 1), bins=100)
-ax[0].set_title('Histogram of fractions of first component')
-ax[0].set_xlabel('Fraction of first component')
-ax[0].set_ylabel('Counts')
-ax[1].hist(fraction_from_second_component.flatten(), range=(0, 1), bins=100)
-ax[1].set_title('Histogram of fractions of second component')
-ax[1].set_xlabel('Fraction of second component')
-ax[1].set_ylabel('Counts')
+fig, ax = plt.subplots()
+ax.hist(
+    fraction_from_first_component.flatten(),
+    range=(0, 1),
+    bins=100,
+    alpha=0.75,
+    label='First',
+)
+ax.hist(
+    fraction_from_second_component.flatten(),
+    range=(0, 1),
+    bins=100,
+    alpha=0.75,
+    label='Second',
+)
+ax.set_title('Histograms of fractions of first and second component')
+ax.set_xlabel('Fraction')
+ax.set_ylabel('Counts')
+ax.legend()
 plt.tight_layout()
 plt.show()
 
