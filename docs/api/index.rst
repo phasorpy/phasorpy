@@ -14,9 +14,9 @@ PhasorPy library version |version|.
 
     phasorpy
     phasor
+    components
     plot
     io
-    components
     color
     datasets
     utils

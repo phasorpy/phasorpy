@@ -2,7 +2,6 @@
 
 import math
 
-import numpy
 import pytest
 from numpy.testing import assert_allclose
 
@@ -143,19 +142,19 @@ def test_project_phasor_to_line():
             [0.7, 0.5, 0.3], [0.3, 0.4, 0.3], [0.2, 0.9], [0.4, 0.3]
         ),
         (
-            numpy.array([0.704, 0.494, 0.312]),
-            numpy.array([0.328, 0.358, 0.384]),
+            [0.704, 0.494, 0.312],
+            [0.328, 0.358, 0.384],
         ),
     )
     assert_allclose(
         project_phasor_to_line([0.1, 1.0], [0.5, 0.5], [0.2, 0.9], [0.4, 0.3]),
-        (numpy.array([0.2, 0.9]), numpy.array([0.4, 0.3])),
+        ([0.2, 0.9], [0.4, 0.3]),
     )
     assert_allclose(
         project_phasor_to_line(
             [0.1, 1.0], [0.5, 0.5], [0.2, 0.9], [0.4, 0.3], clip=False
         ),
-        (numpy.array([0.088, 0.97]), numpy.array([0.416, 0.29])),
+        ([0.088, 0.97], [0.416, 0.29]),
     )
     with pytest.raises(ValueError):
         project_phasor_to_line([0], [0], [0.1, 0.2], [0.1, 0.2])

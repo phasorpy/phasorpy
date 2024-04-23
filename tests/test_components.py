@@ -1,6 +1,5 @@
 """Tests for the phasorpy.components module."""
 
-import numpy
 import pytest
 from numpy.testing import assert_allclose
 
@@ -17,8 +16,8 @@ def test_two_fractions_from_phasor():
             [0.23419652, 0.40126936],
         ),
         (
-            numpy.array([0.82766281, 0.38389704, 0.15577992]),
-            numpy.array([0.17233719, 0.61610296, 0.84422008]),
+            [0.82766281, 0.38389704, 0.15577992],
+            [0.17233719, 0.61610296, 0.84422008],
         ),
     )
     assert_allclose(
@@ -29,8 +28,8 @@ def test_two_fractions_from_phasor():
             [0.23419652, 0.40126936],
         ),
         (
-            numpy.array([1.0, 0.38389704, 0.0]),
-            numpy.array([0.0, 0.61610296, 1.0]),
+            [1.0, 0.38389704, 0.0],
+            [0.0, 0.61610296, 1.0],
         ),
     )
     with pytest.raises(ValueError):
