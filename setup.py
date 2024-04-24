@@ -31,8 +31,8 @@ else:
 
 ext_modules = [
     Extension(
-        'phasorpy._phasor',
-        ['src/phasorpy/_phasor.pyx'],
+        'phasorpy._phasorpy',
+        ['src/phasorpy/_phasorpy.pyx'],
         include_dirs=[numpy.get_include()],
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args,
