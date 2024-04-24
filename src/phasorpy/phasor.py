@@ -43,11 +43,18 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`frequency_from_lifetime`
   - :py:func:`frequency_to_lifetime`
 
+- convert between fractional intensities and pre-exponential amplitudes:
+
+  - :py:func:`fraction_from_amplitude`
+  - :py:func:`fraction_to_amplitude`
+
 """
 
 from __future__ import annotations
 
 __all__ = [
+    'fraction_from_amplitude',
+    'fraction_to_amplitude',
     'frequency_from_lifetime',
     'frequency_to_lifetime',
     'phasor_calibrate',
@@ -86,7 +93,7 @@ if TYPE_CHECKING:
 
 import numpy
 
-from ._phasor import (
+from ._phasorpy import (
     _phasor_from_apparent_lifetime,
     _phasor_from_fret_acceptor,
     _phasor_from_fret_donor,
@@ -1160,6 +1167,97 @@ def frequency_to_lifetime(
     """
     t = numpy.reciprocal(frequency, dtype=numpy.float64)
     t *= 0.18601566519848653 / unit_conversion
+    return t
+
+
+def fraction_to_amplitude(
+    lifetime: ArrayLike, fraction: ArrayLike, *, axis: int = -1
+) -> NDArray[numpy.float64]:
+    r"""Return pre-exponential amplitude from fractional intensity.
+
+    Parameters
+    ----------
+    lifetime : array_like
+        Lifetime components.
+    fraction : array_like
+        Fractional intensities of lifetime components.
+        Fractions are normalized to sum to 1.
+    axis : int, optional
+        Axis over which to compute pre-exponential amplitudes.
+        The default is the last axis (-1).
+
+    Returns
+    -------
+    amplitude : ndarray
+        Pre-exponential amplitudes.
+        The product of `amplitude` and `lifetime` sums to 1 along `axis`.
+
+    See Also
+    --------
+    phasorpy.phasor.fraction_from_amplitude
+
+    Notes
+    -----
+    The pre-exponential amplitude :math:`a` of component :math:`j` with
+    lifetime :math:`\tau` and fractional intensity :math:`\alpha` is:
+
+    .. math::
+
+        a_{j} = \frac{\alpha_{j}}{\tau_{j} \cdot \sum_{j} \alpha_{j}}
+
+    Examples
+    --------
+    >>> fraction_to_amplitude([4.0, 1.0], [1.6, 0.4])  # doctest: +NUMBER
+    array([0.2, 0.2])
+
+    """
+    t = numpy.array(fraction, copy=True, dtype=numpy.float64)
+    t /= numpy.sum(t, axis=axis, keepdims=True)
+    numpy.true_divide(t, lifetime, out=t)
+    return t
+
+
+def fraction_from_amplitude(
+    lifetime: ArrayLike, amplitude: ArrayLike, *, axis: int = -1
+) -> NDArray[numpy.float64]:
+    r"""Return fractional intensity from pre-exponential amplitude.
+
+    Parameters
+    ----------
+    lifetime : array_like
+        Lifetime of components.
+    amplitude : array_like
+        Pre-exponential amplitudes of lifetime components.
+    axis : int, optional
+        Axis over which to compute fractional intensities.
+        The default is the last axis (-1).
+
+    Returns
+    -------
+    fraction : ndarray
+        Fractional intensities, normalized to sum to 1 along `axis`.
+
+    See Also
+    --------
+    phasorpy.phasor.fraction_to_amplitude
+
+    Notes
+    -----
+    The fractional intensity :math:`\alpha` of component :math:`j` with
+    lifetime :math:`\tau` and pre-exponential amplitude :math:`a` is:
+
+    .. math::
+
+        \alpha_{j} = \frac{a_{j} \tau_{j}}{\sum_{j} a_{j} \tau_{j}}
+
+    Examples
+    --------
+    >>> fraction_from_amplitude([4.0, 1.0], [1.0, 1.0])  # doctest: +NUMBER
+    array([0.8, 0.2])
+
+    """
+    t = numpy.multiply(amplitude, lifetime, dtype=numpy.float64)
+    t /= numpy.sum(t, axis=axis, keepdims=True)
     return t
 
 
