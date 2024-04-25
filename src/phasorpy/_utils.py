@@ -302,7 +302,7 @@ def project_phasor_to_line(
         (second_component_phasor[0] - first_component_phasor[0]) ** 2
         + (second_component_phasor[1] - first_component_phasor[1]) ** 2
     )
-    if math.isclose(total_distance_between_components, 0, abs_tol = 1e-6):
+    if math.isclose(total_distance_between_components, 0, abs_tol=1e-6):
         raise ValueError('components must have different coordinates')
     line_vector = second_component_phasor - first_component_phasor
     line_length = numpy.linalg.norm(line_vector)

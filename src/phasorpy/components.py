@@ -68,7 +68,7 @@ def two_fractions_from_phasor(
     -----
     For the moment, calculation of fraction of components from different
     channels or frequencies is not supported. Only one pair of components can
-    be analyzed and will be broadcasted to all channels/frequencies.    
+    be analyzed and will be broadcasted to all channels/frequencies.
 
     Raises
     ------
@@ -101,7 +101,7 @@ def two_fractions_from_phasor(
         (second_component_phasor[0] - first_component_phasor[0]) ** 2
         + (second_component_phasor[1] - first_component_phasor[1]) ** 2
     )
-    if math.isclose(total_distance_between_components, 0, abs_tol = 1e-6):
+    if math.isclose(total_distance_between_components, 0, abs_tol=1e-6):
         raise ValueError('components must have different coordinates')
     projected_real, projected_imag = project_phasor_to_line(
         real, imag, real_components, imag_components
