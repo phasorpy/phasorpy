@@ -17,6 +17,7 @@ __all__: list[str] = [
     'phasor_from_polar_scalar',
     'circle_line_intersection',
     'circle_circle_intersection',
+    'project_phasor_to_line',
 ]
 
 import math
@@ -260,3 +261,62 @@ def circle_line_intersection(
             y + (-dd * dx - abs(dy) * rdd) / dr,
         ),
     )
+
+
+def project_phasor_to_line(
+    real: ArrayLike,
+    imag: ArrayLike,
+    real_components: ArrayLike,
+    imag_components: ArrayLike,
+    /,
+    *,
+    clip: bool = True,
+    axis: int = -1,
+) -> tuple[NDArray, NDArray]:
+    """Return projected phasor coordinates to the line that joins two phasors.
+
+    By default, the points are clipped to the line segment between components
+    and the projection is done into the last axis.
+
+    >>> project_phasor_to_line(
+    ...     [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.9], [0.4, 0.3]
+    ... )  # doctest: +NUMBER
+    (array([0.592, 0.508, 0.424]), array([0.344, 0.356, 0.368]))
+
+    """
+    real = numpy.copy(real)
+    imag = numpy.copy(imag)
+    real_components = numpy.asarray(real_components)
+    imag_components = numpy.asarray(imag_components)
+    if real_components.shape != (2,):
+        raise ValueError(f'{real_components.shape=} != (2,)')
+    if imag_components.shape != (2,):
+        raise ValueError(f'{imag_components.shape=} != (2,)')
+    first_component_phasor = numpy.array(
+        [real_components[0], imag_components[0]]
+    )
+    second_component_phasor = numpy.array(
+        [real_components[1], imag_components[1]]
+    )
+    total_distance_between_components = math.hypot(
+        (second_component_phasor[0] - first_component_phasor[0]),
+        (second_component_phasor[1] - first_component_phasor[1]),
+    )
+    if math.isclose(total_distance_between_components, 0, abs_tol=1e-6):
+        raise ValueError('components must have different coordinates')
+    line_vector = second_component_phasor - first_component_phasor
+    line_length = numpy.linalg.norm(line_vector)
+    line_direction = line_vector / line_length
+    projected_points = (
+        numpy.stack((real, imag), axis=axis) - first_component_phasor
+    )
+    projection_lengths = numpy.dot(projected_points, line_direction)
+    if clip:
+        projection_lengths = numpy.clip(projection_lengths, 0, line_length)
+    projected_points = (
+        first_component_phasor
+        + numpy.expand_dims(projection_lengths, axis=axis) * line_direction
+    )
+    projected_points_real = projected_points[..., 0]
+    projected_points_imag = projected_points[..., 1]
+    return projected_points_real, projected_points_imag
