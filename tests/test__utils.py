@@ -157,7 +157,7 @@ def test_project_phasor_to_line():
         ([0.088, 0.97], [0.416, 0.29]),
     )
     with pytest.raises(ValueError):
-        project_phasor_to_line([0], [0], [0.1, 0.2], [0.1, 0.2])
+        project_phasor_to_line([0], [0], [0.1, 0.1], [0.2, 0.2])
     with pytest.raises(ValueError):
         project_phasor_to_line([0], [0], [0.3], [0.1, 0.2])
     with pytest.raises(ValueError):

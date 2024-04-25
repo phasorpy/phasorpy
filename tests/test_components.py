@@ -33,7 +33,7 @@ def test_two_fractions_from_phasor():
         ),
     )
     with pytest.raises(ValueError):
-        two_fractions_from_phasor([0], [0], [0.1, 0.2], [0.1, 0.2])
+        two_fractions_from_phasor([0], [0], [0.1, 0.1], [0.2, 0.2])
     with pytest.raises(ValueError):
         two_fractions_from_phasor([0], [0], [0.3], [0.1, 0.2])
     with pytest.raises(ValueError):
@@ -42,3 +42,20 @@ def test_two_fractions_from_phasor():
         two_fractions_from_phasor([0], [0], [0.1], [0.3])
     with pytest.raises(ValueError):
         two_fractions_from_phasor([0], [0], [0.1, 0.1, 0, 1], [0.1, 0, 2])
+
+
+@pytest.mark.xfail
+def test_two_fractions_from_phasor_channels():
+    """Test two_fractions_from_phasor function for multiple channels."""
+    assert_allclose(
+        two_fractions_from_phasor(
+            [[[0.1, 0.2, 0.3]]],
+            [[[0.1, 0.2, 0.3]]],
+            [[0.2, 0.2, 0.2], [0.9, 0.9, 0.9]],
+            [[0.4, 0.4, 0.4], [0.3, 0.3, 0.3]],
+        ),
+        (
+            [[[1., 0.96, 0.84]]],
+            [[[0., 0.04, 0.16]]],
+        ),
+    )

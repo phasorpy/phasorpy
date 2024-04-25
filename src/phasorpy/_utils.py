@@ -276,7 +276,7 @@ def project_phasor_to_line(
     """Return projected phasor coordinates to the line that joins two phasors.
 
     By default, the points are clipped to the line segment between components
-    and the axis into which project the phasor can also be selected.
+    and the projection is done into the last axis.
 
     >>> project_phasor_to_line(
     ...     [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.9], [0.4, 0.3]
@@ -288,18 +288,22 @@ def project_phasor_to_line(
     imag = numpy.copy(imag)
     real_components = numpy.asarray(real_components)
     imag_components = numpy.asarray(imag_components)
-    if real_components.size != 2:
-        raise ValueError(f'{real_components.size=} must have two coordinates')
-    if imag_components.size != 2:
-        raise ValueError(f'{imag_components.size=} must have two coordinates')
-    if numpy.all(real_components == imag_components):
-        raise ValueError('components must have different coordinates')
+    if real_components.shape != (2,):
+        raise ValueError(f'{real_components.shape=} != (2,)')
+    if imag_components.shape != (2,):
+        raise ValueError(f'{imag_components.shape=} != (2,)')
     first_component_phasor = numpy.array(
         [real_components[0], imag_components[0]]
     )
     second_component_phasor = numpy.array(
         [real_components[1], imag_components[1]]
     )
+    total_distance_between_components = math.sqrt(
+        (second_component_phasor[0] - first_component_phasor[0]) ** 2
+        + (second_component_phasor[1] - first_component_phasor[1]) ** 2
+    )
+    if math.isclose(total_distance_between_components, 0, abs_tol = 1e-6):
+        raise ValueError('components must have different coordinates')
     line_vector = second_component_phasor - first_component_phasor
     line_length = numpy.linalg.norm(line_vector)
     line_direction = line_vector / line_length

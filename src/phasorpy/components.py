@@ -64,6 +64,12 @@ def two_fractions_from_phasor(
     fraction_of_second_component : ndarray
         Fractions of the second component.
 
+    Notes
+    -----
+    For the moment, calculation of fraction of components from different
+    channels or frequencies is not supported. Only one pair of components can
+    be analyzed and will be broadcasted to all channels/frequencies.    
+
     Raises
     ------
     ValueError
@@ -81,15 +87,10 @@ def two_fractions_from_phasor(
     """
     real_components = numpy.asarray(real_components)
     imag_components = numpy.asarray(imag_components)
-    if real_components.size != 2:
-        raise ValueError(f'{real_components.size=} must have two coordinates')
-    if imag_components.size != 2:
-        raise ValueError(f'{imag_components.size=} must have two coordinates')
-    if numpy.all(real_components == imag_components):
-        raise ValueError('components must have different coordinates')
-    projected_real, projected_imag = project_phasor_to_line(
-        real, imag, real_components, imag_components
-    )
+    if real_components.shape != (2,):
+        raise ValueError(f'{real_components.shape=} != (2,)')
+    if imag_components.shape != (2,):
+        raise ValueError(f'{imag_components.shape=} != (2,)')
     first_component_phasor = numpy.array(
         [real_components[0], imag_components[0]]
     )
@@ -99,6 +100,11 @@ def two_fractions_from_phasor(
     total_distance_between_components = math.sqrt(
         (second_component_phasor[0] - first_component_phasor[0]) ** 2
         + (second_component_phasor[1] - first_component_phasor[1]) ** 2
+    )
+    if math.isclose(total_distance_between_components, 0, abs_tol = 1e-6):
+        raise ValueError('components must have different coordinates')
+    projected_real, projected_imag = project_phasor_to_line(
+        real, imag, real_components, imag_components
     )
     distances_to_first_component = numpy.sqrt(
         (numpy.array(projected_real) - first_component_phasor[0]) ** 2
