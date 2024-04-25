@@ -97,18 +97,18 @@ def two_fractions_from_phasor(
     second_component_phasor = numpy.array(
         [real_components[1], imag_components[1]]
     )
-    total_distance_between_components = math.sqrt(
-        (second_component_phasor[0] - first_component_phasor[0]) ** 2
-        + (second_component_phasor[1] - first_component_phasor[1]) ** 2
+    total_distance_between_components = numpy.hypot(
+        (second_component_phasor[0] - first_component_phasor[0]),
+        (second_component_phasor[1] - first_component_phasor[1]),
     )
     if math.isclose(total_distance_between_components, 0, abs_tol=1e-6):
         raise ValueError('components must have different coordinates')
     projected_real, projected_imag = project_phasor_to_line(
         real, imag, real_components, imag_components
     )
-    distances_to_first_component = numpy.sqrt(
-        (numpy.array(projected_real) - first_component_phasor[0]) ** 2
-        + (numpy.array(projected_imag) - first_component_phasor[1]) ** 2
+    distances_to_first_component = numpy.hypot(
+        (numpy.array(projected_real) - first_component_phasor[0]),
+        (numpy.array(projected_imag) - first_component_phasor[1]),
     )
     fraction_of_second_component = (
         distances_to_first_component / total_distance_between_components
