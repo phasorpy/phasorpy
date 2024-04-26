@@ -2,7 +2,7 @@
 requires = [
     "setuptools>=68",
     "numpy",
-    "Cython",
+    "Cython>=3.0.10",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -81,6 +81,9 @@ version = { attr = "phasorpy.version.__version__" }
 [tool.setuptools.package-data]
 phasorpy = ["py.typed"]
 
+[tool.ruff.lint]
+select = ["NPY201"]
+
 [tool.pylint.format]
 max-line-length = 79
 max-module-lines = 2500
@@ -156,7 +159,7 @@ norecursedirs = [
     ".pytest_cache",
     "adhoc",
     "build",
-    "docs",
+    "docs/_build",
     "fixture",
     "htmlcov",
     "_htmlcov",

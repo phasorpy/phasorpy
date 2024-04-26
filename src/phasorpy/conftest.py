@@ -7,6 +7,10 @@ import pytest
 
 from .datasets import fetch
 
+# numpy 2.0 changed the scalar type representation,
+# causing many doctests to fail.
+numpy.set_printoptions(legacy='1.21')
+
 
 @pytest.fixture(autouse=True)
 def add_doctest_namespace(doctest_namespace):

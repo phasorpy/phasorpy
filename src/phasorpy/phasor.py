@@ -218,15 +218,15 @@ def phasor_from_signal(
     (1.1, 0.0, 0.0)
 
     """
-    signal = numpy.array(signal, order='C', ndmin=1, copy=False)
-    samples = signal.shape[axis]  # this also verifies axis
+    signal = numpy.asarray(signal, order='C')
+    samples = numpy.size(signal, axis)  # this also verifies axis and ndim >= 1
 
     if sample_phase is not None:
         if harmonic is not None:
             raise ValueError('sample_phase cannot be used with harmonic')
         harmonics = [1]  # value not used
-        sample_phase = numpy.array(
-            sample_phase, dtype=numpy.float64, copy=False, ndmin=1
+        sample_phase = numpy.atleast_1d(
+            numpy.asarray(sample_phase, dtype=numpy.float64)
         )
         if sample_phase.ndim != 1 or sample_phase.size != samples:
             raise ValueError(f'{sample_phase.shape=} != ({samples},)')
@@ -237,7 +237,7 @@ def phasor_from_signal(
     elif isinstance(harmonic, int):
         harmonics = [harmonic]
     else:
-        a = numpy.array(harmonic, ndmin=1)
+        a = numpy.atleast_1d(numpy.asarray(harmonic))
         if a.dtype.kind not in 'iu' or a.ndim != 1:
             raise TypeError(f'invalid {harmonic=} type')
         harmonics = a.tolist()
@@ -358,7 +358,7 @@ def phasor_from_signal_fft(
     (1.1, array([0.5, 0.0]), array([0.5, -0]))
 
     """
-    signal = numpy.array(signal, copy=False, ndmin=1)
+    signal = numpy.asarray(signal)
     samples = numpy.size(signal, axis)
     if samples < 3:
         raise ValueError(f'not enough {samples=} along {axis=}')
@@ -372,7 +372,7 @@ def phasor_from_signal_fft(
                 f'harmonic={harmonic} out of range 1..{max_harmonic}'
             )
     else:
-        a = numpy.array(harmonic)
+        a = numpy.atleast_1d(numpy.asarray(harmonic))
         if a.dtype.kind not in 'iu' or a.ndim != 1:
             raise TypeError(f'invalid {harmonic=} type')
         if numpy.any(a < 1) or numpy.any(a > max_harmonic):
@@ -986,7 +986,7 @@ def phasor_to_apparent_lifetime(
     (array([inf, 0]), array([inf, 0]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
     return _phasor_to_apparent_lifetime(real, imag, omega, **kwargs)
 
@@ -1068,7 +1068,7 @@ def phasor_from_apparent_lifetime(
     (array([1, 0.0]), array([0, 0.0]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
     if modulation_lifetime is None:
         return _phasor_from_single_lifetime(phase_lifetime, omega, **kwargs)
@@ -1211,7 +1211,7 @@ def fraction_to_amplitude(
     array([0.2, 0.2])
 
     """
-    t = numpy.array(fraction, copy=True, dtype=numpy.float64)
+    t = numpy.array(fraction, dtype=numpy.float64)  # makes copy
     t /= numpy.sum(t, axis=axis, keepdims=True)
     numpy.true_divide(t, lifetime, out=t)
     return t
@@ -1419,10 +1419,10 @@ def phasor_from_lifetime(
     """
     if unit_conversion < 1e-16:
         raise ValueError(f'{unit_conversion=} < 1e-16')
-    frequency = numpy.array(frequency, dtype=numpy.float64, ndmin=1)
+    frequency = numpy.atleast_1d(numpy.asarray(frequency, dtype=numpy.float64))
     if frequency.ndim != 1:
         raise ValueError('frequency is not one-dimensional array')
-    lifetime = numpy.array(lifetime, dtype=numpy.float64, ndmin=1)
+    lifetime = numpy.atleast_1d(numpy.asarray(lifetime, dtype=numpy.float64))
     if lifetime.ndim > 2:
         raise ValueError('lifetime must be one- or two-dimensional array')
 
@@ -1435,7 +1435,9 @@ def phasor_from_lifetime(
         lifetime = lifetime.reshape(-1, 1)  # move components to last axis
         fraction = numpy.ones_like(lifetime)  # not really used
     else:
-        fraction = numpy.array(fraction, dtype=numpy.float64, ndmin=1)
+        fraction = numpy.atleast_1d(
+            numpy.asarray(fraction, dtype=numpy.float64)
+        )
         if fraction.ndim > 2:
             raise ValueError('fraction must be one- or two-dimensional array')
 
@@ -1541,7 +1543,7 @@ def polar_to_apparent_lifetime(
     (array([1.989, 1.989]), array([1.989, 2.411]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
     return _polar_to_apparent_lifetime(phase, modulation, omega, **kwargs)
 
@@ -1611,7 +1613,7 @@ def polar_from_apparent_lifetime(
     (array([0.7854, 0.7854]), array([0.7071, 0.6364]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
     if modulation_lifetime is None:
         return _polar_from_single_lifetime(phase_lifetime, omega, **kwargs)
@@ -1702,7 +1704,7 @@ def phasor_from_fret_donor(
     (array([0.1766, 0.2737, 0.1466]), array([0.3626, 0.4134, 0.2534]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
     return _phasor_from_fret_donor(
         omega,
@@ -1820,7 +1822,7 @@ def phasor_from_fret_acceptor(
     (array([0.1996, 0.05772, 0.2867]), array([0.3225, 0.3103, 0.4292]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
     return _phasor_from_fret_acceptor(
         omega,
