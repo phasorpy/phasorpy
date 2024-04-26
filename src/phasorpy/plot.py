@@ -237,7 +237,10 @@ class PhasorPlot:
             i,
             (re, im),
         ) in enumerate(
-            zip(numpy.array(real, ndmin=2), numpy.array(imag, ndmin=2))
+            zip(
+                numpy.atleast_2d(numpy.asarray(real)),
+                numpy.atleast_2d(numpy.asarray(imag)),
+            )
         ):
             lbl = None
             if label is not None:

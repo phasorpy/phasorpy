@@ -191,7 +191,14 @@ plot.show()
 # %%
 # To be continued
 # ---------------
+
+# %%
+# Appendix
+# --------
 #
+# Print information about Python interpreter and installed packages:
+
+print(phasorpy.versions())
 
 # %%
 # sphinx_gallery_thumbnail_number = 3
