@@ -11,7 +11,7 @@ def pytest_report_header(config, start_path, startdir):
     """Return versions of relevant installed packages."""
     return '\n'.join(
         (
-            f'versions: {versions(sep=', ')}',
+            f'versions: {versions(sep=", ")}',
             f'number_threads: {number_threads(0)}',
             f'path: {os.path.dirname(phasorpy.__file__)}',
         )
