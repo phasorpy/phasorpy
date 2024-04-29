@@ -34,7 +34,7 @@ def label_from_phasor_circular(
     imag,
     center: ArrayLike,
     radius: ArrayLike,
-) -> tuple[NDArray[Any]]:
+) -> NDArray[Any]:
     r"""Return indices of circle to which each phasor coordinate belongs.
     Phasor coordinates that do not fall in a circle have an index of zero.
 
@@ -92,7 +92,7 @@ def label_from_phasor_circular(
     return label
 
 
-def label_from_ranges(values, ranges: ArrayLike) -> tuple[NDArray[Any]]:
+def label_from_ranges(values, ranges: ArrayLike) -> NDArray[Any]:
     r"""Return indices of range to which each value belongs.
     Values that do not fall in any range have an index of zero.
 
