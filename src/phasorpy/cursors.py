@@ -11,8 +11,8 @@
 from __future__ import annotations
 
 __all__ = [
-    'circular_cursor',
-    'range_cursor',
+    'label_from_phasor_circular',
+    'label_from_ranges',
 ]
 
 from typing import TYPE_CHECKING
@@ -29,7 +29,7 @@ import warnings
 import numpy
 
 
-def circular_cursor(
+def label_from_phasor_circular(
     real,
     imag,
     center: ArrayLike,
@@ -64,7 +64,7 @@ def circular_cursor(
     --------
     Compute label array for four circles:
 
-    >>> circular_cursor(numpy.array([-0.5, -0.5, 0.5, 0.5]),
+    >>> label_from_phasor_circular(numpy.array([-0.5, -0.5, 0.5, 0.5]),
     ...     numpy.array([-0.5, 0.5, -0.5, 0.5]),
     ...     numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]),
     ...     radius=[0.1, 0.1, 0.1, 0.1])
@@ -92,7 +92,7 @@ def circular_cursor(
     return label
 
 
-def range_cursor(values, ranges: ArrayLike) -> tuple[NDArray[Any]]:
+def label_from_ranges(values, ranges: ArrayLike) -> tuple[NDArray[Any]]:
     r"""Return indices of range to which each value belongs.
     Values that do not fall in any range have an index of zero.
 
@@ -116,7 +116,7 @@ def range_cursor(values, ranges: ArrayLike) -> tuple[NDArray[Any]]:
     --------
     Compute the range cursor:
 
-    >>> range_cursor(numpy.array([[3.3, 6, 8], [15, 20, 7]]),
+    >>> label_from_ranges(numpy.array([[3.3, 6, 8], [15, 20, 7]]),
     ...     numpy.array([(2, 8), (10, 15), (20, 25)]))
     array([[1, 1, 1], [2, 3, 1]])
     """
