@@ -23,9 +23,16 @@ def main() -> int:
 
 
 @main.command(help='Show runtime versions.')
-def versions():
+@click.option(
+    '--verbose',
+    default=False,
+    is_flag=True,
+    type=click.BOOL,
+    help='Show module paths.',
+)
+def versions(verbose):
     """Versions command group."""
-    click.echo(version.versions())
+    click.echo(version.versions(verbose=verbose))
 
 
 @main.command(help='Fetch sample files from remote repositories.')
@@ -45,6 +52,29 @@ def fetch(files, hideprogress):
         *files, return_scalar=False, progressbar=not hideprogress
     )
     click.echo(f'Cached at {os.path.commonpath(files)}')
+
+
+@main.command(help='Start interactive FRET phasor plot.')
+@click.option(
+    '--hide',
+    default=False,
+    is_flag=True,
+    type=click.BOOL,
+    help='Do not show interactive plot.',
+)
+def fret(hide):
+    """FRET command group."""
+    from .plot import PhasorPlotFret
+
+    plot = PhasorPlotFret(
+        frequency=60.0,
+        donor_lifetime=4.2,
+        acceptor_lifetime=3.0,
+        fret_efficiency=0.5,
+        interactive=True,
+    )
+    if not hide:
+        plot.show()
 
 
 if __name__ == '__main__':

@@ -33,14 +33,35 @@ The ``phasorpy.phasor`` module provides functions to:
 
   - :py:func:`phasor_center`
 
+- calculate phasor coordinates for FRET donor and acceptor channels:
+
+  - :py:func:`phasor_from_fret_donor`
+  - :py:func:`phasor_from_fret_acceptor`
+
+- convert between single component lifetimes and optimal frequency:
+
+  - :py:func:`frequency_from_lifetime`
+  - :py:func:`frequency_to_lifetime`
+
+- convert between fractional intensities and pre-exponential amplitudes:
+
+  - :py:func:`fraction_from_amplitude`
+  - :py:func:`fraction_to_amplitude`
+
 """
 
 from __future__ import annotations
 
 __all__ = [
+    'fraction_from_amplitude',
+    'fraction_to_amplitude',
+    'frequency_from_lifetime',
+    'frequency_to_lifetime',
     'phasor_calibrate',
     'phasor_center',
     'phasor_from_apparent_lifetime',
+    'phasor_from_fret_acceptor',
+    'phasor_from_fret_donor',
     'phasor_from_lifetime',
     'phasor_from_polar',
     'phasor_from_signal',
@@ -72,8 +93,10 @@ if TYPE_CHECKING:
 
 import numpy
 
-from ._phasor import (
+from ._phasorpy import (
     _phasor_from_apparent_lifetime,
+    _phasor_from_fret_acceptor,
+    _phasor_from_fret_donor,
     _phasor_from_lifetime,
     _phasor_from_polar,
     _phasor_from_signal,
@@ -138,6 +161,11 @@ def phasor_from_signal(
     imag : ndarray
         Imaginary component of phasor coordinates at `harmonic` along `axis`.
 
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_signal_fft
+    :ref:`sphx_glr_tutorials_benchmarks_phasorpy_phasor_from_signal.py`
+
     Notes
     -----
     Compared to the :py:func:`phasor_from_signal_fft` reference implementation,
@@ -190,15 +218,15 @@ def phasor_from_signal(
     (1.1, 0.0, 0.0)
 
     """
-    signal = numpy.array(signal, order='C', ndmin=1, copy=False)
-    samples = signal.shape[axis]  # this also verifies axis
+    signal = numpy.asarray(signal, order='C')
+    samples = numpy.size(signal, axis)  # this also verifies axis and ndim >= 1
 
     if sample_phase is not None:
         if harmonic is not None:
             raise ValueError('sample_phase cannot be used with harmonic')
         harmonics = [1]  # value not used
-        sample_phase = numpy.array(
-            sample_phase, dtype=numpy.float64, copy=False, ndmin=1
+        sample_phase = numpy.atleast_1d(
+            numpy.asarray(sample_phase, dtype=numpy.float64)
         )
         if sample_phase.ndim != 1 or sample_phase.size != samples:
             raise ValueError(f'{sample_phase.shape=} != ({samples},)')
@@ -209,7 +237,7 @@ def phasor_from_signal(
     elif isinstance(harmonic, int):
         harmonics = [harmonic]
     else:
-        a = numpy.array(harmonic, ndmin=1)
+        a = numpy.atleast_1d(numpy.asarray(harmonic))
         if a.dtype.kind not in 'iu' or a.ndim != 1:
             raise TypeError(f'invalid {harmonic=} type')
         harmonics = a.tolist()
@@ -238,7 +266,7 @@ def phasor_from_signal(
         if sample_phase is None:
             phase = numpy.linspace(
                 0,
-                h * math.pi * 2,
+                h * math.pi * 2.0,
                 samples,
                 endpoint=False,
                 dtype=numpy.float64,
@@ -294,6 +322,7 @@ def phasor_from_signal_fft(
         The default is the first harmonic (fundamental frequency).
     fft_func : callable, optional
         A drop-in replacement function for ``numpy.fft.fft``.
+        For example, ``scipy.fft.fft`` or ``mkl_fft._numpy_fft.fft``.
 
     Returns
     -------
@@ -312,6 +341,11 @@ def phasor_from_signal_fft(
         `harmonic` is smaller than 1 or greater than half the samples along
         `axis`.
 
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_signal
+    :ref:`sphx_glr_tutorials_benchmarks_phasorpy_phasor_from_signal.py`
+
     Examples
     --------
     Calculate phasor coordinates of a phase-shifted sinusoidal signal:
@@ -324,7 +358,7 @@ def phasor_from_signal_fft(
     (1.1, array([0.5, 0.0]), array([0.5, -0]))
 
     """
-    signal = numpy.array(signal, copy=False, ndmin=1)
+    signal = numpy.asarray(signal)
     samples = numpy.size(signal, axis)
     if samples < 3:
         raise ValueError(f'not enough {samples=} along {axis=}')
@@ -338,7 +372,7 @@ def phasor_from_signal_fft(
                 f'harmonic={harmonic} out of range 1..{max_harmonic}'
             )
     else:
-        a = numpy.array(harmonic)
+        a = numpy.atleast_1d(numpy.asarray(harmonic))
         if a.dtype.kind not in 'iu' or a.ndim != 1:
             raise TypeError(f'invalid {harmonic=} type')
         if numpy.any(a < 1) or numpy.any(a > max_harmonic):
@@ -372,21 +406,21 @@ def phasor_from_signal_fft(
 
 
 def phasor_semicircle(
-    samples: int = 33, /
+    samples: int = 101, /
 ) -> tuple[NDArray[numpy.float64], NDArray[numpy.float64]]:
     r"""Return equally spaced phasor coordinates on universal semicircle.
 
     Parameters
     ----------
-    samples : int, optional
-        Number of coordinates to return. The default is 33.
+    samples : int, optional, default: 101
+        Number of coordinates to return.
 
     Returns
     -------
     real : ndarray
-        Real component of phasor coordinates.
+        Real component of semicircle phasor coordinates.
     imag : ndarray
-        Imaginary component of phasor coordinates.
+        Imaginary component of semicircle phasor coordinates.
 
     Raises
     ------
@@ -501,6 +535,13 @@ def phasor_calibrate(
     ValueError
         The array shapes of `real` and `imag`, or `reference_real` and
         `reference_imag` do not match.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_transform
+    phasorpy.phasor.polar_from_reference_phasor
+    phasorpy.phasor.phasor_center
+    phasorpy.phasor.phasor_from_lifetime
 
     Notes
     -----
@@ -682,6 +723,10 @@ def polar_from_reference_phasor(
     modulation_zero : ndarray
         Radial component of polar coordinates for calibration.
 
+    See Also
+    --------
+    phasorpy.phasor.polar_from_reference
+
     Notes
     -----
     This function performs the following operations:
@@ -739,6 +784,10 @@ def polar_from_reference(
     modulation_zero : ndarray
         Radial component of polar coordinates for calibration.
 
+    See Also
+    --------
+    phasorpy.phasor.polar_from_reference_phasor
+
     Examples
     --------
     >>> polar_from_reference(0.2, 0.4, 0.4, 1.3)
@@ -791,6 +840,10 @@ def phasor_to_polar(
     modulation : ndarray
         Radial component of polar coordinates.
 
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_polar
+
     Examples
     --------
     Calculate polar coordinates from three phasor coordinates:
@@ -827,6 +880,10 @@ def phasor_from_polar(
     imag : ndarray
         Imaginary component of phasor coordinates.
 
+    See Also
+    --------
+    phasorpy.phasor.phasor_to_polar
+
     Notes
     -----
     The polar coordinates `phase` (:math:`\phi`) and `modulation` (:math:`M`)
@@ -861,7 +918,7 @@ def phasor_to_apparent_lifetime(
     unit_conversion: float = 1e-3,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    r"""Return single apparent lifetimes from phasor coordinates.
+    r"""Return apparent single lifetimes from phasor coordinates.
 
     Parameters
     ----------
@@ -886,6 +943,10 @@ def phasor_to_apparent_lifetime(
     modulation_lifetime : ndarray
         Apparent single lifetime from radial component of phasor coordinates.
 
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_apparent_lifetime
+
     Notes
     -----
     The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
@@ -905,7 +966,7 @@ def phasor_to_apparent_lifetime(
     Examples
     --------
     The apparent single lifetimes from phase and modulation are equal
-    only if the phasor coordinates lie on the universal circle:
+    only if the phasor coordinates lie on the universal semicircle:
 
     >>> phasor_to_apparent_lifetime(
     ...    0.5, [0.5, 0.45], frequency=80
@@ -913,20 +974,20 @@ def phasor_to_apparent_lifetime(
     (array([1.989, 1.79]), array([1.989, 2.188]))
 
     Apparent single lifetimes of phasor coordinates outside the universal
-    circle are undefined:
+    semicircle are undefined:
 
     >>> phasor_to_apparent_lifetime(-0.1, 1.1, 80)  # doctest: +NUMBER
     (-21.8, 0.0)
 
-    Apparent single lifetimes at the universal circle endpoints are
+    Apparent single lifetimes at the universal semicircle endpoints are
     infinite and zero:
 
     >>> phasor_to_apparent_lifetime([0, 1], [0, 0], 80)  # doctest: +NUMBER
     (array([inf, 0]), array([inf, 0]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
-    omega *= math.pi * 2 * unit_conversion
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega *= math.pi * 2.0 * unit_conversion
     return _phasor_to_apparent_lifetime(real, imag, omega, **kwargs)
 
 
@@ -960,10 +1021,14 @@ def phasor_from_apparent_lifetime(
 
     Returns
     -------
-    real : array_like
+    real : ndarray
         Real component of phasor coordinates.
-    imag : array_like
+    imag : ndarray
         Imaginary component of phasor coordinates.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_to_apparent_lifetime
 
     Notes
     -----
@@ -987,7 +1052,7 @@ def phasor_from_apparent_lifetime(
     Examples
     --------
     If the apparent single lifetimes from phase and modulation are equal,
-    the phasor coordinates lie on the universal circle, else inside:
+    the phasor coordinates lie on the universal semicircle, else inside:
 
     >>> phasor_from_apparent_lifetime(
     ...     1.9894, [1.9894, 2.4113], frequency=80.0
@@ -995,7 +1060,7 @@ def phasor_from_apparent_lifetime(
     (array([0.5, 0.45]), array([0.5, 0.45]))
 
     Zero and infinite apparent single lifetimes define the endpoints of the
-    universal circle:
+    universal semicircle:
 
     >>> phasor_from_apparent_lifetime(
     ...     [0.0, 1e9], [0.0, 1e9], frequency=80
@@ -1003,13 +1068,197 @@ def phasor_from_apparent_lifetime(
     (array([1, 0.0]), array([0, 0.0]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
-    omega *= math.pi * 2 * unit_conversion
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega *= math.pi * 2.0 * unit_conversion
     if modulation_lifetime is None:
         return _phasor_from_single_lifetime(phase_lifetime, omega, **kwargs)
     return _phasor_from_apparent_lifetime(
         phase_lifetime, modulation_lifetime, omega, **kwargs
     )
+
+
+def frequency_from_lifetime(
+    lifetime: ArrayLike,
+    *,
+    unit_conversion: float = 1e-3,
+) -> NDArray[numpy.float64]:
+    r"""Return optimal frequency for resolving single component lifetime.
+
+    Parameters
+    ----------
+    lifetime : array_like
+        Single component lifetime.
+    unit_conversion : float, optional, default: 1e-3
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+
+    Returns
+    -------
+    frequency : ndarray
+        Optimal laser pulse or modulation frequency for resolving `lifetime`.
+
+    Notes
+    -----
+    The optimal frequency :math:`f` to resolve a single component lifetime
+    :math:`\tau` is
+    (:ref:`Redford & Clegg 2005 <redford-clegg-2005>`. Eq. B.6):
+
+    .. math::
+
+        \omega &= 2 \pi f
+
+        \omega^2 &= \frac{1 + \sqrt{3}}{2 \tau^2}
+
+    Examples
+    --------
+    Measurements of a lifetime near 4 ns should be made at 47 MHz,
+    near 1 ns at 186 MHz:
+
+    >>> frequency_from_lifetime([4.0, 1.0])  # doctest: +NUMBER
+    array([46.5, 186])
+
+    """
+    t = numpy.reciprocal(lifetime, dtype=numpy.float64)
+    t *= 0.18601566519848653 / unit_conversion
+    return t
+
+
+def frequency_to_lifetime(
+    frequency: ArrayLike,
+    *,
+    unit_conversion: float = 1e-3,
+) -> NDArray[numpy.float64]:
+    r"""Return single component lifetime best resolved at frequency.
+
+    Parameters
+    ----------
+    frequency : array_like
+        Laser pulse or modulation frequency.
+    unit_conversion : float, optional, default: 1e-3
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+
+    Returns
+    -------
+    lifetime : ndarray
+        Single component lifetime best resolved at `frequency`.
+
+    Notes
+    -----
+    The lifetime :math:`\tau` that is best resolved at frequency :math:`f` is
+    (:ref:`Redford & Clegg 2005 <redford-clegg-2005>`. Eq. B.6):
+
+    .. math::
+
+        \omega &= 2 \pi f
+
+        \tau^2 &=  \frac{1 + \sqrt{3}}{2 \omega^2}
+
+    Examples
+    --------
+    Measurements at frequencies of 47 and 186 MHz are best for measuring
+    lifetimes near 4 and 1 ns respectively:
+
+    >>> frequency_to_lifetime([46.5, 186])  # doctest: +NUMBER
+    array([4, 1])
+
+    """
+    t = numpy.reciprocal(frequency, dtype=numpy.float64)
+    t *= 0.18601566519848653 / unit_conversion
+    return t
+
+
+def fraction_to_amplitude(
+    lifetime: ArrayLike, fraction: ArrayLike, *, axis: int = -1
+) -> NDArray[numpy.float64]:
+    r"""Return pre-exponential amplitude from fractional intensity.
+
+    Parameters
+    ----------
+    lifetime : array_like
+        Lifetime components.
+    fraction : array_like
+        Fractional intensities of lifetime components.
+        Fractions are normalized to sum to 1.
+    axis : int, optional
+        Axis over which to compute pre-exponential amplitudes.
+        The default is the last axis (-1).
+
+    Returns
+    -------
+    amplitude : ndarray
+        Pre-exponential amplitudes.
+        The product of `amplitude` and `lifetime` sums to 1 along `axis`.
+
+    See Also
+    --------
+    phasorpy.phasor.fraction_from_amplitude
+
+    Notes
+    -----
+    The pre-exponential amplitude :math:`a` of component :math:`j` with
+    lifetime :math:`\tau` and fractional intensity :math:`\alpha` is:
+
+    .. math::
+
+        a_{j} = \frac{\alpha_{j}}{\tau_{j} \cdot \sum_{j} \alpha_{j}}
+
+    Examples
+    --------
+    >>> fraction_to_amplitude([4.0, 1.0], [1.6, 0.4])  # doctest: +NUMBER
+    array([0.2, 0.2])
+
+    """
+    t = numpy.array(fraction, dtype=numpy.float64)  # makes copy
+    t /= numpy.sum(t, axis=axis, keepdims=True)
+    numpy.true_divide(t, lifetime, out=t)
+    return t
+
+
+def fraction_from_amplitude(
+    lifetime: ArrayLike, amplitude: ArrayLike, *, axis: int = -1
+) -> NDArray[numpy.float64]:
+    r"""Return fractional intensity from pre-exponential amplitude.
+
+    Parameters
+    ----------
+    lifetime : array_like
+        Lifetime of components.
+    amplitude : array_like
+        Pre-exponential amplitudes of lifetime components.
+    axis : int, optional
+        Axis over which to compute fractional intensities.
+        The default is the last axis (-1).
+
+    Returns
+    -------
+    fraction : ndarray
+        Fractional intensities, normalized to sum to 1 along `axis`.
+
+    See Also
+    --------
+    phasorpy.phasor.fraction_to_amplitude
+
+    Notes
+    -----
+    The fractional intensity :math:`\alpha` of component :math:`j` with
+    lifetime :math:`\tau` and pre-exponential amplitude :math:`a` is:
+
+    .. math::
+
+        \alpha_{j} = \frac{a_{j} \tau_{j}}{\sum_{j} a_{j} \tau_{j}}
+
+    Examples
+    --------
+    >>> fraction_from_amplitude([4.0, 1.0], [1.0, 1.0])  # doctest: +NUMBER
+    array([0.8, 0.2])
+
+    """
+    t = numpy.multiply(amplitude, lifetime, dtype=numpy.float64)
+    t /= numpy.sum(t, axis=axis, keepdims=True)
+    return t
 
 
 def phasor_from_lifetime(
@@ -1072,14 +1321,14 @@ def phasor_from_lifetime(
 
         \omega &= 2 \pi f
 
-        g_{j} &= a_{j} / (1 + (\omega \tau_{j})^2)
+        g_{j} &= \alpha_{j} / (1 + (\omega \tau_{j})^2)
 
         G &= \sum_{j} g_{j}
 
         S &= \sum_{j} \omega \tau_{j} g_{j}
 
-    The relation between pre-exponential amplitudes :math:`\alpha` and
-    fractional intensities :math:`a` is:
+    The relation between pre-exponential amplitudes :math:`a` and
+    fractional intensities :math:`\alpha` is:
 
     .. math::
         F_{DC} &= \sum_{j} a_{j} \tau_{j}
@@ -1170,10 +1419,10 @@ def phasor_from_lifetime(
     """
     if unit_conversion < 1e-16:
         raise ValueError(f'{unit_conversion=} < 1e-16')
-    frequency = numpy.array(frequency, dtype=numpy.float64, ndmin=1)
+    frequency = numpy.atleast_1d(numpy.asarray(frequency, dtype=numpy.float64))
     if frequency.ndim != 1:
         raise ValueError('frequency is not one-dimensional array')
-    lifetime = numpy.array(lifetime, dtype=numpy.float64, ndmin=1)
+    lifetime = numpy.atleast_1d(numpy.asarray(lifetime, dtype=numpy.float64))
     if lifetime.ndim > 2:
         raise ValueError('lifetime must be one- or two-dimensional array')
 
@@ -1186,7 +1435,9 @@ def phasor_from_lifetime(
         lifetime = lifetime.reshape(-1, 1)  # move components to last axis
         fraction = numpy.ones_like(lifetime)  # not really used
     else:
-        fraction = numpy.array(fraction, dtype=numpy.float64, ndmin=1)
+        fraction = numpy.atleast_1d(
+            numpy.asarray(fraction, dtype=numpy.float64)
+        )
         if fraction.ndim > 2:
             raise ValueError('fraction must be one- or two-dimensional array')
 
@@ -1236,7 +1487,7 @@ def polar_to_apparent_lifetime(
     unit_conversion: float = 1e-3,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    r"""Return single apparent lifetimes from polar coordinates.
+    r"""Return apparent single lifetimes from polar coordinates.
 
     Parameters
     ----------
@@ -1261,6 +1512,10 @@ def polar_to_apparent_lifetime(
     modulation_lifetime : ndarray
         Apparent single lifetime from `modulation`.
 
+    See Also
+    --------
+    phasorpy.phasor.polar_from_apparent_lifetime
+
     Notes
     -----
     The polar coordinates `phase` (:math:`\phi`) and `modulation` (:math:`M`)
@@ -1280,7 +1535,7 @@ def polar_to_apparent_lifetime(
     Examples
     --------
     The apparent single lifetimes from phase and modulation are equal
-    only if the polar coordinates lie on the universal circle:
+    only if the polar coordinates lie on the universal semicircle:
 
     >>> polar_to_apparent_lifetime(
     ...     math.pi / 4, numpy.hypot([0.5, 0.45], [0.5, 0.45]), frequency=80
@@ -1288,8 +1543,8 @@ def polar_to_apparent_lifetime(
     (array([1.989, 1.989]), array([1.989, 2.411]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
-    omega *= math.pi * 2 * unit_conversion
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega *= math.pi * 2.0 * unit_conversion
     return _polar_to_apparent_lifetime(phase, modulation, omega, **kwargs)
 
 
@@ -1323,10 +1578,14 @@ def polar_from_apparent_lifetime(
 
     Returns
     -------
-    phase : array_like
+    phase : ndarray
         Angular component of polar coordinates.
-    modulation : array_like
+    modulation : ndarray
         Radial component of polar coordinates.
+
+    See Also
+    --------
+    phasorpy.phasor.polar_to_apparent_lifetime
 
     Notes
     -----
@@ -1346,7 +1605,7 @@ def polar_from_apparent_lifetime(
     Examples
     --------
     If the apparent single lifetimes from phase and modulation are equal,
-    the polar coordinates lie on the universal circle, else inside:
+    the polar coordinates lie on the universal semicircle, else inside:
 
     >>> polar_from_apparent_lifetime(
     ...     1.9894, [1.9894, 2.4113], frequency=80.0
@@ -1354,12 +1613,229 @@ def polar_from_apparent_lifetime(
     (array([0.7854, 0.7854]), array([0.7071, 0.6364]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64, copy=True)
-    omega *= math.pi * 2 * unit_conversion
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega *= math.pi * 2.0 * unit_conversion
     if modulation_lifetime is None:
         return _polar_from_single_lifetime(phase_lifetime, omega, **kwargs)
     return _polar_from_apparent_lifetime(
         phase_lifetime, modulation_lifetime, omega, **kwargs
+    )
+
+
+def phasor_from_fret_donor(
+    frequency: ArrayLike,
+    donor_lifetime: ArrayLike,
+    *,
+    fret_efficiency: ArrayLike = 0.0,
+    donor_freting: ArrayLike = 1.0,
+    donor_background: ArrayLike = 0.0,
+    background_real: ArrayLike = 0.0,
+    background_imag: ArrayLike = 0.0,
+    unit_conversion: float = 1e-3,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return phasor coordinates of FRET donor channel.
+
+    Calculate phasor coordinates of a FRET (Förster Resonance Energy Transfer)
+    donor channel as a function of frequency, donor lifetime, FRET efficiency,
+    fraction of donors undergoing FRET, and background fluorescence.
+
+    The phasor coordinates of the donor channel contain fractions of:
+
+    - donor not undergoing energy transfer
+    - donor quenched by energy transfer
+    - background fluorescence
+
+    Parameters
+    ----------
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+    donor_lifetime : array_like
+        Lifetime of donor without FRET in ns.
+    fret_efficiency : array_like, optional, default 0
+        FRET efficiency in range [0..1].
+    donor_freting : array_like, optional, default 1
+        Fraction of donors participating in FRET. Range [0..1].
+    donor_background : array_like, optional, default 0
+        Weight of background fluorescence in donor channel
+        relative to fluorescence of donor without FRET.
+        A weight of 1 means the fluorescence of background and donor
+        without FRET are equal.
+    background_real : array_like, optional, default 0
+        Real component of background fluorescence phasor coordinate
+        at `frequency`.
+    background_imag : array_like, optional, default 0
+        Imaginary component of background fluorescence phasor coordinate
+        at `frequency`.
+    unit_conversion : float, optional
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    real : ndarray
+        Real component of donor channel phasor coordinates.
+    imag : ndarray
+        Imaginary component of donor channel phasor coordinates.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_fret_acceptor
+    :ref:`sphx_glr_tutorials_phasorpy_fret.py`
+
+    Examples
+    --------
+    Compute the phasor coordinates of a FRET donor channel at three
+    FRET efficiencies:
+
+    >>> phasor_from_fret_donor(
+    ...     frequency=80,
+    ...     donor_lifetime=4.2,
+    ...     fret_efficiency=[0.0, 0.3, 1.0],
+    ...     donor_freting=0.9,
+    ...     donor_background=0.1,
+    ...     background_real=0.11,
+    ...     background_imag=0.12,
+    ... )  # doctest: +NUMBER
+    (array([0.1766, 0.2737, 0.1466]), array([0.3626, 0.4134, 0.2534]))
+
+    """
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega *= math.pi * 2.0 * unit_conversion
+    return _phasor_from_fret_donor(
+        omega,
+        donor_lifetime,
+        fret_efficiency,
+        donor_freting,
+        donor_background,
+        background_real,
+        background_imag,
+        **kwargs,
+    )
+
+
+def phasor_from_fret_acceptor(
+    frequency: ArrayLike,
+    donor_lifetime: ArrayLike,
+    acceptor_lifetime: ArrayLike,
+    *,
+    fret_efficiency: ArrayLike = 0.0,
+    donor_freting: ArrayLike = 1.0,
+    donor_bleedthrough: ArrayLike = 0.0,
+    acceptor_bleedthrough: ArrayLike = 0.0,
+    acceptor_background: ArrayLike = 0.0,
+    background_real: ArrayLike = 0.0,
+    background_imag: ArrayLike = 0.0,
+    unit_conversion: float = 1e-3,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return phasor coordinates of FRET acceptor channel.
+
+    Calculate phasor coordinates of a FRET (Förster Resonance Energy Transfer)
+    acceptor channel as a function of frequency, donor and acceptor lifetimes,
+    FRET efficiency, fraction of donors undergoing FRET, fraction of directly
+    excited acceptors, fraction of donor fluorescence in acceptor channel,
+    and background fluorescence.
+
+    The phasor coordinates of the acceptor channel contain fractions of:
+
+    - acceptor sensitized by energy transfer
+    - directly excited acceptor
+    - donor bleedthrough
+    - background fluorescence
+
+    Parameters
+    ----------
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+    donor_lifetime : array_like
+        Lifetime of donor without FRET in ns.
+    acceptor_lifetime : array_like
+        Lifetime of acceptor in ns.
+    fret_efficiency : array_like, optional, default 0
+        FRET efficiency in range [0..1].
+    donor_freting : array_like, optional, default 1
+        Fraction of donors participating in FRET. Range [0..1].
+    donor_bleedthrough : array_like, optional, default 0
+        Weight of donor fluorescence in acceptor channel
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence from donor and fully sensitized
+        acceptor are equal.
+        The background in the donor channel does not bleed through.
+    acceptor_bleedthrough : array_like, optional, default 0
+        Weight of fluorescence from directly excited acceptor
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence from directly excited acceptor
+        and fully sensitized acceptor are equal.
+    acceptor_background : array_like, optional, default 0
+        Weight of background fluorescence in acceptor channel
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence of background and fully
+        sensitized acceptor are equal.
+    background_real : array_like, optional, default 0
+        Real component of background fluorescence phasor coordinate
+        at `frequency`.
+    background_imag : array_like, optional, default 0
+        Imaginary component of background fluorescence phasor coordinate
+        at `frequency`.
+    unit_conversion : float, optional
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    real : ndarray
+        Real component of acceptor channel phasor coordinates.
+    imag : ndarray
+        Imaginary component of acceptor channel phasor coordinates.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_fret_donor
+    :ref:`sphx_glr_tutorials_phasorpy_fret.py`
+
+    Examples
+    --------
+    Compute the phasor coordinates of a FRET acceptor channel at three
+    FRET efficiencies:
+
+    >>> phasor_from_fret_acceptor(
+    ...     frequency=80,
+    ...     donor_lifetime=4.2,
+    ...     acceptor_lifetime=3.0,
+    ...     fret_efficiency=[0.0, 0.3, 1.0],
+    ...     donor_freting=0.9,
+    ...     donor_bleedthrough=0.1,
+    ...     acceptor_bleedthrough=0.1,
+    ...     acceptor_background=0.1,
+    ...     background_real=0.11,
+    ...     background_imag=0.12,
+    ... )  # doctest: +NUMBER
+    (array([0.1996, 0.05772, 0.2867]), array([0.3225, 0.3103, 0.4292]))
+
+    """
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega *= math.pi * 2.0 * unit_conversion
+    return _phasor_from_fret_acceptor(
+        omega,
+        donor_lifetime,
+        acceptor_lifetime,
+        fret_efficiency,
+        donor_freting,
+        donor_bleedthrough,
+        acceptor_bleedthrough,
+        acceptor_background,
+        background_real,
+        background_imag,
+        **kwargs,
     )
 
 

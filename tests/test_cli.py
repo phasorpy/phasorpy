@@ -17,9 +17,9 @@ def test_version():
 def test_versions():
     """Test ``python -m phasorpy versions``."""
     runner = CliRunner()
-    result = runner.invoke(main, ['versions'])
+    result = runner.invoke(main, ['versions', '--verbose'])
     assert result.exit_code == 0
-    assert result.output.strip() == versions()
+    assert result.output.strip() == versions(verbose=True)
 
 
 def test_fetch():
@@ -28,3 +28,10 @@ def test_fetch():
     result = runner.invoke(main, ['fetch', 'simfcs.r64'])
     assert result.exit_code == 0
     assert result.output.strip().endswith('simfcs.r64')
+
+
+def test_fret():
+    """Test ``python -m phasorpy fret``."""
+    runner = CliRunner()
+    result = runner.invoke(main, ['fret', '--hide'])
+    assert result.exit_code == 0

@@ -181,26 +181,26 @@ def _phasor_from_signal(
                 # TODO: move harmonics to an inner loop?
                 for i in range(signal.shape[0]):
                     for j in range(signal.shape[2]):
+                        dc = 0.0
+                        re = 0.0
+                        im = 0.0
+                        for k in range(samples):
+                            sample = <double> signal[i, k, j]
+                            dc += sample
+                            re += sample * sincos[h, k, 0]
+                            im += sample * sincos[h, k, 1]
+                        if dc > 1e-16:
+                            re /= dc
+                            im /= dc
+                            dc /= samples
+                        else:
                             dc = 0.0
-                            re = 0.0
-                            im = 0.0
-                            for k in range(samples):
-                                sample = <double> signal[i, k, j]
-                                dc += sample
-                                re += sample * sincos[h, k, 0]
-                                im += sample * sincos[h, k, 1]
-                            if dc > 1e-16:
-                                re /= dc
-                                im /= dc
-                                dc /= samples
-                            else:
-                                dc = 0.0
-                                re = 0.0  # inf?
-                                im = 0.0  # inf?
-                            if h == 0:
-                                mean[i, j] = <float_t> dc
-                            real[h, i, j] = <float_t> re
-                            imag[h, i, j] = <float_t> im
+                            re = 0.0  # inf?
+                            im = 0.0  # inf?
+                        if h == 0:
+                            mean[i, j] = <float_t> dc
+                        real[h, i, j] = <float_t> re
+                        imag[h, i, j] = <float_t> im
 
 
 def _phasor_from_lifetime(
@@ -244,7 +244,7 @@ def _phasor_from_lifetime(
         ssize_t ncomp = lifetime.shape[1]  # number lifetime components
         ssize_t ntau = lifetime.shape[0]  # number lifetimes
         ssize_t nfrac = fraction.shape[0]  # number fractions
-        double twopi = 2 * M_PI * unit_conversion
+        double twopi = 2.0 * M_PI * unit_conversion
         double nan = NAN  # float('NaN')
         double freq, tau, frac, sum, re, im, gs
         ssize_t f, t, s
@@ -373,6 +373,260 @@ def _phasor_from_lifetime(
 
 
 @cython.ufunc
+cdef (double, double) _phasor_from_fret_donor(
+    double omega,
+    double donor_lifetime,
+    double fret_efficiency,
+    double donor_freting,
+    double donor_background,
+    double background_real,
+    double background_imag,
+) noexcept nogil:
+    """Return phasor coordinates of FRET donor channel.
+
+    See :py:func:`phasor_from_fret_donor` for parameter definitions.
+
+    """
+    cdef:
+        double real, imag
+        double quenched_real, quenched_imag  # quenched donor
+        double f_pure, f_quenched, sum
+
+    if fret_efficiency < 0.0:
+        fret_efficiency = 0.0
+    elif fret_efficiency > 1.0:
+        fret_efficiency = 1.0
+
+    if donor_freting < 0.0:
+        donor_freting = 0.0
+    elif donor_freting > 1.0:
+        donor_freting = 1.0
+
+    if donor_background < 0.0:
+        donor_background = 0.0
+
+    f_pure = 1.0 - donor_freting
+    f_quenched = (1.0 - fret_efficiency) * donor_freting
+    sum = f_pure + f_quenched + donor_background
+    if sum < 1e-9:
+        # no signal in donor channel
+        return 1.0, 0.0
+
+    # phasor of pure donor at frequency
+    real, imag = phasor_from_lifetime(donor_lifetime, omega)
+
+    # phasor of quenched donor
+    quenched_real, quenched_imag = phasor_from_lifetime(
+        donor_lifetime * (1.0 - fret_efficiency), omega
+    )
+
+    # weighted average
+    real = (
+        real * f_pure
+        + quenched_real * f_quenched
+        + donor_background * background_real
+    ) / sum
+
+    imag = (
+        imag * f_pure
+        + quenched_imag * f_quenched
+        + background_imag * donor_background
+    ) / sum
+
+    return real, imag
+
+
+@cython.ufunc
+cdef (double, double) _phasor_from_fret_acceptor(
+    double omega,
+    double donor_lifetime,
+    double acceptor_lifetime,
+    double fret_efficiency,
+    double donor_freting,
+    double donor_bleedthrough,
+    double acceptor_bleedthrough,
+    double acceptor_background,
+    double background_real,
+    double background_imag,
+) noexcept nogil:
+    """Return phasor coordinates of FRET acceptor channel.
+
+    See :py:func:`phasor_from_fret_acceptor` for parameter definitions.
+
+    """
+    cdef:
+        double phi, mod
+        double donor_real, donor_imag
+        double acceptor_real, acceptor_imag
+        double quenched_real, quenched_imag  # quenched donor
+        double sensitized_real, sensitized_imag  # sensitized acceptor
+        double sum, f_donor, f_acceptor
+
+    if fret_efficiency < 0.0:
+        fret_efficiency = 0.0
+    elif fret_efficiency > 1.0:
+        fret_efficiency = 1.0
+
+    if donor_freting < 0.0:
+        donor_freting = 0.0
+    elif donor_freting > 1.0:
+        donor_freting = 1.0
+
+    if donor_bleedthrough < 0.0:
+        donor_bleedthrough = 0.0
+    if acceptor_bleedthrough < 0.0:
+        acceptor_bleedthrough = 0.0
+    if acceptor_background < 0.0:
+        acceptor_background = 0.0
+
+    # phasor of pure donor at frequency
+    donor_real, donor_imag = phasor_from_lifetime(donor_lifetime, omega)
+
+    if fret_efficiency == 0.0:
+        quenched_real = donor_real
+        quenched_imag = donor_imag
+    else:
+        # phasor of quenched donor
+        quenched_real, quenched_imag = phasor_from_lifetime(
+            donor_lifetime * (1.0 - fret_efficiency), omega
+        )
+
+        # phasor of pure and quenched donor
+        donor_real, donor_imag = linear_combination(
+            1.0,
+            0.0,
+            donor_real,
+            donor_imag,
+            quenched_real,
+            quenched_imag,
+            1.0,
+            1.0 - fret_efficiency,
+            1.0 - donor_freting
+        )
+
+    # phasor of acceptor at frequency
+    acceptor_real, acceptor_imag = phasor_from_lifetime(
+        acceptor_lifetime, omega
+    )
+
+    # phasor of acceptor sensitized by quenched donor
+    # TODO: use rotation formula
+    phi = (
+        atan2(quenched_imag, quenched_real)
+        + atan2(acceptor_imag, acceptor_real)
+    )
+    mod = (
+        sqrt(
+            quenched_real * quenched_real
+            + quenched_imag * quenched_imag
+        )
+        * sqrt(
+            acceptor_real * acceptor_real
+            + acceptor_imag * acceptor_imag
+        )
+    )
+    sensitized_real = mod * cos(phi)
+    sensitized_imag = mod * sin(phi)
+
+    # weighted average
+    f_donor = donor_bleedthrough * (1.0 - donor_freting * fret_efficiency)
+    f_acceptor = donor_freting * fret_efficiency
+    sum = f_donor + f_acceptor + acceptor_bleedthrough + acceptor_background
+    if sum < 1e-9:
+        # no signal in acceptor channel
+        # do not return 0, 0 to avoid discontinuities
+        return sensitized_real, sensitized_imag
+
+    acceptor_real = (
+        donor_real * f_donor
+        + sensitized_real * f_acceptor
+        + acceptor_real * acceptor_bleedthrough
+        + background_real * acceptor_background
+    ) / sum
+
+    acceptor_imag = (
+        donor_imag * f_donor
+        + sensitized_imag * f_acceptor
+        + acceptor_imag * acceptor_bleedthrough
+        + background_imag * acceptor_background
+    ) / sum
+
+    return acceptor_real, acceptor_imag
+
+
+cdef inline (double, double) linear_combination(
+    const double real,
+    const double imag,
+    const double real1,
+    const double imag1,
+    const double real2,
+    const double imag2,
+    double int1,
+    double int2,
+    double frac,
+) noexcept nogil:
+    """Return linear combinations of phasor coordinates."""
+    int1 *= frac
+    int2 *= 1.0 - frac
+    frac = int1 + int2
+    if frac == 0.0:
+        return real, imag
+    return (
+        (int1 * real1 + int2 * real2) / frac,
+        (int1 * imag1 + int2 * imag2) / frac
+    )
+
+
+cdef inline (double, double) phasor_from_lifetime(
+    float_t lifetime,
+    float_t omega,
+) noexcept nogil:
+    """Return phasor coordinates from single lifetime component."""
+    cdef:
+        double t = omega * lifetime
+        double mod = 1.0 / sqrt(1.0 + t * t)
+        double phi = atan(t)
+
+    return mod * cos(phi), mod * sin(phi)
+
+
+cdef inline (double, double) phasor_to_apparent_lifetime(
+    float_t real,
+    float_t imag,
+    float_t omega,
+) noexcept nogil:
+    """Return apparent single lifetimes from phasor coordinates."""
+    cdef:
+        double tauphi = INFINITY
+        double taumod = INFINITY
+        double t = real * real + imag * imag
+
+    if omega > 0.0 and t > 0.0:
+        if fabs(real * omega) > 0.0:
+            tauphi = imag / (real * omega)
+        if t <= 1.0:
+            taumod = sqrt(1.0 / t - 1.0) / omega
+        else:
+            taumod = 0.0
+
+    return tauphi, taumod
+
+
+cdef inline (double, double) phasor_from_apparent_lifetime(
+    float_t tauphi,
+    float_t taumod,
+    float_t omega,
+) noexcept nogil:
+    """Return phasor coordinates from apparent single lifetimes."""
+    cdef:
+        double t = omega * taumod
+        double mod = 1.0 / sqrt(1.0 + t * t)
+        double phi = atan(omega * tauphi)
+
+    return mod * cos(phi), mod * sin(phi)
+
+
+@cython.ufunc
 cdef (double, double) _phasor_transform(
     float_t real,
     float_t imag,
@@ -423,20 +677,7 @@ cdef (double, double) _phasor_to_apparent_lifetime(
     float_t omega,
 ) noexcept nogil:
     """Return apparent single lifetimes from phasor coordinates."""
-    cdef:
-        double tauphi = INFINITY
-        double taumod = INFINITY
-        double t = real * real + imag * imag
-
-    if omega > 0.0 and t > 0.0:
-        if fabs(real * omega) > 0.0:
-            tauphi = imag / (real * omega)
-        if t <= 1.0:
-            taumod = sqrt(1.0 / t - 1.0) / omega
-        else:
-            taumod = 0.0
-
-    return tauphi, taumod
+    return phasor_to_apparent_lifetime(real, imag, omega)
 
 
 @cython.ufunc
@@ -446,12 +687,7 @@ cdef (double, double) _phasor_from_apparent_lifetime(
     float_t omega,
 ) noexcept nogil:
     """Return phasor coordinates from apparent single lifetimes."""
-    cdef:
-        double t = omega * taumod
-        double mod = 1.0 / sqrt(1.0 + t * t)
-        double phi = atan(omega * tauphi)
-
-    return mod * cos(phi), mod * sin(phi)
+    return phasor_from_apparent_lifetime(tauphi, taumod, omega)
 
 
 @cython.ufunc
@@ -548,27 +784,3 @@ cdef (double, double) _polar_from_reference_phasor(
     if fabs(measured_modulation) == 0.0:
         return known_phase - measured_phase, INFINITY
     return known_phase - measured_phase, known_modulation / measured_modulation
-
-
-@cython.ufunc
-cdef float_t _fractional_intensity_to_preexponential_amplitude(
-    float_t fractional_intensity,
-    float_t lifetime,
-    float_t mean,
-) noexcept nogil:
-    """Return preexponential amplitude from fractional intensity."""
-    if fabs(mean) == 0.0:
-        return INFINITY
-    return fractional_intensity * lifetime / mean
-
-
-@cython.ufunc
-cdef float_t _fractional_intensity_from_preexponential_amplitude(
-    float_t preexponential_amplitude,
-    float_t lifetime,
-    float_t mean,
-) noexcept nogil:
-    """Return fractional intensity from preexponential amplitude."""
-    if fabs(lifetime) == 0.0:
-        return INFINITY
-    return preexponential_amplitude / lifetime * mean

@@ -76,7 +76,7 @@ jobs:
         make html
 
   build_wheels:
-    name: Test cibuildwheel
+    name: Test cibuildwheel and numpy 2
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -84,8 +84,10 @@ jobs:
         os: ["ubuntu-22.04", "windows-2019", "macos-12"]
     steps:
       - uses: actions/checkout@v4
-      - uses: pypa/cibuildwheel@v2.16.5
+      - uses: pypa/cibuildwheel@v2.17.0
         env:
+          CIBW_ENVIRONMENT: "PIP_PRE=1"
+          CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD: "cp311-manylinux_x86_64 cp312-win_amd64 cp312-macosx_x86_64"
           CIBW_SKIP:
       - uses: actions/upload-artifact@v4

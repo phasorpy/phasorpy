@@ -536,7 +536,7 @@ def read_sdt(
 
     # TODO: get spatial coordinates from scanner settings?
     metadata = _metadata('QYXH'[-data.ndim :], data.shape, filename, H=times)
-    metadata['attrs']['frequency'] = 1e-6 / (times[-1] + times[1])
+    metadata['attrs']['frequency'] = 1e-6 / float(times[-1] + times[1])
     return DataArray(data, **metadata)
 
 

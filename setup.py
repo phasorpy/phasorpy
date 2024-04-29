@@ -9,6 +9,10 @@ from setuptools import Extension, setup
 
 DEBUG = bool(os.environ.get('PHASORPY_DEBUG', False))
 
+print()
+print(f'Building with numpy-{numpy.__version__}')
+print()
+
 if sys.platform == 'win32':
     extra_compile_args = ['/openmp']
     extra_link_args: list[str] = []
@@ -31,8 +35,8 @@ else:
 
 ext_modules = [
     Extension(
-        'phasorpy._phasor',
-        ['src/phasorpy/_phasor.pyx'],
+        'phasorpy._phasorpy',
+        ['src/phasorpy/_phasorpy.pyx'],
         include_dirs=[numpy.get_include()],
         extra_compile_args=extra_compile_args,
         extra_link_args=extra_link_args,
