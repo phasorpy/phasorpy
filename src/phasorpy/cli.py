@@ -23,9 +23,16 @@ def main() -> int:
 
 
 @main.command(help='Show runtime versions.')
-def versions():
+@click.option(
+    '--verbose',
+    default=False,
+    is_flag=True,
+    type=click.BOOL,
+    help='Show module paths.',
+)
+def versions(verbose):
     """Versions command group."""
-    click.echo(version.versions())
+    click.echo(version.versions(verbose=verbose))
 
 
 @main.command(help='Fetch sample files from remote repositories.')

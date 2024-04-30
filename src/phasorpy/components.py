@@ -107,8 +107,8 @@ def two_fractions_from_phasor(
         real, imag, real_components, imag_components
     )
     distances_to_first_component = numpy.hypot(
-        (numpy.array(projected_real) - first_component_phasor[0]),
-        (numpy.array(projected_imag) - first_component_phasor[1]),
+        numpy.asarray(projected_real) - first_component_phasor[0],
+        numpy.asarray(projected_imag) - first_component_phasor[1],
     )
     fraction_of_second_component = (
         distances_to_first_component / total_distance_between_components
