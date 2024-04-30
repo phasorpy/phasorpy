@@ -943,19 +943,20 @@ class PhasorPlotFret(PhasorPlot):
             background_real=background_real,
             background_imag=background_imag,
         )
-        acceptor_trajectory_real, acceptor_trajectory_imag = (
-            phasor_from_fret_acceptor(
-                frequency,
-                donor_lifetime,
-                acceptor_lifetime,
-                fret_efficiency=self._fret_efficiencies,
-                donor_freting=donor_freting,
-                donor_bleedthrough=donor_bleedthrough,
-                acceptor_bleedthrough=acceptor_bleedthrough,
-                acceptor_background=acceptor_background,
-                background_real=background_real,
-                background_imag=background_imag,
-            )
+        (
+            acceptor_trajectory_real,
+            acceptor_trajectory_imag,
+        ) = phasor_from_fret_acceptor(
+            frequency,
+            donor_lifetime,
+            acceptor_lifetime,
+            fret_efficiency=self._fret_efficiencies,
+            donor_freting=donor_freting,
+            donor_bleedthrough=donor_bleedthrough,
+            acceptor_bleedthrough=acceptor_bleedthrough,
+            acceptor_background=acceptor_background,
+            background_real=background_real,
+            background_imag=background_imag,
         )
 
         # add plots
@@ -1259,19 +1260,20 @@ class PhasorPlotFret(PhasorPlot):
             background_real=background_real,
             background_imag=background_imag,
         )
-        acceptor_trajectory_real, acceptor_trajectory_imag = (
-            phasor_from_fret_acceptor(
-                frequency,
-                donor_lifetime,
-                acceptor_lifetime,
-                fret_efficiency=self._fret_efficiencies,
-                donor_freting=donor_freting,
-                donor_bleedthrough=donor_bleedthrough,
-                acceptor_bleedthrough=acceptor_bleedthrough,
-                acceptor_background=acceptor_background,
-                background_real=background_real,
-                background_imag=background_imag,
-            )
+        (
+            acceptor_trajectory_real,
+            acceptor_trajectory_imag,
+        ) = phasor_from_fret_acceptor(
+            frequency,
+            donor_lifetime,
+            acceptor_lifetime,
+            fret_efficiency=self._fret_efficiencies,
+            donor_freting=donor_freting,
+            donor_bleedthrough=donor_bleedthrough,
+            acceptor_bleedthrough=acceptor_bleedthrough,
+            acceptor_background=acceptor_background,
+            background_real=background_real,
+            background_imag=background_imag,
         )
 
         if donor_background > 0.0:

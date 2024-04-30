@@ -22,6 +22,8 @@ except ImportError:
     mkl_fft = None
 
 from phasorpy.phasor import (
+    fraction_from_amplitude,
+    fraction_to_amplitude,
     frequency_from_lifetime,
     frequency_to_lifetime,
     phasor_calibrate,
@@ -1304,3 +1306,74 @@ def test_frequency_to_lifetime():
     assert_allclose(
         frequency_to_lifetime([46.503916, 186.015665]), [4.0, 1.0], atol=1e-3
     )
+
+
+def test_fraction_to_amplitude():
+    """Test fraction_to_amplitude function."""
+    # assert isinstance(fraction_to_amplitude(1.0, 1.0), float)
+    assert_allclose(fraction_to_amplitude(1.0, 1.0), 1.0, atol=1e-3)
+    assert_allclose(
+        fraction_to_amplitude([4.0, 1.0], [1.6, 0.4]),
+        [0.2, 0.2],
+        atol=1e-3,
+    )
+    assert_allclose(
+        fraction_to_amplitude([[4.0], [1.0]], [[1.6], [0.4]], axis=0),
+        [[0.2], [0.2]],
+        atol=1e-3,
+    )
+    assert_allclose(
+        fraction_to_amplitude([4.0, 1.0], [1.6, 0.0]),
+        [0.25, 0.0],
+        atol=1e-3,
+    )
+    with pytest.warns(RuntimeWarning):
+        assert_allclose(
+            fraction_to_amplitude([4.0, 0.0], [1.6, 0.4]),
+            [0.2, numpy.inf],
+            atol=1e-3,
+        )
+    with pytest.warns(RuntimeWarning):
+        assert_allclose(
+            fraction_to_amplitude([4.0, 1.0], [0.0, 0.0]),
+            [numpy.nan, numpy.nan],
+            atol=1e-3,
+        )
+
+
+def test_fraction_from_amplitude():
+    """Test fraction_from_amplitude function."""
+    # assert isinstance(fraction_from_amplitude(1.0, 1.0), float)
+    assert_allclose(fraction_from_amplitude(1.0, 1.0), 1.0, atol=1e-3)
+    assert_allclose(
+        fraction_from_amplitude([4.0, 1.0], [0.4, 0.4]),
+        [0.8, 0.2],
+        atol=1e-3,
+    )
+    assert_allclose(
+        fraction_from_amplitude([[4.0], [1.0]], [[0.4], [0.4]], axis=0),
+        [[0.8], [0.2]],
+        atol=1e-3,
+    )
+    assert_allclose(
+        fraction_from_amplitude([4.0, 1.0], [0.5, 0.0]),
+        [1.0, 0.0],
+        atol=1e-3,
+    )
+    assert_allclose(
+        fraction_from_amplitude([4.0, 0.0], [0.4, 10.0]),
+        [1.0, 0.0],
+        atol=1e-3,
+    )
+    with pytest.warns(RuntimeWarning):
+        assert_allclose(
+            fraction_from_amplitude([0.0, 0.0], [0.4, 0.4]),
+            [numpy.nan, numpy.nan],
+            atol=1e-3,
+        )
+    with pytest.warns(RuntimeWarning):
+        assert_allclose(
+            fraction_from_amplitude([4.0, 1.0], [0.0, 0.0]),
+            [numpy.nan, numpy.nan],
+            atol=1e-3,
+        )

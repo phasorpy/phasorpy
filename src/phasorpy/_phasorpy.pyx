@@ -784,27 +784,3 @@ cdef (double, double) _polar_from_reference_phasor(
     if fabs(measured_modulation) == 0.0:
         return known_phase - measured_phase, INFINITY
     return known_phase - measured_phase, known_modulation / measured_modulation
-
-
-@cython.ufunc
-cdef float_t _fractional_intensity_to_preexponential_amplitude(
-    float_t fractional_intensity,
-    float_t lifetime,
-    float_t mean,
-) noexcept nogil:
-    """Return preexponential amplitude from fractional intensity."""
-    if fabs(mean) == 0.0:
-        return INFINITY
-    return fractional_intensity * lifetime / mean
-
-
-@cython.ufunc
-cdef float_t _fractional_intensity_from_preexponential_amplitude(
-    float_t preexponential_amplitude,
-    float_t lifetime,
-    float_t mean,
-) noexcept nogil:
-    """Return fractional intensity from preexponential amplitude."""
-    if fabs(lifetime) == 0.0:
-        return INFINITY
-    return preexponential_amplitude / lifetime * mean
