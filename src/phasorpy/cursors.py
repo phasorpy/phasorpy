@@ -1,10 +1,11 @@
 """ Select phasor coordinates.
+
     The ``phasorpy.cursors`` module provides functions to:
 
 - create labels for region of interests in the phasor space:
 
-  - :py:func:`circular_cursor`
-  - :py:func:`range_cursor`
+  - :py:func:`label_from_phasor_circular`
+  - :py:func:`label_from_ranges`
 
 """
 
@@ -30,8 +31,8 @@ import numpy
 
 
 def label_from_phasor_circular(
-    real,
-    imag,
+    real: ArrayLike,
+    imag: ArrayLike,
     center: ArrayLike,
     radius: ArrayLike,
 ) -> NDArray[Any]:
@@ -64,7 +65,8 @@ def label_from_phasor_circular(
     --------
     Compute label array for four circles:
 
-    >>> label_from_phasor_circular(numpy.array([-0.5, -0.5, 0.5, 0.5]),
+    >>> label_from_phasor_circular(
+    ...     numpy.array([-0.5, -0.5, 0.5, 0.5]),
     ...     numpy.array([-0.5, 0.5, -0.5, 0.5]),
     ...     numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]),
     ...     radius=[0.1, 0.1, 0.1, 0.1])
@@ -77,89 +79,98 @@ def label_from_phasor_circular(
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if center.ndim != 2 or center.shape[1] != 2:
+        raise ValueError(f'invalid {center.shape=}')
+    if radius.ndim != 1 or radius.shape != (center.shape[0],):
+        raise ValueError(f'invalid {radius.shape=}')
     if numpy.any(radius < 0):
         raise ValueError('radius is < 0')
-    label = numpy.zeros(real.shape, dtype=numpy.int8)
+    dtype = numpy.uint8 if len(center) < 256 else numpy.uint16
+    label = numpy.zeros(real.shape, dtype=dtype)
     for i in range(len(center)):
         condition = (
-            (real - center[i][0]) ** 2
-            + (imag - center[i][1]) ** 2
-            - radius[i] ** 2
+            numpy.square(real - center[i][0])
+            + numpy.square(imag - center[i][1])
+            - numpy.square(radius[i])
         )
         label = numpy.where(
-            condition > 0, label, numpy.ones(label.shape) * (i + 1)
+            condition > 0, label, numpy.full(label.shape, i + 1, dtype=dtype)
         )
     return label
 
 
-def label_from_ranges(values, ranges: ArrayLike) -> NDArray[Any]:
+def label_from_ranges(values: ArrayLike, /, ranges: ArrayLike) -> NDArray[Any]:
     r"""Return indices of range to which each value belongs.
-    Values that do not fall in any range have an index of zero.
+     Values that do not fall in any range have an index of zero.
 
-    Parameters
-    ----------
-    values : array_like, shape (M, 2)
-    ranges : array_like
-        Start and stop values of ranges.
+     Parameters
+     ----------
+     values : array_like
+         Values to be labeled.
+     ranges : array_like, shape (M, 2)
+         Start and stop values of ranges.
 
-    Returns
-    -------
-    label : ndarray
-        A mask indicating the index of the range each value belongs to.
+     Returns
+     -------
+     label : ndarray
+         A mask indicating the index of the range each value belongs to.
 
-    Raises
-    ------
-    Warning:
-        Overlapping ranges not recommended.
+     Raises
+     ------
+     Warning:
+         Overlapping ranges not recommended.
 
-    Examples
-    --------
-    Compute the range cursor:
+     Examples
+     --------
+     Compute label array for three ranges:
 
-    >>> label_from_ranges(numpy.array([[3.3, 6, 8], [15, 20, 7]]),
-    ...     numpy.array([(2, 8), (10, 15), (20, 25)]))
-    array([[1, 1, 1], [2, 3, 1]])
+    >>> label_from_ranges(
+     ...     [[3.3, 6, 8], [15, 20, 7]], ranges=[(2, 8), (10, 15), (20, 25)])
+     array([[1, 1, 0], [0, 3, 1]], dtype=uint8)
     """
     values = numpy.asarray(values)
     ranges = numpy.asarray(ranges)
+    if ranges.ndim != 2 or ranges.shape[1] != 2:
+        raise ValueError(f'invalid {ranges.shape=}')
 
     if _overlapping_ranges(ranges):
         warnings.warn("Overlapping ranges", UserWarning)
-    label = numpy.zeros_like(values, dtype=int)
+    dtype = numpy.uint8 if ranges.shape[0] < 256 else numpy.uint16
+    label = numpy.zeros_like(values, dtype=dtype)
     # Iterate over each value in the array
     for index, value in numpy.ndenumerate(values):
         # Iterate over each range
         for range_index, (start, end) in enumerate(ranges):
             # Check if the value falls within the current range
-            if start <= value <= end:
+            if start <= value < end:
                 # Set the index of the current range
                 label[index] = range_index + 1
                 break
     return label
 
 
-def _overlapping_ranges(ranges) -> bool:
+def _overlapping_ranges(ranges: ArrayLike) -> bool:
     r"""Check if there are overlapping ranges in an array of ranges.
 
     Parameters
     ----------
-        ranges : array_like
-            Start and stop values of ranges.
+    ranges : array_like
+        Start and stop values of ranges.
 
     Returns
     -------
-        bool: True if there are overlapping ranges, False otherwise.
+    bool: True if there are overlapping ranges, False otherwise.
 
     Example
     -------
     Compute for some range with overlapping.
-        >>> _overlapping_ranges([(1, 5), (3, 8), (6, 10), (9, 12)])
-        True
+    >>> _overlapping_ranges([(1, 5), (3, 8), (6, 10), (9, 12)])
+    True
     """
     ranges = numpy.asarray(ranges)
     for i in range(len(ranges)):
         for j in range(i + 1, len(ranges)):
             # Check if the ranges overlap
-            if ranges[i][0] <= ranges[j][1] and ranges[j][0] <= ranges[i][1]:
+            if ranges[i][0] < ranges[j][1] and ranges[j][0] < ranges[i][1]:
                 return True  # Ranges overlap
     return False  # No overlaps found

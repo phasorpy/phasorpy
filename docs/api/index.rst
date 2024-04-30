@@ -14,6 +14,7 @@ PhasorPy library version |version|.
 
     phasorpy
     phasor
+    cursors
     components
     plot
     io
@@ -21,4 +22,3 @@ PhasorPy library version |version|.
     datasets
     utils
     cli
-    cursors
