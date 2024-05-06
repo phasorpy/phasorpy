@@ -36,8 +36,9 @@ def test_label_from_phasor_circular_erros():
 
 def test_label_from_ranges():
     # Test label from ranges
-    values = numpy.array([[3.3, 6, 8], [15, 20, 7]])
-    ranges = numpy.array([(2, 8), (10, 15), (20, 25)])
+    values = [[0, 3.3, 6, 8], [21, 15, 20, 7]]
+    ranges = [2, 8, 15, 20, 25]
     labels = label_from_ranges(values, ranges)
     assert labels.dtype == 'uint8'
-    assert_array_equal(labels, [[1, 1, 0], [0, 3, 1]])
+    assert_array_equal(labels, [[0, 1, 1, 2], [4, 3, 4, 1]])
+    

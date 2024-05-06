@@ -107,70 +107,20 @@ def label_from_ranges(values: ArrayLike, /, ranges: ArrayLike) -> NDArray[Any]:
      ----------
      values : array_like
          Values to be labeled.
-     ranges : array_like, shape (M, 2)
-         Start and stop values of ranges.
+     ranges : array_like, Array of bins. It has to be 1-dimensional and monotonic.
 
      Returns
      -------
      label : ndarray
          A mask indicating the index of the range each value belongs to.
 
-     Raises
-     ------
-     Warning:
-         Overlapping ranges not recommended.
-
      Examples
      --------
      Compute label array for three ranges:
 
-    >>> label_from_ranges(
-     ...     [[3.3, 6, 8], [15, 20, 7]], ranges=[(2, 8), (10, 15), (20, 25)])
-     array([[1, 1, 0], [0, 3, 1]], dtype=uint8)
+    >>> label_from_ranges([[0, 3.3, 6, 8], [21, 15, 20, 7]], 
+    ...     ranges=[2, 8, 15, 20, 25])
+     array([[0, 1, 1, 2],
+       [4, 3, 4, 1]])
     """
-    values = numpy.asarray(values)
-    ranges = numpy.asarray(ranges)
-    if ranges.ndim != 2 or ranges.shape[1] != 2:
-        raise ValueError(f'invalid {ranges.shape=}')
-
-    if _overlapping_ranges(ranges):
-        warnings.warn("Overlapping ranges", UserWarning)
-    dtype = numpy.uint8 if ranges.shape[0] < 256 else numpy.uint16
-    label = numpy.zeros_like(values, dtype=dtype)
-    # Iterate over each value in the array
-    for index, value in numpy.ndenumerate(values):
-        # Iterate over each range
-        for range_index, (start, end) in enumerate(ranges):
-            # Check if the value falls within the current range
-            if start <= value < end:
-                # Set the index of the current range
-                label[index] = range_index + 1
-                break
-    return label
-
-
-def _overlapping_ranges(ranges: ArrayLike) -> bool:
-    r"""Check if there are overlapping ranges in an array of ranges.
-
-    Parameters
-    ----------
-    ranges : array_like
-        Start and stop values of ranges.
-
-    Returns
-    -------
-    bool: True if there are overlapping ranges, False otherwise.
-
-    Example
-    -------
-    Compute for some range with overlapping.
-    >>> _overlapping_ranges([(1, 5), (3, 8), (6, 10), (9, 12)])
-    True
-    """
-    ranges = numpy.asarray(ranges)
-    for i in range(len(ranges)):
-        for j in range(i + 1, len(ranges)):
-            # Check if the ranges overlap
-            if ranges[i][0] < ranges[j][1] and ranges[j][0] < ranges[i][1]:
-                return True  # Ranges overlap
-    return False  # No overlaps found
+    return numpy.digitize(values, ranges)
