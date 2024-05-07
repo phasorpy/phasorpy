@@ -30,7 +30,7 @@ mean, real, imag = phasor_from_signal(signal, axis=0)
 
 center = [(-0.48, -0.65), (-0.22, -0.75), (0.4, -0.8), (0.66, -0.68)]
 radius = [0.15, 0.15, 0.15, 0.15]
-
+ 
 label = label_from_phasor_circular(real, imag, center, radius)
 
 
@@ -48,7 +48,7 @@ plot.cursor(*center[3], radius=radius[3], color='tab:purple', linestyle='-')
 
 # %%
 # Show the label image:
-
+ 
 fig, ax = pyplot.subplots()
 ax.set_title('Labels from circular cursors')
 plt = ax.imshow(label, vmin=0, vmax=10, cmap='tab10')
@@ -64,7 +64,8 @@ pyplot.show()
 
 mean, real, imag = phasor_from_signal(signal, axis=0)
 phase, _ = phasor_to_polar(real, imag)
-ranges = [(0, math.pi), (-math.pi / 2, 0), (-math.pi, -math.pi / 2)]
+# ranges = [- 3 * math.pi / 2, -math.pi / 2, 0, math.pi]
+ranges = [-2.27, -1.57, -1.13, -0.7]
 label = label_from_ranges(phase, ranges=ranges)
 
 # %%
@@ -82,20 +83,20 @@ pyplot.show()
 plot = PhasorPlot(allquadrants=True, title='Phase range cursors')
 plot.hist2d(real, imag, cmap='Blues')
 plot.polar_cursor(
-    phase=ranges[0][0],
-    phase_limit=ranges[0][1],
+    phase=ranges[0],
+    phase_limit=ranges[1],
     color='tab:orange',
     linestyle='-',
 )
 plot.polar_cursor(
-    phase=ranges[1][0],
-    phase_limit=ranges[1][1],
+    phase=ranges[1],
+    phase_limit=ranges[2],
     color='tab:green',
     linestyle='-',
 )
 plot.polar_cursor(
-    phase=ranges[2][0],
-    phase_limit=ranges[2][1],
+    phase=ranges[2],
+    phase_limit=ranges[3],
     color='tab:red',
     linestyle='-',
 )

@@ -70,7 +70,7 @@ def label_from_phasor_circular(
     ...     numpy.array([-0.5, 0.5, -0.5, 0.5]),
     ...     numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]),
     ...     radius=[0.1, 0.1, 0.1, 0.1])
-    array([1, 2, 3, 4])
+    array([1, 2, 3, 4], dtype=uint8)
     """
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
