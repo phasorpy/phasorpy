@@ -784,3 +784,25 @@ cdef (double, double) _polar_from_reference_phasor(
     if fabs(measured_modulation) == 0.0:
         return known_phase - measured_phase, INFINITY
     return known_phase - measured_phase, known_modulation / measured_modulation
+
+
+@cython.ufunc
+cdef (double, double) _phasor_at_harmonic(
+    float_t real,
+    int harmonic,
+    int other_harmonic,
+) noexcept nogil:
+    """Return phasor coordinates on semicircle at other harmonic."""
+    if real <= 0.0:
+        return 0.0, 0.0
+    if real >= 1.0:
+        return 1.0, 0.0
+
+    harmonic *= harmonic
+    other_harmonic *= other_harmonic
+
+    real = (
+        harmonic * real / (other_harmonic + (harmonic - other_harmonic) * real)
+    )
+
+    return real, sqrt(real - real * real)

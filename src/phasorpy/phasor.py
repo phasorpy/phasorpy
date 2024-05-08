@@ -48,6 +48,10 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`fraction_from_amplitude`
   - :py:func:`fraction_to_amplitude`
 
+- calculate phasor coordinates on semicircle at other harmonics:
+
+  - :py:func:`phasor_at_harmonic`
+
 """
 
 from __future__ import annotations
@@ -57,6 +61,7 @@ __all__ = [
     'fraction_to_amplitude',
     'frequency_from_lifetime',
     'frequency_to_lifetime',
+    'phasor_at_harmonic',
     'phasor_calibrate',
     'phasor_center',
     'phasor_from_apparent_lifetime',
@@ -94,6 +99,7 @@ if TYPE_CHECKING:
 import numpy
 
 from ._phasorpy import (
+    _phasor_at_harmonic,
     _phasor_from_apparent_lifetime,
     _phasor_from_fret_acceptor,
     _phasor_from_fret_donor,
@@ -1259,6 +1265,82 @@ def fraction_from_amplitude(
     t = numpy.multiply(amplitude, lifetime, dtype=numpy.float64)
     t /= numpy.sum(t, axis=axis, keepdims=True)
     return t
+
+
+def phasor_at_harmonic(
+    real: ArrayLike,
+    harmonic: ArrayLike,
+    other_harmonic: ArrayLike,
+    /,
+    **kwargs: Any,
+) -> tuple[NDArray[numpy.float64], NDArray[numpy.float64]]:
+    r"""Return phasor coordinates on semicircle at other harmonics.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates of single exponential lifetime
+        at `harmonic`.
+    harmonic : array_like
+        Harmonic of `real` coordinate. Must be integer >= 1.
+    other_harmonic : array_like
+        Harmonic for which to return phasor coordinates. Must be integer >= 1.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    real_other : ndarray
+        Real component of phasor coordinates at `other_harmonic`.
+    imag_other : ndarray
+        Imaginary component of phasor coordinates at `other_harmonic`.
+
+    Notes
+    -----
+    The phasor coordinates
+    :math:`g_{n}` (`real_other`) and :math:`s_{n}` (`imag_other`)
+    of a single exponential lifetime at harmonic :math:`n` (`other_harmonic`)
+    is calculated from the real part of the phasor coordinates
+    :math:`g_{m}` (`real`) at harmonic :math:`m` (`harmonic`) according to
+    (:ref:`Torrado, Malacrida, & Ranjit. 2022 <torrado-2022>`. Eq. 25):
+
+    .. math::
+
+        g_{n} &= \frac{m^2 \cdot g_{m}}{n^2 + (m^2-n^2) \cdot g_{m}}
+
+        s_{n} &= \sqrt{G_{n} - g_{n}^2}
+
+    This function is equivalent to the following operations:
+
+    .. code-block:: python
+
+        phasor_from_lifetime(
+            frequency=other_harmonic,
+            lifetime=phasor_to_apparent_lifetime(
+                real,
+                sqrt(real - real * real),
+                frequency=harmonic
+            )[0]
+        )
+
+    Examples
+    --------
+    The phasor coordinates at higher harmonics are approaching the origin:
+
+    >>> phasor_at_harmonic(0.5, 1, [1, 2, 4, 8])  # doctest: +NUMBER
+    (array([0.5, 0.2, 0.05882, 0.01538]), array([0.5, 0.4, 0.2353, 0.1231]))
+
+    """
+    harmonic = numpy.asarray(harmonic, dtype=numpy.int32)
+    if numpy.any(harmonic < 1):
+        raise ValueError('invalid harmonic')
+
+    other_harmonic = numpy.asarray(other_harmonic, dtype=numpy.int32)
+    if numpy.any(other_harmonic < 1):
+        raise ValueError('invalid other_harmonic')
+
+    return _phasor_at_harmonic(real, harmonic, other_harmonic)
 
 
 def phasor_from_lifetime(
