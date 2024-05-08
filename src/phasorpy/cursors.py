@@ -106,23 +106,23 @@ def label_from_phasor_circular(
 
 
 def create_lut(
-    min_vals1: ArrayLike,
-    max_vals1: ArrayLike,
-    min_vals2: ArrayLike,
-    max_vals2: ArrayLike,
-) -> NDArray[Any]:
+    min_vals1: NDArray,
+    max_vals1: NDArray,
+    min_vals2: NDArray,
+    max_vals2: NDArray,
+) -> dict:
     """
     Create a Lookup Table (LUT) with two pairs of minimum and maximum values.
 
     Parameters
     ----------
-    - min_vals1: array_like
+    - min_vals1: NDArray
         Array of minimum values to binarize data1.
-    - max_vals1: array_like
+    - max_vals1: NDArray
         Array of maximum values to binarize data1.
-    - min_vals2: array_like
+    - min_vals2: NDArray
         Array of minimum values to binarize data2.
-    - max_vals2: array_like
+    - max_vals2: NDArray
         Array of maximum values to binarize data2.
 
     Returns
@@ -145,8 +145,8 @@ def create_lut(
     ...     min_vals2 = numpy.array([1, 4, 7]),
     ...     max_vals2 = numpy.array([3, 6, 9]))
     {((0, 2), (1, 3)): 1, ((0, 2), (4, 6)): 2, ((0, 2), (7, 9)): 3,
-    ((3, 5), (1, 3)): 4, ((3, 5), (4, 6)): 5, ((3, 5), (7, 9)): 6,
-    ((6, 8), (1, 3)): 7, ((6, 8), (4, 6)): 8, ((6, 8), (7, 9)): 9}
+    ... ((3, 5), (1, 3)): 4, ((3, 5), (4, 6)): 5, ((3, 5), (7, 9)): 6,
+    ... ((6, 8), (1, 3)): 7, ((6, 8), (4, 6)): 8, ((6, 8), (7, 9)): 9}
     """
     if (
         min_vals1.shape
@@ -159,30 +159,31 @@ def create_lut(
         # Define the binning ranges and their corresponding binarized values
         for i, (min1, max1) in enumerate(zip(min_vals1, max_vals1)):
             for j, (min2, max2) in enumerate(zip(min_vals2, max_vals2)):
-                lut[((min1, max1), (min2, max2))] = i * len(min_vals2) + j + 1
+                lut[((min1, max1), (min2, max2))] = i * \
+                    len(min_vals2) + j + 1
         return lut
     else:
         raise ValueError('Input array must have same shapes')
 
 
 def label_from_lut(
-    arr1: ArrayLike, arr2: ArrayLike, lut: dict
+    arr1: NDArray, arr2: NDArray, lut: dict
 ) -> NDArray[Any]:
     """
     Binarize two arrays based on a Lookup Table (LUT).
 
     Parameters
     ----------
-    - data1: numpy.ndarray
+    - data1: NDArray
         The first data array.
-    - data2: numpy.ndarray
+    - data2: NDArray
         The second data array.
     - lut: dict
         Lookup Table (LUT) mapping input values to binarized output values.
 
     Returns
     -------
-    - label: arraylike:
+    - label: NDArray:
         The binarized array.
 
     Raises
@@ -194,24 +195,14 @@ def label_from_lut(
     -------
     >>> arr1 = numpy.array([[1.2, 2.4, 3.5], [4.7, 5.1, 6.9], [7.3, 8.6, 9.0]])
     >>> arr2 = numpy.array([[0.8, 2.1, 3.9], [4.2, 5.7, 6.3],[7.5, 8.2, 9.5]])
-    >>> lut = {
-        ((0, 2), (1, 3)): 1,
-        ((0, 2), (4, 6)): 2,
-        ((0, 2), (7, 9)): 3,
-        ((3, 5), (1, 3)): 4,
-        ((3, 5), (4, 6)): 5,
-        ((3, 5), (7, 9)): 6,
-        ((6, 8), (1, 3)): 7,
-        ((6, 8), (4, 6)): 8,
-        ((6, 8), (7, 9)): 9,
-        }
+    >>> lut = {((0, 2), (1, 3)): 1, ((0, 2), (4, 6)): 2, ((0, 2), (7, 9)): 3,
+    ... ((3, 5), (1, 3)): 4, ((3, 5), (4, 6)): 5, ((3, 5), (7, 9)): 6,
+    ... ((6, 8), (1, 3)): 7, ((6, 8), (4, 6)): 8, ((6, 8), (7, 9)): 9}
     >>> label = label_from_lut(arr1, arr2, lut)
-    array([[0, 0, 0],
-        [5, 0, 0],
-        [9, 0, 0]])
+    array([[0, 0, 0], [5, 0, 0], [9, 0, 0]])
     """
     # Check if the input arrays have compatible shapes
-    if arr1.shape != arr2.shape:
+    if  arr1.shape !=  arr2.shape:
         raise ValueError('Input arrays must have same shapes')
     label = numpy.zeros(arr1.shape, dtype=int)
     # Loop through the Lookup Table (LUT) and binarize the data
