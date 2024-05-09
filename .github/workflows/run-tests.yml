@@ -117,6 +117,9 @@ jobs:
     - name: Test with black
       run: |
         python -m black --check src/phasorpy tutorials docs
+    - name: Test with blackdoc
+      run: |
+        python -m blackdoc --check src/phasorpy
     - name: Test with mypy
       run: |
         python -m mypy

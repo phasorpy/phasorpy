@@ -188,13 +188,15 @@ Configuration settings for pytest and other tools are in the
 Code standards
 ..............
 
-All the PhasorPy source code must conform to the
+All the PhasorPy source code, including tutorials and docstring examples,
+must conform to the
 `PEP8 <https://peps.python.org/pep-0008/>`_
 standard and be formatted with
 `black <https://black.readthedocs.io/en/stable/>`_
 (single quotes and lines up to 79 characters are allowed)::
 
     $ python -m black .
+    $ python -m blackdoc src/phasorpy
 
 User-facing classes and functions must use
 `type hints <https://peps.python.org/pep-0484/>`_
