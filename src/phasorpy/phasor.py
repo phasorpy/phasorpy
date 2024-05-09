@@ -1274,7 +1274,11 @@ def phasor_at_harmonic(
     /,
     **kwargs: Any,
 ) -> tuple[NDArray[numpy.float64], NDArray[numpy.float64]]:
-    r"""Return phasor coordinates on semicircle at other harmonics.
+    r"""Return phasor coordinates on universal semicircle at other harmonics.
+
+    Return phasor coordinates at any harmonic, given the real component of
+    phasor coordinates of a single exponential lifetime at a certain harmonic.
+    The input and output phasor coordinates lie on the universal semicircle.
 
     Parameters
     ----------
@@ -1318,10 +1322,8 @@ def phasor_at_harmonic(
         phasor_from_lifetime(
             frequency=other_harmonic,
             lifetime=phasor_to_apparent_lifetime(
-                real,
-                sqrt(real - real * real),
-                frequency=harmonic
-            )[0]
+                real, sqrt(real - real * real), frequency=harmonic
+            )[0],
         )
 
     Examples
@@ -1340,7 +1342,7 @@ def phasor_at_harmonic(
     if numpy.any(other_harmonic < 1):
         raise ValueError('invalid other_harmonic')
 
-    return _phasor_at_harmonic(real, harmonic, other_harmonic)
+    return _phasor_at_harmonic(real, harmonic, other_harmonic, **kwargs)
 
 
 def phasor_from_lifetime(
