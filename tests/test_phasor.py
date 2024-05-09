@@ -1378,6 +1378,7 @@ def test_fraction_from_amplitude():
             [numpy.nan, numpy.nan],
             atol=1e-3,
         )
+<<<<<<< HEAD
 
 
 def test_phasor_at_harmonic():
@@ -1425,3 +1426,5 @@ def test_phasor_at_harmonic():
         phasor_at_harmonic(0.5, 0, 1)
     with pytest.raises(ValueError):
         phasor_at_harmonic(0.5, 1, 0)
+=======
+>>>>>>> 0c9bd9e (Add phasor_at_harmonic function (#65))
