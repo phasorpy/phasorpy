@@ -205,10 +205,10 @@ def phasor_from_signal(
 
     >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)[::-1]
     >>> signal = 1.1 * (
-    ...     numpy.cos(sample_phase - 0.78539816) * 2 *  0.70710678 + 1
+    ...     numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1
     ... )
     >>> phasor_from_signal(
-    ...    signal, sample_phase=sample_phase
+    ...     signal, sample_phase=sample_phase
     ... )  # doctest: +NUMBER
     (1.1, 0.5, 0.5)
 
@@ -352,7 +352,7 @@ def phasor_from_signal_fft(
 
     >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
     >>> signal = 1.1 * (
-    ...     numpy.cos(sample_phase - 0.78539816) * 2 *  0.70710678 + 1
+    ...     numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1
     ... )
     >>> phasor_from_signal_fft(signal, harmonic=[1, 2])  # doctest: +NUMBER
     (1.1, array([0.5, 0.0]), array([0.5, -0]))
@@ -572,10 +572,13 @@ def phasor_calibrate(
     Examples
     --------
     >>> phasor_calibrate(
-    ...    [0.1, 0.2, 0.3], [0.4, 0.5, 0.6],
-    ...    [0.2, 0.3, 0.4], [0.5, 0.6, 0.7],
-    ...    frequency=80, lifetime=4
-    ... ) # doctest: +NUMBER
+    ...     [0.1, 0.2, 0.3],
+    ...     [0.4, 0.5, 0.6],
+    ...     [0.2, 0.3, 0.4],
+    ...     [0.5, 0.6, 0.7],
+    ...     frequency=80,
+    ...     lifetime=4,
+    ... )  # doctest: +NUMBER
     (array([0.0658, 0.132, 0.198]), array([0.2657, 0.332, 0.399]))
 
     """
@@ -663,18 +666,15 @@ def phasor_transform(
     Use scalar reference coordinates to rotate and scale phasor coordinates:
 
     >>> phasor_transform(
-    ...     [0.1, 0.2, 0.3],
-    ...     [0.4, 0.5, 0.6],
-    ...     0.1,
-    ...     0.5
-    ... ) # doctest: +NUMBER
+    ...     [0.1, 0.2, 0.3], [0.4, 0.5, 0.6], 0.1, 0.5
+    ... )  # doctest: +NUMBER
     (array([0.0298, 0.0745, 0.119]), array([0.204, 0.259, 0.3135]))
 
     Use separate reference coordinates for each phasor coordinate:
 
     >>> phasor_transform(
     ...     [0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.2, 0.2, 0.3], [0.5, 0.2, 0.3]
-    ... ) # doctest: +NUMBER
+    ... )  # doctest: +NUMBER
     (array([0.00927, 0.0193, 0.0328]), array([0.206, 0.106, 0.1986]))
 
     """
@@ -735,7 +735,7 @@ def polar_from_reference_phasor(
 
         polar_from_reference(
             *phasor_to_polar(measured_real, measured_imag),
-            *phasor_to_polar(known_real, known_imag)
+            *phasor_to_polar(known_real, known_imag),
         )
 
     Examples
@@ -969,7 +969,7 @@ def phasor_to_apparent_lifetime(
     only if the phasor coordinates lie on the universal semicircle:
 
     >>> phasor_to_apparent_lifetime(
-    ...    0.5, [0.5, 0.45], frequency=80
+    ...     0.5, [0.5, 0.45], frequency=80
     ... )  # doctest: +NUMBER
     (array([1.989, 1.79]), array([1.989, 2.188]))
 
@@ -1386,7 +1386,7 @@ def phasor_from_lifetime(
     Phasor coordinates of many single-component lifetimes (fractions omitted):
 
     >>> phasor_from_lifetime(
-    ...     80.0, [3.9788735, 1.9894368, 0.9947183],
+    ...     80.0, [3.9788735, 1.9894368, 0.9947183]
     ... )  # doctest: +NUMBER
     (array([0.2, 0.5, 0.8]), array([0.4, 0.5, 0.4]))
 
@@ -1412,7 +1412,7 @@ def phasor_from_lifetime(
     ...     [40e6, 80e6],
     ...     [[1e-9, 0.9947183e-9], [3.9788735e-9, 0.9947183e-9]],
     ...     [[0, 1], [0.5, 0.5]],
-    ...    unit_conversion=1.0
+    ...     unit_conversion=1.0,
     ... )  # doctest: +NUMBER
     (array([[0.941, 0.721], [0.8, 0.5]]), array([[0.235, 0.368], [0.4, 0.4]]))
 
