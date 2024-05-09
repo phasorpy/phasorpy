@@ -7,7 +7,7 @@ from phasorpy import versions
 from phasorpy.utils import number_threads
 
 
-def pytest_report_header(config, start_path, startdir):
+def pytest_report_header(config, start_path):
     """Return versions of relevant installed packages."""
     return '\n'.join(
         (
