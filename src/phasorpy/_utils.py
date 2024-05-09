@@ -67,7 +67,7 @@ def parse_kwargs(
 def update_kwargs(kwargs: dict[str, Any], /, **keyvalues: Any) -> None:
     """Update dict with keys and values if keys do not already exist.
 
-    >>> kwargs = {'one': 1, }
+    >>> kwargs = {'one': 1}
     >>> update_kwargs(kwargs, one=None, two=2)
     >>> kwargs == {'one': 1, 'two': 2}
     True
