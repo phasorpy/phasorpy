@@ -1378,3 +1378,50 @@ def test_fraction_from_amplitude():
             [numpy.nan, numpy.nan],
             atol=1e-3,
         )
+
+
+def test_phasor_at_harmonic():
+    """Test phasor_at_harmonic function."""
+    # identity
+    assert_allclose(phasor_at_harmonic(0.5, 1, 1), [0.5, 0.5], atol=1e-6)
+    assert_allclose(phasor_at_harmonic(0.5, 2, 2), [0.5, 0.5], atol=1e-6)
+    # up
+    assert_allclose(phasor_at_harmonic(0.5, 1, 2), [0.2, 0.4], atol=1e-6)
+    # down
+    assert_allclose(phasor_at_harmonic(0.5, 2, 1), [0.8, 0.4], atol=1e-6)
+    # phasor array
+    assert_allclose(
+        phasor_at_harmonic([0.4, 0.6], 1, 2),
+        [[0.14285714, 0.27272727], [0.34992711, 0.44536177]],
+        atol=1e-6,
+    )
+    # harmonic array
+    assert_allclose(
+        phasor_at_harmonic(0.5, 1, [1, 2, 4, 8]),
+        [[0.5, 0.2, 0.058824, 0.015385], [0.5, 0.4, 0.235294, 0.123077]],
+        atol=1e-6,
+    )
+    # out of bounds
+    assert_array_equal(
+        phasor_at_harmonic([-0.1, 1.0], 1, 1),
+        [[0.0, 1.0], [0.0, 0.0]],
+    )
+    # test against phasor_from_lifetime
+    real = 0.8
+    harmonic = 1
+    other_harmonic = [2, 3]
+    assert_allclose(
+        phasor_at_harmonic(real, harmonic, other_harmonic),
+        phasor_from_lifetime(
+            frequency=other_harmonic,
+            lifetime=phasor_to_apparent_lifetime(
+                real, math.sqrt(real - real * real), frequency=harmonic
+            )[0],
+        ),
+        atol=1e-6,
+    )
+    # errors
+    with pytest.raises(ValueError):
+        phasor_at_harmonic(0.5, 0, 1)
+    with pytest.raises(ValueError):
+        phasor_at_harmonic(0.5, 1, 0)
