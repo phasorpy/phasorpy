@@ -50,7 +50,7 @@ def test_create_lut():
         ((3, 5), (7, 9)): 6,
         ((6, 8), (1, 3)): 7,
         ((6, 8), (4, 6)): 8,
-        ((6, 8), (7, 9)): 9,
+        ((6, 8), (7, 9)): 9
     }
     assert_array_equal(lut, expected_lut)
 
@@ -76,7 +76,7 @@ def test_label_from_lut():
         ((3, 5), (7, 9)): 6,
         ((6, 8), (1, 3)): 7,
         ((6, 8), (4, 6)): 8,
-        ((6, 8), (7, 9)): 9,
+        ((6, 8), (7, 9)): 9
     }
     label = label_from_lut(arr1, arr2, lut)
     assert_array_equal(label, [[0, 0, 0], [5, 0, 0], [9, 0, 0]])
@@ -94,7 +94,7 @@ def test_label_from_lut_errors():
         ((3, 5), (7, 9)): 6,
         ((6, 8), (1, 3)): 7,
         ((6, 8), (4, 6)): 8,
-        ((6, 8), (7, 9)): 9,
+        ((6, 8), (7, 9)): 9
     }
     with pytest.raises(ValueError):
         label_from_lut(arr1, arr2, lut)
