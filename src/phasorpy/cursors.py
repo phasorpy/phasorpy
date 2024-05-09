@@ -144,8 +144,8 @@ def create_lut(
     ...     max_vals1 = numpy.array([2, 5, 8]),
     ...     min_vals2 = numpy.array([1, 4, 7]),
     ...     max_vals2 = numpy.array([3, 6, 9]))
-    {((0, 2), (1, 3)): 1, ((0, 2), (4, 6)): 2, ((0, 2), (7, 9)): 3, 
-    ... ((3, 5), (1, 3)): 4, ((3, 5), (4, 6)): 5, ((3, 5), (7, 9)): 6, 
+    {((0, 2), (1, 3)): 1, ((0, 2), (4, 6)): 2, ((0, 2), (7, 9)): 3,
+    ... ((3, 5), (1, 3)): 4, ((3, 5), (4, 6)): 5, ((3, 5), (7, 9)): 6,
     ... ((6, 8), (1, 3)): 7, ((6, 8), (4, 6)): 8, ((6, 8), (7, 9)): 9}
     """
     if (
@@ -159,16 +159,13 @@ def create_lut(
         # Define the binning ranges and their corresponding binarized values
         for i, (min1, max1) in enumerate(zip(min_vals1, max_vals1)):
             for j, (min2, max2) in enumerate(zip(min_vals2, max_vals2)):
-                lut[((min1, max1), (min2, max2))] = i * \
-                    len(min_vals2) + j + 1
+                lut[((min1, max1), (min2, max2))] = i * len(min_vals2) + j + 1
         return lut
     else:
         raise ValueError('Input array must have same shapes')
 
 
-def label_from_lut(
-    arr1: NDArray, arr2: NDArray, lut: dict
-) -> NDArray[Any]:
+def label_from_lut(arr1: NDArray, arr2: NDArray, lut: dict) -> NDArray[Any]:
     """
     Binarize two arrays based on a Lookup Table (LUT).
 
@@ -202,7 +199,7 @@ def label_from_lut(
     array([[0, 0, 0], [5, 0, 0], [9, 0, 0]])
     """
     # Check if the input arrays have compatible shapes
-    if  arr1.shape !=  arr2.shape:
+    if arr1.shape != arr2.shape:
         raise ValueError('Input arrays must have same shapes')
     label = numpy.zeros(arr1.shape, dtype=int)
     # Loop through the Lookup Table (LUT) and binarize the data
