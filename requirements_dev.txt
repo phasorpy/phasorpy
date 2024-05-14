@@ -38,6 +38,7 @@ pytest-doctestplus
 # tools requirements
 tomli; python_version < "3.11"
 black
+blackdoc
 flake8
 isort
 mypy

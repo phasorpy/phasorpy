@@ -81,7 +81,7 @@ def two_fractions_from_phasor(
     --------
     >>> two_fractions_from_phasor(
     ...     [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.9], [0.4, 0.3]
-    ... ) # doctest: +NUMBER
+    ... )  # doctest: +NUMBER
     (array([0.44, 0.56, 0.68]), array([0.56, 0.44, 0.32]))
 
     """
