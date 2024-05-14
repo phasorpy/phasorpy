@@ -621,6 +621,8 @@ def phasor_transform(
     phase_zero: ArrayLike = 0.0,
     modulation_zero: ArrayLike = 1.0,
     /,
+    *,
+    skip_axes: int | Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     r"""Return rotated and scaled phasor coordinates.
@@ -639,6 +641,9 @@ def phasor_transform(
         Rotation angle in radians.
     modulation_zero : array_like, optional, default: 1.0
         Uniform scale factor.
+    skip_axes : int or sequence of int, optional
+        Axes to be excluded during dimension expantion. If None, all
+        axes are considered.
     **kwargs
         Optional `arguments passed to numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
@@ -684,14 +689,30 @@ def phasor_transform(
     (array([0.00927, 0.0193, 0.0328]), array([0.206, 0.106, 0.1986]))
 
     """
+    re = numpy.asarray(real)
+    im = numpy.asarray(imag)
+    if re.shape != im.shape:
+        raise ValueError(f'real.shape={re.shape} != imag.shape={im.shape}')
     if numpy.ndim(phase_zero) == 0 and numpy.ndim(modulation_zero) == 0:
         return _phasor_transform_const(
-            real,
-            imag,
+            re,
+            im,
             modulation_zero * numpy.cos(phase_zero),
             modulation_zero * numpy.sin(phase_zero),
         )
-    return _phasor_transform(real, imag, phase_zero, modulation_zero, **kwargs)
+    if isinstance(skip_axes, int):
+        skip_axes = (skip_axes,)
+    dim_diff = numpy.ndim(re) - numpy.ndim(phase_zero)
+    if dim_diff > 0:
+        phase_zero = numpy.expand_dims(
+            phase_zero,
+            axis=tuple(i for i in range(-dim_diff, 0) if i not in skip_axes),
+        )
+        modulation_zero = numpy.expand_dims(
+            modulation_zero,
+            axis=tuple(i for i in range(-dim_diff, 0) if i not in skip_axes),
+        )
+    return _phasor_transform(re, im, phase_zero, modulation_zero, **kwargs)
 
 
 def polar_from_reference_phasor(
@@ -1930,6 +1951,7 @@ def phasor_center(
     *,
     skip_axes: int | Sequence[int] | None = None,
     method: Literal['mean', 'median'] = 'mean',
+    **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return center of phasor coordinates.
 
@@ -1947,6 +1969,10 @@ def phasor_center(
 
         - ``'mean'``: Arithmetic mean of phasor coordinates.
         - ``'median'``: Spatial median of phasor coordinates.
+
+    **kwargs
+        Optional arguments passed to :py:func:`numpy.mean` or
+        :py:func:`numpy.median`.
 
     Returns
     -------
@@ -2000,7 +2026,7 @@ def phasor_center(
         'median': _median,
     }[
         method
-    ](real, imag, axis=axis)
+    ](real, imag, axis=axis, **kwargs)
 
 
 def _mean(
