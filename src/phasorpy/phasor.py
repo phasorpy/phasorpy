@@ -612,7 +612,7 @@ def phasor_calibrate(
     phi_zero, mod_zero = polar_from_reference_phasor(
         measured_re, measured_im, known_re, known_im
     )
-    return phasor_transform(re, im, phi_zero, mod_zero)
+    return phasor_transform(re, im, phi_zero, mod_zero, skip_axes=skip_axes)
 
 
 def phasor_transform(
@@ -700,7 +700,7 @@ def phasor_transform(
             modulation_zero * numpy.cos(phase_zero),
             modulation_zero * numpy.sin(phase_zero),
         )
-    if isinstance(skip_axes, int):
+    if isinstance(skip_axes, int | None):
         skip_axes = (skip_axes,)
     dim_diff = numpy.ndim(re) - numpy.ndim(phase_zero)
     if dim_diff > 0:
