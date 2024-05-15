@@ -487,18 +487,35 @@ def test_polar_from_reference_functions():
 
 @pytest.mark.parametrize(
     """real, imag,
-    phase_zero, modulation_zero,
+    phase_zero, modulation_zero, kwargs,
     expected_real, expected_imag""",
     [
-        (2, 2, None, None, 2, 2),
-        (2, 2, 0, 1, 2, 2),
-        (2, 2, 0.5, 2.0, 1.592628093144679, 5.428032401978303),
-        (2, 2, -0.5, -2.0, -5.428032401978303, -1.592628093144679),
+        (2, 2, None, None, {'skip_axes': None}, 2, 2),
+        (2, 2, 0, 1, {'skip_axes': None}, 2, 2),
+        (
+            2,
+            2,
+            0.5,
+            2.0,
+            {'skip_axes': None},
+            1.592628093144679,
+            5.428032401978303,
+        ),
+        (
+            2,
+            2,
+            -0.5,
+            -2.0,
+            {'skip_axes': None},
+            -5.428032401978303,
+            -1.592628093144679,
+        ),
         (
             SYNTH_DATA_LIST,
             SYNTH_DATA_LIST,
             None,
             None,
+            {'skip_axes': None},
             SYNTH_DATA_LIST,
             SYNTH_DATA_LIST,
         ),
@@ -507,6 +524,7 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_LIST,
             0,
             1,
+            {'skip_axes': None},
             SYNTH_DATA_LIST,
             SYNTH_DATA_LIST,
         ),
@@ -515,6 +533,7 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_LIST,
             0.5,
             2.0,
+            {'skip_axes': None},
             [0.79631405, 1.59262809, 3.18525619],
             [2.7140162, 5.4280324, 10.8560648],
         ),
@@ -523,6 +542,7 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_ARRAY,
             None,
             None,
+            {'skip_axes': None},
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
         ),
@@ -531,6 +551,7 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_ARRAY,
             0,
             1,
+            {'skip_axes': None},
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
         ),
@@ -539,6 +560,7 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_ARRAY,
             0.5,
             2.0,
+            {'skip_axes': None},
             numpy.array([[39.81570233, 0.79631405], [0.79631405, 0.79631405]]),
             numpy.array([[135.70081005, 2.7140162], [2.7140162, 2.7140162]]),
         ),
@@ -547,9 +569,37 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_ARRAY,
             SYNTH_PHI,
             SYNTH_MOD,
+            {'skip_axes': None},
             numpy.array([[39.81570233, 0.79631405], [0.79631405, 0.79631405]]),
             numpy.array([[135.70081005, 2.7140162], [2.7140162, 2.7140162]]),
         ),  # test with phase_zero and modulation_zero as arrays
+        (
+            numpy.stack(
+                (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY / 2, SYNTH_DATA_ARRAY / 3),
+                axis=0,
+            ),
+            numpy.stack(
+                (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY / 2, SYNTH_DATA_ARRAY / 3),
+                axis=0,
+            ),
+            [0.1, 0.2, 0.3],
+            [0.4, 0.5, 0.6],
+            {'skip_axes': 0},
+            numpy.array(
+                [
+                    [[17.90341497, 0.3580683], [0.3580683, 0.3580683]],
+                    [[9.76746559, 0.19534931], [0.19534931, 0.19534931]],
+                    [[6.59816282, 0.13196326], [0.13196326, 0.13196326]],
+                ]
+            ),
+            numpy.array(
+                [
+                    [[21.89675164, 0.43793503], [0.43793503, 0.43793503]],
+                    [[14.73419886, 0.29468398], [0.29468398, 0.29468398]],
+                    [[12.50856696, 0.25017134], [0.25017134, 0.25017134]],
+                ]
+            ),
+        ),  # test with skip_axes
     ],
 )
 def test_phasor_transform(
@@ -557,6 +607,7 @@ def test_phasor_transform(
     imag,
     phase_zero,
     modulation_zero,
+    kwargs,
     expected_real,
     expected_imag,
 ):
@@ -565,10 +616,7 @@ def test_phasor_transform(
     imag_copy = copy.deepcopy(imag)
     if phase_zero is not None and modulation_zero is not None:
         calibrated_real, calibrated_imag = phasor_transform(
-            real_copy,
-            imag_copy,
-            phase_zero,
-            modulation_zero,
+            real_copy, imag_copy, phase_zero, modulation_zero, **kwargs
         )
     else:
         calibrated_real, calibrated_imag = phasor_transform(
@@ -602,56 +650,74 @@ def test_phasor_transform_more():
 
 
 @pytest.mark.parametrize(
-    """real, imag,
-    skip_axes, method,
+    """real, imag, kwargs,
     expected_real_center, expected_imag_center""",
     [
-        (1.0, 4.0, None, 'mean', 1.0, 4.0),
-        (1.0, -4.0, None, 'median', 1.0, -4.0),
+        (1.0, 4.0, {'skip_axes': None, 'method': 'mean'}, 1.0, 4.0),
+        (1.0, -4.0, {'skip_axes': None, 'method': 'median'}, 1.0, -4.0),
         (
             SYNTH_DATA_LIST,
             SYNTH_DATA_LIST,
-            None,
-            'mean',
+            {'skip_axes': None, 'method': 'mean'},
             2.3333333333333335,
             2.3333333333333335,
         ),
-        (SYNTH_DATA_LIST, SYNTH_DATA_LIST, None, 'median', 2.0, 2.0),
-        (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY, None, 'mean', 13.25, 13.25),
-        (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY, None, 'median', 1.0, 1.0),
+        (
+            SYNTH_DATA_LIST,
+            SYNTH_DATA_LIST,
+            {'skip_axes': None, 'method': 'median'},
+            2.0,
+            2.0,
+        ),
+        (
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            {'skip_axes': None, 'method': 'mean'},
+            13.25,
+            13.25,
+        ),
+        (
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            {'skip_axes': None, 'method': 'median'},
+            1.0,
+            1.0,
+        ),
         # with skip_axes
         (
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
-            0,
-            'mean',
+            {'skip_axes': 0, 'method': 'mean'},
             numpy.asarray([25.5, 1.0]),
             numpy.asarray([25.5, 1.0]),
         ),
         (
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
-            (-2,),
-            'median',
+            {'skip_axes': (-2,), 'method': 'median'},
             numpy.asarray([25.5, 1.0]),
             numpy.asarray([25.5, 1.0]),
         ),
+        (
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            {'keepdims': True},
+            [[13.25]],
+            [[13.25]],
+        ),  # with kwargs for numpy functions
     ],
 )
 def test_phasor_center(
     real,
     imag,
-    skip_axes,
-    method,
+    kwargs,
     expected_real_center,
     expected_imag_center,
 ):
     """Test `phasor_center` function with various inputs and methods."""
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
-    real_center, imag_center = phasor_center(
-        real_copy, imag_copy, skip_axes=skip_axes, method=method
-    )
+    real_center, imag_center = phasor_center(real_copy, imag_copy, **kwargs)
     assert_array_equal(real, real_copy)
     assert_array_equal(imag, imag_copy)
     assert_almost_equal(real_center, expected_real_center)
@@ -978,6 +1044,49 @@ def test_phasor_from_lifetime_modify():
                 ),
             ),
         ),  # multiple lifetime with median method
+        (
+            (
+                numpy.stack(
+                    (
+                        SYNTH_DATA_ARRAY,
+                        SYNTH_DATA_ARRAY / 2,
+                        SYNTH_DATA_ARRAY / 3,
+                    ),
+                    axis=0,
+                ),
+                numpy.stack(
+                    (
+                        SYNTH_DATA_ARRAY,
+                        SYNTH_DATA_ARRAY / 2,
+                        SYNTH_DATA_ARRAY / 3,
+                    ),
+                    axis=0,
+                ),
+                [0.5, 0.25, 0.1],
+                [0.3, 0.2, 0.1],
+            ),
+            {
+                'frequency': [80, 160, 240],
+                'lifetime': 4,
+                'skip_axes': 0,
+            },
+            (
+                numpy.array(
+                    [
+                        [[11.60340173, 0.23206803], [0.23206803, 0.23206803]],
+                        [[3.53612871, 0.07072257], [0.07072257, 0.07072257]],
+                        [[4.45831758, 0.08916635], [0.08916635, 0.08916635]],
+                    ]
+                ),
+                numpy.array(
+                    [
+                        [[52.74178815, 1.05483576], [1.05483576, 1.05483576]],
+                        [[26.41473921, 0.52829478], [0.52829478, 0.52829478]],
+                        [[26.89193809, 0.53783876], [0.53783876, 0.53783876]],
+                    ]
+                ),
+            ),
+        ),  # multiple harmonics with skip_axes
     ],
 )
 def test_phasor_calibrate(args, kwargs, expected):

@@ -700,8 +700,10 @@ def phasor_transform(
             modulation_zero * numpy.cos(phase_zero),
             modulation_zero * numpy.sin(phase_zero),
         )
-    if isinstance(skip_axes, int | None):
-        skip_axes = (skip_axes,)
+    if isinstance(skip_axes, int):
+        skip_axes = [skip_axes]
+    elif skip_axes is None:
+        skip_axes = []
     dim_diff = numpy.ndim(re) - numpy.ndim(phase_zero)
     if dim_diff > 0:
         phase_zero = numpy.expand_dims(
