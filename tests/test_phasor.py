@@ -487,17 +487,16 @@ def test_polar_from_reference_functions():
 
 @pytest.mark.parametrize(
     """real, imag,
-    phase_zero, modulation_zero, kwargs,
+    phase_zero, modulation_zero,
     expected_real, expected_imag""",
     [
-        (2, 2, None, None, {'skip_axes': None}, 2, 2),
-        (2, 2, 0, 1, {'skip_axes': None}, 2, 2),
+        (2, 2, None, None, 2, 2),
+        (2, 2, 0, 1, 2, 2),
         (
             2,
             2,
             0.5,
             2.0,
-            {'skip_axes': None},
             1.592628093144679,
             5.428032401978303,
         ),
@@ -506,7 +505,6 @@ def test_polar_from_reference_functions():
             2,
             -0.5,
             -2.0,
-            {'skip_axes': None},
             -5.428032401978303,
             -1.592628093144679,
         ),
@@ -515,7 +513,6 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_LIST,
             None,
             None,
-            {'skip_axes': None},
             SYNTH_DATA_LIST,
             SYNTH_DATA_LIST,
         ),
@@ -524,7 +521,6 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_LIST,
             0,
             1,
-            {'skip_axes': None},
             SYNTH_DATA_LIST,
             SYNTH_DATA_LIST,
         ),
@@ -533,7 +529,6 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_LIST,
             0.5,
             2.0,
-            {'skip_axes': None},
             [0.79631405, 1.59262809, 3.18525619],
             [2.7140162, 5.4280324, 10.8560648],
         ),
@@ -542,7 +537,6 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_ARRAY,
             None,
             None,
-            {'skip_axes': None},
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
         ),
@@ -551,7 +545,6 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_ARRAY,
             0,
             1,
-            {'skip_axes': None},
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
         ),
@@ -560,7 +553,6 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_ARRAY,
             0.5,
             2.0,
-            {'skip_axes': None},
             numpy.array([[39.81570233, 0.79631405], [0.79631405, 0.79631405]]),
             numpy.array([[135.70081005, 2.7140162], [2.7140162, 2.7140162]]),
         ),
@@ -569,37 +561,9 @@ def test_polar_from_reference_functions():
             SYNTH_DATA_ARRAY,
             SYNTH_PHI,
             SYNTH_MOD,
-            {'skip_axes': None},
             numpy.array([[39.81570233, 0.79631405], [0.79631405, 0.79631405]]),
             numpy.array([[135.70081005, 2.7140162], [2.7140162, 2.7140162]]),
         ),  # test with phase_zero and modulation_zero as arrays
-        (
-            numpy.stack(
-                (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY / 2, SYNTH_DATA_ARRAY / 3),
-                axis=0,
-            ),
-            numpy.stack(
-                (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY / 2, SYNTH_DATA_ARRAY / 3),
-                axis=0,
-            ),
-            [0.1, 0.2, 0.3],
-            [0.4, 0.5, 0.6],
-            {'skip_axes': 0},
-            numpy.array(
-                [
-                    [[17.90341497, 0.3580683], [0.3580683, 0.3580683]],
-                    [[9.76746559, 0.19534931], [0.19534931, 0.19534931]],
-                    [[6.59816282, 0.13196326], [0.13196326, 0.13196326]],
-                ]
-            ),
-            numpy.array(
-                [
-                    [[21.89675164, 0.43793503], [0.43793503, 0.43793503]],
-                    [[14.73419886, 0.29468398], [0.29468398, 0.29468398]],
-                    [[12.50856696, 0.25017134], [0.25017134, 0.25017134]],
-                ]
-            ),
-        ),  # test with skip_axes
     ],
 )
 def test_phasor_transform(
@@ -607,7 +571,6 @@ def test_phasor_transform(
     imag,
     phase_zero,
     modulation_zero,
-    kwargs,
     expected_real,
     expected_imag,
 ):
@@ -616,7 +579,7 @@ def test_phasor_transform(
     imag_copy = copy.deepcopy(imag)
     if phase_zero is not None and modulation_zero is not None:
         calibrated_real, calibrated_imag = phasor_transform(
-            real_copy, imag_copy, phase_zero, modulation_zero, **kwargs
+            real_copy, imag_copy, phase_zero, modulation_zero
         )
     else:
         calibrated_real, calibrated_imag = phasor_transform(

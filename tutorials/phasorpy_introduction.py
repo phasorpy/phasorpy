@@ -140,30 +140,6 @@ real, imag = phasor_calibrate(
 )
 
 # %%
-# Calibrate the raw phasor coordinates of multiple harmonics with the
-# reference coordinates of known lifetime (Fluorescein, 4.2 ns):
-
-mean_harmonics, real_harmonics, imag_harmonics = phasor_from_signal(
-    signal, axis=0, harmonic=[1, 2]
-)
-
-(
-    reference_mean_harmonics,
-    reference_real_harmonics,
-    reference_imag_harmonics,
-) = phasor_from_signal(reference_signal, axis=0, harmonic=[1, 2])
-
-real_harmonics, imag_harmonics = phasor_calibrate(
-    real_harmonics,
-    imag_harmonics,
-    reference_real_harmonics,
-    reference_imag_harmonics,
-    frequency=[frequency, frequency * 2],
-    lifetime=4.2,
-    skip_axes=0,
-)
-
-# %%
 # Filter phasor coordinates
 # -------------------------
 #

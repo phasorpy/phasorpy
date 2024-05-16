@@ -612,7 +612,25 @@ def phasor_calibrate(
     phi_zero, mod_zero = polar_from_reference_phasor(
         measured_re, measured_im, known_re, known_im
     )
-    return phasor_transform(re, im, phi_zero, mod_zero, skip_axes=skip_axes)
+    if numpy.ndim(phi_zero) > 0:
+        if skip_axes is None:
+            axis = None
+        else:
+            if not isinstance(skip_axes, Sequence):
+                skip_axes = (skip_axes,)
+            if any(i >= real.ndim for i in skip_axes):
+                raise IndexError(f'{skip_axes=} out of range {real.ndim=}')
+            skip_axes = tuple(i % real.ndim for i in skip_axes)
+            axis = tuple(i for i in range(real.ndim) if i not in skip_axes)
+        phi_zero = numpy.expand_dims(
+            phi_zero,
+            axis=axis,
+        )
+        mod_zero = numpy.expand_dims(
+            mod_zero,
+            axis=axis,
+        )
+    return phasor_transform(re, im, phi_zero, mod_zero)
 
 
 def phasor_transform(
@@ -621,8 +639,6 @@ def phasor_transform(
     phase_zero: ArrayLike = 0.0,
     modulation_zero: ArrayLike = 1.0,
     /,
-    *,
-    skip_axes: int | Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     r"""Return rotated and scaled phasor coordinates.
@@ -641,9 +657,6 @@ def phasor_transform(
         Rotation angle in radians.
     modulation_zero : array_like, optional, default: 1.0
         Uniform scale factor.
-    skip_axes : int or sequence of int, optional
-        Axes to be excluded during dimension expantion. If None, all
-        axes are considered.
     **kwargs
         Optional `arguments passed to numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
@@ -689,32 +702,14 @@ def phasor_transform(
     (array([0.00927, 0.0193, 0.0328]), array([0.206, 0.106, 0.1986]))
 
     """
-    re = numpy.asarray(real)
-    im = numpy.asarray(imag)
-    if re.shape != im.shape:
-        raise ValueError(f'real.shape={re.shape} != imag.shape={im.shape}')
     if numpy.ndim(phase_zero) == 0 and numpy.ndim(modulation_zero) == 0:
         return _phasor_transform_const(
-            re,
-            im,
+            real,
+            imag,
             modulation_zero * numpy.cos(phase_zero),
             modulation_zero * numpy.sin(phase_zero),
         )
-    if isinstance(skip_axes, int):
-        skip_axes = [skip_axes]
-    elif skip_axes is None:
-        skip_axes = []
-    dim_diff = numpy.ndim(re) - numpy.ndim(phase_zero)
-    if dim_diff > 0:
-        phase_zero = numpy.expand_dims(
-            phase_zero,
-            axis=tuple(i for i in range(-dim_diff, 0) if i not in skip_axes),
-        )
-        modulation_zero = numpy.expand_dims(
-            modulation_zero,
-            axis=tuple(i for i in range(-dim_diff, 0) if i not in skip_axes),
-        )
-    return _phasor_transform(re, im, phase_zero, modulation_zero, **kwargs)
+    return _phasor_transform(real, imag, phase_zero, modulation_zero, **kwargs)
 
 
 def polar_from_reference_phasor(
