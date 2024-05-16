@@ -2103,7 +2103,7 @@ def _parse_skip_axis(
     Examples
     --------
     >>> _parse_skip_axis((1, -2), 5)
-    (1, 3), (0, 2, 4)
+    ((1, 3), (0, 2, 4))
 
     """
     if ndim < 0:
