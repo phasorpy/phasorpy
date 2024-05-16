@@ -2096,7 +2096,7 @@ def _determine_axis(
 
     Examples
     --------
-    >>> _determine_axis(0,[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+    >>> _determine_axis(0, [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
     (1,)
 
     """
