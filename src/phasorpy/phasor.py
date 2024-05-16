@@ -618,10 +618,10 @@ def phasor_calibrate(
         else:
             if not isinstance(skip_axes, Sequence):
                 skip_axes = (skip_axes,)
-            if any(i >= real.ndim for i in skip_axes):
-                raise IndexError(f'{skip_axes=} out of range {real.ndim=}')
-            skip_axes = tuple(i % real.ndim for i in skip_axes)
-            axis = tuple(i for i in range(real.ndim) if i not in skip_axes)
+            if any(i >= re.ndim for i in skip_axes):
+                raise IndexError(f'{skip_axes=} out of range {re.ndim=}')
+            skip_axes = tuple(i % re.ndim for i in skip_axes)
+            axis = tuple(i for i in range(re.ndim) if i not in skip_axes)
         phi_zero = numpy.expand_dims(
             phi_zero,
             axis=axis,
