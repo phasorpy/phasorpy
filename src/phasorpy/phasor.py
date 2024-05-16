@@ -613,23 +613,16 @@ def phasor_calibrate(
         measured_re, measured_im, known_re, known_im
     )
     if numpy.ndim(phi_zero) > 0:
-        if skip_axes is None:
-            axis = None
-        else:
-            if not isinstance(skip_axes, Sequence):
-                skip_axes = (skip_axes,)
-            if any(i >= re.ndim for i in skip_axes):
-                raise IndexError(f'{skip_axes=} out of range {re.ndim=}')
-            skip_axes = tuple(i % re.ndim for i in skip_axes)
-            axis = tuple(i for i in range(re.ndim) if i not in skip_axes)
-        phi_zero = numpy.expand_dims(
-            phi_zero,
-            axis=axis,
-        )
-        mod_zero = numpy.expand_dims(
-            mod_zero,
-            axis=axis,
-        )
+        axis = _determine_axis(skip_axes, re)
+        if axis is not None:
+            phi_zero = numpy.expand_dims(
+                phi_zero,
+                axis=axis,
+            )
+            mod_zero = numpy.expand_dims(
+                mod_zero,
+                axis=axis,
+            )
     return phasor_transform(re, im, phi_zero, mod_zero)
 
 
@@ -2008,15 +2001,7 @@ def phasor_center(
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
 
-    if skip_axes is None:
-        axis = None
-    else:
-        if not isinstance(skip_axes, Sequence):
-            skip_axes = (skip_axes,)
-        if any(i >= real.ndim for i in skip_axes):
-            raise IndexError(f'{skip_axes=} out of range {real.ndim=}')
-        skip_axes = tuple(i % real.ndim for i in skip_axes)
-        axis = tuple(i for i in range(real.ndim) if i not in skip_axes)
+    axis = _determine_axis(skip_axes, real)
 
     return {
         'mean': _mean,
@@ -2084,3 +2069,45 @@ def _median(
 
     """
     return numpy.median(real, **kwargs), numpy.median(imag, **kwargs)
+
+
+def _determine_axis(
+    skip_axes: int | Sequence[int] | None, real: ArrayLike, /
+) -> tuple[int, ...] | None:
+    """Helper function to determine the axis for calculation.
+
+    Parameters
+    ----------
+    skip_axes:
+        Axes to skip during calculation.
+    real:
+        The real component, used to determine dimensionality.
+
+    Returns
+    -------
+        The tuple of axes to include in the calculation, or None if all
+        axes are included.
+
+    Raises
+    ------
+        IndexError
+            If any skip_axes value is out of bounds for the array's
+            dimensionality.
+
+    Examples
+    --------
+    >>> _determine_axis(0,[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+    (1,)
+
+    """
+    if skip_axes is None:
+        return None
+    if not isinstance(skip_axes, Sequence):
+        skip_axes = (skip_axes,)
+    ndim = numpy.ndim(real)
+    if any(i >= ndim for i in skip_axes):
+        raise IndexError(
+            f"skip_axes={skip_axes} out of range for array with ndim={ndim}"
+        )
+    skip_axes = tuple(i % ndim for i in skip_axes)
+    return tuple(i for i in range(ndim) if i not in skip_axes)
