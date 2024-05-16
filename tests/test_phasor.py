@@ -22,6 +22,7 @@ except ImportError:
     mkl_fft = None
 
 from phasorpy.phasor import (
+    _parse_skip_axis,
     fraction_from_amplitude,
     fraction_to_amplitude,
     frequency_from_lifetime,
@@ -616,48 +617,48 @@ def test_phasor_transform_more():
     """real, imag, kwargs,
     expected_real_center, expected_imag_center""",
     [
-        (1.0, 4.0, {'skip_axes': None, 'method': 'mean'}, 1.0, 4.0),
-        (1.0, -4.0, {'skip_axes': None, 'method': 'median'}, 1.0, -4.0),
+        (1.0, 4.0, {'skip_axis': None, 'method': 'mean'}, 1.0, 4.0),
+        (1.0, -4.0, {'skip_axis': None, 'method': 'median'}, 1.0, -4.0),
         (
             SYNTH_DATA_LIST,
             SYNTH_DATA_LIST,
-            {'skip_axes': None, 'method': 'mean'},
+            {'skip_axis': None, 'method': 'mean'},
             2.3333333333333335,
             2.3333333333333335,
         ),
         (
             SYNTH_DATA_LIST,
             SYNTH_DATA_LIST,
-            {'skip_axes': None, 'method': 'median'},
+            {'skip_axis': None, 'method': 'median'},
             2.0,
             2.0,
         ),
         (
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
-            {'skip_axes': None, 'method': 'mean'},
+            {'skip_axis': None, 'method': 'mean'},
             13.25,
             13.25,
         ),
         (
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
-            {'skip_axes': None, 'method': 'median'},
+            {'skip_axis': None, 'method': 'median'},
             1.0,
             1.0,
         ),
-        # with skip_axes
+        # with skip_axis
         (
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
-            {'skip_axes': 0, 'method': 'mean'},
+            {'skip_axis': 0, 'method': 'mean'},
             numpy.asarray([25.5, 1.0]),
             numpy.asarray([25.5, 1.0]),
         ),
         (
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
-            {'skip_axes': (-2,), 'method': 'median'},
+            {'skip_axis': (-2,), 'method': 'median'},
             numpy.asarray([25.5, 1.0]),
             numpy.asarray([25.5, 1.0]),
         ),
@@ -694,7 +695,7 @@ def test_phasor_center_exceptions():
     with pytest.raises(ValueError):
         phasor_center([0], [0, 0])
     with pytest.raises(IndexError):
-        phasor_center([0, 0], [0, 0], skip_axes=1)
+        phasor_center([0, 0], [0, 0], skip_axis=1)
 
 
 @pytest.mark.parametrize(
@@ -1031,7 +1032,7 @@ def test_phasor_from_lifetime_modify():
             {
                 'frequency': [80, 160, 240],
                 'lifetime': 4,
-                'skip_axes': 0,
+                'skip_axis': 0,
             },
             (
                 numpy.array(
@@ -1049,7 +1050,7 @@ def test_phasor_from_lifetime_modify():
                     ]
                 ),
             ),
-        ),  # multiple harmonics with skip_axes
+        ),  # multiple harmonics with skip_axis
     ],
 )
 def test_phasor_calibrate(args, kwargs, expected):
@@ -1497,3 +1498,22 @@ def test_phasor_at_harmonic():
         phasor_at_harmonic(0.5, 0, 1)
     with pytest.raises(ValueError):
         phasor_at_harmonic(0.5, 1, 0)
+
+
+def test_parse_skip_axis():
+    """Test _parse_skip_axis function."""
+    assert _parse_skip_axis(None, 0) == ((), ())
+    assert _parse_skip_axis(None, 1) == ((), (0,))
+    assert _parse_skip_axis((), 1) == ((), (0,))
+    assert _parse_skip_axis(0, 1) == ((0,), ())
+    assert _parse_skip_axis(0, 2) == ((0,), (1,))
+    assert _parse_skip_axis(-1, 2) == ((1,), (0,))
+    assert _parse_skip_axis((1, -2), 5) == ((1, 3), (0, 2, 4))
+    with pytest.raises(ValueError):
+        _parse_skip_axis(0, -1)
+    with pytest.raises(IndexError):
+        _parse_skip_axis(0, 0)
+    with pytest.raises(IndexError):
+        _parse_skip_axis(1, 1)
+    with pytest.raises(IndexError):
+        _parse_skip_axis(-2, 1)
