@@ -134,19 +134,6 @@ def create_lut(
     ------
     ValueError
         'Input array must have same shapes'
-
-    Examples
-    --------
-    Create a LUT based on ranges values:
-
-    >>> create_lut(
-    ...     min_vals1 = numpy.array([0, 3, 6]),
-    ...     max_vals1 = numpy.array([2, 5, 8]),
-    ...     min_vals2 = numpy.array([1, 4, 7]),
-    ...     max_vals2 = numpy.array([3, 6, 9]))
-    {((0, 2), (1, 3)): 1, ((0, 2), (4, 6)): 2, ((0, 2), (7, 9)): 3,
-    ... ((3, 5), (1, 3)): 4, ((3, 5), (4, 6)): 5, ((3, 5), (7, 9)): 6,
-    ... ((6, 8), (1, 3)): 7, ((6, 8), (4, 6)): 8, ((6, 8), (7, 9)): 9}
     """
     if (
         min_vals1.shape
@@ -188,15 +175,6 @@ def label_from_lut(arr1: NDArray, arr2: NDArray, lut: dict) -> NDArray[Any]:
     ValueError
         'Input arrays must have same shapes'
 
-    Example
-    -------
-    >>> arr1 = numpy.array([[1.2, 2.4, 3.5], [4.7, 5.1, 6.9], [7.3, 8.6, 9.0]])
-    >>> arr2 = numpy.array([[0.8, 2.1, 3.9], [4.2, 5.7, 6.3],[7.5, 8.2, 9.5]])
-    >>> lut = {((0, 2), (1, 3)): 1, ((0, 2), (4, 6)): 2, ((0, 2), (7, 9)): 3,
-    ... ((3, 5), (1, 3)): 4, ((3, 5), (4, 6)): 5, ((3, 5), (7, 9)): 6,
-    ... ((6, 8), (1, 3)): 7, ((6, 8), (4, 6)): 8, ((6, 8), (7, 9)): 9}
-    >>> label = label_from_lut(arr1, arr2, lut)
-    array([[0, 0, 0], [5, 0, 0], [9, 0, 0]])
     """
     # Check if the input arrays have compatible shapes
     if arr1.shape != arr2.shape:
@@ -210,3 +188,30 @@ def label_from_lut(arr1: NDArray, arr2: NDArray, lut: dict) -> NDArray[Any]:
             0,
         )
     return label
+
+
+
+#### EXAMPLES
+# Examples
+# --------
+# Create a LUT based on ranges values:
+
+# >>> create_lut(
+# ...     min_vals1 = numpy.array([0, 3, 6]),
+# ...     max_vals1 = numpy.array([2, 5, 8]),
+# ...     min_vals2 = numpy.array([1, 4, 7]),
+# ...     max_vals2 = numpy.array([3, 6, 9]))
+# {((0, 2), (1, 3)): 1, ((0, 2), (4, 6)): 2, ((0, 2), (7, 9)): 3,
+# ... ((3, 5), (1, 3)): 4, ((3, 5), (4, 6)): 5, ((3, 5), (7, 9)): 6,
+# ... ((6, 8), (1, 3)): 7, ((6, 8), (4, 6)): 8, ((6, 8), (7, 9)): 9} 
+
+# Example
+# -------
+# >>> arr1 = numpy.array([[1.2, 2.4, 3.5], [4.7, 5.1, 6.9], [7.3, 8.6, 9.0]])
+# >>> arr2 = numpy.array([[0.8, 2.1, 3.9], [4.2, 5.7, 6.3],[7.5, 8.2, 9.5]])
+# >>> lut = {((0, 2), (1, 3)): 1, ((0, 2), (4, 6)): 2, ((0, 2), (7, 9)): 3,
+# ... ((3, 5), (1, 3)): 4, ((3, 5), (4, 6)): 5, ((3, 5), (7, 9)): 6,
+# ... ((6, 8), (1, 3)): 7, ((6, 8), (4, 6)): 8, ((6, 8), (7, 9)): 9}
+# >>> label = label_from_lut(arr1, arr2, lut)
+# array([[0, 0, 0], [5, 0, 0], [9, 0, 0]])
+
