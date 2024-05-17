@@ -479,7 +479,7 @@ def phasor_calibrate(
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
     method: Literal['mean', 'median'] = 'mean',
-    skip_axes: int | Sequence[int] | None = None,
+    skip_axis: int | Sequence[int] | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """
     Return calibrated/referenced phasor coordinates.
@@ -525,7 +525,7 @@ def phasor_calibrate(
 
         - ``'mean'``: Arithmetic mean of phasor coordinates.
         - ``'median'``: Spatial median of phasor coordinates.
-    skip_axes : int or sequence of int, optional
+    skip_axis : int or sequence of int, optional
         Axes to be excluded during center calculation. If None, all
         axes are considered.
 
@@ -562,7 +562,7 @@ def phasor_calibrate(
                 *phasor_center(
                     reference_real,
                     reference_imag,
-                    skip_axes,
+                    skip_axis,
                     method,
                 ),
                 *phasor_from_lifetime(
@@ -600,7 +600,7 @@ def phasor_calibrate(
             f'!= reference_imag.shape{ref_im.shape}'
         )
     measured_re, measured_im = phasor_center(
-        reference_real, reference_imag, skip_axes=skip_axes, method=method
+        reference_real, reference_imag, skip_axis=skip_axis, method=method
     )
     known_re, known_im = phasor_from_lifetime(
         frequency,
@@ -612,6 +612,17 @@ def phasor_calibrate(
     phi_zero, mod_zero = polar_from_reference_phasor(
         measured_re, measured_im, known_re, known_im
     )
+    if numpy.ndim(phi_zero) > 0:
+        _, axis = _parse_skip_axis(skip_axis, re.ndim)
+        if axis is not None:
+            phi_zero = numpy.expand_dims(
+                phi_zero,
+                axis=axis,
+            )
+            mod_zero = numpy.expand_dims(
+                mod_zero,
+                axis=axis,
+            )
     return phasor_transform(re, im, phi_zero, mod_zero)
 
 
@@ -1928,8 +1939,9 @@ def phasor_center(
     imag: ArrayLike,
     /,
     *,
-    skip_axes: int | Sequence[int] | None = None,
+    skip_axis: int | Sequence[int] | None = None,
     method: Literal['mean', 'median'] = 'mean',
+    **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return center of phasor coordinates.
 
@@ -1939,7 +1951,7 @@ def phasor_center(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    skip_axes : int or sequence of int, optional
+    skip_axis : int or sequence of int, optional
         Axes to be excluded during center calculation. If None, all
         axes are considered.
     method : str, optional
@@ -1947,6 +1959,10 @@ def phasor_center(
 
         - ``'mean'``: Arithmetic mean of phasor coordinates.
         - ``'median'``: Spatial median of phasor coordinates.
+
+    **kwargs
+        Optional arguments passed to :py:func:`numpy.mean` or
+        :py:func:`numpy.median`.
 
     Returns
     -------
@@ -1985,22 +2001,14 @@ def phasor_center(
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
 
-    if skip_axes is None:
-        axis = None
-    else:
-        if not isinstance(skip_axes, Sequence):
-            skip_axes = (skip_axes,)
-        if any(i >= real.ndim for i in skip_axes):
-            raise IndexError(f'{skip_axes=} out of range {real.ndim=}')
-        skip_axes = tuple(i % real.ndim for i in skip_axes)
-        axis = tuple(i for i in range(real.ndim) if i not in skip_axes)
+    _, axis = _parse_skip_axis(skip_axis, real.ndim)
 
     return {
         'mean': _mean,
         'median': _median,
     }[
         method
-    ](real, imag, axis=axis)
+    ](real, imag, axis=axis, **kwargs)
 
 
 def _mean(
@@ -2061,3 +2069,51 @@ def _median(
 
     """
     return numpy.median(real, **kwargs), numpy.median(imag, **kwargs)
+
+
+def _parse_skip_axis(
+    skip_axis: int | Sequence[int] | None,
+    /,
+    ndim: int,
+) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    """Return axes to skip and not to skip.
+
+    This helper function is used to validate and parse `skip_axis`
+    parameters.
+
+    Parameters
+    ----------
+    skip_axis : Sequence of int, or None
+        Axes to skip. If None, no axes are skipped.
+    ndim : int
+        Dimensionality of array in which to skip axes.
+
+    Returns
+    -------
+    skip_axis
+        Ordered, positive values of `skip_axis`.
+    other_axis
+        Axes indices not included in `skip_axis`.
+
+    Raises
+    ------
+    IndexError
+        If any `skip_axis` value is out of bounds of `ndim`.
+
+    Examples
+    --------
+    >>> _parse_skip_axis((1, -2), 5)
+    ((1, 3), (0, 2, 4))
+
+    """
+    if ndim < 0:
+        raise ValueError(f'invalid {ndim=}')
+    if skip_axis is None:
+        return (), tuple(range(ndim))
+    if not isinstance(skip_axis, Sequence):
+        skip_axis = (skip_axis,)
+    if any(i >= ndim or i < -ndim for i in skip_axis):
+        raise IndexError(f"skip_axis={skip_axis} out of range for {ndim=}")
+    skip_axis = tuple(sorted(int(i % ndim) for i in skip_axis))
+    other_axis = tuple(i for i in range(ndim) if i not in skip_axis)
+    return skip_axis, other_axis
