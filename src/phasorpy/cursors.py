@@ -190,7 +190,6 @@ def label_from_lut(arr1: NDArray, arr2: NDArray, lut: dict) -> NDArray[Any]:
     return label
 
 
-
 #### EXAMPLES
 # Examples
 # --------
@@ -203,7 +202,7 @@ def label_from_lut(arr1: NDArray, arr2: NDArray, lut: dict) -> NDArray[Any]:
 # ...     max_vals2 = numpy.array([3, 6, 9]))
 # {((0, 2), (1, 3)): 1, ((0, 2), (4, 6)): 2, ((0, 2), (7, 9)): 3,
 # ... ((3, 5), (1, 3)): 4, ((3, 5), (4, 6)): 5, ((3, 5), (7, 9)): 6,
-# ... ((6, 8), (1, 3)): 7, ((6, 8), (4, 6)): 8, ((6, 8), (7, 9)): 9} 
+# ... ((6, 8), (1, 3)): 7, ((6, 8), (4, 6)): 8, ((6, 8), (7, 9)): 9}
 
 # Example
 # -------
@@ -214,4 +213,3 @@ def label_from_lut(arr1: NDArray, arr2: NDArray, lut: dict) -> NDArray[Any]:
 # ... ((6, 8), (1, 3)): 7, ((6, 8), (4, 6)): 8, ((6, 8), (7, 9)): 9}
 # >>> label = label_from_lut(arr1, arr2, lut)
 # array([[0, 0, 0], [5, 0, 0], [9, 0, 0]])
-
