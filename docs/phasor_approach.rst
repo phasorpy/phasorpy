@@ -155,7 +155,10 @@ approach to analyze fluorescence time-resolved or spectral images:
   hyperspectral images.
   Many `tutorials <https://www.lfd.uci.edu/globals/tutorials/>`_ are available.
 
-- `Spectral Phasor PlugIn <http://spechron.com/Spectral%20Phasor-Download.aspx>`_
+-
+  .. _phasor_plugins:
+
+  `Spectral Phasor PlugIn <http://spechron.com/Spectral%20Phasor-Download.aspx>`_
   and
   `Time Gated Phasor PlugIn <http://spechron.com/Time%20gated%20Phasor-Download.aspx>`_
   are open-source ImageJ plugins by Farzad Fereidouni, which provide
@@ -163,85 +166,144 @@ approach to analyze fluorescence time-resolved or spectral images:
   images using the phasor approach. The software is distributed under an
   unknown license and was last updated in 2013.
 
-- `Napari-flim-phasor-plotter <https://github.com/zoccoler/napari-flim-phasor-plotter>`_
+-
+  .. _napari_flim_phasor_plotter:
+
+  `Napari-flim-phasor-plotter <https://github.com/zoccoler/napari-flim-phasor-plotter>`_
   is a napari plugin to interactively load and show raw FLIM single images
   and series and generate phasor plots.
 
-- `Napari-live-flim <https://github.com/uw-loci/napari-live-flim>`_
+-
+  .. _napari_live_flim:
+
+  `Napari-live-flim <https://github.com/uw-loci/napari-live-flim>`_
   is a napari plugin for real-time TCSPC-FLIM analysis based on FLIMLib.
   The plugin is distributed under the GPLv3 license.
 
-- `HySP <https://bioimage.usc.edu/software.html#HySP>`_
+-
+  .. _hysp:
+
+  `HySP <https://bioimage.usc.edu/software.html#HySP>`_
   is a free, closed-source, multi-platform desktop application developed by
   Francesco Cutrale for the analysis of multi-dimensional, hyper- and
   multi-spectral data using the phasor approach.
 
-- `FLUTE <https://github.com/LaboratoryOpticsBiosciences/FLUTE>`_,
+-
+  .. _flute:
+
+  `FLUTE <https://github.com/LaboratoryOpticsBiosciences/FLUTE>`_,
   the Fluorescence Lifetime Ultimate Explorer, is an open-source Python GUI
   for interactive phasor analysis of FLIM data developed by Chiara Stringari
   and others. The software is distributed under the GPL license.
 
-- `FLIM_tools <https://github.com/jayunruh/FLIM_tools>`_
+-
+  .. _flim_tools:
+
+  `FLIM_tools <https://github.com/jayunruh/FLIM_tools>`_
   is an open-source Python library for linear unmixing and phasor tools for
   FLIM analysis developed by Jay Unruh. The library is distributed under
   the GPL2 license.
 
-- `tttrlib <https://github.com/Fluorescence-Tools/tttrlib>`_
+-
+  .. _tttrlib:
+
+  `tttrlib <https://github.com/Fluorescence-Tools/tttrlib>`_
   is an open-source C++ and Python library to read, write, and process
   time-tagged time-resolved (TTTR) data. It includes functions for computing
   and correcting phasor coordinates. The library is distributed under the
   BSD license.
 
-- `PhasorIdentifier <https://github.com/Mariochem92/PhasorIdentifier>`_
+-
+  .. _phasor_identifier:
+
+  `PhasorIdentifier <https://github.com/Mariochem92/PhasorIdentifier>`_
   is a Jupyter notebook to analyze FLIM files, including masking, cell
   segmentation, pH correlation, nanoscale effects, and precise quantification.
   The notebook is distributed under CC BY-NC 4.0.
 
-- `FLIMLib <https://flimlib.github.io>`_ is an exponential curve fitting
+-
+  .. _flimlib:
+
+  `FLIMLib <https://flimlib.github.io>`_ is an exponential curve fitting
   library used for Fluorescent Lifetime Imaging (FLIM). It includes a function
   to calculate phasor coordinates from time-resolved signals.
   FLIMLib is licensed under the GPL v3.
 
-- `PAM <https://pam.readthedocs.io/en/latest/phasor.html>`_
-  is an open-source GUI-based Matlab package for the analysis of fluorescence
+-
+  .. _flimfit:
+
+  `FLIMfit <https://flimfit.org/>`_  is an open-source, MATLAB-based tool
+  to analyse and visualize time-resolved data from FLIM measurements
+  including TCSPC and wide-field time-gated imaging.
+  It includes a segmentation tool based on the phasor approach.
+  The affiliated `FlimReader <https://github.com/flimfit/FlimReader>`_ library
+  provides file readers for FLIM data including TTTR.
+  FLIMfit is licensed under the GPL v2.
+
+-
+  .. _pam:
+
+  `PAM <https://pam.readthedocs.io/en/latest/phasor.html>`_
+  is an open-source GUI-based MATLAB package for the analysis of fluorescence
   experiments. The phasor analysis includes region of interests, fractions,
   triangular mixtures, and FRET estimation. PAM is licensed under the GPL v3.
 
-- `Instant-FLIM-Analysis <https://github.com/yzhang34/Instant-FLIM-Analysis>`_
-  is an open-source Matlab program that analyzes data acquired with an
+-
+  .. _instant_flim_analysis:
+
+  `Instant-FLIM-Analysis <https://github.com/yzhang34/Instant-FLIM-Analysis>`_
+  is an open-source MATLAB-based program that analyzes data acquired with an
   "instant FLIM" system. It supports image segmentation based on phasor plot
   regions of interest and K-means clustering.
 
-- `FLIM Studio <https://www.flimlabs.com/software/>`_
+-
+  .. _flim_studio:
+
+  `FLIM Studio <https://www.flimlabs.com/software/>`_
   is a commercial software by FLIM LABS, a vendor of portable devices for
   fluorescence lifetime imaging and spectroscopy. The software provides
   real-time FLIM phasor-plot analysis, AI-driven phasor-plot analysis
   techniques, and an application programming interface. Python modules
   by FLIM LABS are available on `GitHub <https://github.com/FLIMLABS>`_.
 
-- `VistaVision <https://iss.com/software/vistavision>`_
+-
+  .. _vistavision:
+
+  `VistaVision <https://iss.com/software/vistavision>`_
   is a commercial Windows desktop software by ISS, Inc., for confocal
   microscopy applications, including instrument control, data acquisition,
   and data processing. It performs image segmentation of FLIM images via
   the phasor plot.
 
-- `SPCImage <https://www.becker-hickl.com/literature/documents/flim/spcimage-ng/>`_
+-
+  .. _spcimage:
+
+  `SPCImage <https://www.becker-hickl.com/literature/documents/flim/spcimage-ng/>`_
   is a commercial Windows desktop software by Becker & Hickl (tm) for
   TCSPC-FLIM data analysis. It performs image segmentation of time-resolved
   data via the phasor plot.
 
-- `LAS X <https://www.leica-microsystems.com/science-lab/phasor-analysis-for-flim-fluorescence-lifetime-imaging-microscopy/>`_
+-
+  .. _lasx:
+
+  `LAS X <https://www.leica-microsystems.com/science-lab/phasor-analysis-for-flim-fluorescence-lifetime-imaging-microscopy/>`_
   is a commercial Windows desktop software by Leica Microsystems.
   The software allows, by using phasors, to follow microenvironmental changes,
   select components to multiplex signal, and determine FRET efficiency.
 
-- `Luminosa <https://www.picoquant.com/products/category/fluorescence-microscopes/luminosa-single-photon-counting-confocal-microscope#documents>`_
+-
+  .. _luminosa:
+
+  `Luminosa <https://www.picoquant.com/products/category/fluorescence-microscopes/luminosa-single-photon-counting-confocal-microscope#documents>`_
   is a commercial Windows desktop software by PicoQuant GmbH, which includes
   single molecule detection, FCS, and time-resolved imaging methods.
   The InstaFLIM module allows simultaneous TCSPC and phasor analysis
   options for ROI determination.
 
-- `FlimFast <https://www.cgohlke.com/flimfast/>`_
+-
+  .. _flimfast:
+
+  `FlimFast <https://www.cgohlke.com/flimfast/>`_
   was a research-grade Windows desktop software for frequency-domain,
   full-field, fluorescence lifetime imaging at video rate, developed by
   Christoph Gohlke during 2000-2002 at UIUC. It enabled phasor vs intensity
