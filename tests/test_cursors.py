@@ -33,68 +33,23 @@ def test_label_from_phasor_circular_erros():
             numpy.array([-0.5, -0.5, 0.5]), imag, center, radius=radius
         )
 
-
-def test_create_lut():
-    # min1, max1, min2, max2
-    min_vals1 = numpy.array([0, 3, 6])
-    max_vals1 = numpy.array([2, 5, 8])
-    min_vals2 = numpy.array([1, 4, 7])
-    max_vals2 = numpy.array([3, 6, 9])
-    lut = create_lut(min_vals1, max_vals1, min_vals2, max_vals2)
-    expected_lut = {
-        ((0, 2), (1, 3)): 1,
-        ((0, 2), (4, 6)): 2,
-        ((0, 2), (7, 9)): 3,
-        ((3, 5), (1, 3)): 4,
-        ((3, 5), (4, 6)): 5,
-        ((3, 5), (7, 9)): 6,
-        ((6, 8), (1, 3)): 7,
-        ((6, 8), (4, 6)): 8,
-        ((6, 8), (7, 9)): 9,
-    }
-    assert_array_equal(lut, expected_lut)
+def test_mask_from_cursor():
+    xarray = [[337, 306, 227], [21, 231, 235], [244, 328, 116]]
+    yarray = [[0.22, 0.40, 0.81], [0.33, 0.43 , 0.36], [0.015, 0.82 , 0.58]]
+    mask = mask_from_cursor(xarray=xarray, yarray=yarray,
+                            xrange=[0, 270], yrange = [0, 0.5])
+    assert_array_equal(mask, [[0, 0, 0],[1, 1, 1],[1, 0, 0]])
 
 
-def test_create_lut_errors():
-    min_vals1 = numpy.array([0, 3])
-    max_vals1 = numpy.array([2, 5, 8])
-    min_vals2 = numpy.array([1, 4, 7])
-    max_vals2 = numpy.array([3, 6, 9])
+def test_mask_from_cursor_erros():
+    # Test ValueErrors
+    xarray = [[337, 306], [21, 231, 235], [244, 328, 116]]
+    yarray = [[0.22, 0.40, 0.81], [0.33, 0.43 , 0.36], [0.015, 0.82 , 0.58]]
     with pytest.raises(ValueError):
-        create_lut(min_vals1, max_vals1, min_vals2, max_vals2)
-
-
-def test_label_from_lut():
-    arr1 = numpy.array([[1.2, 2.4, 3.5], [4.7, 5.1, 6.9], [7.3, 8.6, 9.0]])
-    arr2 = numpy.array([[0.8, 2.1, 3.9], [4.2, 5.7, 6.3], [7.5, 8.2, 9.5]])
-    lut = {
-        ((0, 2), (1, 3)): 1,
-        ((0, 2), (4, 6)): 2,
-        ((0, 2), (7, 9)): 3,
-        ((3, 5), (1, 3)): 4,
-        ((3, 5), (4, 6)): 5,
-        ((3, 5), (7, 9)): 6,
-        ((6, 8), (1, 3)): 7,
-        ((6, 8), (4, 6)): 8,
-        ((6, 8), (7, 9)): 9,
-    }
-    label = label_from_lut(arr1, arr2, lut)
-    assert_array_equal(label, [[0, 0, 0], [5, 0, 0], [9, 0, 0]])
-
-
-def test_label_from_lut_errors():
-    arr1 = numpy.array([[1.2, 2.4, 3.5], [7.3, 8.6, 9.0]])
-    arr2 = numpy.array([[0.8, 2.1, 3.9], [4.2, 5.7, 6.3], [7.5, 8.2, 9.5]])
-    lut = {
-        ((0, 2), (1, 3)): 1,
-        ((0, 2), (4, 6)): 2,
-        ((0, 2), (7, 9)): 3,
-        ((3, 5), (1, 3)): 4,
-        ((3, 5), (4, 6)): 5,
-        ((3, 5), (7, 9)): 6,
-        ((6, 8), (1, 3)): 7,
-        ((6, 8), (4, 6)): 8,
-        ((6, 8), (7, 9)): 9,
-    }
+        mask_from_cursor(xarray=xarray, yarray=yarray,
+                         xrange=[0, 270], yrange = [0, 0.5])
+        
+    xarray = [[337, 306, 227], [21, 231, 235], [244, 328, 116]]
     with pytest.raises(ValueError):
-        label_from_lut(arr1, arr2, lut)
+        mask_from_cursor(xarray=xarray, yarray=yarray, 
+                         xrange=[0], yrange = [0, 0.5])
