@@ -40,7 +40,8 @@ def test_mask_from_cursor():
     mask = mask_from_cursor(
         xarray=xarray, yarray=yarray, xrange=[0, 270], yrange=[0, 0.5]
     )
-    assert_array_equal(mask, [[0, 0, 0], [1, 1, 1], [1, 0, 0]])
+    mk = [[False, False, False], [True, True, True], [True, False, False]]
+    assert_array_equal(mask, mk)
 
 
 def test_mask_from_cursor_erros():
