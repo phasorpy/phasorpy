@@ -12,6 +12,7 @@ An introduction to selecting phasor coordinates using cursors.
 import math
 
 import numpy
+from phasorpy.cursors import join_masks
 import tifffile
 from matplotlib import pyplot
 
