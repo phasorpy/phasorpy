@@ -150,9 +150,10 @@ def mask_from_cursor(xarray: NDArray,
     ... [1 0 0]]
 =======
     >>> phase = [[337, 306, 227], [21, 231, 235], [244, 328, 116]]
-    >>> mod = [[0.22, 0.40, 0.81], [0.33, 0.43 , 0.36], [0.015, 0.82 , 0.58]]
-    >>> mask_from_cursor(xarray=phase, yarray=mod, xrange=[0, 270],
-    ... yrange=[0, 0.5])
+    >>> mod = [[0.22, 0.40, 0.81], [0.33, 0.43, 0.36], [0.015, 0.82, 0.58]]
+    >>> mask_from_cursor(
+    ...     xarray=phase, yarray=mod, xrange=[0, 270], yrange=[0, 0.5]
+    ... )
     array([[False, False, False],
             [ True,  True,  True],
             [ True, False, False]])
