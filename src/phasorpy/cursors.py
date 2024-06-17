@@ -7,8 +7,6 @@
   - :py:func:`label_from_phasor_circular`
   - :py:func:`mask_from_cursor`
   - :py:func:`join_masks`
-  - :py:func:`mask_from_cursor`
-  - :py:func:`join_masks`
 
 """
 
@@ -16,8 +14,6 @@ from __future__ import annotations
 
 __all__ = [
     'label_from_phasor_circular',
-    'mask_from_cursor',
-    'join_masks',
     'mask_from_cursor',
     'join_masks',
 ]
@@ -129,6 +125,8 @@ def mask_from_cursor(xarray: NDArray,
     -------
     - mask: NDArray:
         cursor mask.
+    - mask: NDArray:
+        cursor mask.
 
     Raises
     ------
@@ -140,15 +138,6 @@ def mask_from_cursor(xarray: NDArray,
     Example
     -------
     Creat mask from cursor.
-<<<<<<< HEAD
-    phase = [[337, 306, 227], [21, 231, 235], [244, 328, 116]]
-    mod = [[0.22, 0.40, 0.81], [0.33, 0.43 , 0.36], [0.015, 0.82 , 0.58]]
-    >>> mask_from_cursor(phase=phase, mod=mod, xrange=[[0, 270],
-    ...     yrange=[0, 0.5]])
-    [[0 0 0]
-    ... [1 1 1]
-    ... [1 0 0]]
-=======
     >>> phase = [[337, 306, 227], [21, 231, 235], [244, 328, 116]]
     >>> mod = [[0.22, 0.40, 0.81], [0.33, 0.43, 0.36], [0.015, 0.82, 0.58]]
     >>> mask_from_cursor(
@@ -157,7 +146,6 @@ def mask_from_cursor(xarray: NDArray,
     array([[False, False, False],
             [ True,  True,  True],
             [ True, False, False]])
->>>>>>> 4271b2d (wip with label from masks)
     """
     xarray = numpy.asarray(xarray)
     yarray = numpy.asarray(yarray)
@@ -186,7 +174,57 @@ def join_masks(mask_array, /, *, axis=-1
 
     Returns
     -------
+    - label: NDArray:
+        The binarized array.
+
+    Raises
+    ------
+    ValueError
+        `xrange` and y `range` must be the same length.
+
+    Example
+    -------
+    Creat mask from cursor.
+    phase = [[337, 306, 227], [21, 231, 235], [244, 328, 116]]
+    mod = [[0.22, 0.40, 0.81], [0.33, 0.43 , 0.36], [0.015, 0.82 , 0.58]]
+    >>> mask_from_cursor(phase=phase, mod=mod, xrange=[[0, 270],
+    ...     yrange=[0, 0.5]])
+    [[0 0 0]
+    ... [1 1 1]
+    ... [1 0 0]]
+    """
+    xarray = numpy.asarray(xarray)
+    yarray = numpy.asarray(yarray)
+    if xarray.shape != yarray.shape:
+        raise ValueError('xarray and yarray must have same shape')
+    if len(xrange) != len(yrange):
+        raise ValueError('xrange and y range must be the same length')
+    xmask = (xarray >= xrange[0]) & (xarray <= xrange[1])
+    ymask = (yarray >= yrange[0]) & (yarray <= yrange[1])
+    return xmask * ymask
+
+# WIP: example of function to combine a label or mask for all cursors
+def join_masks(mask_array,
+              /,
+              *,
+              axis=-1
+)-> NDArray[Any]:
+    """
+    Creat an image label for all cursors.
+
+    Parameters
+    ----------
+    mask_array : NDArray
+        Array with all mask from each cursor. 
+        Each array must have the same shape.
+    axis : int, optional
+        The axis in the result array along which 
+        the input arrays are stacked, by default -1
+
+    Returns
+    -------
     label: NDArray
         label for all the cursors.
     """
     return numpy.stack(mask_array, axis=axis)
+
