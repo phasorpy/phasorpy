@@ -102,10 +102,11 @@ def label_from_phasor_circular(
     return label
 
 
-def mask_from_cursor(xarray: NDArray,
-                     yarray: NDArray,
-                     xrange: NDArray,
-                     yrange: NDArray,
+def mask_from_cursor(
+    xarray: NDArray,
+    yarray: NDArray,
+    xrange: NDArray,
+    yrange: NDArray,
 ) -> NDArray[Any]:
     """
     Create mask for a cursor.
@@ -136,13 +137,13 @@ def mask_from_cursor(xarray: NDArray,
     Example
     -------
     Creat mask from cursor.
-    phase = [[337, 306, 227], [21, 231, 235], [244, 328, 116]]
-    mod = [[0.22, 0.40, 0.81], [0.33, 0.43 , 0.36], [0.015, 0.82 , 0.58]]
-    >>> mask_from_cursor(phase=phase, mod=mod, xrange=[[0, 270],
-    ...     yrange=[0, 0.5]])
-    [[0 0 0]
-    ... [1 1 1]
-    ... [1 0 0]]
+    >>> phase = [[337, 306, 227], [21, 231, 235], [244, 328, 116]]
+    >>> mod = [[0.22, 0.40, 0.81], [0.33, 0.43 , 0.36], [0.015, 0.82 , 0.58]]
+    >>> mask_from_cursor(xarray=phase, yarray=mod, xrange=[0, 270], 
+    ... yrange=[0, 0.5])
+    array([[False, False, False],
+            [ True,  True,  True],
+            [ True, False, False]])
     """
     xarray = numpy.asarray(xarray)
     yarray = numpy.asarray(yarray)
@@ -154,22 +155,19 @@ def mask_from_cursor(xarray: NDArray,
     ymask = (yarray >= yrange[0]) & (yarray <= yrange[1])
     return xmask * ymask
 
+
 # WIP: example of function to combine a label or mask for all cursors
-def join_masks(mask_array,
-              /,
-              *,
-              axis=-1
-)-> NDArray[Any]:
+def join_masks(mask_array, /, *, axis=-1) -> NDArray[Any]:
     """
     Creat an image label for all cursors.
 
     Parameters
     ----------
     mask_array : NDArray
-        Array with all mask from each cursor. 
+        Array with all mask from each cursor.
         Each array must have the same shape.
     axis : int, optional
-        The axis in the result array along which 
+        The axis in the result array along which
         the input arrays are stacked, by default -1
 
     Returns
@@ -178,4 +176,3 @@ def join_masks(mask_array,
         label for all the cursors.
     """
     return numpy.stack(mask_array, axis=axis)
-
