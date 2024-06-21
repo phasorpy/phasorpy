@@ -158,11 +158,7 @@ def mask_from_cursor(
 
 
 # WIP: example of function to combine a label or mask for all cursors
-def join_masks(mask_array, 
-               /, 
-               *, 
-               axis=-1
-) -> NDArray[Any]:
+def join_masks(mask_array, /, *, axis=-1) -> NDArray[Any]:
     """
     Creat an image label for all cursors.
 
