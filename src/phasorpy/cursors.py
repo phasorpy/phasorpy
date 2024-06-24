@@ -108,11 +108,6 @@ def mask_from_cursor(
     xrange: NDArray,
     yrange: NDArray,
 ) -> NDArray[Any]:
-def mask_from_cursor(xarray: NDArray,
-                     yarray: NDArray,
-                     xrange: NDArray,
-                     yrange: NDArray,
-) -> NDArray[Any]:
     """
     Create mask for a cursor.
     Create mask for a cursor.
