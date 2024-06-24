@@ -301,6 +301,13 @@ approach to analyze fluorescence time-resolved or spectral images:
   options for ROI determination.
 
 -
+  .. _ eztime
+
+  `EzTime <https://www.horiba.com/int/scientific/products/detail/action/show/Product/eztime-software-6283/>`_
+  is a commercial software by HORIBA Scientific. It allows real-time TCSPC
+  image analysis and visualization, including phasor plots, in conjunction
+  with the FLIMera wide-field camera.
+-
   .. _flimfast:
 
   `FlimFast <https://www.cgohlke.com/flimfast/>`_
