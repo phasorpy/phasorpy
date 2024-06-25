@@ -3,7 +3,11 @@
 import pytest
 from numpy.testing import assert_allclose
 
-from phasorpy.components import two_fractions_from_phasor
+from phasorpy.components import (
+    graphical_component_analysis,
+    graphical_two_fractions,
+    two_fractions_from_phasor,
+)
 
 
 def test_two_fractions_from_phasor():
@@ -59,3 +63,79 @@ def test_two_fractions_from_phasor_channels():
             [[[0.0, 0.04, 0.16]]],
         ),
     )
+
+    # TODO
+    # def test_graphical_two_fractions():
+    """Test graphical_two_fractions function."""
+    # assert_allclose(
+    #     graphical_two_fractions(
+    #         [0.2, 0.5, 0.7],
+    #         [0.2, 0.4, 0.3],
+    #         [0.0582399, 0.79830002],
+    #         [0.23419652, 0.40126936],
+    #     ),
+    #     (
+    #         [0.82766281, 0.38389704, 0.15577992],
+    #         [0.17233719, 0.61610296, 0.84422008],
+    #     ),
+    # )
+    # assert_allclose(
+    #     graphical_two_fractions(
+    #         [0.0, 0.5, 0.9],
+    #         [0.4, 0.4, 0.6],
+    #         [0.0582399, 0.79830002],
+    #         [0.23419652, 0.40126936],
+    #     ),
+    #     (
+    #         [1.0, 0.38389704, 0.0],
+    #         [0.0, 0.61610296, 1.0],
+    #     ),
+    # )
+    # with pytest.raises(ValueError):
+    #     graphical_two_fractions([0], [0], [0.1, 0.1], [0.2, 0.2])
+    # with pytest.raises(ValueError):
+    #     graphical_two_fractions([0], [0], [0.3], [0.1, 0.2])
+    # with pytest.raises(ValueError):
+    #     graphical_two_fractions([0], [0], [0.1, 0.2], [0.3])
+    # with pytest.raises(ValueError):
+    #     graphical_two_fractions([0], [0], [0.1], [0.3])
+    # with pytest.raises(ValueError):
+    #     graphical_two_fractions([0], [0], [0.1, 0.1, 0, 1], [0.1, 0, 2])
+
+    # TODO
+    # def test_graphical_component_analysis():
+    """Test graphical_component_analysis function."""
+    # assert_allclose(
+    #     graphical_component_analysis(
+    #         [0.2, 0.5, 0.7],
+    #         [0.2, 0.4, 0.3],
+    #         [0.0582399, 0.79830002],
+    #         [0.23419652, 0.40126936],
+    #     ),
+    #     (
+    #         [0.82766281, 0.38389704, 0.15577992],
+    #         [0.17233719, 0.61610296, 0.84422008],
+    #     ),
+    # )
+    # assert_allclose(
+    #     graphical_component_analysis(
+    #         [0.0, 0.5, 0.9],
+    #         [0.4, 0.4, 0.6],
+    #         [0.0582399, 0.79830002],
+    #         [0.23419652, 0.40126936],
+    #     ),
+    #     (
+    #         [1.0, 0.38389704, 0.0],
+    #         [0.0, 0.61610296, 1.0],
+    #     ),
+    # )
+    # with pytest.raises(ValueError):
+    #     graphical_component_analysis([0], [0], [0.1, 0.1], [0.2, 0.2])
+    # with pytest.raises(ValueError):
+    #     graphical_component_analysis([0], [0], [0.3], [0.1, 0.2])
+    # with pytest.raises(ValueError):
+    #     graphical_component_analysis([0], [0], [0.1, 0.2], [0.3])
+    # with pytest.raises(ValueError):
+    #     graphical_component_analysis([0], [0], [0.1], [0.3])
+    # with pytest.raises(ValueError):
+    #     graphical_component_analysis([0], [0], [0.1, 0.1, 0, 1], [0.1, 0, 2])

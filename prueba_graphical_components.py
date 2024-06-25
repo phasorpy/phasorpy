@@ -5,19 +5,20 @@ from phasorpy.components import graphical_component_analysis
 from matplotlib.patches import Circle
 import matplotlib.pyplot as plt
 frequency = 80.0
-components_lifetimes = [8.0, 4.0, 2.0, 0.5]
+components_lifetimes = [15.0, 4.0, 1.5, 0.2]
 real, imag = phasor_from_lifetime(
         frequency, components_lifetimes, [[0.4, 0.1, 0.1, 0.4], [0.5, 0.2, 0.2, 0.1]]
     )
+components_lifetimes = [8.0, 4.0, 0.5]
+real, imag = phasor_from_lifetime(
+        frequency, components_lifetimes, [[0.1, 0.5, 0.4], [0.5, 0.4, 0.1]]
+    )
 components_real, components_imag = phasor_from_lifetime(frequency, components_lifetimes)
-# fig, ax = plt.subplots()
-cursor_diameter = 0.005
+fig, ax = plt.subplots()
+cursor_diameter = 0.05
 fractions = graphical_component_analysis(
-    real, imag, components_real, components_imag, cursor_diameter=cursor_diameter
+    real, imag, components_real, components_imag, cursor_diameter=cursor_diameter, number_of_steps=20
 )
-# fractions, centers_x, centers_y, inner_centers_x, inner_centers_y = graphical_component_analysis(
-#     real, imag, components_real, components_imag, cursor_diameter=cursor_diameter
-# )
 # for x, y in zip(centers_x, centers_y):
 #     circle = Circle((x, y), cursor_diameter/2, fill=False, edgecolor='green')  # Create a circle patch
 #     ax.add_patch(circle)
@@ -27,9 +28,9 @@ fractions = graphical_component_analysis(
 #     for x, y in zip(x_list, y_list):
 #         circle = Circle((x, y), cursor_diameter/2, fill=False, edgecolor='red')
 #         ax.add_patch(circle)
-# plot = PhasorPlot(frequency = frequency, ax=ax)
-# plot.plot(components_real, components_imag, linestyle = '-')
-# plot.plot(real, imag)
+plot = PhasorPlot(frequency = frequency, ax=ax)
+plot.plot(components_real, components_imag, linestyle = '-')
+plot.plot(real, imag)
 print(fractions[0])
 print(fractions[1])
 print(fractions[2])
@@ -114,4 +115,20 @@ plt.title('Third component')
 plt.xlabel('Value')
 plt.ylabel('Frequency')
 plt.show()
+# %%
+from phasorpy.components import graphical_first_fraction
+from phasorpy.plot import PhasorPlot
+plot = PhasorPlot(frequency=80)
+plot.plot([0.7, 0.55, 0.4], [0.35, 0.37, 0.39])
+plot.plot([0.2, 0.9], [0.4, 0.3])
+
+result = graphical_first_fraction([0.7, 0.55, 0.4], [0.35, 0.37, 0.39], [0.2, 0.9], [0.4, 0.3], cursor_diameter=0.05)
+print(result)
+# %%
+from phasorpy._utils import move_cursor_along_line, line_from_components,mask_cursor
+from phasorpy.components import graphical_component_analysis
+
+
+result = mask_cursor([0.6, 0.5, 0.4], [0.4, 0.3, 0.2], 0.5, 0.3, 0.05)
+print(result)
 # %%

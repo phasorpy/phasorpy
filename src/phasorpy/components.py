@@ -14,7 +14,10 @@ The ``phasorpy.components`` module provides functions to:
   harmonic information (not implemented)
 
 - calculate fractions of two or three components of known location by
-  resolving graphically with histogram (not implemented)
+  resolving graphically with histogram:
+
+  - :py:func:`graphical_two_fractions`
+  - :py:func:`graphical_component_analysis`
 
 - blindly resolve fractions of n components by using harmonic
   information (not implemented)
@@ -25,19 +28,27 @@ from __future__ import annotations
 
 __all__ = [
     'two_fractions_from_phasor',
-    'graphical_component_analysis'
-    ]
+    'graphical_two_fractions',
+    'graphical_component_analysis',
+]
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ._typing import Any, ArrayLike, NDArray
 
-import math
-
 import numpy
 
-from ._utils import project_phasor_to_line
+import matplotlib.pyplot as plt
+from phasorpy.plot import PhasorPlot
+from matplotlib.patches import Circle
+
+from ._utils import (
+    line_from_components,
+    mask_cursor,
+    move_cursor_along_line,
+    project_phasor_to_line,
+)
 
 
 def two_fractions_from_phasor(
@@ -62,10 +73,10 @@ def two_fractions_from_phasor(
 
     Returns
     -------
-    fraction_of_first_component : ndarray
-        Fractions of the first component.
-    fraction_of_second_component : ndarray
-        Fractions of the second component.
+    fractions : tuple of ndarray
+        A tuple containing arrays with the fractions of a specific component.
+        The order of the arrays in the tuple corresponds to the order of the
+        components used in the calculation.
 
     Notes
     -----
@@ -78,7 +89,6 @@ def two_fractions_from_phasor(
     ValueError
         If the real and/or imaginary coordinates of the known components are
         not of size 2.
-        If the two components have the same coordinates.
 
     Examples
     --------
@@ -94,29 +104,22 @@ def two_fractions_from_phasor(
         raise ValueError(f'{real_components.shape=} != (2,)')
     if imag_components.shape != (2,):
         raise ValueError(f'{imag_components.shape=} != (2,)')
-    first_component_phasor = numpy.array(
-        [real_components[0], imag_components[0]]
+    _, distance_between_components = line_from_components(
+        real_components, imag_components
     )
-    second_component_phasor = numpy.array(
-        [real_components[1], imag_components[1]]
-    )
-    total_distance_between_components = math.hypot(
-        (second_component_phasor[0] - first_component_phasor[0]),
-        (second_component_phasor[1] - first_component_phasor[1]),
-    )
-    if math.isclose(total_distance_between_components, 0, abs_tol=1e-6):
-        raise ValueError('components must have different coordinates')
     projected_real, projected_imag = project_phasor_to_line(
         real, imag, real_components, imag_components
     )
     distances_to_first_component = numpy.hypot(
-        numpy.asarray(projected_real) - first_component_phasor[0],
-        numpy.asarray(projected_imag) - first_component_phasor[1],
+        numpy.asarray(projected_real) - real_components[0],
+        numpy.asarray(projected_imag) - imag_components[0],
     )
-    fraction_of_second_component = (
-        distances_to_first_component / total_distance_between_components
+    second_component_fractions = (
+        distances_to_first_component / distance_between_components
     )
-    return 1 - fraction_of_second_component, fraction_of_second_component
+    first_component_fractions = 1 - second_component_fractions
+    return first_component_fractions, second_component_fractions
+
 
 def graphical_component_analysis(
     real: ArrayLike,
@@ -126,6 +129,7 @@ def graphical_component_analysis(
     /,
     *,
     cursor_diameter: float = 0.1,
+    number_of_steps: int = 100,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return fractions of two components from phasor coordinates.
 
@@ -141,11 +145,15 @@ def graphical_component_analysis(
         Imaginary coordinates of the first and second components.
     cursor_diameter: float, optional
         Diameter of the cursor in phasor coordinates.
+    number_of_steps: int, optional
+        Number of steps to move the cursor along the line between components.
 
     Returns
     -------
-    fractions : ndarray
-        Fractions of the components.
+    fractions : tuple of ndarray
+        A tuple containing arrays with the fractions of a specific component.
+        The order of the arrays in the tuple corresponds to the order of the
+        components used in the calculation.
 
     Notes
     -----
@@ -175,32 +183,83 @@ def graphical_component_analysis(
     real_components = numpy.atleast_1d(real_components)
     imag_components = numpy.atleast_1d(imag_components)
     if real_components.shape != imag_components.shape:
-        raise ValueError(f'{real_components.shape=} != {imag_components.shape=}')
+        raise ValueError(
+            f'{real_components.shape=} != {imag_components.shape=}'
+        )
     fractions = []
     for component in range(len(real_components)):
         component_fractions_avg = []
-        other_components = [id for id in range(len(real_components)) if id != component]
+        other_components = [
+            id for id in range(len(real_components)) if id != component
+        ]
         if len(other_components) < 2:
-            fractions_first_component = _graphical_first_fraction(real, imag, real_components, imag_components, cursor_diameter=cursor_diameter)
-            return fractions_first_component, 1 - fractions_first_component
-        components_combinations = [(b, c) for id, b in enumerate(other_components) for c in other_components[id + 1:]]
+            fractions_first_component, fractions_second_component = (
+                graphical_two_fractions(
+                    real,
+                    imag,
+                    real_components,
+                    imag_components,
+                    cursor_diameter=cursor_diameter,
+                    number_of_steps=number_of_steps,
+                )
+            )
+            return fractions_first_component, fractions_second_component
+        components_combinations = [
+            (b, c)
+            for id, b in enumerate(other_components)
+            for c in other_components[id + 1 :]
+        ]
         for component_b, component_c in components_combinations:
-            line_vector = numpy.array([real_components[component_c] - real_components[component_b], imag_components[component_c] - imag_components[component_b]])
-            total_distance_between_components = numpy.linalg.norm(line_vector)
-            if math.isclose(total_distance_between_components, 0, abs_tol=1e-6):
-                raise ValueError('components must have different coordinates')
-            unit_vector = line_vector / total_distance_between_components
-            number_of_steps = math.ceil(total_distance_between_components / cursor_diameter)
-            cursor_x, cursor_y = real_components[component_b], imag_components[component_b]
+            unit_vector, distance_between_components = line_from_components(
+                [
+                    real_components[component_b],
+                    real_components[component_c],
+                ],
+                [
+                    imag_components[component_b],
+                    imag_components[component_c],
+                ],
+            )
+            # number_of_steps = math.ceil(
+            #     distance_between_components / cursor_diameter
+            # )
+            cursor_real, cursor_imag = (
+                real_components[component_b],
+                imag_components[component_b],
+            )
+            fig, ax = plt.subplots()
+            plot = PhasorPlot(frequency = 80, ax=ax)
+            plot.plot(real_components, imag_components, linestyle = '-')
+            plot.plot(real, imag)
+            print('COMPONENT: ', component)
             for step in range(0, number_of_steps + 1):
-                component_fractions = _graphical_first_fraction(real, imag, [real_components[component], cursor_x], [imag_components[component], cursor_y], cursor_diameter=cursor_diameter)
+                component_fractions, _ = graphical_two_fractions(
+                    real,
+                    imag,
+                    [real_components[component], cursor_real],
+                    [imag_components[component], cursor_imag],
+                    cursor_diameter=cursor_diameter,
+                    number_of_steps=number_of_steps,
+                    ax = ax,
+                )
+                circle = Circle((cursor_real, cursor_imag), cursor_diameter/2, fill=False, edgecolor='green')  # Create a circle patch
+                ax.add_patch(circle)
                 component_fractions_avg.append(component_fractions)
-                cursor_x, cursor_y = _move_cursor_along_line(cursor_x, cursor_y, cursor_diameter, unit_vector)
-        fractions.append(numpy.nanmean(numpy.array(component_fractions_avg), axis = 0))
-    fractions = fractions / numpy.sum(fractions, axis=0) 
+                cursor_real, cursor_imag = move_cursor_along_line(
+                    cursor_real,
+                    cursor_imag,
+                    distance_between_components / number_of_steps,
+                    unit_vector,
+                )
+            plot.show()
+        fractions.append(
+            numpy.nanmean(numpy.array(component_fractions_avg), axis=0)
+        )
+    fractions = fractions / numpy.sum(fractions, axis=0)
     return tuple(fractions)
 
-def _graphical_first_fraction(
+
+def graphical_two_fractions(
     real: ArrayLike,
     imag: ArrayLike,
     real_components: ArrayLike,
@@ -208,8 +267,10 @@ def _graphical_first_fraction(
     /,
     *,
     cursor_diameter: float = 0.1,
+    number_of_steps: int = 100,
+    ax=None,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return fractions of two components from phasor coordinates.
+    """Return fractions of the first component by the graphical solution.
 
     Parameters
     ----------
@@ -223,21 +284,32 @@ def _graphical_first_fraction(
         Imaginary coordinates of the first and second components.
     cursor_diameter: float, optional
         Diameter of the cursor in phasor coordinates.
+    number_of_steps: int, optional
+        Number of steps to move the cursor along the line between components.
 
     Returns
     -------
-
-
-    Notes
-    -----
+    fractions : tuple of ndarray
+        A tuple containing arrays with the fractions of a specific component.
+        The order of the arrays in the tuple corresponds to the order of the
+        components used in the calculation.
 
     Raises
     ------
+    ValueError
+        The array shapes of `real` and `imag`, or `real_components` and
+        `imag_components` do not match.
 
     Examples
     --------
-
-    
+    >>> graphical_two_fractions(
+    ...     [0.7, 0.55, 0.4],
+    ...     [0.35, 0.37, 0.39],
+    ...     [0.2, 0.9],
+    ...     [0.4, 0.3],
+    ...     cursor_diameter=0.05,
+    ... )  # doctest: +NUMBER
+    (array([0.29, 0.50, 0.70]), array([0.71, 0.51, 0.30]))
 
     """
     real = numpy.atleast_1d(real)
@@ -247,58 +319,28 @@ def _graphical_first_fraction(
     real_components = numpy.atleast_1d(real_components)
     imag_components = numpy.atleast_1d(imag_components)
     if real_components.shape != imag_components.shape:
-        raise ValueError(f'{real_components.shape=} != {imag_components.shape=}')
+        raise ValueError(
+            f'{real_components.shape=} != {imag_components.shape=}'
+        )
     fractions = numpy.full_like(real, numpy.nan)
-    line_vector = numpy.array([real_components[1] - real_components[0], imag_components[1] - imag_components[0]])
-    total_distance_between_components = numpy.linalg.norm(line_vector)
-    if math.isclose(total_distance_between_components, 0, abs_tol=1e-6):
-        raise ValueError('components must have different coordinates')
-    unit_vector = line_vector / total_distance_between_components
-    number_of_steps = math.ceil(total_distance_between_components / cursor_diameter)
-    cursor_x, cursor_y = real_components[0], imag_components[0]
-    for step in range(0, number_of_steps):
-        mask = _mask_cursor(real, imag, cursor_x, cursor_y, cursor_diameter)
-        fraction =  (number_of_steps - step) / number_of_steps
+    unit_vector, distance_between_components = line_from_components(
+        real_components, imag_components
+    )
+    # number_of_steps = math.ceil(distance_between_components / cursor_diameter)
+    cursor_real, cursor_imag = real_components[0], imag_components[0]
+    for step in range(0, number_of_steps + 1):
+        circle = Circle((cursor_real, cursor_imag), cursor_diameter/2, fill=False, edgecolor='red')  # Create a circle patch
+        ax.add_patch(circle)
+        mask = mask_cursor(
+            real, imag, cursor_real, cursor_imag, cursor_diameter
+        )
+        # fraction = (number_of_steps + 1 - step) / (number_of_steps + 1)
+        fraction = numpy.hypot(cursor_real - real_components[1], cursor_imag - imag_components[1]) / distance_between_components
         fractions[mask] = fraction
-        cursor_x, cursor_y = _move_cursor_along_line(cursor_x, cursor_y, cursor_diameter, unit_vector)
-    return fractions
-
-def _move_cursor_along_line(cursor_x, cursor_y, cursor_diameter, unit_vector) -> tuple[float, float]:
-    displacement = cursor_diameter * unit_vector
-    cursor_x += displacement[0]
-    cursor_y += displacement[1]
-    return cursor_x, cursor_y
-
-def _mask_cursor(
-    real: NDArray[Any],
-    imag: NDArray[Any],
-    cursor_x: float,
-    cursor_y: float,
-    cursor_diameter: float,
-    /,
-) -> NDArray[Any]:
-    """Return array with cursor masked.
-
-    Parameters
-    ----------
-    real : ndarray
-        Real component of phasor coordinates.
-    imag : ndarray
-        Imaginary component of phasor coordinates.
-    cursor_x : float
-        x-coordinate of the cursor.
-    cursor_y : float
-        y-coordinate of the cursor.
-    cursor_diameter : float
-        Diameter of the cursor in phasor coordinates.
-
-    Returns
-    -------
-    masked_array : ndarray
-        Masked array.
-
-    """
-    cursor_radius = cursor_diameter / 2
-    distances = numpy.hypot(real - cursor_x, imag - cursor_y)
-    return numpy.where(distances <= cursor_radius, True, False)  
-
+        cursor_real, cursor_imag = move_cursor_along_line(
+            cursor_real,
+            cursor_imag,
+            distance_between_components / number_of_steps,
+            unit_vector,
+        )
+    return (fractions, 1 - fractions)
