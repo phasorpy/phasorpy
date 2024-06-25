@@ -35,14 +35,13 @@ radius = [0.15, 0.15, 0.15, 0.15]
 
 label = label_from_phasor_circular(real, imag, center, radius)
 
-
 # %%
 # Show the circular cursors in the phasor plot:
 
-mask = mean > 1
+threshold = mean > 1
 
 plot = PhasorPlot(allquadrants=True, title='Circular cursors')
-plot.hist2d(real[mask], imag[mask])
+plot.hist2d(real[threshold], imag[threshold])
 plot.cursor(*center[0], radius=radius[0], color='tab:orange', linestyle='-')
 plot.cursor(*center[1], radius=radius[1], color='tab:green', linestyle='-')
 plot.cursor(*center[2], radius=radius[2], color='tab:red', linestyle='-')
@@ -59,54 +58,37 @@ pyplot.show()
 
 
 # %%
-# Cursors with LUT without overlapping
-# ------------------------------------
+# Phase and modulation cursor
+# ---------------------------
 #
-# Create labels from LUT of phase and modulation values computed from phasor coordinates:
+# Create a mask with phase and modulation values:
 
 mean, real, imag = phasor_from_signal(signal, axis=0)
 phase, mod = phasor_to_polar(real, imag)
-
+threshold = mean > 1
 
 xrange1 = [-2.27, -1.57]
 yrange1 = [0.7, 0.9]
-mask1 = mask_from_cursor(phase, mod, xrange1, yrange1)
-xrange2 = [-1.22, -0.7]
-yrange2 = [0.8, 1]
-# mask2 = mask_from_cursor(phase, mod, xrange2, yrange2)
-# label = join_masks([mask1, mask2])
-# label1 = numpy.where(label, 1, 0)
-# compose masks
-
-
-# %%
-# Show the label image:
-
-fig, ax = pyplot.subplots()
-ax.set_title('Mask from cursor')
-plt = ax.imshow(mask1, vmin=0, vmax=10, cmap='tab10')
-fig.colorbar(plt)
-pyplot.show()
+mask = mask_from_cursor(phase, mod, xrange1, yrange1)
 
 # %%
 # Show cursors in the phasor plot:
 
 plot = PhasorPlot(allquadrants=True, title='Phase/Modulation cursors')
-plot.hist2d(real, imag, cmap='Blues')
+plot.hist2d(real[threshold], imag[threshold], cmap='Blues')
 plot.polar_cursor(
     phase=xrange1[0],
     phase_limit=xrange1[1],
     modulation=yrange1[0],
     modulation_limit=yrange1[1],
-    color='tab:orange',
-    linestyle='-',
-)
-plot.polar_cursor(
-    phase=xrange2[0],
-    phase_limit=xrange2[1],
-    modulation=yrange2[0],
-    modulation_limit=yrange2[1],
-    color='tab:purple',
+    color='tab:red',
     linestyle='-',
 )
 plot.show()
+
+# %%
+# Show the label image:
+fig, ax = pyplot.subplots()
+ax.set_title('Mask from cursor')
+plt = ax.imshow(mask, cmap="seismic")
+fig.colorbar(plt)
