@@ -4,10 +4,16 @@ import os
 
 import pytest
 
-from phasorpy.datasets import fetch
+from phasorpy.datasets import DATA_ON_GITHUB, fetch
 
 # skip large downloads by default
 SKIP_LARGE = bool(int(os.environ.get('SKIP_LARGE', 1)))
+
+
+@pytest.mark.skipif(not DATA_ON_GITHUB, reason='not using GitHub Actions')
+def test_data_on_github():
+    """Test data files on GitHub."""
+    assert DATA_ON_GITHUB
 
 
 def test_fetch():
