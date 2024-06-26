@@ -32,9 +32,17 @@ import pooch
 
 ENV = 'PHASORPY_DATA_DIR'
 
+DATA_ON_GITHUB = bool(
+    os.environ.get('PHASORPY_DATA_ON_GITHUB', False)
+) or bool(os.environ.get('GITHUB_ACTIONS', False))
+
 TESTS = pooch.create(
     path=pooch.os_cache('phasorpy'),
-    base_url='doi:10.5281/zenodo.8417894',
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/tests'
+        if DATA_ON_GITHUB
+        else 'doi:10.5281/zenodo.8417894'
+    ),
     env=ENV,
     registry={
         'flimage.int.bin': (
@@ -142,7 +150,11 @@ TESTS = pooch.create(
 
 LFD_WORKSHOP = pooch.create(
     path=pooch.os_cache('phasorpy'),
-    base_url='doi:10.5281/zenodo.8411056',
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/lfd_workshop'
+        if DATA_ON_GITHUB
+        else 'doi:10.5281/zenodo.8411056'
+    ),
     env=ENV,
     registry={
         '4-22-03-2-A5-CHO-CELL3B.tif': (
