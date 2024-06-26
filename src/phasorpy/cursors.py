@@ -163,4 +163,4 @@ def mask_from_cursor(
         raise ValueError('xrange and y range must be the same length')
     xmask = (xarray >= xrange[0]) & (xarray <= xrange[1])
     ymask = (yarray >= yrange[0]) & (yarray <= yrange[1])
-    return xmask * ymask
+    return xmask & ymask
