@@ -16,7 +16,6 @@ import tifffile
 from matplotlib import pyplot
 
 from phasorpy.cursors import *
-from phasorpy.cursors import join_masks
 from phasorpy.datasets import fetch
 from phasorpy.phasor import phasor_from_signal, phasor_to_polar
 from phasorpy.plot import PhasorPlot

@@ -6,7 +6,6 @@
 
   - :py:func:`label_from_phasor_circular`
   - :py:func:`mask_from_cursor`
-  - :py:func:`join_masks`
 
 """
 
@@ -15,7 +14,6 @@ from __future__ import annotations
 __all__ = [
     'label_from_phasor_circular',
     'mask_from_cursor',
-    'join_masks',
 ]
 
 from typing import TYPE_CHECKING
@@ -166,24 +164,3 @@ def mask_from_cursor(
     xmask = (xarray >= xrange[0]) & (xarray <= xrange[1])
     ymask = (yarray >= yrange[0]) & (yarray <= yrange[1])
     return xmask * ymask
-
-
-def join_masks(mask_array, /, *, axis=-1) -> NDArray[Any]:
-    """
-    Creat an image label for all cursors.
-
-    Parameters
-    ----------
-    mask_array : NDArray
-        Array with all mask from each cursor.
-        Each array must have the same shape.
-    axis : int, optional
-        The axis in the result array along which
-        the input arrays are stacked, by default -1
-
-    Returns
-    -------
-    label: NDArray
-        label for all the cursors.
-    """
-    return numpy.stack(mask_array, axis=axis)
