@@ -143,7 +143,7 @@ directory = "_htmlcov"
 minversion = "7"
 log_cli_level = "INFO"
 xfail_strict = true
-addopts = "-rfEXs --strict-config --strict-markers --cov=phasorpy --cov-report html --doctest-modules --doctest-glob=*.py --doctest-glob=*.rst"
+addopts = "-rfEXs --strict-config --strict-markers --doctest-modules --doctest-glob=*.py --doctest-glob=*.rst"
 doctest_optionflags = [
     "NORMALIZE_WHITESPACE",
     "ELLIPSIS",
