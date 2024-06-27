@@ -12,8 +12,10 @@
 from __future__ import annotations
 
 __all__ = [
-    'label_from_phasor_circular',
+    'mask_from_circular_cursor',
     'mask_from_cursor',
+    'join_arrays',
+    'segmentate_with_cursors',
 ]
 
 from typing import TYPE_CHECKING
@@ -30,11 +32,11 @@ import warnings
 import numpy
 
 
-def label_from_phasor_circular(
+def mask_from_circular_cursor(
     real: ArrayLike,
     imag: ArrayLike,
     center: ArrayLike,
-    radius: ArrayLike,
+    radius: float,
 ) -> NDArray[Any]:
     r"""Return indices of circle to which each phasor coordinate belongs.
     Phasor coordinates that do not fall in a circle have an index of zero.
@@ -47,7 +49,7 @@ def label_from_phasor_circular(
         Imaginary component of phasor coordinates.
     center : array_like, shape (M, 2)
         Phasor coordinates of circle centers.
-    radius : array_like, shape (M,)
+    radius : float
         Radii of circles.
 
     Returns
@@ -65,39 +67,30 @@ def label_from_phasor_circular(
     --------
     Compute label array for four circles:
 
-    >>> label_from_phasor_circular(
+    >>> mask_from_circular_cursor(
     ...     numpy.array([-0.5, -0.5, 0.5, 0.5]),
     ...     numpy.array([-0.5, 0.5, -0.5, 0.5]),
-    ...     numpy.array([[-0.5, -0.5], [-0.5, 0.5], [0.5, -0.5], [0.5, 0.5]]),
-    ...     radius=[0.1, 0.1, 0.1, 0.1],
+    ...     numpy.array([-0.5, -0.5]),
+    ...     radius=0.1,
     ... )
-    array([1, 2, 3, 4], dtype=uint8)
+    array([ True, False, False, False])
     """
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
     center = numpy.asarray(center)
-    radius = numpy.asarray(radius)
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
-    if center.ndim != 2 or center.shape[1] != 2:
+    if center.shape[0] != 2:
         raise ValueError(f'invalid {center.shape=}')
-    if radius.ndim != 1 or radius.shape != (center.shape[0],):
-        raise ValueError(f'invalid {radius.shape=}')
     if numpy.any(radius < 0):
         raise ValueError('radius is < 0')
-    dtype = numpy.uint8 if len(center) < 256 else numpy.uint16
-    label = numpy.zeros(real.shape, dtype=dtype)
-    for i in range(len(center)):
-        condition = (
-            numpy.square(real - center[i][0])
-            + numpy.square(imag - center[i][1])
-            - numpy.square(radius[i])
-        )
-        label = numpy.where(
-            condition > 0, label, numpy.full(label.shape, i + 1, dtype=dtype)
-        )
-    return label
+    condition = (
+        numpy.square(real - center[0])
+        + numpy.square(imag - center[1])
+        - numpy.square(radius)
+    )
+    return condition < 0
 
 
 def mask_from_cursor(
@@ -108,7 +101,6 @@ def mask_from_cursor(
 ) -> NDArray[Any]:
     """
     Create mask for a cursor.
-    Create mask for a cursor.
 
     Parameters
     ----------
@@ -116,23 +108,13 @@ def mask_from_cursor(
         x-coordinates.
     - yarray: NDArray
         y-coordinates.
-    - xrange: NDArray
-        x range to be binned.
-    - yrange: NDArray
-        y range to be binned.
     - xarray: NDArray
         x-coordinates.
     - yarray: NDArray
         y-coordinates.
-    - xrange: NDArray
-        x range to be binned.
-    - yrange: NDArray
-        y range to be binned.
 
     Returns
     -------
-    - mask: NDArray:
-        cursor mask.
     - mask: NDArray:
         cursor mask.
 
@@ -140,8 +122,6 @@ def mask_from_cursor(
     ------
     ValueError
         `xarray` and `yarray` must be same shape.
-    ValueError
-        `xrange` and y `range` must be the same length.
 
     Example
     -------
@@ -164,3 +144,104 @@ def mask_from_cursor(
     xmask = (xarray >= xrange[0]) & (xarray <= xrange[1])
     ymask = (yarray >= yrange[0]) & (yarray <= yrange[1])
     return xmask & ymask
+
+
+def join_arrays(arrays: NDArray, /, *, axis: int = -1) -> NDArray[Any]:
+    """
+    Join arrays to creat an image label for all cursors.
+
+    Parameters
+    ----------
+    arrays : NDArray
+        Array with all mask from each cursor.
+        Each array must have the same shape.
+    axis : int, optional
+        The axis in the result array along which
+        the input arrays are stacked, by default -1
+
+    Returns
+    -------
+    stack arrays: NDArray
+        stacked arrays (masks) for all the cursors.
+
+    Example
+    -------
+    >>> join_arrays([[1, 1], [2, 3]])
+    array([[1, 2],
+           [1, 3]])
+    """
+    arrays = numpy.asarray(arrays)
+    return numpy.stack(arrays, axis=axis)
+
+
+def segmentate_with_cursors(
+    mask: NDArray, cursors_color: NDArray, mean: NDArray
+) -> NDArray[Any]:
+    """
+    Create the segmented image with cursors.
+
+    Parameters
+    ----------
+    - mask: NDArray
+        masks for each cursor.
+    - cursors_color: NDArray
+        cursor color to match with the segmented region.
+    - mean: NDArray
+        grayscale image to overwrite with segmented areas.
+
+    Returns
+    -------
+    - Segmented image: NDArray:
+        Segmented image with cursors.
+
+    Raises
+    ------
+    ValueError
+        `xarray` and `yarray` must be same shape.
+
+    Example
+    -------
+    Segment an image with cursors.
+    >>> segmentate_with_cursors(
+    ...     [True, False, False], [255, 0, 0], [0, 128, 255]
+    ... )
+    array([[255,   0,   0],
+           [128, 128, 128],
+           [255, 255, 255]])
+    """
+
+    mask = numpy.asarray(mask)
+    mean = numpy.asarray(mean)
+
+    if mask.ndim == 1 and mean.ndim == 1:
+        if mask.shape[0] != mean.shape[0]:
+            raise ValueError('mask and mean first dimension must be equal')
+        else:
+            imcolor = numpy.zeros([mask.shape[0], 3])
+            mean = join_arrays([mean, mean, mean])
+            imcolor[:, 0] = cursors_color[0]
+            imcolor[:, 1] = cursors_color[1]
+            imcolor[:, 2] = cursors_color[2]
+            segmented = numpy.where(
+                join_arrays([mask, mask, mask]), imcolor, mean
+            )
+            return segmented
+    else:
+        if mask.shape[0] != mean.shape[0] or mask.shape[1] != mean.shape[1]:
+            raise ValueError(
+                'mask and mean first and second dimension\n' 'must be the same'
+            )
+        else:
+            imcolor = numpy.zeros([mask.shape[0], mask.shape[1], 3])
+            mean = join_arrays([mean, mean, mean])
+            segmented = numpy.copy(mean)
+            for i in range(len(cursors_color)):
+                imcolor[:, :, 0] = cursors_color[i][0]
+                imcolor[:, :, 1] = cursors_color[i][1]
+                imcolor[:, :, 2] = cursors_color[i][2]
+                segmented = numpy.where(
+                    join_arrays([mask[:, :, i], mask[:, :, i], mask[:, :, i]]),
+                    imcolor,
+                    segmented,
+                )
+            return segmented
