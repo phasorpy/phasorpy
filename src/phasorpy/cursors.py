@@ -6,7 +6,6 @@
 
   - :py:func:`mask_from_circular_cursor`
   - :py:func:`mask_from_cursor`
-  - :py:func:`join_arrays`
   - :py:func:`segmentate_with_cursors`
 
 """
@@ -16,7 +15,6 @@ from __future__ import annotations
 __all__ = [
     'mask_from_circular_cursor',
     'mask_from_cursor',
-    'join_arrays',
     'segmentate_with_cursors',
 ]
 
@@ -148,33 +146,6 @@ def mask_from_cursor(
     return xmask & ymask
 
 
-def join_arrays(arrays: ArrayLike, /, *, axis: int = -1) -> NDArray[Any]:
-    """
-    Join arrays to creat an image label for all cursors.
-
-    Parameters
-    ----------
-    arrays : NDArray
-        Array with all mask from each cursor.
-        Each array must have the same shape.
-    axis : int, optional
-        The axis in the result array along which
-        the input arrays are stacked, by default -1
-
-    Returns
-    -------
-    stacked : NDArray
-        stacked arrays (masks) for all the cursors.
-
-    Example
-    -------
-    >>> join_arrays([[1, 1], [2, 3]])
-    array([[1, 2],
-           [1, 3]])
-    """
-    return numpy.stack(arrays, axis=axis)
-
-
 def segmentate_with_cursors(
     mask: NDArray, cursors_color: NDArray, mean: NDArray
 ) -> NDArray[Any]:
@@ -219,12 +190,12 @@ def segmentate_with_cursors(
             raise ValueError('mask and mean first dimension must be equal')
         else:
             imcolor = numpy.zeros([mask.shape[0], 3])
-            mean = join_arrays([mean, mean, mean])
+            mean = numpy.stack([mean, mean, mean], axis=-1)
             imcolor[:, 0] = cursors_color[0]
             imcolor[:, 1] = cursors_color[1]
             imcolor[:, 2] = cursors_color[2]
             segmented = numpy.where(
-                join_arrays([mask, mask, mask]), imcolor, mean
+                numpy.stack([mask, mask, mask], -1), imcolor, mean
             )
             return segmented
     else:
@@ -234,14 +205,14 @@ def segmentate_with_cursors(
             )
         else:
             imcolor = numpy.zeros([mask.shape[0], mask.shape[1], 3])
-            mean = join_arrays([mean, mean, mean])
+            mean = numpy.stack([mean, mean, mean], -1)
             segmented = numpy.copy(mean)
             for i in range(len(cursors_color)):
                 imcolor[:, :, 0] = cursors_color[i][0]
                 imcolor[:, :, 1] = cursors_color[i][1]
                 imcolor[:, :, 2] = cursors_color[i][2]
                 segmented = numpy.where(
-                    join_arrays([mask[:, :, i], mask[:, :, i], mask[:, :, i]]),
+                    numpy.stack([mask[:, :, i], mask[:, :, i], mask[:, :, i]], -1),
                     imcolor,
                     segmented,
                 )

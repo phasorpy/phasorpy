@@ -44,7 +44,7 @@ plot.cursor(0.55, -0.72, radius=0.2, color='tab:red', linestyle='-')
 
 # %%
 # Show segmented image with circular cursors:
-mask = join_arrays([mask_c1, mask_c2])
+mask = numpy.stack([mask_c1, mask_c2], axis=-1)
 cursors_colors = [[0, 0, 255], [255, 0, 0]]
 segmented = segmentate_with_cursors(mask, cursors_colors, mean)
 
@@ -93,7 +93,7 @@ plot.polar_cursor(
 
 # %%
 # Segmented intensity image with cursors
-mask = join_arrays([maskc1, maskc2])
+mask = numpy.stack([maskc1, maskc2], axis=-1)
 cursors_colors = [[0, 0, 255], [255, 0, 0]]
 segmented = segmentate_with_cursors(mask, cursors_colors, mean)
 

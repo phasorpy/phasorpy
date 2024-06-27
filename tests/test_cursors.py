@@ -62,11 +62,6 @@ def test_mask_from_cursor_erros():
         )
 
 
-def test_join_arrays():
-    out = join_arrays([[1, 1], [2, 3]])
-    assert_array_equal(out, [[1, 2], [1, 3]])
-
-
 def test_segmentate_with_cursors():
     segmented = segmentate_with_cursors(
         [True, False, False], [255, 0, 0], [0, 128, 255]
