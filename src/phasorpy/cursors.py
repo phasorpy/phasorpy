@@ -4,8 +4,10 @@
 
 - create labels for region of interests in the phasor space:
 
-  - :py:func:`label_from_phasor_circular`
+  - :py:func:`mask_from_circular_cursor`
   - :py:func:`mask_from_cursor`
+  - :py:func:`join_arrays`
+  - :py:func:`segmentate_with_cursors`
 
 """
 
@@ -146,7 +148,7 @@ def mask_from_cursor(
     return xmask & ymask
 
 
-def join_arrays(arrays: NDArray, /, *, axis: int = -1) -> NDArray[Any]:
+def join_arrays(arrays: ArrayLike, /, *, axis: int = -1) -> NDArray[Any]:
     """
     Join arrays to creat an image label for all cursors.
 
@@ -161,7 +163,7 @@ def join_arrays(arrays: NDArray, /, *, axis: int = -1) -> NDArray[Any]:
 
     Returns
     -------
-    stack arrays: NDArray
+    stacked : NDArray
         stacked arrays (masks) for all the cursors.
 
     Example
@@ -170,7 +172,6 @@ def join_arrays(arrays: NDArray, /, *, axis: int = -1) -> NDArray[Any]:
     array([[1, 2],
            [1, 3]])
     """
-    arrays = numpy.asarray(arrays)
     return numpy.stack(arrays, axis=axis)
 
 
