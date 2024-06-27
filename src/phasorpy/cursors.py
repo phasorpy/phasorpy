@@ -212,7 +212,9 @@ def segmentate_with_cursors(
                 imcolor[:, :, 1] = cursors_color[i][1]
                 imcolor[:, :, 2] = cursors_color[i][2]
                 segmented = numpy.where(
-                    numpy.stack([mask[:, :, i], mask[:, :, i], mask[:, :, i]], -1),
+                    numpy.stack(
+                        [mask[:, :, i], mask[:, :, i], mask[:, :, i]], -1
+                    ),
                     imcolor,
                     segmented,
                 )
