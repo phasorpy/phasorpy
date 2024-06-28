@@ -19,8 +19,8 @@ __all__: list[str] = [
     'circle_circle_intersection',
     'project_phasor_to_line',
     'line_from_components',
-    'move_cursor_along_line',
     'mask_cursor',
+    'mask_segment',
 ]
 
 import math
@@ -342,27 +342,6 @@ def line_from_components(
     return numpy.asarray(unit_vector), float(distance_between_components)
 
 
-def move_cursor_along_line(
-    cursor_real: float,
-    cursor_imag: float,
-    cursor_diameter: float,
-    unit_vector: NDArray[Any],
-) -> tuple[float, float]:
-    """Return new phasor position for cursor along line.
-
-    >>> move_cursor_along_line(
-    ...     0.2, 0.9, 0.05, [0.99, -0.14]
-    ... )  # doctest: +NUMBER
-    (0.25, 0.89)
-
-    """
-    unit_vector = numpy.asarray(unit_vector)
-    displacement = cursor_diameter * unit_vector
-    cursor_real += displacement[0]
-    cursor_imag += displacement[1]
-    return cursor_real, cursor_imag
-
-
 def mask_cursor(
     real: ArrayLike,
     imag: ArrayLike,
@@ -370,8 +349,8 @@ def mask_cursor(
     cursor_imag: float,
     cursor_diameter: float,
     /,
-) -> NDArray[Any]:
-    """Return array with cursor masked.
+) -> NDArray[numpy.bool_]:
+    """Return mask for phasors within circular cursor diameter.
 
     >>> mask_cursor([0.6, 0.5, 0.4], [0.4, 0.3, 0.2], 0.5, 0.3, 0.05)
     array([False,  True, False])
@@ -379,6 +358,42 @@ def mask_cursor(
     """
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
-    cursor_radius = cursor_diameter / 2
-    distances = numpy.hypot(real - cursor_real, imag - cursor_imag)
-    return numpy.where(distances <= cursor_radius, True, False)
+    return (real - cursor_real) ** 2 + (imag - cursor_imag) ** 2 <= (
+        cursor_diameter / 2
+    ) ** 2
+
+
+def mask_segment(
+    real: ArrayLike,
+    imag: ArrayLike,
+    start_real: float,
+    start_imag: float,
+    end_real: float,
+    end_imag: float,
+    distance_threshold: float,
+    /,
+) -> NDArray[numpy.bool_]:
+    """Return mask for phasors within distance threshold from line segment.
+
+    >>> mask_segment([0.6, 0.5, 0.4], [0.4, 0.3, 0.2], 0.2, 0.4, 0.9, 0.3, 0.1)
+    array([ True,  True, False])
+
+    """
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    original_shape = real.shape
+    real = real.flatten()
+    imag = imag.flatten()
+    p_vec = numpy.vstack((real, imag)).T
+    v_vec = numpy.array([end_real - start_real, end_imag - start_imag])
+    t_values = numpy.dot(
+        p_vec - numpy.array([start_real, start_imag]), v_vec
+    ) / numpy.dot(v_vec, v_vec)
+    t_values = numpy.clip(t_values, 0, 1)
+    closest_points = (
+        numpy.array([start_real, start_imag])
+        + t_values[:, numpy.newaxis] * v_vec
+    )
+    distances = numpy.linalg.norm(p_vec - closest_points, axis=1)
+    mask = distances <= distance_threshold
+    return mask.reshape(original_shape)

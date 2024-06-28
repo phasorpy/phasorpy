@@ -10,7 +10,8 @@ from phasorpy._utils import (
     circle_line_intersection,
     kwargs_notnone,
     line_from_components,
-    move_cursor_along_line,
+    mask_cursor,
+    mask_segment,
     parse_kwargs,
     phasor_from_polar_scalar,
     phasor_to_polar_scalar,
@@ -169,38 +170,38 @@ def test_project_phasor_to_line():
     with pytest.raises(ValueError):
         project_phasor_to_line([0], [0], [0.1, 0.1, 0, 1], [0.1, 0, 2])
 
-    # TODO
-    # def test_line_from_components():
+# TODO
+def test_line_from_components():
     """Test line_from_components function."""
-    # assert_allclose(
-    #     line_from_components(
-    #         [0.7, 0.5, 0.3], [0.3, 0.4, 0.3], [0.2, 0.9], [0.4, 0.3]
-    #     ),
-    #     (
-    #         [0.704, 0.494, 0.312],
-    #         [0.328, 0.358, 0.384],
-    #     ),
-    # )
-    # assert_allclose(
-    #     line_from_components([0.1, 1.0], [0.5, 0.5], [0.2, 0.9], [0.4, 0.3]),
-    #     ([0.2, 0.9], [0.4, 0.3]),
-    # )
-    # assert_allclose(
-    #     line_from_components(
-    #         [0.1, 1.0], [0.5, 0.5], [0.2, 0.9], [0.4, 0.3], clip=False
-    #     ),
-    #     ([0.088, 0.97], [0.416, 0.29]),
-    # )
-    # with pytest.raises(ValueError):
-    #     line_from_components([0], [0], [0.1, 0.1], [0.2, 0.2])
-    # with pytest.raises(ValueError):
-    #     line_from_components([0], [0], [0.3], [0.1, 0.2])
-    # with pytest.raises(ValueError):
-    #     line_from_components([0], [0], [0.1, 0.2], [0.3])
-    # with pytest.raises(ValueError):
-    #     line_from_components([0], [0], [0.1], [0.3])
-    # with pytest.raises(ValueError):
-    #     line_from_components([0], [0], [0.1, 0.1, 0, 1], [0.1, 0, 2])
+    assert_allclose(
+        line_from_components(
+            [0.7, 0.5, 0.3], [0.3, 0.4, 0.3], [0.2, 0.9], [0.4, 0.3]
+        ),
+        (
+            [0.704, 0.494, 0.312],
+            [0.328, 0.358, 0.384],
+        ),
+    )
+    assert_allclose(
+        line_from_components([0.1, 1.0], [0.5, 0.5], [0.2, 0.9], [0.4, 0.3]),
+        ([0.2, 0.9], [0.4, 0.3]),
+    )
+    assert_allclose(
+        line_from_components(
+            [0.1, 1.0], [0.5, 0.5], [0.2, 0.9], [0.4, 0.3], clip=False
+        ),
+        ([0.088, 0.97], [0.416, 0.29]),
+    )
+    with pytest.raises(ValueError):
+        line_from_components([0], [0], [0.1, 0.1], [0.2, 0.2])
+    with pytest.raises(ValueError):
+        line_from_components([0], [0], [0.3], [0.1, 0.2])
+    with pytest.raises(ValueError):
+        line_from_components([0], [0], [0.1, 0.2], [0.3])
+    with pytest.raises(ValueError):
+        line_from_components([0], [0], [0.1], [0.3])
+    with pytest.raises(ValueError):
+        line_from_components([0], [0], [0.1, 0.1, 0, 1], [0.1, 0, 2])
 
     # TODO
     # def test_move_cursor_along_line():

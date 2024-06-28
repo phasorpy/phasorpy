@@ -4,11 +4,12 @@ from phasorpy.plot import PhasorPlot
 from phasorpy.components import graphical_component_analysis
 from matplotlib.patches import Circle
 import matplotlib.pyplot as plt
+import numpy as np
 frequency = 80.0
-components_lifetimes = [15.0, 4.0, 1.5, 0.2]
-real, imag = phasor_from_lifetime(
-        frequency, components_lifetimes, [[0.4, 0.1, 0.1, 0.4], [0.5, 0.2, 0.2, 0.1]]
-    )
+# components_lifetimes = [15.0, 4.0, 1.5, 0.2]
+# real, imag = phasor_from_lifetime(
+#         frequency, components_lifetimes, [[0.4, 0.1, 0.1, 0.4], [0.5, 0.2, 0.2, 0.1]]
+#     )
 components_lifetimes = [8.0, 4.0, 0.5]
 real, imag = phasor_from_lifetime(
         frequency, components_lifetimes, [[0.1, 0.5, 0.4], [0.5, 0.4, 0.1]]
@@ -16,31 +17,30 @@ real, imag = phasor_from_lifetime(
 components_real, components_imag = phasor_from_lifetime(frequency, components_lifetimes)
 fig, ax = plt.subplots()
 cursor_diameter = 0.05
+number_of_steps = 100
 fractions = graphical_component_analysis(
-    real, imag, components_real, components_imag, cursor_diameter=cursor_diameter, number_of_steps=20
+    real, imag, components_real, components_imag, cursor_diameter=cursor_diameter, number_of_steps=number_of_steps
 )
-# for x, y in zip(centers_x, centers_y):
-#     circle = Circle((x, y), cursor_diameter/2, fill=False, edgecolor='green')  # Create a circle patch
-#     ax.add_patch(circle)
-# # Loop over each nested list pair
-# for x_list, y_list in zip(inner_centers_x, inner_centers_y):
-#     # Iterate through the individual coordinates within each pair
-#     for x, y in zip(x_list, y_list):
-#         circle = Circle((x, y), cursor_diameter/2, fill=False, edgecolor='red')
-#         ax.add_patch(circle)
 plot = PhasorPlot(frequency = frequency, ax=ax)
 plot.plot(components_real, components_imag, linestyle = '-')
 plot.plot(real, imag)
+plot.show()
 print(fractions[0])
 print(fractions[1])
 print(fractions[2])
-print(fractions[3])
+
+x_values = range(1, len(fractions[0]) + 1) 
+
+# Plot the histogram
+plt.bar(x_values, fractions[0], align='center')
 # %%
 from phasorpy.io import read_fbd
 from phasorpy.phasor import phasor_from_signal, phasor_calibrate, phasor_center, phasor_from_lifetime
 from phasorpy.plot import PhasorPlot
 from phasorpy.components import graphical_component_analysis
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 data_path = 'test_data/FBDfiles-DIVER/BUENOS/convallaria_000$EI0S.fbd'
 calibration_path = 'test_data/FBDfiles-DIVER/BUENOS/RH110CALIBRATION_000$EI0S.fbd'
@@ -69,66 +69,37 @@ mean = np.where(mask, np.nan, mean)
 
 real, imag = phasor_calibrate(real, imag, real_calib, imag_calib, frequency=frequency, lifetime=4)
 
-components_lifetimes = [8.0, 4.0, 2.0, 0.4]
+components_lifetimes = [12.0, 2.0, 0.5]
 # components_lifetimes = [4.5, 0.7]
 components_real, components_imag = phasor_from_lifetime(frequency, components_lifetimes)
-
 plot = PhasorPlot(frequency=80)
 plot.hist2d(real, imag, cmap = 'plasma', bins = 300)
 plot.plot(np.concatenate([components_real, [components_real[0]]]), np.concatenate([components_imag, [components_imag[0]]]),'-o')
+plot.show()
 cursor_diameter = 0.05
-fractions = graphical_component_analysis(
-    real, imag, components_real, components_imag, cursor_diameter=cursor_diameter
+number_of_steps = 100
+
+counts, fractions = graphical_component_analysis(
+    real, imag, components_real, components_imag, cursor_diameter=cursor_diameter, number_of_steps=number_of_steps
 )
-# %%
-import matplotlib.pyplot as plt
-plt.imshow(mean, cmap = 'Greys')
-plt.colorbar()
-plt.title("Mean intensity image")
-plt.show()
+for i in range(len(counts)):
+    plt.plot(fractions*100, counts[i], linestyle='-')
+    plt.show()
 
-plt.imshow(fractions[0], cmap = 'Reds')
-plt.colorbar()
-plt.title("Fractions of First component (tau =  3 ns)")
-plt.show()
-plt.imshow(fractions[1], cmap= 'Blues')
-plt.colorbar()
-plt.title("Fractions of Second component (tau = 0.5 ns)")
-plt.show()
-plt.imshow(fractions[2], cmap= 'Greens')
-plt.colorbar()
-plt.title("Fractions of Third component (tau = 0.4 ns)")
-plt.show()
-
-plt.hist(fractions[0].flatten(), bins = 30)
-plt.title('First component')
-plt.xlabel('Value')
-plt.ylabel('Frequency')
-plt.show()
-plt.hist(fractions[1].flatten(), bins = 30)
-plt.title('Second component')
-plt.xlabel('Value')
-plt.ylabel('Frequency')
-plt.show()
-plt.hist(fractions[2].flatten(), bins = 30)
-plt.title('Third component')
-plt.xlabel('Value')
-plt.ylabel('Frequency')
-plt.show()
-# %%
-from phasorpy.components import graphical_first_fraction
-from phasorpy.plot import PhasorPlot
-plot = PhasorPlot(frequency=80)
-plot.plot([0.7, 0.55, 0.4], [0.35, 0.37, 0.39])
-plot.plot([0.2, 0.9], [0.4, 0.3])
-
-result = graphical_first_fraction([0.7, 0.55, 0.4], [0.35, 0.37, 0.39], [0.2, 0.9], [0.4, 0.3], cursor_diameter=0.05)
-print(result)
-# %%
-from phasorpy._utils import move_cursor_along_line, line_from_components,mask_cursor
+#%%
 from phasorpy.components import graphical_component_analysis
+from phasorpy.plot import PhasorPlot
+import matplotlib.pyplot as plt
+
+real = [0.6, 0.4]
+imag = [0.35,0.38]
+real_comp = [0.2, 0.9]
+imag_comp = [0.4, 0.3]
+plot = PhasorPlot(frequency=80)
+plot.plot(real, imag)
+plot.plot(real_comp, imag_comp)
+plot.show()
+graphical_component_analysis(real, imag, real_comp, imag_comp, cursor_diameter=0.05, number_of_steps=10) 
 
 
-result = mask_cursor([0.6, 0.5, 0.4], [0.4, 0.3, 0.2], 0.5, 0.3, 0.05)
-print(result)
 # %%
