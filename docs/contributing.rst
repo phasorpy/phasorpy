@@ -175,12 +175,12 @@ thorougly.
 
 Run the unit tests in the development environment::
 
-    $ python -m pytest -v
+    $ python -m pytest -v --cov=phasorpy --cov-report=html tests
 
 All tests must pass.
 
-PhasorPy strives to maintain near complete test coverage. The coverage report
-is automatically generated during testing in the ``_htmlcov`` folder.
+PhasorPy strives to maintain near complete code coverage. A coverage report
+is generated during testing in the ``_htmlcov`` folder.
 
 Configuration settings for pytest and other tools are in the
 ``pyproject.toml`` file.
@@ -232,7 +232,7 @@ standard.
 Examples in docstrings must run and pass as
 `doctests <https://docs.python.org/3/library/doctest.html>`_ ::
 
-    $ python -m pytest -v phasorpy
+    $ python -m pytest -v src/phasorpy
 
 Examples in docstrings are meant to illustrate mere usage, not to
 provide a testing framework.
