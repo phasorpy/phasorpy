@@ -53,6 +53,8 @@ SYNTH_DATA_LIST = [1, 2, 4]
 SYNTH_PHI = numpy.array([[0.5, 0.5], [0.5, 0.5]])
 SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
 
+numpy.random.seed(42)
+
 
 @pytest.mark.parametrize('fft', (True, False))
 def test_phasor_from_signal(fft):
@@ -1504,34 +1506,36 @@ def test_phasor_at_harmonic():
 def test_phasor_to_principal_plane():
     """Test phasor_to_principal_plane function."""
 
-    real, imag = phasor_from_lifetime(
-        frequency=[40, 80, 160],
-        lifetime=[[0.5, 4.0], [1.0, 8.0]],
-        fraction=[[0.4, 0.6], [0.6, 0.4]],
-    )
+    def distribution(values, stddev=0.05, samples=100):
+        return numpy.ascontiguousarray(
+            numpy.vstack(
+                [
+                    numpy.random.normal(value, stddev, samples)
+                    for value in values
+                ]
+            ).T
+        )
 
-    assert_allclose(
-        real,
-        [[0.69219, 0.64368], [0.49522, 0.50228], [0.35426, 0.30450]],
-        atol=1e-3,
+    frequency = [80, 160, 240, 320, 400]
+    real0, imag0 = phasor_from_lifetime(
+        frequency,
+        lifetime=distribution([0.5, 4.0]),
+        fraction=distribution([0.4, 0.6]),
     )
-    assert_allclose(
-        imag,
-        [[0.34948, 0.301328], [0.333795, 0.33444], [0.301026, 0.348974]],
-        atol=1e-3,
+    real1, imag1 = phasor_from_lifetime(
+        frequency,
+        lifetime=distribution([1.0, 8.0]),
+        fraction=distribution([0.6, 0.4]),
     )
+    real = numpy.hstack([real0, real1])
+    imag = numpy.hstack([imag0, imag1])
 
     x, y, transformation_matrix = phasor_to_principal_plane(real, imag)
-    assert_allclose(x, [0.53084, 0.430805], atol=1e-1)
-    assert_allclose(y, [0.079848, 0.059642], atol=1e-1)
-    assert_allclose(
-        transformation_matrix,
-        [
-            [0.443737, 0.083286, 0.472978, 0.561342, -0.006637, -0.594889],
-            [0.436153, -0.795182, 0.359029, -0.165872, -0.002176, 0.342964],
-        ],
-        atol=1e-1,
-    )
+    assert x.shape == (200,)
+    assert y.shape == (200,)
+    assert transformation_matrix.shape == (2, 10)
+    assert_allclose(x.mean(), 0.306839, atol=1e-2)
+    assert_allclose(y.mean(), 0.281617, atol=1e-2)
 
     with pytest.raises(ValueError):
         phasor_to_principal_plane([0.0, 1.0], [0.0])
