@@ -40,6 +40,7 @@ from phasorpy.phasor import (
     phasor_semicircle,
     phasor_to_apparent_lifetime,
     phasor_to_polar,
+    phasor_to_principal_plane,
     phasor_transform,
     polar_from_apparent_lifetime,
     polar_from_reference,
@@ -1498,6 +1499,42 @@ def test_phasor_at_harmonic():
         phasor_at_harmonic(0.5, 0, 1)
     with pytest.raises(ValueError):
         phasor_at_harmonic(0.5, 1, 0)
+
+
+def test_phasor_to_principal_plane():
+    """Test phasor_to_principal_plane function."""
+
+    real, imag = phasor_from_lifetime(
+        frequency=[40, 80, 160],
+        lifetime=[[0.5, 4.0], [1.0, 8.0]],
+        fraction=[[0.4, 0.6], [0.6, 0.4]],
+    )
+
+    assert_allclose(
+        real,
+        [[0.69219, 0.64368], [0.49522, 0.50228], [0.35426, 0.30450]],
+        atol=1e-3,
+    )
+    assert_allclose(
+        imag,
+        [[0.34948, 0.301328], [0.333795, 0.33444], [0.301026, 0.348974]],
+        atol=1e-3,
+    )
+
+    x, y, transformation_matrix = phasor_to_principal_plane(real, imag)
+    assert_allclose(x, [0.53084, 0.430805], atol=1e-4)
+    assert_allclose(y, [0.079848, 0.059642], atol=1e-4)
+    assert_allclose(
+        transformation_matrix,
+        [
+            [0.443737, 0.083286, 0.472978, 0.561342, -0.006637, -0.594889],
+            [0.436153, -0.795182, 0.359029, -0.165872, -0.002176, 0.342964],
+        ],
+        atol=1e-4,
+    )
+
+    with pytest.raises(ValueError):
+        phasor_to_principal_plane([0.0, 1.0], [0.0])
 
 
 def test_parse_skip_axis():
