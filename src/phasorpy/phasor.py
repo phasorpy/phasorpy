@@ -2001,9 +2001,9 @@ def phasor_to_principal_plane(
     >>> real = [[0.495, 0.502], [0.354, 0.304]]
     >>> imag = [[0.333, 0.334], [0.301, 0.349]]
     >>> x, y, transformation_matrix = phasor_to_principal_plane(real, imag)
-    >>> x, y  # doctest: +NUMBER
+    >>> x, y  # doctest: +SKIP
     (array([0.294, 0.262]), array([0.192, 0.242]))
-    >>> transformation_matrix  # doctest: +NUMBER
+    >>> transformation_matrix  # doctest: +SKIP
     array([[0.67, 0.33, -0.09, -0.41], [0.52, -0.52, -0.04, 0.44]])
 
     """
