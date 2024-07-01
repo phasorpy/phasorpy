@@ -20,7 +20,7 @@ jobs:
         os: [ubuntu-22.04, macos-12, windows-2019]
     steps:
       - uses: actions/checkout@v4
-      - uses: pypa/cibuildwheel@v2.18.1
+      - uses: pypa/cibuildwheel@v2.19.1
         env:
           # CIBW_ENVIRONMENT: "PIP_PRE=1"
           CIBW_BUILD_VERBOSITY: 3
