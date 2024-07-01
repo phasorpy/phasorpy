@@ -87,19 +87,26 @@ for i in range(len(counts)):
     plt.show()
 
 #%%
-from phasorpy.components import graphical_component_analysis
+# from phasorpy.components import graphical_component_analysis
+from phasorpy._utils import mask_cursor, mask_segment, line_from_components
 from phasorpy.plot import PhasorPlot
 import matplotlib.pyplot as plt
 
 real = [0.6, 0.4]
 imag = [0.35,0.38]
-real_comp = [0.2, 0.9]
-imag_comp = [0.4, 0.3]
+real_comp = [[0.9, 0.2],[0.3, 0.4]]
+imag_comp = [[0.3, 0.4],[0.3, 0.4]]
 plot = PhasorPlot(frequency=80)
-plot.plot(real, imag)
+# plot.plot(real, imag)
 plot.plot(real_comp, imag_comp)
+unit_vector, distance = line_from_components(real_comp, imag_comp)
+start_point = (0.9, 0.3)
+end_point = (0.2, 0.4)
+plt.quiver(start_point[0], start_point[1], end_point[0] - start_point[0], end_point[1] - start_point[1], angles='xy', scale_units='xy', scale=1)
 plot.show()
-graphical_component_analysis(real, imag, real_comp, imag_comp, cursor_diameter=0.05, number_of_steps=10) 
+print(unit_vector)
+print(distance)
+# graphical_component_analysis(real, imag, real_comp, imag_comp, cursor_diameter=0.05, number_of_steps=10) 
 
 
 # %%
