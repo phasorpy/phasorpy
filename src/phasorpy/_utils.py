@@ -329,6 +329,8 @@ def line_from_components(
     """
     real_components = numpy.asarray(real_components)
     imag_components = numpy.asarray(imag_components)
+    if real_components.shape != (2,) or imag_components.shape != (2,):
+        raise ValueError('components must have shape (2,)')
     line_vector = numpy.array(
         [
             real_components[1] - real_components[0],

@@ -168,16 +168,18 @@ def graphical_component_analysis(
     Count the number of phasors between two components:
 
     >>> graphical_component_analysis(
-    ...     [0.6, 0.3], [0.35, 0.38], [0.2, 0.9], [0.4, 0.3],
-    ...     number_of_steps=5
+    ...     [0.6, 0.3], [0.35, 0.38], [0.2, 0.9], [0.4, 0.3], number_of_steps=5
     ... )  # doctest: +NUMBER
     ((array([0, 0, 1, 0, 1, 0]),), array([0, 0.2, 0.4, 0.6, 0.8, 1]))
 
     Count number of phasors between the combinations of three components:
 
     >>> graphical_component_analysis(
-    ...     [0.4, 0.5], [0.2, 0.3], [0.0, 0.2, 0.9], [0.0, 0.4, 0.3],
-    ...     number_of_steps=5
+    ...     [0.4, 0.5],
+    ...     [0.2, 0.3],
+    ...     [0.0, 0.2, 0.9],
+    ...     [0.0, 0.4, 0.3],
+    ...     number_of_steps=5,
     ... )  # doctest: +NUMBER +NORMALIZE_WHITESPACE
     ((array([0, 1, 1, 1, 1, 0]),
     array([0, 1, 0, 0, 0, 0]),

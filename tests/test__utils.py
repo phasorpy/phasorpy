@@ -3,7 +3,7 @@
 import math
 
 import pytest
-from numpy.testing import assert_allclose, assert_almost_equal
+from numpy.testing import assert_allclose
 
 from phasorpy._utils import (
     circle_circle_intersection,
@@ -170,56 +170,65 @@ def test_project_phasor_to_line():
     with pytest.raises(ValueError):
         project_phasor_to_line([0], [0], [0.1, 0.1, 0, 1], [0.1, 0, 2])
 
+
 @pytest.mark.parametrize(
     """real_components, imag_components,
     expected_unit_vector, expected_distance""",
     [
-        ([0.2, 0.9], [0.4, 0.3],[0.98994949, -0.14142136],  0.70710678),
-        ([0.9, 0.2], [0.3, 0.4],[-0.98994949, 0.14142136],  0.70710678),   
-    ])    
-def test_line_from_components(real_components, imag_components, expected_unit_vector, expected_distance):
+        ([0.2, 0.9], [0.4, 0.3], [0.98994949, -0.14142136], 0.70710678),
+        ([0.9, 0.2], [0.3, 0.4], [-0.98994949, 0.14142136], 0.70710678),
+    ],
+)
+def test_line_from_components(
+    real_components, imag_components, expected_unit_vector, expected_distance
+):
     """Test line_from_components function."""
-    unit_vector, distance = line_from_components(real_components, imag_components)
+    unit_vector, distance = line_from_components(
+        real_components, imag_components
+    )
     assert_allclose(unit_vector, expected_unit_vector)
     assert_allclose(distance, expected_distance)
 
 
 def test_errors_line_from_components():
-    """ Test errors riased by line_from_components function"""
+    """Test errors riased by line_from_components function"""
     with pytest.raises(ValueError):
         line_from_components([0, 0], [1, 1])
     with pytest.raises(ValueError):
         line_from_components([-1, -1], [1, 1])
+    with pytest.raises(ValueError):
+        line_from_components([0], [0])
+    with pytest.raises(ValueError):
+        line_from_components([0, 1, 2], [0, 1, 2])
 
 
-# def test_move_cursor_along_line():
-#     """Test move_cursor_along_line function."""
-#     assert_allclose(
-#         move_cursor_along_line(
-#             [0.7, 0.5, 0.3], [0.3, 0.4, 0.3], [0.2, 0.9], [0.4, 0.3]
-#         ),
-#         (
-#             [0.704, 0.494, 0.312],
-#             [0.328, 0.358, 0.384],
-#         ),
-#     )
-#     assert_allclose(
-#         move_cursor_along_line([0.1, 1.0], [0.5, 0.5], [0.2, 0.9], [0.4, 0.3]),
-#         ([0.2, 0.9], [0.4, 0.3]),
-#     )
-#     assert_allclose(
-#         move_cursor_along_line(
-#             [0.1, 1.0], [0.5, 0.5], [0.2, 0.9], [0.4, 0.3], clip=False
-#         ),
-#         ([0.088, 0.97], [0.416, 0.29]),
-#     )
-#     with pytest.raises(ValueError):
-#         move_cursor_along_line([0], [0], [0.1, 0.1], [0.2, 0.2])
-#     with pytest.raises(ValueError):
-#         move_cursor_along_line([0], [0], [0.3], [0.1, 0.2])
-#     with pytest.raises(ValueError):
-#         move_cursor_along_line([0], [0], [0.1, 0.2], [0.3])
-#     with pytest.raises(ValueError):
-#         move_cursor_along_line([0], [0], [0.1], [0.3])
-#     with pytest.raises(ValueError):
-#         move_cursor_along_line([0], [0], [0.1, 0.1, 0, 1], [0.1, 0, 2])
+def test_mask_segment():
+    """Test mask_segment function."""
+    assert_allclose(
+        mask_segment([0.4, 0.84], [0.38, 0.4], 0.8, 0.4, 0.042, 0.2, 0.05 / 2),
+        [False, False],
+    )  # Both phasors are outside the segment
+    assert_allclose(
+        mask_segment([0.4, 0.82], [0.38, 0.4], 0.8, 0.4, 0.042, 0.2, 0.05 / 2),
+        [False, True],
+    )  # Only the second phasor is inside the segment
+    assert_allclose(
+        mask_segment(0.8, 0.4, 0.8, 0.4, 0.042, 0.2, 0.05 / 2),
+        [True],
+    )  # Single phasor point inside segment
+    assert_allclose(
+        mask_segment(0.9, 0.4, 0.8, 0.4, 0.042, 0.2, 0.05 / 2),
+        [False],
+    )  # Single phasor point ouside segment
+
+
+def test_mask_cursor():
+    """Test mask_cursor function."""
+    assert_allclose(
+        mask_cursor([0.4, 0.84], [0.38, 0.4], 0.8, 0.4, 0.05),
+        [False, False],
+    )  # Both phasors are outside the cursor
+    assert_allclose(
+        mask_cursor([0.4, 0.82], [0.38, 0.4], 0.8, 0.4, 0.05),
+        [False, True],
+    )  # Only the second phasor is inside the cursor

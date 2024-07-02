@@ -120,6 +120,26 @@ def test_two_fractions_from_phasor_channels():
             ([0, 1, 0, 1, 0, 0], [0, 1, 0, 1, 0, 0], [0, 0, 1, 1, 0, 0]),
             [0, 0.2, 0.4, 0.6, 0.8, 1],
         ),  # Three components, phasors as list
+        (
+            [0.4, 0.82],
+            [0.38, 0.4],
+            [0.8, 0.2, 0.042],
+            [0.4, 0.4, 0.2],
+            0.05,
+            4,
+            ([0, 0, 1, 0, 1], [0, 0, 0, 1, 2], [1, 1, 1, 2, 2]),
+            [0, 0.25, 0.5, 0.75, 1],
+        ),  # Phasor outside semicircle but inside cursor of component 1
+        (
+            [0.4, 0.84],
+            [0.38, 0.4],
+            [0.8, 0.2, 0.042],
+            [0.4, 0.4, 0.2],
+            0.05,
+            4,
+            ([0, 0, 1, 0, 0], [0, 0, 0, 1, 1], [0, 0, 0, 1, 1]),
+            [0, 0.25, 0.5, 0.75, 1],
+        ),  # Phasor outside semicircle and outside cursor of component 1
     ],
 )
 def test_graphical_component_analysis(
