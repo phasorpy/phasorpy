@@ -183,7 +183,7 @@ plt.tight_layout()
 plt.show()
 
 # %%
-# The funcion `graphical_component_analysis` performs this graphical
+# The function `graphical_component_analysis` performs this graphical
 # analysis for two or three components and return the number of phasors
 # for each fraction of the components (with respect to other components):
 

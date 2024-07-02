@@ -219,7 +219,7 @@ def test_mask_segment():
     assert_allclose(
         mask_segment(0.9, 0.4, 0.8, 0.4, 0.042, 0.2, 0.05 / 2),
         [False],
-    )  # Single phasor point ouside segment
+    )  # Single phasor point outside segment
 
 
 def test_mask_cursor():
