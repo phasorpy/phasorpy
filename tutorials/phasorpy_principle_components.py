@@ -32,12 +32,14 @@ def distribution(values, stddev=0.05, samples=100):
     )
 
 
+numpy.random.seed(42)
+
 # %%
 # Overlapping phasor distributions
 # --------------------------------
 #
 # The phasor coordinates of different multi-exponential decays may be
-# indistinguishable at a certain frequency:
+# overlapping, indistinguishable at a certain frequency:
 
 frequency = [80, 160, 240, 320, 400]
 
@@ -68,7 +70,7 @@ plot.show()
 
 plot = PhasorPlot(
     frequency=frequency[2],
-    title=f'Overlapping phasor distributions ({frequency[2]} MHz)',
+    title=f'Phasor distributions ({frequency[2]} MHz)',
 )
 plot.plot(real[2], imag[2], '.')
 plot.show()
@@ -103,8 +105,38 @@ x2, y2 = numpy.dot(
 plot = PhasorPlot(
     title='Projection on principal plane', grid=False, xlabel='x', ylabel='y'
 )
-plot.plot(x0, y0, '.', label='lifetime distributions')
-plot.plot(x1, y1, '-', color='0.5', label='universal semicircle')
+plot.plot(x0, y0, '.', label='Phasor distributions')
+plot.plot(x1, y1, '-', color='0.5', label='Universal semicircle')
+plot.plot(x2, y2, '.', color='0.5')
+plot.show()
+
+# %%
+# For single harmonic input, the projected, reoriented coordinates
+# match the original, single harmonics phasor coordinates
+# (compare to the first figure):
+
+x0, y0, transformation_matrix = phasor_to_principal_plane(real[:1], imag[:1])
+x1, y1 = numpy.dot(
+    transformation_matrix,
+    numpy.vstack(phasor_from_lifetime(frequency[0], lifetimes, keepdims=True)),
+)
+x2, y2 = numpy.dot(
+    transformation_matrix,
+    numpy.vstack(
+        phasor_from_lifetime(
+            frequency[0], [0.5, 1.0, 2.0, 4.0, 8.0], keepdims=True
+        )
+    ),
+)
+
+plot = PhasorPlot(
+    title=f'Projection on principal plane ({frequency[0]} MHz)',
+    grid=False,
+    xlabel='x',
+    ylabel='y',
+)
+plot.plot(x0, y0, '.', label='Phasor distributions')
+plot.plot(x1, y1, '-', color='0.5', label='Universal semicircle')
 plot.plot(x2, y2, '.', color='0.5')
 plot.show()
 
@@ -112,4 +144,4 @@ plot.show()
 # TODO: demonstrate on real data that linearity is preserved and
 # visualization by cursors is applicable.
 #
-# sphinx_gallery_thumbnail_number = -1
+# sphinx_gallery_thumbnail_number = -2

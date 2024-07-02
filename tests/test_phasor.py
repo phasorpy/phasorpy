@@ -1505,6 +1505,7 @@ def test_phasor_at_harmonic():
 
 def test_phasor_to_principal_plane():
     """Test phasor_to_principal_plane function."""
+    # see phasorpy_principal_components.py for comments and visualization
 
     def distribution(values, stddev=0.05, samples=100):
         return numpy.ascontiguousarray(
@@ -1537,6 +1538,20 @@ def test_phasor_to_principal_plane():
     assert_allclose(x.mean(), 0.306839, atol=1e-2)
     assert_allclose(y.mean(), 0.281617, atol=1e-2)
 
+    # for single harmonics, reoriented projection matches phasor coordinates
+    real = real[:1]
+    imag = imag[:1]
+    x, y, transformation_matrix = phasor_to_principal_plane(real, imag)
+    assert_allclose(x, real[0], atol=1e-3)
+    assert_allclose(y, imag[0], atol=1e-3)
+
+    x, y, transformation_matrix = phasor_to_principal_plane(
+        real, imag, reorient=False
+    )
+    with pytest.raises(AssertionError):
+        assert_allclose(x, real[0], atol=1e-3)
+
+    # exception
     with pytest.raises(ValueError):
         phasor_to_principal_plane([0.0, 1.0], [0.0])
 
