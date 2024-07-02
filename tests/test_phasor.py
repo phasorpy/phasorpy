@@ -22,6 +22,7 @@ except ImportError:
     mkl_fft = None
 
 from phasorpy.phasor import (
+    _parse_skip_axis,
     fraction_from_amplitude,
     fraction_to_amplitude,
     frequency_from_lifetime,
@@ -492,8 +493,22 @@ def test_polar_from_reference_functions():
     [
         (2, 2, None, None, 2, 2),
         (2, 2, 0, 1, 2, 2),
-        (2, 2, 0.5, 2.0, 1.592628093144679, 5.428032401978303),
-        (2, 2, -0.5, -2.0, -5.428032401978303, -1.592628093144679),
+        (
+            2,
+            2,
+            0.5,
+            2.0,
+            1.592628093144679,
+            5.428032401978303,
+        ),
+        (
+            2,
+            2,
+            -0.5,
+            -2.0,
+            -5.428032401978303,
+            -1.592628093144679,
+        ),
         (
             SYNTH_DATA_LIST,
             SYNTH_DATA_LIST,
@@ -565,10 +580,7 @@ def test_phasor_transform(
     imag_copy = copy.deepcopy(imag)
     if phase_zero is not None and modulation_zero is not None:
         calibrated_real, calibrated_imag = phasor_transform(
-            real_copy,
-            imag_copy,
-            phase_zero,
-            modulation_zero,
+            real_copy, imag_copy, phase_zero, modulation_zero
         )
     else:
         calibrated_real, calibrated_imag = phasor_transform(
@@ -602,56 +614,74 @@ def test_phasor_transform_more():
 
 
 @pytest.mark.parametrize(
-    """real, imag,
-    skip_axes, method,
+    """real, imag, kwargs,
     expected_real_center, expected_imag_center""",
     [
-        (1.0, 4.0, None, 'mean', 1.0, 4.0),
-        (1.0, -4.0, None, 'median', 1.0, -4.0),
+        (1.0, 4.0, {'skip_axis': None, 'method': 'mean'}, 1.0, 4.0),
+        (1.0, -4.0, {'skip_axis': None, 'method': 'median'}, 1.0, -4.0),
         (
             SYNTH_DATA_LIST,
             SYNTH_DATA_LIST,
-            None,
-            'mean',
+            {'skip_axis': None, 'method': 'mean'},
             2.3333333333333335,
             2.3333333333333335,
         ),
-        (SYNTH_DATA_LIST, SYNTH_DATA_LIST, None, 'median', 2.0, 2.0),
-        (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY, None, 'mean', 13.25, 13.25),
-        (SYNTH_DATA_ARRAY, SYNTH_DATA_ARRAY, None, 'median', 1.0, 1.0),
-        # with skip_axes
         (
-            SYNTH_DATA_ARRAY,
-            SYNTH_DATA_ARRAY,
-            0,
-            'mean',
-            numpy.asarray([25.5, 1.0]),
-            numpy.asarray([25.5, 1.0]),
+            SYNTH_DATA_LIST,
+            SYNTH_DATA_LIST,
+            {'skip_axis': None, 'method': 'median'},
+            2.0,
+            2.0,
         ),
         (
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
-            (-2,),
-            'median',
+            {'skip_axis': None, 'method': 'mean'},
+            13.25,
+            13.25,
+        ),
+        (
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            {'skip_axis': None, 'method': 'median'},
+            1.0,
+            1.0,
+        ),
+        # with skip_axis
+        (
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            {'skip_axis': 0, 'method': 'mean'},
             numpy.asarray([25.5, 1.0]),
             numpy.asarray([25.5, 1.0]),
         ),
+        (
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            {'skip_axis': (-2,), 'method': 'median'},
+            numpy.asarray([25.5, 1.0]),
+            numpy.asarray([25.5, 1.0]),
+        ),
+        (
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            {'keepdims': True},
+            [[13.25]],
+            [[13.25]],
+        ),  # with kwargs for numpy functions
     ],
 )
 def test_phasor_center(
     real,
     imag,
-    skip_axes,
-    method,
+    kwargs,
     expected_real_center,
     expected_imag_center,
 ):
     """Test `phasor_center` function with various inputs and methods."""
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
-    real_center, imag_center = phasor_center(
-        real_copy, imag_copy, skip_axes=skip_axes, method=method
-    )
+    real_center, imag_center = phasor_center(real_copy, imag_copy, **kwargs)
     assert_array_equal(real, real_copy)
     assert_array_equal(imag, imag_copy)
     assert_almost_equal(real_center, expected_real_center)
@@ -665,7 +695,7 @@ def test_phasor_center_exceptions():
     with pytest.raises(ValueError):
         phasor_center([0], [0, 0])
     with pytest.raises(IndexError):
-        phasor_center([0, 0], [0, 0], skip_axes=1)
+        phasor_center([0, 0], [0, 0], skip_axis=1)
 
 
 @pytest.mark.parametrize(
@@ -978,6 +1008,49 @@ def test_phasor_from_lifetime_modify():
                 ),
             ),
         ),  # multiple lifetime with median method
+        (
+            (
+                numpy.stack(
+                    (
+                        SYNTH_DATA_ARRAY,
+                        SYNTH_DATA_ARRAY / 2,
+                        SYNTH_DATA_ARRAY / 3,
+                    ),
+                    axis=0,
+                ),
+                numpy.stack(
+                    (
+                        SYNTH_DATA_ARRAY,
+                        SYNTH_DATA_ARRAY / 2,
+                        SYNTH_DATA_ARRAY / 3,
+                    ),
+                    axis=0,
+                ),
+                [0.5, 0.25, 0.1],
+                [0.3, 0.2, 0.1],
+            ),
+            {
+                'frequency': [80, 160, 240],
+                'lifetime': 4,
+                'skip_axis': 0,
+            },
+            (
+                numpy.array(
+                    [
+                        [[11.60340173, 0.23206803], [0.23206803, 0.23206803]],
+                        [[3.53612871, 0.07072257], [0.07072257, 0.07072257]],
+                        [[4.45831758, 0.08916635], [0.08916635, 0.08916635]],
+                    ]
+                ),
+                numpy.array(
+                    [
+                        [[52.74178815, 1.05483576], [1.05483576, 1.05483576]],
+                        [[26.41473921, 0.52829478], [0.52829478, 0.52829478]],
+                        [[26.89193809, 0.53783876], [0.53783876, 0.53783876]],
+                    ]
+                ),
+            ),
+        ),  # multiple harmonics with skip_axis
     ],
 )
 def test_phasor_calibrate(args, kwargs, expected):
@@ -1425,3 +1498,22 @@ def test_phasor_at_harmonic():
         phasor_at_harmonic(0.5, 0, 1)
     with pytest.raises(ValueError):
         phasor_at_harmonic(0.5, 1, 0)
+
+
+def test_parse_skip_axis():
+    """Test _parse_skip_axis function."""
+    assert _parse_skip_axis(None, 0) == ((), ())
+    assert _parse_skip_axis(None, 1) == ((), (0,))
+    assert _parse_skip_axis((), 1) == ((), (0,))
+    assert _parse_skip_axis(0, 1) == ((0,), ())
+    assert _parse_skip_axis(0, 2) == ((0,), (1,))
+    assert _parse_skip_axis(-1, 2) == ((1,), (0,))
+    assert _parse_skip_axis((1, -2), 5) == ((1, 3), (0, 2, 4))
+    with pytest.raises(ValueError):
+        _parse_skip_axis(0, -1)
+    with pytest.raises(IndexError):
+        _parse_skip_axis(0, 0)
+    with pytest.raises(IndexError):
+        _parse_skip_axis(1, 1)
+    with pytest.raises(IndexError):
+        _parse_skip_axis(-2, 1)
