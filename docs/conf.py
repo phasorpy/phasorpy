@@ -96,6 +96,7 @@ sphinx_gallery_conf = {
     'examples_dirs': '../tutorials',
     'gallery_dirs': 'tutorials',
     'reference_url': {'phasorpy': None},
+    'matplotlib_animations': True,
 }
 
 copybutton_prompt_text = (
