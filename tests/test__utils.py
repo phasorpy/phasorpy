@@ -225,7 +225,7 @@ def test_mask_segment():
 def test_mask_cursor():
     """Test mask_cursor function."""
     assert_allclose(
-        mask_cursor([0.4, 0.84], [0.38, 0.4], 0.8, 0.4, 0.05),
+        mask_cursor([0.4, 0.86], [0.38, 0.4], 0.8, 0.4, 0.05),
         [False, False],
     )  # Both phasors are outside the cursor
     assert_allclose(
