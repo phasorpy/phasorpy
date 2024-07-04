@@ -21,6 +21,8 @@ from phasorpy.components import (
 from phasorpy.phasor import phasor_from_lifetime
 from phasorpy.plot import PhasorPlot
 
+numpy.random.seed(42)
+
 # %%
 # Fractions of combination of two components
 # ------------------------------------------
