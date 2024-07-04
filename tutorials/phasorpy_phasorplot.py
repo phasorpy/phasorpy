@@ -20,6 +20,8 @@ import numpy
 
 from phasorpy.plot import PhasorPlot
 
+numpy.random.seed(42)
+
 # %%
 # Empty phasor plot
 # -----------------
@@ -52,7 +54,6 @@ plot.plot(0.6, 0.4, label='1')
 plot.plot([0.2, 0.9], [0.4, 0.3], '.-', label='2')
 plot.plot([0.39, 0.4, 0.41], [0.21, 0.19, 0.2], 'x', label='3')
 plot.show()
-
 
 # %%
 # Cursors
@@ -113,7 +114,6 @@ plot.show()
 plot = PhasorPlot(frequency=80.0, title='Contours')
 plot.contour(real, imag)
 plot.show()
-
 
 # %%
 # Image
@@ -177,7 +177,6 @@ plot.ax.annotate(
     arrowprops=dict(arrowstyle='->'),
 )
 pyplot.show()
-
 
 # %%
 # plot_phasor function
