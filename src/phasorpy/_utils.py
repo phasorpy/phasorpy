@@ -349,10 +349,10 @@ def mask_cursor(
     imag: ArrayLike,
     cursor_real: float,
     cursor_imag: float,
-    cursor_diameter: float,
+    radius: float,
     /,
-) -> NDArray[numpy.bool_]:
-    """Return mask for phasors within circular cursor diameter.
+) -> NDArray[bool]:
+    """Return mask for phasors within circular cursor radius.
 
     >>> mask_cursor([0.6, 0.5, 0.4], [0.4, 0.3, 0.2], 0.5, 0.3, 0.05)
     array([False,  True, False])
@@ -360,9 +360,7 @@ def mask_cursor(
     """
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
-    return (real - cursor_real) ** 2 + (imag - cursor_imag) ** 2 <= (
-        cursor_diameter / 2
-    ) ** 2
+    return numpy.hypot(real - cursor_real, imag - cursor_imag) <= radius
 
 
 def mask_segment(

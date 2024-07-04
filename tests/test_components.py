@@ -66,8 +66,8 @@ def test_two_fractions_from_phasor_channels():
 
 @pytest.mark.parametrize(
     """real, imag,
-    real_components, imag_components,
-    cursor_diameter, number_of_steps,
+    components_real, components_imag,
+    radius, steps,
     expected_counts, expected_fractions""",
     [
         (
@@ -87,9 +87,9 @@ def test_two_fractions_from_phasor_channels():
             [0.4, 0.3],
             0.15,
             5,
-            ([0, 0, 1, 0, 1, 0],),
+            ([0, 0, 1, 2, 1, 0],),
             [0, 0.2, 0.4, 0.6, 0.8, 1],
-        ),  # Two components, phasors as list. Increase cursor diameter.
+        ),  # Two components, phasors as list. Increase cursor radius.
         (
             [0.6, 0.4],
             [0.35, 0.38],
@@ -107,7 +107,7 @@ def test_two_fractions_from_phasor_channels():
             [0.0, 0.4, 0.3],
             0.05,
             5,
-            ([0, 0, 0, 1, 0, 0], [0, 0, 0, 1, 0, 0], [0, 0, 0, 1, 0, 0]),
+            ([0, 0, 0, 1, 0, 0], [0, 0, 0, 1, 0, 0], [0, 0, 1, 1, 0, 0]),
             [0, 0.2, 0.4, 0.6, 0.8, 1],
         ),  # Three components, phasor as scalar
         (
@@ -117,7 +117,7 @@ def test_two_fractions_from_phasor_channels():
             [0.0, 0.4, 0.3],
             0.05,
             5,
-            ([0, 1, 0, 1, 0, 0], [0, 1, 0, 1, 0, 0], [0, 0, 1, 1, 0, 0]),
+            ([0, 1, 1, 1, 0, 0], [0, 1, 0, 1, 0, 0], [0, 0, 2, 1, 0, 0]),
             [0, 0.2, 0.4, 0.6, 0.8, 1],
         ),  # Three components, phasors as list
         (
@@ -127,17 +127,17 @@ def test_two_fractions_from_phasor_channels():
             [0.4, 0.4, 0.2],
             0.05,
             4,
-            ([0, 0, 1, 0, 1], [0, 0, 0, 1, 2], [1, 1, 1, 2, 2]),
+            ([0, 0, 1, 0, 1], [0, 0, 0, 1, 2], [1, 1, 2, 2, 2]),
             [0, 0.25, 0.5, 0.75, 1],
         ),  # Phasor outside semicircle but inside cursor of component 1
         (
-            [0.4, 0.84],
+            [0.4, 0.86],
             [0.38, 0.4],
             [0.8, 0.2, 0.042],
             [0.4, 0.4, 0.2],
             0.05,
             4,
-            ([0, 0, 1, 0, 0], [0, 0, 0, 1, 1], [0, 0, 0, 1, 1]),
+            ([0, 0, 1, 0, 0], [0, 0, 0, 1, 1], [0, 0, 1, 1, 1]),
             [0, 0.25, 0.5, 0.75, 1],
         ),  # Phasor outside semicircle and outside cursor of component 1
     ],
@@ -145,10 +145,10 @@ def test_two_fractions_from_phasor_channels():
 def test_graphical_component_analysis(
     real,
     imag,
-    real_components,
-    imag_components,
-    cursor_diameter,
-    number_of_steps,
+    components_real,
+    components_imag,
+    radius,
+    steps,
     expected_counts,
     expected_fractions,
 ):
@@ -156,10 +156,10 @@ def test_graphical_component_analysis(
     actual_counts, actual_fractions = graphical_component_analysis(
         real,
         imag,
-        real_components,
-        imag_components,
-        cursor_diameter=cursor_diameter,
-        number_of_steps=number_of_steps,
+        components_real,
+        components_imag,
+        radius=radius,
+        steps=steps,
     )
     for actual_count, expected_count in zip(actual_counts, expected_counts):
         assert_allclose(actual_count, expected_count)
@@ -168,40 +168,41 @@ def test_graphical_component_analysis(
 
 @pytest.mark.parametrize(
     """real, imag,
-    real_components, imag_components""",
+    components_real, components_imag""",
     [
         ([0], [0, 0], [0, 1], [0, 1]),  # imag.shape != real.shape
         ([0, 0], [0], [0, 1], [0, 1]),  # real.shape != imag.shape
         (
-            [0],
-            [0],
+            0,
+            0,
             [0, 1, 2],
             [0, 1],
-        ),  # imag_components.shape != real_components.shape
+        ),  # components_imag.shape != components_real.shape
         (
-            [0],
-            [0],
+            0,
+            0,
             [0, 1],
             [0, 1, 2],
-        ),  # real_components.shape != imag_components.shape
+        ),  # components_real.shape != components_imag.shape
         ([0], [0], [0], [0]),  # Number of components is 1
         (
-            [0],
-            [0],
+            0,
+            0,
             [0, 1, 2, 3],
             [0, 1, 2, 3],
         ),  # Number of components is more than 3
         ([0], [0], [0, 0], [0, 0]),  # Components have same coordinates
+        (0, 0, [[0], [1]], [[0], [1]]),  # Components are not one dimensional
     ],
 )
 def test_errors_graphical_component_analysis(
     real,
     imag,
-    real_components,
-    imag_components,
+    components_real,
+    components_imag,
 ):
     """Test errors in graphical_component_analysis function."""
     with pytest.raises(ValueError):
         graphical_component_analysis(
-            real, imag, real_components, imag_components
+            real, imag, components_real, components_imag
         )
