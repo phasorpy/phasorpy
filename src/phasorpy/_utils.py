@@ -351,7 +351,7 @@ def mask_cursor(
     cursor_imag: float,
     radius: float,
     /,
-) -> NDArray[bool]:
+) -> NDArray[numpy.bool_]:
     """Return mask for phasors within circular cursor radius.
 
     >>> mask_cursor([0.6, 0.5, 0.4], [0.4, 0.3, 0.2], 0.5, 0.3, 0.05)
