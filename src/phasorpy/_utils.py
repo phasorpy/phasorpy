@@ -18,6 +18,9 @@ __all__: list[str] = [
     'circle_line_intersection',
     'circle_circle_intersection',
     'project_phasor_to_line',
+    'line_from_components',
+    'mask_cursor',
+    'mask_segment',
 ]
 
 import math
@@ -292,31 +295,105 @@ def project_phasor_to_line(
         raise ValueError(f'{real_components.shape=} != (2,)')
     if imag_components.shape != (2,):
         raise ValueError(f'{imag_components.shape=} != (2,)')
-    first_component_phasor = numpy.array(
-        [real_components[0], imag_components[0]]
+    unit_vector, distance_between_components = line_from_components(
+        real_components, imag_components
     )
-    second_component_phasor = numpy.array(
-        [real_components[1], imag_components[1]]
-    )
-    total_distance_between_components = math.hypot(
-        (second_component_phasor[0] - first_component_phasor[0]),
-        (second_component_phasor[1] - first_component_phasor[1]),
-    )
-    if math.isclose(total_distance_between_components, 0, abs_tol=1e-6):
-        raise ValueError('components must have different coordinates')
-    line_vector = second_component_phasor - first_component_phasor
-    line_length = numpy.linalg.norm(line_vector)
-    line_direction = line_vector / line_length
-    projected_points = (
-        numpy.stack((real, imag), axis=axis) - first_component_phasor
-    )
-    projection_lengths = numpy.dot(projected_points, line_direction)
+    projected_points = numpy.stack((real, imag), axis=axis) - [
+        real_components[0],
+        imag_components[0],
+    ]
+    projection_lengths = numpy.dot(projected_points, unit_vector)
     if clip:
-        projection_lengths = numpy.clip(projection_lengths, 0, line_length)
-    projected_points = (
-        first_component_phasor
-        + numpy.expand_dims(projection_lengths, axis=axis) * line_direction
-    )
+        projection_lengths = numpy.clip(
+            projection_lengths, 0, distance_between_components
+        )
+    projected_points = [
+        real_components[0],
+        imag_components[0],
+    ] + numpy.expand_dims(projection_lengths, axis=axis) * unit_vector
     projected_points_real = projected_points[..., 0]
     projected_points_imag = projected_points[..., 1]
     return projected_points_real, projected_points_imag
+
+
+def line_from_components(
+    real_components: ArrayLike,
+    imag_components: ArrayLike,
+    /,
+) -> tuple[NDArray[Any], float]:
+    """Return unit vector and distance between components.
+
+    >>> line_from_components([0.2, 0.9], [0.4, 0.3])  # doctest: +NUMBER
+    (array([0.99, -0.14]), 0.71)
+
+    """
+    real_components = numpy.asarray(real_components)
+    imag_components = numpy.asarray(imag_components)
+    if real_components.shape != (2,) or imag_components.shape != (2,):
+        raise ValueError('components must have shape (2,)')
+    line_vector = numpy.array(
+        [
+            real_components[1] - real_components[0],
+            imag_components[1] - imag_components[0],
+        ]
+    )
+    distance_between_components = numpy.linalg.norm(line_vector)
+    if math.isclose(distance_between_components, 0, abs_tol=1e-6):
+        raise ValueError('components must have different coordinates')
+    unit_vector = line_vector / distance_between_components
+    return numpy.asarray(unit_vector), float(distance_between_components)
+
+
+def mask_cursor(
+    real: ArrayLike,
+    imag: ArrayLike,
+    cursor_real: float,
+    cursor_imag: float,
+    radius: float,
+    /,
+) -> NDArray[numpy.bool_]:
+    """Return mask for phasors within circular cursor radius.
+
+    >>> mask_cursor([0.6, 0.5, 0.4], [0.4, 0.3, 0.2], 0.5, 0.3, 0.05)
+    array([False,  True, False])
+
+    """
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    return numpy.hypot(real - cursor_real, imag - cursor_imag) <= radius
+
+
+def mask_segment(
+    real: ArrayLike,
+    imag: ArrayLike,
+    start_real: float,
+    start_imag: float,
+    end_real: float,
+    end_imag: float,
+    distance_threshold: float,
+    /,
+) -> NDArray[numpy.bool_]:
+    """Return mask for phasors within distance threshold from line segment.
+
+    >>> mask_segment([0.6, 0.5, 0.4], [0.4, 0.3, 0.2], 0.2, 0.4, 0.9, 0.3, 0.1)
+    array([ True,  True, False])
+
+    """
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    original_shape = real.shape
+    real = real.flatten()
+    imag = imag.flatten()
+    p_vec = numpy.vstack((real, imag)).T
+    v_vec = numpy.array([end_real - start_real, end_imag - start_imag])
+    t_values = numpy.dot(
+        p_vec - numpy.array([start_real, start_imag]), v_vec
+    ) / numpy.dot(v_vec, v_vec)
+    t_values = numpy.clip(t_values, 0, 1)
+    closest_points = (
+        numpy.array([start_real, start_imag])
+        + t_values[:, numpy.newaxis] * v_vec
+    )
+    distances = numpy.linalg.norm(p_vec - closest_points, axis=1)
+    mask = distances <= distance_threshold
+    return mask.reshape(original_shape)

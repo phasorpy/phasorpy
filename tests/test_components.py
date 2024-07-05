@@ -3,7 +3,10 @@
 import pytest
 from numpy.testing import assert_allclose
 
-from phasorpy.components import two_fractions_from_phasor
+from phasorpy.components import (
+    graphical_component_analysis,
+    two_fractions_from_phasor,
+)
 
 
 def test_two_fractions_from_phasor():
@@ -59,3 +62,147 @@ def test_two_fractions_from_phasor_channels():
             [[[0.0, 0.04, 0.16]]],
         ),
     )
+
+
+@pytest.mark.parametrize(
+    """real, imag,
+    components_real, components_imag,
+    radius, steps,
+    expected_counts, expected_fractions""",
+    [
+        (
+            0.6,
+            0.35,
+            [0.2, 0.9],
+            [0.4, 0.3],
+            0.05,
+            5,
+            ([0, 0, 1, 0, 0, 0],),
+            [0, 0.2, 0.4, 0.6, 0.8, 1],
+        ),  # Two components, phasor as scalar
+        (
+            [0.6, 0.4],
+            [0.35, 0.38],
+            [0.2, 0.9],
+            [0.4, 0.3],
+            0.15,
+            5,
+            ([0, 0, 1, 2, 1, 0],),
+            [0, 0.2, 0.4, 0.6, 0.8, 1],
+        ),  # Two components, phasors as list. Increase cursor radius.
+        (
+            [0.6, 0.4],
+            [0.35, 0.38],
+            [0.2, 0.9],
+            [0.4, 0.3],
+            0.05,
+            10,
+            ([0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0],),
+            [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+        ),  # Two components, phasors as list. Increase number of steps.
+        (
+            0.3,
+            0.2,
+            [0.0, 0.2, 0.9],
+            [0.0, 0.4, 0.3],
+            0.05,
+            5,
+            ([0, 0, 0, 1, 0, 0], [0, 0, 0, 1, 0, 0], [0, 0, 1, 1, 0, 0]),
+            [0, 0.2, 0.4, 0.6, 0.8, 1],
+        ),  # Three components, phasor as scalar
+        (
+            [0.3, 0.5],
+            [0.2, 0.3],
+            [0.0, 0.2, 0.9],
+            [0.0, 0.4, 0.3],
+            0.05,
+            5,
+            ([0, 1, 1, 1, 0, 0], [0, 1, 0, 1, 0, 0], [0, 0, 2, 1, 0, 0]),
+            [0, 0.2, 0.4, 0.6, 0.8, 1],
+        ),  # Three components, phasors as list
+        (
+            [0.4, 0.82],
+            [0.38, 0.4],
+            [0.8, 0.2, 0.042],
+            [0.4, 0.4, 0.2],
+            0.05,
+            4,
+            ([0, 0, 1, 0, 1], [0, 0, 0, 1, 2], [1, 1, 2, 2, 2]),
+            [0, 0.25, 0.5, 0.75, 1],
+        ),  # Phasor outside semicircle but inside cursor of component 1
+        (
+            [0.4, 0.86],
+            [0.38, 0.4],
+            [0.8, 0.2, 0.042],
+            [0.4, 0.4, 0.2],
+            0.05,
+            4,
+            ([0, 0, 1, 0, 0], [0, 0, 0, 1, 1], [0, 0, 1, 1, 1]),
+            [0, 0.25, 0.5, 0.75, 1],
+        ),  # Phasor outside semicircle and outside cursor of component 1
+    ],
+)
+def test_graphical_component_analysis(
+    real,
+    imag,
+    components_real,
+    components_imag,
+    radius,
+    steps,
+    expected_counts,
+    expected_fractions,
+):
+    """Test graphical_component_analysis function."""
+    actual_counts, actual_fractions = graphical_component_analysis(
+        real,
+        imag,
+        components_real,
+        components_imag,
+        radius=radius,
+        steps=steps,
+    )
+    for actual_count, expected_count in zip(actual_counts, expected_counts):
+        assert_allclose(actual_count, expected_count)
+    assert_allclose(actual_fractions, expected_fractions)
+
+
+@pytest.mark.parametrize(
+    """real, imag,
+    components_real, components_imag""",
+    [
+        ([0], [0, 0], [0, 1], [0, 1]),  # imag.shape != real.shape
+        ([0, 0], [0], [0, 1], [0, 1]),  # real.shape != imag.shape
+        (
+            0,
+            0,
+            [0, 1, 2],
+            [0, 1],
+        ),  # components_imag.shape != components_real.shape
+        (
+            0,
+            0,
+            [0, 1],
+            [0, 1, 2],
+        ),  # components_real.shape != components_imag.shape
+        ([0], [0], [0], [0]),  # Number of components is 1
+        (
+            0,
+            0,
+            [0, 1, 2, 3],
+            [0, 1, 2, 3],
+        ),  # Number of components is more than 3
+        ([0], [0], [0, 0], [0, 0]),  # Components have same coordinates
+        (0, 0, [[0], [1]], [[0], [1]]),  # Components are not one dimensional
+    ],
+)
+def test_errors_graphical_component_analysis(
+    real,
+    imag,
+    components_real,
+    components_imag,
+):
+    """Test errors in graphical_component_analysis function."""
+    with pytest.raises(ValueError):
+        graphical_component_analysis(
+            real, imag, components_real, components_imag
+        )
