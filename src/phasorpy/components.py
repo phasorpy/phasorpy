@@ -141,7 +141,7 @@ def graphical_component_analysis(
     components_imag: array_like, shape (2,) or (3,)
         Imaginary coordinates for two or three components.
     radius: float, optional
-        Diameter of the cursor in phasor coordinates.
+        Radius of the cursor in phasor coordinates.
     steps: int, optional
         Number of steps to move the cursor along the line between components.
 
