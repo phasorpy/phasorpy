@@ -147,9 +147,11 @@ def graphical_component_analysis(
 
     Returns
     -------
-    fractions : tuple of ndarray
+    counts : tuple of ndarray
         Counts along each line segment connecting the components, ordered
-        1-2, 1-3, 2-3 (for 3 components) or simply 1-2 (for 2 components).
+        0-1, 0-2, 1-2 (for 3 components) or simply 0-1 (for 2 components).
+    fractions : ndarray
+        Fractions for the combinations of each pair of components, from 0 to 1.
 
     Notes
     -----
@@ -163,6 +165,10 @@ def graphical_component_analysis(
         The array shapes of `real` and `imag`, or `components_real` and
         `components_imag` do not match.
         Number of components is less than 2 or greater than 3.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_phasorpy_components.py`
 
     Examples
     --------
