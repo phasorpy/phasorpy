@@ -158,7 +158,6 @@ plt.show()
 # between the components, demonstrated in the following animation
 # which is repeated for the other combinations of components:
 
-# sphinx_gallery_start_ignore
 grid_x = numpy.linspace(-0.2, 1, int((1 + 0.2) / 0.001) + 1)
 grid_y = numpy.linspace(-0.2, 0.6, int((0.6 + 0.2) / 0.001) + 1)
 grid_x, grid_y = numpy.meshgrid(grid_x, grid_y)
@@ -224,7 +223,6 @@ ax1.annotate(
 )
 plt.tight_layout()
 plt.show()
-# sphinx_gallery_end_ignore
 
 # %%
 # sphinx_gallery_thumbnail_number = 2

@@ -60,9 +60,9 @@ def two_fractions_from_phasor(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    components_real: array_like
+    components_real: array_like, shape (2,)
         Real coordinates of the first and second components.
-    components_imag: array_like
+    components_imag: array_like, shape (2,)
         Imaginary coordinates of the first and second components.
 
     Returns
@@ -136,9 +136,9 @@ def graphical_component_analysis(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    components_real: array_like
+    components_real: array_like, shape (2,) or (3,)
         Real coordinates for two or three components.
-    components_imag: array_like
+    components_imag: array_like, shape (2,) or (3,)
         Imaginary coordinates for two or three components.
     radius: float, optional
         Diameter of the cursor in phasor coordinates.
