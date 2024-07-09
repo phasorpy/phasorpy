@@ -14,7 +14,7 @@ from __future__ import annotations
 
 __all__ = [
     'mask_from_circular_cursor',
-    'mask_from_cursor',
+    'mask_from_polar_cursor',
     'segmentate_with_cursors',
 ]
 
@@ -27,19 +27,16 @@ if TYPE_CHECKING:
         NDArray,
     )
 
-import warnings
-
 import numpy
 
 
 def mask_from_circular_cursor(
     real: ArrayLike,
     imag: ArrayLike,
-    center: ArrayLike,
+    centers: ArrayLike,
     radius: float,
 ) -> NDArray[Any]:
-    r"""Return indices of circle to which each phasor coordinate belongs.
-    Phasor coordinates that do not fall in a circle have an index of zero.
+    """Return masks for circular cursors of phasor coordinates.
 
     Parameters
     ----------
@@ -47,53 +44,64 @@ def mask_from_circular_cursor(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    center : array_like, shape (M, 2)
+    centers : array_like, shape (..., 2)
         Phasor coordinates of circle centers.
     radius : float
         Radii of circles.
 
     Returns
     -------
-    label : ndarray
+    masks : ndarray
         Indices of circle to which each phasor coordinate belongs.
 
     Raises
     ------
     ValueError
         `real` and `imag` must have the same dimensions.
+        'centers' second dimension must be 2.
         `radius` must be positive.
 
     Examples
     --------
-    Compute label array for four circles:
+    Compute mask for one circular cursor:
 
     >>> mask_from_circular_cursor(
-    ...     numpy.array([-0.5, -0.5, 0.5, 0.5]),
-    ...     numpy.array([-0.5, 0.5, -0.5, 0.5]),
-    ...     numpy.array([-0.5, -0.5]),
-    ...     radius=0.1,
+    ...     [0.0, 0.0],
+    ...     [0.0, 0.5],
+    ...     [0.0, 0.5],
+    ...     0.1,
     ... )
-    array([ True, False, False, False])
+    array([ False, True])
+
+    Compute masks for three circular cursors:
+
+    >>> mask_from_circular_cursor(
+    ...     [0.0, 0.0],
+    ...     [0.0, 0.5],
+    ...     [[0.0, 0.5],[0.0, 0.0]],
+    ...     0.1,
+    ... )
+    array([ False, True], [True, False])
+
     """
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
-    center = numpy.asarray(center)
+    centers = numpy.asarray(centers)
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
-    if center.shape[0] != 2:
-        raise ValueError(f'invalid {center.shape=}')
+    if centers.shape[1] != 2:
+        raise ValueError(f'invalid {centers.shape=}')
     if numpy.any(radius < 0):
         raise ValueError('radius is < 0')
-    condition = (
-        numpy.square(real - center[0])
-        + numpy.square(imag - center[1])
-        - numpy.square(radius)
-    )
-    return condition < 0
+
+    centers = centers[:, numpy.newaxis, :]
+    distance_sq = numpy.square(real - centers[..., 0]) + numpy.square(imag - centers[..., 1])
+    masks = distance_sq <= numpy.square(radius)
+    return masks
 
 
-def mask_from_cursor(
+def mask_from_polar_cursor(
     xarray: NDArray,
     yarray: NDArray,
     xrange: NDArray,

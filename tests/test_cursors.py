@@ -4,36 +4,26 @@ import numpy
 import pytest
 from numpy.testing import assert_array_equal
 
-from phasorpy.cursors import *
+from phasorpy.cursors import mask_from_circular_cursor, mask_from_cursor, segmentate_with_cursors
 
 
 def test_mask_from_circular_cursor():
-    # real, imag, center, radius=radius
-    real = numpy.array([-0.5, -0.5, 0.5, 0.5])
-    imag = numpy.array([-0.5, 0.5, -0.5, 0.5])
-    center = (numpy.array([[-0.5, -0.5]]),)
+    """Test mask_from_circular_cursor function."""
+    real = [-0.5, -0.5, 0.5, 0.5]
+    imag = [-0.5, 0.5, -0.5, 0.5]
+    center = ([[-0.5, -0.5]],)
     radius = 0.1
-    mask = mask_from_circular_cursor(real, imag, center, radius=radius)
-    assert_array_equal(mask, [True, False, False, False])
-
-
-def test_mask_from_circular_cursor():
-    # Test ValueErrors
-    real = numpy.array([-0.5, -0.5, 0.5, 0.5])
-    imag = numpy.array([-0.5, 0.5, -0.5, 0.5])
-    center = (numpy.array([[-0.5, -0.5]]),)
-    radius = 0.1
+    assert_array_equal(mask_from_circular_cursor(real, imag, center, radius), [True, False, False, False])
     with pytest.raises(ValueError):
-        mask_from_circular_cursor(real, imag, center, radius=-0.1)
+        mask_from_circular_cursor(real, imag, center, -radius)
     with pytest.raises(ValueError):
-        mask_from_circular_cursor(
-            numpy.array([-0.5, -0.5, 0.5]), imag, center, radius=radius
-        )
+        mask_from_circular_cursor(numpy.array([-0.5, -0.5, 0.5]), imag, center, radius)
     with pytest.raises(ValueError):
         mask_from_circular_cursor(real, imag, numpy.array([[-0.5]]), radius)
 
 
 def test_mask_from_cursor():
+    """Test mask_from_cursor function."""
     xarray = [[337, 306, 227], [21, 231, 235], [244, 328, 116]]
     yarray = [[0.22, 0.40, 0.81], [0.33, 0.43, 0.36], [0.015, 0.82, 0.58]]
     mask = mask_from_cursor(
