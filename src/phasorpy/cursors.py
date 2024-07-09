@@ -5,7 +5,7 @@
 - create labels for region of interests in the phasor space:
 
   - :py:func:`mask_from_circular_cursor`
-  - :py:func:`mask_from_cursor`
+  - :py:func:`mask_from_polar_cursor`
   - :py:func:`segmentate_with_cursors`
 
 """
@@ -33,8 +33,11 @@ import numpy
 def mask_from_circular_cursor(
     real: ArrayLike,
     imag: ArrayLike,
-    centers: ArrayLike,
-    radius: float,
+    centers_real: ArrayLike,
+    centers_imag: ArrayLike,
+    /,
+    *,
+    radius: ArrayLike = 0.05,
 ) -> NDArray[Any]:
     """Return masks for circular cursors of phasor coordinates.
 
@@ -44,118 +47,140 @@ def mask_from_circular_cursor(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    centers : array_like, shape (..., 2)
-        Phasor coordinates of circle centers.
-    radius : float
+    centers_real : array_like, shape (n,)
+        Real coordinates of circle centers.
+    centers_imag : array_like, shape (n,)
+        Imaginary coordinates of circle centers.
+    radius : array_like, shape (n,)
         Radii of circles.
 
     Returns
     -------
     masks : ndarray
-        Indices of circle to which each phasor coordinate belongs.
+        Phasor coordinates masked for each circular cursor.
 
     Raises
     ------
     ValueError
-        `real` and `imag` must have the same dimensions.
-        'centers' second dimension must be 2.
-        `radius` must be positive.
+        The array shapes of `real` and `imag`, or `centers_real` and
+        `centers_imag` do not match.
+        If the coordinates and/or the radii of the centers are not
+        one-dimensional.
+        If any of the radii is negative.
 
     Examples
     --------
-    Compute mask for one circular cursor:
+    Create mask for a single circular cursor:
 
-    >>> mask_from_circular_cursor(
-    ...     [0.0, 0.0],
-    ...     [0.0, 0.5],
-    ...     [0.0, 0.5],
-    ...     0.1,
-    ... )
+    >>> mask_from_circular_cursor([0.0, 0.0], [0.0, 0.5], 0.0, 0.5, radius=0.1)
     array([ False, True])
 
-    Compute masks for three circular cursors:
+    Create masks for two circular cursors with different radius:
 
     >>> mask_from_circular_cursor(
-    ...     [0.0, 0.0],
+    ...     [0.0, 1.0],
     ...     [0.0, 0.5],
-    ...     [[0.0, 0.5],[0.0, 0.0]],
-    ...     0.1,
+    ...     [0.0, 1.0],
+    ...     [0.0, 0.4],
+    ...     readius=[0.1, 0.05]
     ... )
-    array([ False, True], [True, False])
+    array([ False, True], [False, False])
 
     """
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
-    centers = numpy.asarray(centers)
+    centers_real = numpy.asarray(centers_real)
+    centers_imag = numpy.asarray(centers_imag)
+    radius = numpy.asarray(radius)
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
-    if centers.shape[1] != 2:
-        raise ValueError(f'invalid {centers.shape=}')
-    if numpy.any(radius < 0):
-        raise ValueError('radius is < 0')
+    if centers_real.shape != centers_imag.shape:
+        raise ValueError(f'{centers_real.shape=} != {centers_imag.shape=}')
+    if centers_real.ndim != 1:
+        raise ValueError(
+            'center coordinates are not one-dimensional: '
+            f'{centers_real.ndim} dimensions found'
+        )
+    if radius.ndim != 1:
+        raise ValueError(
+            f'radius must be one dimensional: {radius.ndim} dimensions found'
+        )
+    if numpy.min(radius) < 0:
+        raise ValueError('all radii must be positive')
 
-    centers = centers[:, numpy.newaxis, :]
-    distance_sq = numpy.square(real - centers[..., 0]) + numpy.square(imag - centers[..., 1])
-    masks = distance_sq <= numpy.square(radius)
+    distance = numpy.square(
+        real[..., numpy.newaxis] - centers_real
+    ) + numpy.square(imag[..., numpy.newaxis] - centers_imag)
+    masks = distance <= numpy.square(radius)
     return masks
 
 
 def mask_from_polar_cursor(
-    xarray: NDArray,
-    yarray: NDArray,
-    xrange: NDArray,
-    yrange: NDArray,
+    phase: ArrayLike,
+    modulation: ArrayLike,
+    phase_range: ArrayLike,
+    modulation_range: ArrayLike,
+    /,
 ) -> NDArray[Any]:
-    """
-    Create mask for a cursor.
+    """Return mask for polar cursor of polar coordinates.
 
     Parameters
     ----------
-    - xarray: NDArray
-        x-coordinates.
-    - yarray: NDArray
-        y-coordinates.
-    - xarray: NDArray
-        x-coordinates.
-    - yarray: NDArray
-        y-coordinates.
+    - phase: array_like
+        Angular component of polar coordinates in radians.
+    - modulation: array_like
+        Radial component of polar coordinates.
+    - phase_range: array_like, shape (..., 2)
+        Angular range of the cursors in radians.
+    - modulation_range: array_like (..., 2)
+        Radial range of the cursors.
 
     Returns
     -------
-    - mask: NDArray:
-        cursor mask.
+    - masks: ndarray
+        Polar coordinates masked for each polar cursor.
 
     Raises
     ------
     ValueError
-        `xarray` and `yarray` must be same shape.
+        `phase` and `modulation` must be same shape.
 
     Example
     -------
     Creat mask from cursor.
     >>> phase = [[337, 306, 227], [21, 231, 235], [244, 328, 116]]
     >>> mod = [[0.22, 0.40, 0.81], [0.33, 0.43, 0.36], [0.015, 0.82, 0.58]]
-    >>> mask_from_cursor(
-    ...     xarray=phase, yarray=mod, xrange=[0, 270], yrange=[0, 0.5]
+    >>> mask_from_polar_cursor(
+    ...     phase=phase, modulation=mod, phase_range=[0, 270], modulation_range=[0, 0.5]
     ... )
     array([[False, False, False],
             [ True,  True,  True],
             [ True, False, False]])
+
     """
-    xarray = numpy.asarray(xarray)
-    yarray = numpy.asarray(yarray)
-    if xarray.shape != yarray.shape:
-        raise ValueError('xarray and yarray must have same shape')
-    if len(xrange) != len(yrange):
-        raise ValueError('xrange and y range must be the same length')
-    xmask = (xarray >= xrange[0]) & (xarray <= xrange[1])
-    ymask = (yarray >= yrange[0]) & (yarray <= yrange[1])
-    return xmask & ymask
+    phase = numpy.asarray(phase)
+    modulation = numpy.asarray(modulation)
+    phase_range = numpy.asarray(phase_range)
+    modulation_range = numpy.asarray(modulation_range)
+    
+    if phase.shape != modulation.shape:
+        raise ValueError(f'{phase.shape=} != {modulation.shape=}')
+    if phase_range.shape != modulation_range.shape:
+        raise ValueError(f'{phase_range.shape=} != {modulation_range.shape=}')
+    if phase_range.shape[-1] != 2:
+        raise ValueError(f'The last dimension of range must be 2: {phase_range.shape[-1]} found')
+    
+    phase_range = numpy.expand_dims(phase_range, axis=(1, 2))
+    modulation_range = numpy.expand_dims(modulation_range, axis=(1, 2))
+
+    phase_mask = (phase[numpy.newaxis, ...] >= phase_range[..., 0]) & (phase[numpy.newaxis, ...] <= phase_range[..., 1])
+    modulation_mask = (modulation[numpy.newaxis, ...] >= modulation_range[..., 0]) & (modulation[numpy.newaxis, ...] <= modulation_range[..., 1])
+    return phase_mask & modulation_mask
 
 
 def segmentate_with_cursors(
-    mask: NDArray, cursors_color: NDArray, mean: NDArray
+    mask: NDArray, cursors_color: NDArray, mean: NDArray, /,
 ) -> NDArray[Any]:
     """
     Create the segmented image with cursors.

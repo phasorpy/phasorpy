@@ -1,10 +1,14 @@
 #%%
-from phasorpy.cursors import mask_from_circular_cursor
-import numpy as np
-centers = np.array([[1,1,1],[0,0,0],[2,2,2]])
+from phasorpy.cursors import mask_from_polar_cursor
+import numpy
+phase = numpy.array([[337, 306, 227], [21, 231, 235], [244, 328, 116]])
+mod = [[0.22, 0.40, 0.81], [0.33, 0.43, 0.36], [0.015, 0.82, 0.58]]
+phase_range = numpy.array([[0, 270],[0, 270],[0, 270], [0, 270]])
+mod_range = numpy.array([[0, 0.5],[0, 0.5], [0, 0.5], [0, 0.5]])
+print(phase.shape)
+print(phase_range.shape)
+result = mask_from_polar_cursor(phase, mod, phase_range, mod_range)
 
-result = mask_from_circular_cursor([0,1], [0,1], centers , 0.5)
-print(centers.shape)
 print(result.shape)
 print(result)
 
