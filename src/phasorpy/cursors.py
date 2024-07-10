@@ -38,7 +38,7 @@ def mask_from_circular_cursor(
     /,
     *,
     radius: ArrayLike = 0.05,
-) -> NDArray[Any]:
+) -> NDArray[numpy.bool_]:
     """Return masks for circular cursors of phasor coordinates.
 
     Parameters
@@ -64,9 +64,8 @@ def mask_from_circular_cursor(
     ValueError
         The array shapes of `real` and `imag`, or `centers_real` and
         `centers_imag` do not match.
-        If the coordinates and/or the radii of the centers are not
-        one-dimensional.
-        If any of the radii is negative.
+        Center's coordinates and/or the radii are not one-dimensional.
+        Any of the radii is negative.
 
     Examples
     --------
@@ -82,7 +81,7 @@ def mask_from_circular_cursor(
     ...     [0.0, 0.5],
     ...     [0.0, 1.0],
     ...     [0.0, 0.4],
-    ...     readius=[0.1, 0.05]
+    ...     radius=[0.1, 0.05]
     ... )
     array([ False, True], [False, False])
 
@@ -91,7 +90,7 @@ def mask_from_circular_cursor(
     imag = numpy.asarray(imag)
     centers_real = numpy.asarray(centers_real)
     centers_imag = numpy.asarray(centers_imag)
-    radius = numpy.asarray(radius)
+    radius = numpy.atleast_1d(radius)
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
@@ -122,7 +121,7 @@ def mask_from_polar_cursor(
     phase_range: ArrayLike,
     modulation_range: ArrayLike,
     /,
-) -> NDArray[Any]:
+) -> NDArray[numpy.bool_]:
     """Return mask for polar cursor of polar coordinates.
 
     Parameters
@@ -133,8 +132,10 @@ def mask_from_polar_cursor(
         Radial component of polar coordinates.
     - phase_range: array_like, shape (..., 2)
         Angular range of the cursors in radians.
-    - modulation_range: array_like (..., 2)
+        The start and end of the range must be in the last dimension.
+    - modulation_range: array_like, shape (..., 2)
         Radial range of the cursors.
+        The start and end of the range must be in the last dimension.
 
     Returns
     -------
@@ -144,38 +145,49 @@ def mask_from_polar_cursor(
     Raises
     ------
     ValueError
-        `phase` and `modulation` must be same shape.
+        The array shapes of `phase` and `modulation`, or `phase_range` and
+        `modulation_range` do not match.
+        The last dimension of `phase_range` and `modulation_range` is not 2.
 
     Example
     -------
-    Creat mask from cursor.
-    >>> phase = [[337, 306, 227], [21, 231, 235], [244, 328, 116]]
-    >>> mod = [[0.22, 0.40, 0.81], [0.33, 0.43, 0.36], [0.015, 0.82, 0.58]]
+    Create mask from a single polar cursor:
+
+    >>> mask_from_polar_cursor([5,100], [0.2, 0.4], [50, 150], [0.2, 0.5])
+    array([False,  True])
+
+    Create masks for two polar cursors with different ranges:
+
     >>> mask_from_polar_cursor(
-    ...     phase=phase, modulation=mod, phase_range=[0, 270], modulation_range=[0, 0.5]
+    ...     [5,100],
+    ...     [0.2, 0.4],
+    ...     [[50, 150], [0, 270]],
+    ...     [[0.2, 0.5], [0, 0.3]]
     ... )
-    array([[False, False, False],
-            [ True,  True,  True],
-            [ True, False, False]])
+    array([[False,  True],
+           [ True, False]])
 
     """
     phase = numpy.asarray(phase)
     modulation = numpy.asarray(modulation)
     phase_range = numpy.asarray(phase_range)
     modulation_range = numpy.asarray(modulation_range)
-    
+
     if phase.shape != modulation.shape:
         raise ValueError(f'{phase.shape=} != {modulation.shape=}')
     if phase_range.shape != modulation_range.shape:
         raise ValueError(f'{phase_range.shape=} != {modulation_range.shape=}')
     if phase_range.shape[-1] != 2:
-        raise ValueError(f'The last dimension of range must be 2: {phase_range.shape[-1]} found')
+        raise ValueError(f'The last dimension of the range must be 2: {phase_range.shape[-1]} found')
     
-    phase_range = numpy.expand_dims(phase_range, axis=(1, 2))
-    modulation_range = numpy.expand_dims(modulation_range, axis=(1, 2))
-
-    phase_mask = (phase[numpy.newaxis, ...] >= phase_range[..., 0]) & (phase[numpy.newaxis, ...] <= phase_range[..., 1])
-    modulation_mask = (modulation[numpy.newaxis, ...] >= modulation_range[..., 0]) & (modulation[numpy.newaxis, ...] <= modulation_range[..., 1])
+    if numpy.ndim(phase_range) > 1:
+        axes = tuple(range(1, numpy.ndim(phase) + 1))
+        phase = numpy.expand_dims(phase, axis=0)
+        modulation = numpy.expand_dims(modulation, axis=0)
+        phase_range = numpy.expand_dims(phase_range, axis=axes)
+        modulation_range = numpy.expand_dims(modulation_range, axis=axes)
+    phase_mask = (phase >= phase_range[..., 0]) & (phase <= phase_range[..., 1])
+    modulation_mask = (modulation >= modulation_range[..., 0]) & (modulation <= modulation_range[..., 1])
     return phase_mask & modulation_mask
 
 
