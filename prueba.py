@@ -27,8 +27,12 @@ mask_from_polar_cursor([5,100],[0.2, 0.4],[[50, 150], [0, 270]],[[0.2, 0.5], [0,
 # print(result)
 # %%
 from phasorpy.cursors import mask_from_circular_cursor
-
-result = mask_from_circular_cursor([0,1],[0,1], [0,0.9,2,3], [0,0.9,2,3], radius=[0.1,0.05,0.1,0.1])
+real = [[-0.5, 0.5],[-0.5, 0.5]]
+imag = [[-0.5, 0.5],[-0.5, 0.5]]
+center_real = -0.5
+center_imag = -0.5
+radius = 0.1
+result = mask_from_circular_cursor(real, imag, center_real, center_imag, radius = radius)
 print(result)
 print(result.shape)
 
