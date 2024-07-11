@@ -51,6 +51,12 @@ class TestPhasorPlot:
         assert plot.fig == fig
         self.show(plot)
 
+    def test_dataunit_to_point(self):
+        """Test dataunit_to_point method."""
+        plot = PhasorPlot(title='dataunit_to_point')
+        assert 100 < plot.dataunit_to_point < 500
+        self.show(plot)
+
     def test_on_format_coord(self):
         """Test on_format_coord callback."""
         plot = PhasorPlot(frequency=80.0, title='on_format_coord')
@@ -79,6 +85,7 @@ class TestPhasorPlot:
             label='3',
         )
         plot.plot(-0.5, -0.5, label='4')
+        plot.plot(0.5, 0.25, marker='v', label='v')
         self.show(plot)
 
     def test_hist2d(self):
@@ -137,8 +144,14 @@ class TestPhasorPlot:
         plot = PhasorPlot(title='components', allquadrants=allquadrants)
         with pytest.raises(ValueError):
             plot.components(0.5, 0.5)
-        plot.components(real, imag, fill=True, facecolor='lightyellow')
+        plot.components(
+            real, imag, fill=True, linestyle=':', facecolor='lightyellow'
+        )
         plot.components(real, imag, weights, linestyle='-', color='tab:blue')
+        plot.components(real, imag, marker='D', linestyle='', color='tab:red')
+        plot.components(
+            real, imag, weights, linestyle='-', marker='.', color='tab:blue'
+        )
         self.show(plot)
 
     def test_line(self):

@@ -187,7 +187,7 @@ pyplot.show()
 
 from phasorpy.plot import plot_phasor
 
-plot_phasor(real[0, :32], imag[0, :32], fmt='.', frequency=80.0)
+plot_phasor(real[0, :32], imag[0, :32], marker='.', frequency=80.0)
 
 # %%
 # sphinx_gallery_thumbnail_number = 10

@@ -52,7 +52,7 @@ fractions = numpy.array(
 
 plot_phasor(
     *phasor_from_lifetime(frequency, lifetimes, fractions),
-    fmt='o-',
+    linestyle='-',
     frequency=frequency,
     title='Multi-component lifetimes',
 )
@@ -68,7 +68,7 @@ plot_phasor(
     *phasor_from_lifetime(
         frequency, lifetimes, fractions, preexponential=True
     ),
-    fmt='o-',
+    linestyle='-',
     frequency=frequency,
     title='Pre-exponential amplitudes',
 )
@@ -131,7 +131,7 @@ plot_phasor(
         fraction=fraction_distributions,
         unit_conversion=1.0,
     ),
-    fmt='.',
+    marker='.',
     label=('40 MHz', '80 MHz', '160 MHz'),
     title='Lifetime distributions at multiple frequencies',
 )
@@ -157,8 +157,9 @@ lifetime_quenched = lifetime * (1.0 - efficiency)
 plot = PhasorPlot(frequency=frequency, title='FRET efficiency')
 plot.plot(
     *phasor_from_lifetime(frequency, lifetime_quenched),
+    color='k',
+    marker='.',
     label='100% Donor in FRET',
-    fmt='k.',
 )
 plot.plot(
     *phasor_from_lifetime(
@@ -173,7 +174,7 @@ plot.plot(
         fraction=[0.1, 0.9, 0.1 / 1e9],
         preexponential=True,
     ),
-    fmt='o-',
+    linestyle='-',
     label='90% Donor in FRET',
 )
 plot.show()

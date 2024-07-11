@@ -2,8 +2,8 @@
 
 The ``phasorpy.components`` module provides functions to:
 
-- calculate fractions of two components of known location by projecting to
-  line between components:
+- calculate fractions of two known components by projecting onto the
+  line between the components:
 
   - :py:func:`two_fractions_from_phasor`
 
@@ -13,12 +13,12 @@ The ``phasorpy.components`` module provides functions to:
 - calculate fractions of three or four known components by using higher
   harmonic information (not implemented)
 
-- calculate fractions of two or three components of known location by
-  resolving graphically with histogram:
+- calculate fractions of two or three known components by resolving
+  graphically with histogram:
 
   - :py:func:`graphical_component_analysis`
 
-- blindly resolve fractions of n components by using harmonic
+- blindly resolve fractions of `n` components by using harmonic
   information (not implemented)
 
 """
@@ -30,6 +30,7 @@ __all__ = [
     'graphical_component_analysis',
 ]
 
+import numbers
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -37,11 +38,10 @@ if TYPE_CHECKING:
 
 import numpy
 
-from ._utils import (
-    line_from_components,
-    mask_cursor,
-    mask_segment,
-    project_phasor_to_line,
+from ._phasorpy import (
+    _fraction_on_segment,
+    _is_inside_circle,
+    _is_inside_stadium,
 )
 
 
@@ -51,8 +51,12 @@ def two_fractions_from_phasor(
     components_real: ArrayLike,
     components_imag: ArrayLike,
     /,
-) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return fractions of two components from phasor coordinates.
+) -> NDArray[Any]:
+    """Return fraction of first of two components from phasor coordinates.
+
+    Return the relative distance (normalized by the distance between the two
+    components) to the second component for each phasor coordinate projected
+    onto the line between two components.
 
     Parameters
     ----------
@@ -67,13 +71,17 @@ def two_fractions_from_phasor(
 
     Returns
     -------
-    fractions : tuple of ndarray
-        A tuple containing arrays with the fractions of a specific component.
-        The order of the arrays in the tuple corresponds to the order of the
-        components used in the calculation.
+    fraction : ndarray
+        Fractions of first component.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_phasorpy_components.py`
 
     Notes
     -----
+    The fraction of the second component is ``1.0 - fraction``.
+
     For now, calculation of fraction of components from different
     channels or frequencies is not supported. Only one pair of components can
     be analyzed and will be broadcasted to all channels/frequencies.
@@ -89,7 +97,7 @@ def two_fractions_from_phasor(
     >>> two_fractions_from_phasor(
     ...     [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.9], [0.4, 0.3]
     ... )  # doctest: +NUMBER
-    (array([0.44, 0.56, 0.68]), array([0.56, 0.44, 0.32]))
+    array([0.44, 0.56, 0.68])
 
     """
     components_real = numpy.asarray(components_real)
@@ -98,21 +106,20 @@ def two_fractions_from_phasor(
         raise ValueError(f'{components_real.shape=} != (2,)')
     if components_imag.shape != (2,):
         raise ValueError(f'{components_imag.shape=} != (2,)')
-    _, distance_between_components = line_from_components(
-        components_real, components_imag
+    if (
+        components_real[0] == components_real[1]
+        and components_imag[0] == components_imag[1]
+    ):
+        raise ValueError('components must have different coordinates')
+
+    return _fraction_on_segment(
+        real,
+        imag,
+        components_real[0],
+        components_imag[0],
+        components_real[1],
+        components_imag[1],
     )
-    projected_real, projected_imag = project_phasor_to_line(
-        real, imag, components_real, components_imag
-    )
-    distances_to_first_component = numpy.hypot(
-        numpy.asarray(projected_real) - components_real[0],
-        numpy.asarray(projected_imag) - components_imag[0],
-    )
-    second_component_fractions = (
-        distances_to_first_component / distance_between_components
-    )
-    first_component_fractions = 1 - second_component_fractions
-    return first_component_fractions, second_component_fractions
 
 
 def graphical_component_analysis(
@@ -123,8 +130,8 @@ def graphical_component_analysis(
     /,
     *,
     radius: float = 0.05,
-    steps: int = 100,
-) -> tuple[tuple[NDArray[Any], ...], NDArray[Any]]:
+    fractions: ArrayLike | None = None,
+) -> tuple[NDArray[Any], ...]:
     """Return fractions of two or three components from phasor coordinates.
 
     The graphical method is based on moving circular cursors along the line
@@ -140,18 +147,23 @@ def graphical_component_analysis(
         Real coordinates for two or three components.
     components_imag: array_like, shape (2,) or (3,)
         Imaginary coordinates for two or three components.
-    radius: float, optional
+    radius: float, optional, default: 0.05
         Radius of the cursor in phasor coordinates.
-    steps: int, optional
-        Number of steps to move the cursor along the line between components.
+    fractions: array_like or int, optional, default: 100
+        Number of equidistant fractions, or 1D array of fraction values.
+        Fraction values must be in range [0.0, 1.0].
+        If an integer, ``numpy.linspace(0.0, 1.0, fractions)`` fraction values
+        are used.
 
     Returns
     -------
     counts : tuple of ndarray
         Counts along each line segment connecting the components, ordered
-        0-1, 0-2, 1-2 (for 3 components) or simply 0-1 (for 2 components).
-    fractions : ndarray
-        Fractions for the combinations of each pair of components, from 0 to 1.
+        0-1 (2 components) or 0-1, 0-2, 1-2 (3 components).
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_phasorpy_components.py`
 
     Notes
     -----
@@ -164,35 +176,30 @@ def graphical_component_analysis(
     ValueError
         The array shapes of `real` and `imag`, or `components_real` and
         `components_imag` do not match.
-        Number of components is less than 2 or greater than 3.
-
-    See Also
-    --------
-    :ref:`sphx_glr_tutorials_phasorpy_components.py`
+        The number of components is not 2 or 3.
+        Fraction values are not in range [0.0, 1.0].
 
     Examples
     --------
-    Count the number of phasors and fractions between two components:
+    Count the number of phasors between two components:
 
     >>> graphical_component_analysis(
-    ...     [0.6, 0.3], [0.35, 0.38], [0.2, 0.9], [0.4, 0.3], steps=5
+    ...     [0.6, 0.3], [0.35, 0.38], [0.2, 0.9], [0.4, 0.3], fractions=6
     ... )  # doctest: +NUMBER
-    ((array([0, 0, 1, 0, 1, 0]),), array([0, 0.2, 0.4, 0.6, 0.8, 1]))
+    (array([0, 0, 1, 0, 1, 0]),)
 
-    Count the number of phasors and fractions between the combinations
-    of three components:
+    Count the number of phasors between the combinations of three components:
 
     >>> graphical_component_analysis(
     ...     [0.4, 0.5],
     ...     [0.2, 0.3],
     ...     [0.0, 0.2, 0.9],
     ...     [0.0, 0.4, 0.3],
-    ...     steps=5,
+    ...     fractions=6,
     ... )  # doctest: +NUMBER +NORMALIZE_WHITESPACE
-    ((array([0, 1, 1, 1, 1, 0]),
-    array([0, 1, 0, 0, 0, 0]),
-    array([0, 1, 2, 0, 0, 0])),
-    array([0, 0.2, 0.4, 0.6, 0.8, 1]))
+    (array([0, 1, 1, 1, 1, 0]),
+     array([0, 1, 0, 0, 0, 0]),
+     array([0, 1, 2, 0, 0, 0]))
 
     """
     real = numpy.asarray(real)
@@ -203,50 +210,61 @@ def graphical_component_analysis(
         real.shape != imag.shape
         or components_real.shape != components_imag.shape
     ):
-        raise ValueError("Input array shapes must match")
+        raise ValueError('input array shapes must match')
     if components_real.ndim != 1:
         raise ValueError(
-            'Components arrays are not one-dimensional: '
+            'component arrays are not one-dimensional: '
             f'{components_real.ndim} dimensions found'
         )
     num_components = len(components_real)
     if num_components not in {2, 3}:
-        raise ValueError("Number of components must be 2 or 3")
+        raise ValueError('number of components must be 2 or 3')
+
+    if isinstance(fractions, numbers.Integral):
+        fractions = numpy.linspace(0.0, 1.0, fractions)
+    else:
+        fractions = numpy.asarray(fractions)
+        if fractions.ndim != 1:
+            raise ValueError('fractions is not a one-dimensional array')
+
     counts = []
-    fractions = numpy.linspace(0, 1, steps + 1)
-    for i, (real_a, imag_a) in enumerate(
-        zip(components_real, components_imag)
-    ):
+    for i in range(num_components):
+        a_real = components_real[i]
+        a_imag = components_imag[i]
         for j in range(i + 1, num_components):
-            real_b, imag_b = components_real[j], components_imag[j]
-            unit_vector, distance = line_from_components(
-                [real_b, real_a], [imag_b, imag_a]
-            )
-            cursor_real, cursor_imag = real_b, imag_b
-            step_size = distance / steps
+            b_real = components_real[j]
+            b_imag = components_imag[j]
+            ab_real = a_real - b_real
+            ab_imag = a_imag - b_imag
+
             component_counts = []
-            for _ in range(steps + 1):
+            for f in fractions:
+                if f < 0.0 or f > 1.0:
+                    raise ValueError(f'fraction {f} out of bounds [0.0, 1.0]')
                 if num_components == 2:
-                    mask = mask_cursor(
-                        real, imag, cursor_real, cursor_imag, radius
-                    )
-                elif num_components == 3:
-                    real_c, imag_c = (
-                        components_real[3 - i - j],
-                        components_imag[3 - i - j],
-                    )
-                    mask = mask_segment(
+                    mask = _is_inside_circle(
                         real,
                         imag,
-                        cursor_real,
-                        cursor_imag,
-                        real_c,
-                        imag_c,
+                        b_real + f * ab_real,  # cursor_real
+                        b_imag + f * ab_imag,  # cursor_imag
                         radius,
+                        True,
+                    )
+                else:
+                    # num_components == 3
+                    mask = _is_inside_stadium(
+                        real,
+                        imag,
+                        b_real + f * ab_real,  # cursor_real
+                        b_imag + f * ab_imag,  # cursor_imag
+                        components_real[3 - i - j],  # c_real
+                        components_imag[3 - i - j],  # c_imag
+                        radius,
+                        True,
                     )
                 fraction_counts = numpy.sum(mask)
                 component_counts.append(fraction_counts)
-                cursor_real += step_size * unit_vector[0]
-                cursor_imag += step_size * unit_vector[1]
+
             counts.append(numpy.asarray(component_counts))
-    return (tuple(counts), fractions)
+
+    return tuple(counts)

@@ -38,9 +38,8 @@ from matplotlib.path import Path
 from matplotlib.patheffects import AbstractPathEffect
 from matplotlib.widgets import Slider
 
+from ._phasorpy import _intersection_circle_circle, _intersection_circle_line
 from ._utils import (
-    circle_circle_intersection,
-    circle_line_intersection,
     parse_kwargs,
     phasor_from_polar_scalar,
     phasor_to_polar_scalar,
@@ -174,6 +173,15 @@ class PhasorPlot:
         """Matplotlib :py:class:`matplotlib.figure.Figure`."""
         return self._ax.get_figure()
 
+    @property
+    def dataunit_to_point(self) -> float:
+        """Factor to convert data to point unit."""
+        fig = self._ax.get_figure()
+        assert fig is not None
+        length = fig.bbox_inches.height * self._ax.get_position().height * 72.0
+        vrange = numpy.diff(self._ax.get_ylim()).item()
+        return length / vrange
+
     def show(self) -> None:
         """Display all open figures. Call :py:func:`matplotlib.pyplot.show`."""
         # self.fig.show()
@@ -228,6 +236,12 @@ class PhasorPlot:
             :py:meth:`matplotlib.axes.Axes.plot`.
 
         """
+        if fmt == 'o':
+            if 'marker' in kwargs:
+                fmt = ''
+                if 'linestyle' not in kwargs and 'ls' not in kwargs:
+                    kwargs['linestyle'] = ''
+        args = (fmt,) if fmt else ()
         ax = self._ax
         if label is not None and (
             isinstance(label, str) or not isinstance(label, Sequence)
@@ -248,7 +262,7 @@ class PhasorPlot:
                     lbl = label[i]
                 except IndexError:
                     pass
-            self._lines = ax.plot(re, im, fmt, label=lbl, **kwargs)
+            self._lines = ax.plot(re, im, *args, label=lbl, **kwargs)
         if label is not None:
             ax.legend()
         self._reset_limits()
@@ -404,10 +418,12 @@ class PhasorPlot:
         imag = numpy.asanyarray(imag)
         if real.ndim != 1 or real.shape != imag.shape:
             raise ValueError(f'invalid {real.shape=} or {imag.shape=}')
+        marker = kwargs.pop('marker', None)
+        color = kwargs.pop('color', None)
         if fraction is None:
             update_kwargs(
                 kwargs,
-                edgecolor=GRID_COLOR,
+                edgecolor=GRID_COLOR if color is None else color,
                 linestyle=GRID_LINESTYLE,
                 linewidth=GRID_LINEWIDH,
                 fill=GRID_FILL,
@@ -415,11 +431,19 @@ class PhasorPlot:
             self._ax.add_patch(
                 Polygon(numpy.vstack(sort_coordinates(real, imag)).T, **kwargs)
             )
+            if marker is not None:
+                self._ax.plot(
+                    real,
+                    imag,
+                    marker=marker,
+                    linestyle='',
+                    color=color,
+                )
             return
 
         update_kwargs(
             kwargs,
-            color=GRID_COLOR,
+            color=GRID_COLOR if color is None else color,
             linestyle=GRID_LINESTYLE,
             linewidth=GRID_LINEWIDH,
         )
@@ -431,6 +455,11 @@ class PhasorPlot:
                 Line2D([center_re, re], [center_im, im], **kwargs)
             )
             # TODO: add fraction labels?
+        if marker is not None:
+            self._ax.plot(real, imag, marker=marker, linestyle='', color=color)
+            self._ax.plot(
+                center_re, center_im, marker=marker, linestyle='', color=color
+            )
 
     def line(
         self,
@@ -593,16 +622,20 @@ class PhasorPlot:
             if _circle_only:
                 return
             del kwargs['fill']
-            p0, p1 = circle_line_intersection(x, y, radius, 0, 0, x, y)
-            ax.add_line(Line2D((p0[0], p1[0]), (p0[1], p1[1]), **kwargs))
-            p0, p1 = circle_circle_intersection(0, 0, modulation, x, y, radius)
+            x0, y0, x1, y1 = _intersection_circle_line(
+                x, y, radius, 0, 0, x, y
+            )
+            ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
+            x0, y0, x1, y1 = _intersection_circle_circle(
+                0, 0, modulation, x, y, radius
+            )
             ax.add_patch(
                 Arc(
                     (0, 0),
                     modulation * 2,
                     modulation * 2,
-                    theta1=math.degrees(math.atan2(p0[1], p0[0])),
-                    theta2=math.degrees(math.atan2(p1[1], p1[0])),
+                    theta1=math.degrees(math.atan2(y0, x0)),
+                    theta2=math.degrees(math.atan2(y1, x1)),
                     fill=False,
                     **kwargs,
                 )
@@ -1003,7 +1036,7 @@ class PhasorPlotFret(PhasorPlot):
         self.plot(
             donor_trajectory_real,
             donor_trajectory_imag,
-            fmt='-',
+            '-',
             color='tab:green',
         )
         self._donor_trajectory_line = self._lines[0]
@@ -1011,7 +1044,7 @@ class PhasorPlotFret(PhasorPlot):
         self.plot(
             acceptor_trajectory_real,
             acceptor_trajectory_imag,
-            fmt='-',
+            '-',
             color='tab:red',
         )
         self._acceptor_trajectory_line = self._lines[0]
@@ -1019,7 +1052,7 @@ class PhasorPlotFret(PhasorPlot):
         self.plot(
             donor_real,
             donor_imag,
-            fmt='.',
+            '.',
             color='tab:green',
         )
         self._donor_only_line = self._lines[0]
@@ -1027,7 +1060,7 @@ class PhasorPlotFret(PhasorPlot):
         self.plot(
             donor_real,
             donor_imag,
-            fmt='.',
+            '.',
             color='tab:green',
         )
         self._donor_fret_line = self._lines[0]
@@ -1035,7 +1068,7 @@ class PhasorPlotFret(PhasorPlot):
         self.plot(
             acceptor_real,
             acceptor_imag,
-            fmt='.',
+            '.',
             color='tab:red',
         )
         self._acceptor_only_line = self._lines[0]
@@ -1043,7 +1076,7 @@ class PhasorPlotFret(PhasorPlot):
         self.plot(
             donor_trajectory_real[int(fret_efficiency * 100.0)],
             donor_trajectory_imag[int(fret_efficiency * 100.0)],
-            fmt='o',
+            'o',
             color='tab:green',
             label='Donor',
         )
@@ -1052,7 +1085,7 @@ class PhasorPlotFret(PhasorPlot):
         self.plot(
             acceptor_trajectory_real[int(fret_efficiency * 100.0)],
             acceptor_trajectory_imag[int(fret_efficiency * 100.0)],
-            fmt='o',
+            'o',
             color='tab:red',
             label='Acceptor',
         )
@@ -1061,7 +1094,7 @@ class PhasorPlotFret(PhasorPlot):
         self.plot(
             background_real,
             background_imag,
-            fmt='o',
+            'o',
             color='black',
             label='Background',
         )
