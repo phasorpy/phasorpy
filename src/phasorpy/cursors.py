@@ -1,12 +1,18 @@
-""" Select phasor coordinates.
+"""Select regions of interest (cursors) from phasor coordinates.
 
     The ``phasorpy.cursors`` module provides functions to:
 
-- create labels for region of interests in the phasor space:
+- create masks for regions of interests in the phasor space:
 
   - :py:func:`mask_from_circular_cursor`
+
+- create masks for regions of interests in the polar space:
+
   - :py:func:`mask_from_polar_cursor`
-  - :py:func:`segmentate_with_cursors`
+
+- create a pseudo-color array of average signal from cursor regions:
+
+  - :py:func:`pseudo_color`
 
 """
 
@@ -15,7 +21,7 @@ from __future__ import annotations
 __all__ = [
     'mask_from_circular_cursor',
     'mask_from_polar_cursor',
-    'segmentate_with_cursors',
+    'pseudo_color',
 ]
 
 from typing import TYPE_CHECKING
@@ -29,12 +35,14 @@ if TYPE_CHECKING:
 
 import numpy
 
+from phasorpy.color import CATEGORICAL
+
 
 def mask_from_circular_cursor(
     real: ArrayLike,
     imag: ArrayLike,
-    centers_real: ArrayLike,
-    centers_imag: ArrayLike,
+    center_real: ArrayLike,
+    center_imag: ArrayLike,
     /,
     *,
     radius: ArrayLike = 0.05,
@@ -47,9 +55,9 @@ def mask_from_circular_cursor(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    centers_real : array_like, shape (n,)
+    center_real : array_like, shape (n,)
         Real coordinates of circle centers.
-    centers_imag : array_like, shape (n,)
+    center_imag : array_like, shape (n,)
         Imaginary coordinates of circle centers.
     radius : array_like, shape (n,)
         Radii of circles.
@@ -62,8 +70,8 @@ def mask_from_circular_cursor(
     Raises
     ------
     ValueError
-        The array shapes of `real` and `imag`, or `centers_real` and
-        `centers_imag` do not match.
+        The array shapes of `real` and `imag`, or `center_real` and
+        `center_imag` do not match.
         Center's coordinates and/or the radii are not one-dimensional.
         Any of the radii is negative.
 
@@ -72,34 +80,32 @@ def mask_from_circular_cursor(
     Create mask for a single circular cursor:
 
     >>> mask_from_circular_cursor([0.0, 0.0], [0.0, 0.5], 0.0, 0.5, radius=0.1)
-    array([ False, True])
+    array([[False],
+           [ True]])
 
     Create masks for two circular cursors with different radius:
 
     >>> mask_from_circular_cursor(
-    ...     [0.0, 1.0],
-    ...     [0.0, 0.5],
-    ...     [0.0, 1.0],
-    ...     [0.0, 0.4],
-    ...     radius=[0.1, 0.05]
+    ...     [0.0, 1.0], [0.0, 0.5], [0.0, 1.0], [0.0, 0.4], radius=[0.1, 0.05]
     ... )
-    array([ False, True], [False, False])
+    array([[ True, False],
+           [False, False]])
 
     """
-    real = numpy.asarray(real)
-    imag = numpy.asarray(imag)
-    centers_real = numpy.asarray(centers_real)
-    centers_imag = numpy.asarray(centers_imag)
+    real = numpy.atleast_1d(real)
+    imag = numpy.atleast_1d(imag)
+    center_real = numpy.atleast_1d(center_real)
+    center_imag = numpy.atleast_1d(center_imag)
     radius = numpy.atleast_1d(radius)
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
-    if centers_real.shape != centers_imag.shape:
-        raise ValueError(f'{centers_real.shape=} != {centers_imag.shape=}')
-    if centers_real.ndim != 1:
+    if center_real.shape != center_imag.shape:
+        raise ValueError(f'{center_real.shape=} != {center_imag.shape=}')
+    if center_real.ndim != 1:
         raise ValueError(
             'center coordinates are not one-dimensional: '
-            f'{centers_real.ndim} dimensions found'
+            f'{center_real.ndim} dimensions found'
         )
     if radius.ndim != 1:
         raise ValueError(
@@ -109,8 +115,8 @@ def mask_from_circular_cursor(
         raise ValueError('all radii must be positive')
 
     distance = numpy.square(
-        real[..., numpy.newaxis] - centers_real
-    ) + numpy.square(imag[..., numpy.newaxis] - centers_imag)
+        real[..., numpy.newaxis] - center_real
+    ) + numpy.square(imag[..., numpy.newaxis] - center_imag)
     masks = distance <= numpy.square(radius)
     return masks
 
@@ -153,114 +159,115 @@ def mask_from_polar_cursor(
     -------
     Create mask from a single polar cursor:
 
-    >>> mask_from_polar_cursor([5,100], [0.2, 0.4], [50, 150], [0.2, 0.5])
+    >>> mask_from_polar_cursor([5, 100], [0.2, 0.4], [50, 150], [0.2, 0.5])
     array([False,  True])
 
     Create masks for two polar cursors with different ranges:
 
     >>> mask_from_polar_cursor(
-    ...     [5,100],
-    ...     [0.2, 0.4],
-    ...     [[50, 150], [0, 270]],
-    ...     [[0.2, 0.5], [0, 0.3]]
+    ...     [5, 100], [0.2, 0.4], [[50, 150], [0, 270]], [[0.2, 0.5], [0, 0.3]]
     ... )
     array([[False,  True],
            [ True, False]])
 
     """
-    phase = numpy.asarray(phase)
-    modulation = numpy.asarray(modulation)
-    phase_range = numpy.asarray(phase_range)
-    modulation_range = numpy.asarray(modulation_range)
+    phase = numpy.atleast_1d(phase)
+    modulation = numpy.atleast_1d(modulation)
+    phase_range = numpy.atleast_1d(phase_range)
+    modulation_range = numpy.atleast_1d(modulation_range)
 
     if phase.shape != modulation.shape:
         raise ValueError(f'{phase.shape=} != {modulation.shape=}')
     if phase_range.shape != modulation_range.shape:
         raise ValueError(f'{phase_range.shape=} != {modulation_range.shape=}')
     if phase_range.shape[-1] != 2:
-        raise ValueError(f'The last dimension of the range must be 2: {phase_range.shape[-1]} found')
-    
+        raise ValueError(
+            'The last dimension of the range must be 2: '
+            f'{phase_range.shape[-1]} found'
+        )
+
     if numpy.ndim(phase_range) > 1:
         axes = tuple(range(1, numpy.ndim(phase) + 1))
         phase = numpy.expand_dims(phase, axis=0)
         modulation = numpy.expand_dims(modulation, axis=0)
         phase_range = numpy.expand_dims(phase_range, axis=axes)
         modulation_range = numpy.expand_dims(modulation_range, axis=axes)
-    phase_mask = (phase >= phase_range[..., 0]) & (phase <= phase_range[..., 1])
-    modulation_mask = (modulation >= modulation_range[..., 0]) & (modulation <= modulation_range[..., 1])
+    phase_mask = (phase >= phase_range[..., 0]) & (
+        phase <= phase_range[..., 1]
+    )
+    modulation_mask = (modulation >= modulation_range[..., 0]) & (
+        modulation <= modulation_range[..., 1]
+    )
     return phase_mask & modulation_mask
 
 
-def segmentate_with_cursors(
-    mask: NDArray, cursors_color: NDArray, mean: NDArray, /,
+def pseudo_color(
+    mean: NDArray,
+    masks: NDArray,
+    /,
+    *,
+    colors: ArrayLike = CATEGORICAL,
+    mask_axis: int = -1,
 ) -> NDArray[Any]:
-    """
-    Create the segmented image with cursors.
+    """Return the average of signal colored for each cursor.
 
     Parameters
     ----------
-    - mask: NDArray
-        masks for each cursor.
-    - cursors_color: NDArray
-        cursor color to match with the segmented region.
     - mean: NDArray
-        grayscale image to overwrite with segmented areas.
+        Average of signal (zero harmonic).
+    - masks: NDArray
+        Masks for each cursor.
+    - colors: array_like, optional, shape (..., 3)
+        Colors assigned to each cursor. Last dimension must contain the
+        RGB values. Default is `CATEGORICAL` from ``phasorpy.color`` module.
+    - mask_axis: int, optional
+        Axis along which the masks are applied.
 
     Returns
     -------
-    - Segmented image: NDArray:
-        Segmented image with cursors.
+    - pseudocolor: ndarray
+        Average of signal replaced by colors for each cursor.
 
     Raises
     ------
     ValueError
-        `xarray` and `yarray` must be same shape.
+        'mean' has more than 2 dimensions.
+        'colors' last dimension is not of size 3 (must contain RGB values).
+        'masks' shape (except for the mask axis) does not match 'mean' shape.
 
     Example
     -------
-    Segment an image with cursors.
-    >>> segmentate_with_cursors(
-    ...     [True, False, False], [255, 0, 0], [0, 128, 255]
-    ... )
-    array([[255,   0,   0],
-           [128, 128, 128],
-           [255, 255, 255]])
+    Pseudo-color for a single mask.
+
+    >>> pseudo_color([0, 1, 2], [True, False, True])  # doctest: +NUMBER
+    array([[0.825, 0.095, 0.127], [0, 0, 0], [0.825, 0.095, 0.127]])
+
+    Pseudo-color for two masks.
+
+    >>> pseudo_color(
+    ...     [0, 1], [[True, False], [False, True]]
+    ... )  # doctest: +NUMBER
+    array([[0.825, 0.095, 0.127], [0.095, 0.413, 1]])
+
     """
+    mean = numpy.atleast_1d(mean)
+    masks = numpy.atleast_1d(masks)
+    colors = numpy.asarray(colors)
 
-    mask = numpy.asarray(mask)
-    mean = numpy.asarray(mean)
+    if mean.ndim > 2:
+        raise ValueError('only 1D and 2D mean arrays are supported')
+    if colors.shape[-1] != 3:
+        raise ValueError(f'{colors.shape[-1]=} != 3')
 
-    if mask.ndim == 1 and mean.ndim == 1:
-        if mask.shape[0] != mean.shape[0]:
-            raise ValueError('mask and mean first dimension must be equal')
-        else:
-            imcolor = numpy.zeros([mask.shape[0], 3])
-            mean = numpy.stack([mean, mean, mean], axis=-1)
-            imcolor[:, 0] = cursors_color[0]
-            imcolor[:, 1] = cursors_color[1]
-            imcolor[:, 2] = cursors_color[2]
-            segmented = numpy.where(
-                numpy.stack([mask, mask, mask], -1), imcolor, mean
-            )
-            return segmented
+    pseudocolor = numpy.zeros(mean.shape + (3,))
+    if mean.ndim == masks.ndim:
+        if mean.shape != masks.shape:
+            raise ValueError(f'{mean.shape=} != {masks.shape=}')
+        pseudocolor[masks] = colors[0]
     else:
-        if mask.shape[0] != mean.shape[0] or mask.shape[1] != mean.shape[1]:
-            raise ValueError(
-                'mask and mean first and second dimension\n' 'must be the same'
-            )
-        else:
-            imcolor = numpy.zeros([mask.shape[0], mask.shape[1], 3])
-            mean = numpy.stack([mean, mean, mean], -1)
-            segmented = numpy.copy(mean)
-            for i in range(len(cursors_color)):
-                imcolor[:, :, 0] = cursors_color[i][0]
-                imcolor[:, :, 1] = cursors_color[i][1]
-                imcolor[:, :, 2] = cursors_color[i][2]
-                segmented = numpy.where(
-                    numpy.stack(
-                        [mask[:, :, i], mask[:, :, i], mask[:, :, i]], -1
-                    ),
-                    imcolor,
-                    segmented,
-                )
-            return segmented
+        if mean.shape != masks.shape[mask_axis:]:
+            raise ValueError(f'{mean.shape=} != {masks.shape[mask_axis:]=}')
+        for i, mask in enumerate(numpy.rollaxis(masks, mask_axis)):
+            pseudocolor[mask] = colors[i]
+
+    return pseudocolor
