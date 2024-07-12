@@ -46,6 +46,7 @@ def mask_from_circular_cursor(
     /,
     *,
     radius: ArrayLike = 0.05,
+    axis: int = 0,
 ) -> NDArray[numpy.bool_]:
     """Return masks for circular cursors of phasor coordinates.
 
@@ -61,6 +62,8 @@ def mask_from_circular_cursor(
         Imaginary coordinates of circle centers.
     radius : array_like, shape (n,)
         Radii of circles.
+    axis : int, optional
+        Axis along which the masks are returned. Default is 0.
 
     Returns
     -------
@@ -72,16 +75,15 @@ def mask_from_circular_cursor(
     ValueError
         The array shapes of `real` and `imag`, or `center_real` and
         `center_imag` do not match.
-        Center's coordinates and/or the radii are not one-dimensional.
         Any of the radii is negative.
+        The axis is out of bounds.
 
     Examples
     --------
     Create mask for a single circular cursor:
 
     >>> mask_from_circular_cursor([0.0, 0.0], [0.0, 0.5], 0.0, 0.5, radius=0.1)
-    array([[False],
-           [ True]])
+    array([False,  True])
 
     Create masks for two circular cursors with different radius:
 
@@ -94,30 +96,33 @@ def mask_from_circular_cursor(
     """
     real = numpy.atleast_1d(real)
     imag = numpy.atleast_1d(imag)
-    center_real = numpy.atleast_1d(center_real)
-    center_imag = numpy.atleast_1d(center_imag)
-    radius = numpy.atleast_1d(radius)
+    center_real = numpy.asarray(center_real)
+    center_imag = numpy.asarray(center_imag)
+    radius = numpy.asarray(radius)
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
     if center_real.shape != center_imag.shape:
         raise ValueError(f'{center_real.shape=} != {center_imag.shape=}')
-    if center_real.ndim != 1:
-        raise ValueError(
-            'center coordinates are not one-dimensional: '
-            f'{center_real.ndim} dimensions found'
-        )
-    if radius.ndim != 1:
-        raise ValueError(
-            f'radius must be one dimensional: {radius.ndim} dimensions found'
-        )
-    if numpy.min(radius) < 0:
+    if numpy.any(radius < 0):
         raise ValueError('all radii must be positive')
 
-    distance = numpy.square(
-        real[..., numpy.newaxis] - center_real
-    ) + numpy.square(imag[..., numpy.newaxis] - center_imag)
+    if numpy.ndim(center_real) or numpy.ndim(radius) > 0:
+        real = numpy.expand_dims(real, axis=-1)
+        imag = numpy.expand_dims(imag, axis=-1)
+    distance = numpy.square(real - center_real) + numpy.square(
+        imag - center_imag
+    )
     masks = distance <= numpy.square(radius)
+    if numpy.ndim(center_real) or numpy.ndim(radius) > 1:
+        max_axis = masks.ndim - 1
+        if not (-max_axis - 1 <= axis <= max_axis):
+            raise ValueError(
+                f'Invalid axis {axis=}.'
+                f'Must be between {-max_axis - 1} and {max_axis}.'
+            )
+        masks = numpy.moveaxis(masks, -1, axis)
+    # TODO: handle radius dimension > 1
     return masks
 
 
@@ -127,6 +132,8 @@ def mask_from_polar_cursor(
     phase_range: ArrayLike,
     modulation_range: ArrayLike,
     /,
+    *,
+    axis: int = 0,
 ) -> NDArray[numpy.bool_]:
     """Return mask for polar cursor of polar coordinates.
 
@@ -142,6 +149,8 @@ def mask_from_polar_cursor(
     - modulation_range: array_like, shape (..., 2)
         Radial range of the cursors.
         The start and end of the range must be in the last dimension.
+    - axis: int, optional
+        Axis along which the masks are returned. Default is 0.
 
     Returns
     -------
@@ -154,6 +163,7 @@ def mask_from_polar_cursor(
         The array shapes of `phase` and `modulation`, or `phase_range` and
         `modulation_range` do not match.
         The last dimension of `phase_range` and `modulation_range` is not 2.
+        The axis is out of bounds.
 
     Example
     -------
@@ -171,8 +181,8 @@ def mask_from_polar_cursor(
            [ True, False]])
 
     """
-    phase = numpy.atleast_1d(phase)
-    modulation = numpy.atleast_1d(modulation)
+    phase = numpy.asarray(phase)
+    modulation = numpy.asarray(modulation)
     phase_range = numpy.atleast_1d(phase_range)
     modulation_range = numpy.atleast_1d(modulation_range)
 
@@ -181,10 +191,8 @@ def mask_from_polar_cursor(
     if phase_range.shape != modulation_range.shape:
         raise ValueError(f'{phase_range.shape=} != {modulation_range.shape=}')
     if phase_range.shape[-1] != 2:
-        raise ValueError(
-            'The last dimension of the range must be 2: '
-            f'{phase_range.shape[-1]} found'
-        )
+        raise ValueError(f'{phase_range.shape[-1]=} != 2')
+    # TODO: check if angles are between -pi and pi
 
     if numpy.ndim(phase_range) > 1:
         axes = tuple(range(1, numpy.ndim(phase) + 1))
@@ -198,7 +206,16 @@ def mask_from_polar_cursor(
     modulation_mask = (modulation >= modulation_range[..., 0]) & (
         modulation <= modulation_range[..., 1]
     )
-    return phase_mask & modulation_mask
+    masks = phase_mask & modulation_mask
+    if numpy.ndim(phase_range) > 1:
+        max_axis = masks.ndim - 1
+        if not (-max_axis - 1 <= axis <= max_axis):
+            raise ValueError(
+                f'Invalid axis {axis=}.'
+                f'Must be between {-max_axis - 1} and {max_axis}.'
+            )
+        masks = numpy.moveaxis(masks, 0, axis)
+    return masks
 
 
 def pseudo_color(
@@ -207,7 +224,7 @@ def pseudo_color(
     /,
     *,
     colors: ArrayLike = CATEGORICAL,
-    mask_axis: int = -1,
+    axis: int = 0,
 ) -> NDArray[Any]:
     """Return the average of signal colored for each cursor.
 
@@ -217,11 +234,11 @@ def pseudo_color(
         Average of signal (zero harmonic).
     - masks: NDArray
         Masks for each cursor.
-    - colors: array_like, optional, shape (..., 3)
+    - colors: array_like, optional, shape (N, 3)
         Colors assigned to each cursor. Last dimension must contain the
         RGB values. Default is `CATEGORICAL` from ``phasorpy.color`` module.
-    - mask_axis: int, optional
-        Axis along which the masks are applied.
+    - axis: int, optional
+        Axis with masks. Default is 0.
 
     Returns
     -------
@@ -231,9 +248,10 @@ def pseudo_color(
     Raises
     ------
     ValueError
-        'mean' has more than 2 dimensions.
-        'colors' last dimension is not of size 3 (must contain RGB values).
-        'masks' shape (except for the mask axis) does not match 'mean' shape.
+        The `colors` array is not 2 dimensional and/or the last dimension is
+        not of size 3 (must contain RGB values).
+        The `masks` shape along axis does not match `mean` shape.
+        Axis is out of bounds.
 
     Example
     -------
@@ -250,14 +268,20 @@ def pseudo_color(
     array([[0.825, 0.095, 0.127], [0.095, 0.413, 1]])
 
     """
-    mean = numpy.atleast_1d(mean)
+    mean = numpy.asarray(mean)
     masks = numpy.atleast_1d(masks)
     colors = numpy.asarray(colors)
 
-    if mean.ndim > 2:
-        raise ValueError('only 1D and 2D mean arrays are supported')
+    if colors.ndim != 2:
+        raise ValueError(f'{colors.ndim=} != 2')
     if colors.shape[-1] != 3:
         raise ValueError(f'{colors.shape[-1]=} != 3')
+    if not (-masks.ndim <= axis < masks.ndim):
+        raise ValueError(
+            f'Invalid {axis=}.'
+            f'Must be between {-masks.ndim} and {masks.ndim - 1}.'
+        )
+    # TODO: add support for matplotlib colors
 
     pseudocolor = numpy.zeros(mean.shape + (3,))
     if mean.ndim == masks.ndim:
@@ -265,9 +289,11 @@ def pseudo_color(
             raise ValueError(f'{mean.shape=} != {masks.shape=}')
         pseudocolor[masks] = colors[0]
     else:
-        if mean.shape != masks.shape[mask_axis:]:
-            raise ValueError(f'{mean.shape=} != {masks.shape[mask_axis:]=}')
-        for i, mask in enumerate(numpy.rollaxis(masks, mask_axis)):
+        if mean.shape != masks[axis].shape:
+            raise ValueError(
+                'shapes of the mask along axis must match `mean` shape'
+            )
+        for i, mask in enumerate(numpy.rollaxis(masks, axis)):
             pseudocolor[mask] = colors[i]
 
     return pseudocolor
