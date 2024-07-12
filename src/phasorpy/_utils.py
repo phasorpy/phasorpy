@@ -145,7 +145,7 @@ def sort_coordinates(
     Examples
     --------
     >>> sort_coordinates([0, 1, 2, 3], [0, 1, -1, 0])
-    (array([2, 3, 1, 0]), array([-1,  0,  1,  0]), array([2, 3, 1, 0]))
+    (array([2, 3, 1, 0]), array([-1,  0,  1,  0]), array([2, 3, 1, 0]...))
 
     """
     x, y = numpy.atleast_1d(real, imag)
