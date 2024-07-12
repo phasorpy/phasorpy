@@ -2,6 +2,7 @@
 
 import math
 
+import numpy
 import pytest
 from numpy import nan
 from numpy.testing import assert_allclose, assert_array_equal
@@ -253,3 +254,113 @@ def test__intersection_circle_line():
         _intersection_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.1),
         [nan, nan, nan, nan],
     )
+
+
+def test_geometric_ufunc_on_grid():
+    """Plot geometric ufuncs used on grid of points."""
+    from math import pi
+
+    from matplotlib import pyplot
+
+    show = False  # enable to see figure
+
+    def plot_mask(real, imag, mask, **kwargs):
+        show = 'ax' not in kwargs
+        ax = kwargs.pop('ax') if not show else pyplot.subplot()
+        mask = mask.astype(bool)
+        ax.set(
+            aspect='equal',
+            xlim=[0, 1],
+            ylim=[0, 1],
+            xticks=[],
+            yticks=[],
+            **kwargs,
+        )
+        ax.plot(real[mask], imag[mask], ',')
+        if show:
+            pyplot.show()
+
+    def plot_points(real, imag, **kwargs):
+        show = 'ax' not in kwargs
+        ax = kwargs.pop('ax') if not show else pyplot.subplot()
+        ax.set(
+            aspect='equal',
+            xlim=[0, 1],
+            ylim=[0, 1],
+            xticks=[],
+            yticks=[],
+            **kwargs,
+        )
+        ax.plot(real, imag, ',', color='tab:blue')
+        if show:
+            pyplot.show()
+
+    def plot_image(values, **kwargs):
+        show = 'ax' not in kwargs
+        ax = kwargs.pop('ax') if not show else pyplot.subplot()
+        ax.set(xticks=[], yticks=[], **kwargs)
+        _ = ax.imshow(values, origin='lower', interpolation='nearest')
+        # ax.figure.colorbar(_, ax=ax)
+        if show:
+            pyplot.show()
+
+    line = (0.25, 0.75, 0.75, 0.25)
+    coords = numpy.linspace(0.0, 1.0, 501)
+    real, imag = numpy.meshgrid(coords, coords)
+
+    _, ax = pyplot.subplots(8, 2, figsize=(6.4, 12), layout='constrained')
+
+    plot_points(real, imag, title='grid', ax=ax[0, 0])
+
+    distance = _distance_from_point(real, imag, 0.5, 0.5)
+    plot_image(distance, title='_distance_from_point', ax=ax[0, 1])
+
+    distance = _distance_from_line(real, imag, *line)
+    plot_image(distance, title='_distance_from_line', ax=ax[1, 0])
+
+    distance = _distance_from_segment(real, imag, *line)
+    plot_image(distance, title='_distance_from_segment', ax=ax[1, 1])
+
+    fraction = _fraction_on_line(real, imag, *line)
+    plot_image(fraction, title='_fraction_on_line', ax=ax[2, 0])
+
+    fraction = _fraction_on_segment(real, imag, *line)
+    plot_image(fraction, title='_fraction_on_segment', ax=ax[2, 1])
+
+    re, im = _point_on_line(real, imag, *line)
+    plot_points(re, im, title='_point_on_line', ax=ax[3, 0])
+
+    re, im = _point_on_segment(real, imag, *line)
+    plot_points(re, im, title='_point_on_segment', ax=ax[3, 1])
+
+    mask = _is_near_line(real, imag, *line, 0.1, True)
+    plot_mask(real, imag, mask, title='_is_near_line', ax=ax[4, 0])
+
+    mask = _is_inside_stadium(real, imag, *line, 0.1, True)
+    plot_mask(real, imag, mask, title='_is_inside_stadium', ax=ax[4, 1])
+
+    mask = _is_inside_circle(real, imag, 0.5, 0.5, 0.1, True)
+    plot_mask(real, imag, mask, title='_is_inside_circle', ax=ax[5, 0])
+
+    mask = _is_inside_ellipse(real, imag, 0.5, 0.5, 0.05, 0.15, pi / 4, True)
+    plot_mask(real, imag, mask, title='_is_inside_ellipse', ax=ax[5, 1])
+
+    mask = _is_inside_polar_rectangle(
+        real, imag, pi / 5, pi / 3 + 4 * pi, 0.6071, 0.8071, True
+    )
+    plot_mask(
+        real, imag, mask, title='_is_inside_polar_rectangle', ax=ax[6, 0]
+    )
+
+    mask = _is_inside_rectangle(real, imag, *line, 0.1, True)
+    plot_mask(real, imag, mask, title='_is_inside_rectangle', ax=ax[6, 1])
+
+    mask = _is_inside_range(real, imag, 0.4, 0.6, 0.45, 0.55, True)
+    plot_mask(real, imag, mask, title='_is_inside_range', ax=ax[7, 0])
+
+    plot_points([], [], title='', ax=ax[7, 1])
+
+    if show:
+        pyplot.show()
+    else:
+        pyplot.close()
