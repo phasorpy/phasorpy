@@ -23,8 +23,12 @@ from phasorpy.phasor import phasor_from_lifetime
 from phasorpy.plot import PhasorPlot
 
 numpy.random.seed(42)
-component_style = {'linestyle': '-', 'marker': 'o', 'color': 'tab:blue'}
-font_properties = {'fontsize': 16, 'fontweight': 'bold', 'color': 'tab:blue'}
+component_style = {
+    'linestyle': '-',
+    'marker': 'o',
+    'color': 'tab:blue',
+    'fontsize': 14,
+}
 
 # %%
 # Fractions of two components
@@ -46,10 +50,12 @@ components_real, components_imag = phasor_from_lifetime(
 
 plot = PhasorPlot(frequency=frequency, title='Combination of two components')
 plot.components(
-    components_real, components_imag, component_fractions, **component_style
+    components_real,
+    components_imag,
+    component_fractions,
+    labels=['A', 'B'],
+    **component_style,
 )
-plot.ax.annotate('A', xy=(0.8, 0.45), **font_properties)
-plot.ax.annotate('B', xy=(-0.01, 0.2), **font_properties)
 plot.show()
 
 # %%
@@ -82,9 +88,9 @@ plot = PhasorPlot(
     frequency=frequency, title='Distribution of fractions of two components'
 )
 plot.hist2d(real, imag, cmap='Greys')
-plot.components(components_real, components_imag, **component_style)
-plot.ax.annotate('A', xy=(0.8, 0.45), **font_properties)
-plot.ax.annotate('B', xy=(-0.01, 0.2), **font_properties)
+plot.components(
+    components_real, components_imag, labels=['A', 'B'], **component_style
+)
 plot.show()
 
 # %%
@@ -166,10 +172,9 @@ plot = PhasorPlot(
     title='Distribution of three known components',
 )
 plot.hist2d(real, imag, cmap='Greys')
-plot.components(components_real, components_imag, **component_style)
-plot.ax.annotate('A', xy=(0.8, 0.45), **font_properties)
-plot.ax.annotate('B', xy=(0.13, 0.43), **font_properties)
-plot.ax.annotate('C', xy=(-0.04, 0.12), **font_properties)
+plot.components(
+    components_real, components_imag, labels=['A', 'B', 'C'], **component_style
+)
 plot.show()
 
 # %%
@@ -211,11 +216,15 @@ plot = PhasorPlot(
     title='Graphical solution for contribution of A vs B',
 )
 plot.hist2d(real, imag, cmap='Greys')
-plot.components(components_real[:2], components_imag[:2], **component_style)
-plot.plot(components_real[2], components_imag[2], **component_style)
-plot.ax.annotate('A', xy=(0.8, 0.45), **font_properties)
-plot.ax.annotate('B', xy=(0.13, 0.43), **font_properties)
-plot.ax.annotate('C', xy=(-0.04, 0.12), **font_properties)
+plot.components(
+    components_real[:2],
+    components_imag[:2],
+    labels=['A', 'B'],
+    **component_style,
+)
+plot.components(
+    components_real[2], components_imag[2], labels=['C'], **component_style
+)
 
 hist.set_xlim(0, 1)
 hist.set_xlabel('Fraction')

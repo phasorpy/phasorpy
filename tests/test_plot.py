@@ -143,7 +143,9 @@ class TestPhasorPlot:
         weights = [2, 1, 2, 1]
         plot = PhasorPlot(title='components', allquadrants=allquadrants)
         with pytest.raises(ValueError):
-            plot.components(0.5, 0.5)
+            plot.components([0.0, 1.0], [0.0])
+        with pytest.raises(ValueError):
+            plot.components([0.0, 1.0], [0.0, 1.0], labels=['A'])
         plot.components(
             real, imag, fill=True, linestyle=':', facecolor='lightyellow'
         )
@@ -152,6 +154,15 @@ class TestPhasorPlot:
         plot.components(
             real, imag, weights, linestyle='-', marker='.', color='tab:blue'
         )
+        plot.components(
+            real,
+            imag,
+            labels=['A', 'B', 'C', ''],
+            fontsize=12,
+            linestyle='',
+            color='tab:green',
+        )
+        plot.components(real[-1], imag[-1], labels=['D'])
         self.show(plot)
 
     def test_line(self):

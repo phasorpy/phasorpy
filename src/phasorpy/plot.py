@@ -40,6 +40,7 @@ from matplotlib.widgets import Slider
 
 from ._phasorpy import _intersection_circle_circle, _intersection_circle_line
 from ._utils import (
+    dilate_coordinates,
     parse_kwargs,
     phasor_from_polar_scalar,
     phasor_to_polar_scalar,
@@ -392,6 +393,8 @@ class PhasorPlot:
         imag: ArrayLike,
         /,
         fraction: ArrayLike | None = None,
+        labels: Sequence[str] | None = None,
+        label_offset: float | None = None,
         **kwargs: Any,
     ) -> None:
         """Plot linear combinations of phasor coordinates or ranges thereof.
@@ -408,18 +411,52 @@ class PhasorPlot:
             combinations of components.
             Else, draw lines from the component coordinates to the weighted
             average.
+        labels : Sequence of str, optional
+            Text label for each component.
+        label_offset : float, optional
+            Distance of text label to component coordinate.
         **kwargs
             Additional parameters passed to
-            :py:class:`matplotlib.patches.Polygon` or
-            :py:class:`matplotlib.lines.Line2D`.
+            :py:class:`matplotlib.patches.Polygon`,
+            :py:class:`matplotlib.lines.Line2D`, or
+            :py:class:`matplotlib.axes.Axes.annotate`
 
         """
-        real = numpy.asanyarray(real)
-        imag = numpy.asanyarray(imag)
-        if real.ndim != 1 or real.shape != imag.shape:
-            raise ValueError(f'invalid {real.shape=} or {imag.shape=}')
+        # TODO: use convex hull for outline
+        # TODO: improve automatic placement of labels
+        # TODO: catch more annotate properties?
+        real, imag, indices = sort_coordinates(real, imag)
+
         marker = kwargs.pop('marker', None)
         color = kwargs.pop('color', None)
+        fontsize = kwargs.pop('fontsize', 12)
+        fontweight = kwargs.pop('fontweight', 'bold')
+        horizontalalignment = kwargs.pop('horizontalalignment', 'center')
+        verticalalignment = kwargs.pop('verticalalignment', 'center')
+        if label_offset is None:
+            label_offset = numpy.diff(self._ax.get_xlim()).item() * 0.04
+
+        if labels is not None:
+            if len(labels) != real.size:
+                raise ValueError(
+                    f'number labels={len(labels)} != components={real.size}'
+                )
+            labels = [labels[i] for i in indices]
+            textposition = dilate_coordinates(real, imag, label_offset)
+            for label, re, im, x, y in zip(labels, real, imag, *textposition):
+                if not label:
+                    continue
+                self._ax.annotate(
+                    label,
+                    (re, im),
+                    xytext=(x, y),
+                    color=color,
+                    fontsize=fontsize,
+                    fontweight=fontweight,
+                    horizontalalignment=horizontalalignment,
+                    verticalalignment=verticalalignment,
+                )
+
         if fraction is None:
             update_kwargs(
                 kwargs,
@@ -428,9 +465,7 @@ class PhasorPlot:
                 linewidth=GRID_LINEWIDH,
                 fill=GRID_FILL,
             )
-            self._ax.add_patch(
-                Polygon(numpy.vstack(sort_coordinates(real, imag)).T, **kwargs)
-            )
+            self._ax.add_patch(Polygon(numpy.vstack((real, imag)).T, **kwargs))
             if marker is not None:
                 self._ax.plot(
                     real,
@@ -454,7 +489,6 @@ class PhasorPlot:
             self._ax.add_line(
                 Line2D([center_re, re], [center_im, im], **kwargs)
             )
-            # TODO: add fraction labels?
         if marker is not None:
             self._ax.plot(real, imag, marker=marker, linestyle='', color=color)
             self._ax.plot(

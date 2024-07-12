@@ -125,7 +125,7 @@ def sort_coordinates(
     imag: ArrayLike,
     /,
     origin: tuple[float, float] | None = None,
-) -> tuple[NDArray[Any], NDArray[Any]]:
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return cartesian coordinates sorted counterclockwise around origin.
 
     Parameters
@@ -139,23 +139,71 @@ def sort_coordinates(
     -------
     real, imag : ndarray
         Coordinates sorted by angle.
+    indices : ndarray
+        Indices used to reorder coordinates.
 
     Examples
     --------
     >>> sort_coordinates([0, 1, 2, 3], [0, 1, -1, 0])
-    (array([2, 3, 1, 0]), array([-1,  0,  1,  0]))
+    (array([2, 3, 1, 0]), array([-1,  0,  1,  0]), array([2, 3, 1, 0]))
 
     """
-    x = numpy.asanyarray(real)
-    y = numpy.asanyarray(imag)
+    x, y = numpy.atleast_1d(real, imag)
     if x.ndim != 1 or x.shape != y.shape:
         raise ValueError(f'invalid {x.shape=} or {y.shape=}')
     if x.size < 4:
-        return x, y
+        return x, y, numpy.arange(x.size)
     if origin is None:
         origin = x.mean(), y.mean()
     indices = numpy.argsort(numpy.arctan2(y - origin[1], x - origin[0]))
-    return x[indices], y[indices]
+    return x[indices], y[indices], indices
+
+
+def dilate_coordinates(
+    real: ArrayLike,
+    imag: ArrayLike,
+    offset: float,
+    /,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return dilated coordinates.
+
+    Parameters
+    ----------
+    real, imag : array_like
+        Coordinates of convex hull, sorted by angle.
+    offset : float
+        Amount by which to dilate coordinates.
+
+    Returns
+    -------
+    real, imag : ndarray
+        Coordinates dilated by offset.
+
+    Examples
+    --------
+    >>> dilate_coordinates([2, 3, 1, 0], [-1, 0, 1, 0], 0.05)
+    (array([2.022, 3.05, 0.9776, -0.05]), array([-1.045, 0, 1.045, 0]))
+
+    """
+    x = numpy.asanyarray(real, dtype=numpy.float64)
+    y = numpy.asanyarray(imag, dtype=numpy.float64)
+    if x.ndim != 1 or x.shape != y.shape or x.size < 1:
+        raise ValueError(f'invalid {x.shape=} or {y.shape=}')
+    if x.size > 1:
+        dx = numpy.diff(numpy.diff(x, prepend=x[-1], append=x[0]))
+        dy = numpy.diff(numpy.diff(y, prepend=y[-1], append=y[0]))
+    else:
+        # TODO: this assumes coordinate on universal semicircle
+        dx = numpy.diff(x, append=0.5)
+        dy = numpy.diff(y, append=0.0)
+    s = numpy.hypot(dx, dy)
+    dx /= s
+    dx *= -offset
+    dx += x
+    dy /= s
+    dy *= -offset
+    dy += y
+    return dx, dy
 
 
 def phasor_to_polar_scalar(

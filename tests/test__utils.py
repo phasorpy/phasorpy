@@ -6,6 +6,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from phasorpy._utils import (
+    dilate_coordinates,
     kwargs_notnone,
     parse_kwargs,
     phasor_from_polar_scalar,
@@ -98,13 +99,29 @@ def test_scale_matrix():
 
 def test_sort_coordinates():
     """Test sort_coordinates function."""
-    x, y = sort_coordinates([0, 1, 2, 3], [0, 1, -1, 0])
+    x, y, i = sort_coordinates([0, 1, 2, 3], [0, 1, -1, 0])
     assert_allclose(x, [2, 3, 1, 0])
     assert_allclose(y, [-1, 0, 1, 0])
+    assert_allclose(i, [2, 3, 1, 0])
 
-    x, y = sort_coordinates([0, 1, 2], [0, 1, -1])
+    x, y, i = sort_coordinates([0, 1, 2], [0, 1, -1])
     assert_allclose(x, [0, 1, 2])
     assert_allclose(y, [0, 1, -1])
+    assert_allclose(i, [0, 1, 2])
 
     with pytest.raises(ValueError):
         sort_coordinates([0, 1, 2, 3], [0, 1, -1])
+
+
+def test_dilate_coordinates():
+    """Test dilate_coordinates function."""
+    x, y = dilate_coordinates([0, 1, 2, 3], [0, 1, -1, 0], 0.05)
+    assert_allclose(x, [-0.048507, 1.0, 2.0, 3.048507], atol=1e-3)
+    assert_allclose(y, [-0.012127, 1.05, -1.05, 0.012127], atol=1e-3)
+
+    x, y = dilate_coordinates([0, 1, 2], [0, 1, -1], -0.05)
+    assert_allclose(x, [0.05, 1.0, 1.964645], atol=1e-3)
+    assert_allclose(y, [0.0, 0.95, -0.964645], atol=1e-3)
+
+    with pytest.raises(ValueError):
+        dilate_coordinates([0, 1, 2, 3], [0, 1, -1], 0.05)

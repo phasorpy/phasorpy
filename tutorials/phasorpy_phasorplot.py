@@ -88,7 +88,16 @@ real, imag, weights = numpy.array(
 )
 
 plot = PhasorPlot(frequency=80.0, title='Component mixtures')
-plot.components(real, imag, linestyle='', fill=True, facecolor='lightyellow')
+plot.components(
+    real,
+    imag,
+    linestyle='',
+    marker='o',
+    labels=['A', 'B', 'C', 'D'],
+    color='tab:blue',
+    fill=True,
+    facecolor='lightyellow',
+)
 plot.components(real, imag, weights)
 plot.show()
 
