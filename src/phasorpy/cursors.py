@@ -226,7 +226,7 @@ def pseudo_color(
     colors: ArrayLike = CATEGORICAL,
     axis: int = 0,
 ) -> NDArray[Any]:
-    """Return the average of signal colored for each cursor.
+    """Return the average of signal pseudo-colored for each cursor.
 
     Parameters
     ----------
