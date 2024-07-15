@@ -237,7 +237,7 @@ plots = []
 for i in range(fractions.size):
     cursor_real = components_real[1] + fractions[i] * direction_real
     cursor_imag = components_imag[1] + fractions[i] * direction_imag
-    plot.plot(
+    plot_lines = plot.plot(
         [cursor_real, components_real[2]],
         [cursor_imag, components_imag[2]],
         '-',
@@ -249,7 +249,7 @@ for i in range(fractions.size):
     hist_artists = plt.plot(
         fractions[: i + 1], counts[0][: i + 1], linestyle='-', color='tab:blue'
     )
-    plots.append(plot._lines + hist_artists)
+    plots.append(plot_lines + hist_artists)
 
 _ = animation.ArtistAnimation(fig, plots, interval=100, blit=True)
 plt.tight_layout()

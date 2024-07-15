@@ -101,9 +101,6 @@ class PhasorPlot:
     _full: bool
     """Show all quadrants of phasor space."""
 
-    _lines: list[Line2D]
-    """Last lines created."""
-
     _semicircle_ticks: SemicircleTicks | None
     """Last SemicircleTicks instance created."""
 
@@ -124,7 +121,6 @@ class PhasorPlot:
         self._ax = pyplot.subplots()[1] if ax is None else ax
         self._ax.format_coord = self._on_format_coord  # type: ignore
 
-        self._lines = []
         self._semicircle_ticks = None
 
         self._full = bool(allquadrants)
@@ -216,7 +212,7 @@ class PhasorPlot:
         *,
         label: str | Sequence[str] | None = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> list[Line2D]:
         """Plot imag versus real coordinates as markers and/or lines.
 
         Parameters
@@ -236,7 +232,13 @@ class PhasorPlot:
             Additional parameters passed to
             :py:meth:`matplotlib.axes.Axes.plot`.
 
+        Returns
+        -------
+        list[matplotlib.lines.Line2D]
+            Lines representing data plotted last.
+
         """
+        lines = []
         if fmt == 'o':
             if 'marker' in kwargs:
                 fmt = ''
@@ -263,10 +265,11 @@ class PhasorPlot:
                     lbl = label[i]
                 except IndexError:
                     pass
-            self._lines = ax.plot(re, im, *args, label=lbl, **kwargs)
+            lines = ax.plot(re, im, *args, label=lbl, **kwargs)
         if label is not None:
             ax.legend()
         self._reset_limits()
+        return lines
 
     def _histogram2d(
         self,
@@ -501,7 +504,7 @@ class PhasorPlot:
         imag: ArrayLike,
         /,
         **kwargs: Any,
-    ) -> None:
+    ) -> list[Line2D]:
         """Draw grid line.
 
         Parameters
@@ -514,6 +517,11 @@ class PhasorPlot:
             Additional parameters passed to
             :py:class:`matplotlib.lines.Line2D`.
 
+        Returns
+        -------
+        list[matplotlib.lines.Line2D]
+            List containing plotted line.
+
         """
         update_kwargs(
             kwargs,
@@ -521,7 +529,7 @@ class PhasorPlot:
             linestyle=GRID_LINESTYLE,
             linewidth=GRID_LINEWIDH,
         )
-        self._lines = [self._ax.add_line(Line2D(real, imag, **kwargs))]
+        return [self._ax.add_line(Line2D(real, imag, **kwargs))]
 
     def circle(
         self,
@@ -761,7 +769,7 @@ class PhasorPlot:
         show_circle: bool = True,
         use_lines: bool = False,
         **kwargs,
-    ) -> None:
+    ) -> list[Line2D]:
         """Draw universal semicircle.
 
         Parameters
@@ -789,6 +797,11 @@ class PhasorPlot:
             :py:class:`matplotlib.patches.Arc` and
             :py:meth:`matplotlib.axes.Axes.plot`.
 
+        Returns
+        -------
+        list[matplotlib.lines.Line2D]
+            Lines representing plotted semicircle and ticks.
+
         """
         if frequency is not None:
             self._frequency = float(frequency)
@@ -807,9 +820,11 @@ class PhasorPlot:
             phasor_reference = phasor_from_polar_scalar(*polar_reference)
         ax = self._ax
 
+        lines = []
+
         if show_circle:
             if use_lines:
-                self._lines = [
+                lines = [
                     ax.add_line(
                         Line2D(
                             *phasor_transform(
@@ -836,15 +851,18 @@ class PhasorPlot:
             # draw ticks and labels
             lifetime, labels = _semicircle_ticks(frequency, lifetime, labels)
             self._semicircle_ticks = SemicircleTicks(labels=labels)
-            self._lines = ax.plot(
-                *phasor_transform(
-                    *phasor_from_lifetime(frequency, lifetime),
-                    *polar_reference,
-                ),
-                path_effects=[self._semicircle_ticks],
-                **kwargs,
+            lines.extend(
+                ax.plot(
+                    *phasor_transform(
+                        *phasor_from_lifetime(frequency, lifetime),
+                        *polar_reference,
+                    ),
+                    path_effects=[self._semicircle_ticks],
+                    **kwargs,
+                )
             )
         self._reset_limits()
+        return lines
 
     def _on_format_coord(self, x: float, y: float, /) -> str:
         """Callback function to update coordinates displayed in toolbar."""
@@ -1030,109 +1048,109 @@ class PhasorPlotFret(PhasorPlot):
         )
 
         # add plots
-        self.semicircle(frequency=frequency)
-        self._donor_semicircle_line = self._lines[0]
+        lines = self.semicircle(frequency=frequency)
+        self._donor_semicircle_line = lines[0]
         self._donor_semicircle_ticks = self._semicircle_ticks
 
-        self.semicircle(
+        lines = self.semicircle(
             phasor_reference=(float(acceptor_real), float(acceptor_imag)),
             use_lines=True,
         )
-        self._acceptor_semicircle_line = self._lines[0]
+        self._acceptor_semicircle_line = lines[0]
 
         if donor_freting < 1.0 and donor_background == 0.0:
-            self.line(
+            lines = self.line(
                 [donor_real, donor_fret_real],
                 [donor_imag, donor_fret_imag],
             )
         else:
-            self.line([0.0, 0.0], [0.0, 0.0])
-        self._donor_donor_line = self._lines[0]
+            lines = self.line([0.0, 0.0], [0.0, 0.0])
+        self._donor_donor_line = lines[0]
 
         if acceptor_background > 0.0:
-            self.line(
+            lines = self.line(
                 [float(acceptor_real), float(background_real)],
                 [float(acceptor_imag), float(background_imag)],
             )
         else:
-            self.line([0.0, 0.0], [0.0, 0.0])
-        self._acceptor_background_line = self._lines[0]
+            lines = self.line([0.0, 0.0], [0.0, 0.0])
+        self._acceptor_background_line = lines[0]
 
         if donor_background > 0.0:
-            self.line(
+            lines = self.line(
                 [float(donor_real), float(background_real)],
                 [float(donor_imag), float(background_imag)],
             )
         else:
-            self.line([0.0, 0.0], [0.0, 0.0])
-        self._donor_background_line = self._lines[0]
+            lines = self.line([0.0, 0.0], [0.0, 0.0])
+        self._donor_background_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             donor_trajectory_real,
             donor_trajectory_imag,
             '-',
             color='tab:green',
         )
-        self._donor_trajectory_line = self._lines[0]
+        self._donor_trajectory_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             acceptor_trajectory_real,
             acceptor_trajectory_imag,
             '-',
             color='tab:red',
         )
-        self._acceptor_trajectory_line = self._lines[0]
+        self._acceptor_trajectory_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             donor_real,
             donor_imag,
             '.',
             color='tab:green',
         )
-        self._donor_only_line = self._lines[0]
+        self._donor_only_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             donor_real,
             donor_imag,
             '.',
             color='tab:green',
         )
-        self._donor_fret_line = self._lines[0]
+        self._donor_fret_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             acceptor_real,
             acceptor_imag,
             '.',
             color='tab:red',
         )
-        self._acceptor_only_line = self._lines[0]
+        self._acceptor_only_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             donor_trajectory_real[int(fret_efficiency * 100.0)],
             donor_trajectory_imag[int(fret_efficiency * 100.0)],
             'o',
             color='tab:green',
             label='Donor',
         )
-        self._donor_line = self._lines[0]
+        self._donor_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             acceptor_trajectory_real[int(fret_efficiency * 100.0)],
             acceptor_trajectory_imag[int(fret_efficiency * 100.0)],
             'o',
             color='tab:red',
             label='Acceptor',
         )
-        self._acceptor_line = self._lines[0]
+        self._acceptor_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             background_real,
             background_imag,
             'o',
             color='black',
             label='Background',
         )
-        self._background_line = self._lines[0]
+        self._background_line = lines[0]
 
         if not interactive:
             return
