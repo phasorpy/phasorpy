@@ -74,6 +74,12 @@ def two_fractions_from_phasor(
     fraction : ndarray
         Fractions of first component.
 
+    Raises
+    ------
+    ValueError
+        If the real and/or imaginary coordinates of the known components are
+        not of size 2.
+
     See Also
     --------
     :ref:`sphx_glr_tutorials_phasorpy_components.py`
@@ -85,12 +91,6 @@ def two_fractions_from_phasor(
     For now, calculation of fraction of components from different
     channels or frequencies is not supported. Only one pair of components can
     be analyzed and will be broadcasted to all channels/frequencies.
-
-    Raises
-    ------
-    ValueError
-        If the real and/or imaginary coordinates of the known components are
-        not of size 2.
 
     Examples
     --------
@@ -135,7 +135,8 @@ def graphical_component_analysis(
     """Return fractions of two or three components from phasor coordinates.
 
     The graphical method is based on moving circular cursors along the line
-    between pairs of components, and quantifying the phasors for each fraction.
+    between pairs of components, and quantifying the phasors for each
+    fraction.
 
     Parameters
     ----------
@@ -161,6 +162,14 @@ def graphical_component_analysis(
         Counts along each line segment connecting the components, ordered
         0-1 (2 components) or 0-1, 0-2, 1-2 (3 components).
 
+    Raises
+    ------
+    ValueError
+        The array shapes of `real` and `imag`, or `components_real` and
+        `components_imag` do not match.
+        The number of components is not 2 or 3.
+        Fraction values are not in range [0.0, 1.0].
+
     See Also
     --------
     :ref:`sphx_glr_tutorials_phasorpy_components.py`
@@ -171,13 +180,16 @@ def graphical_component_analysis(
     channels or frequencies is not supported. Only one set of components can
     be analyzed and will be broadcasted to all channels/frequencies.
 
-    Raises
-    ------
-    ValueError
-        The array shapes of `real` and `imag`, or `components_real` and
-        `components_imag` do not match.
-        The number of components is not 2 or 3.
-        Fraction values are not in range [0.0, 1.0].
+    The graphical method was first introduced in [1]_.
+
+    References
+    ----------
+
+    .. [1] Ranjit S, Datta R, Dvornikov A, and Gratton E.
+      `Multicomponent analysis of phasor plot in a single pixel to
+      calculate changes of metabolic trajectory in biological systems
+      <https://doi.org/10.1021/acs.jpca.9b07880>`_.
+      *J Phys Chem A*, 123(45): 9865-9873 (2019)
 
     Examples
     --------
