@@ -233,26 +233,26 @@ def test_mask_from_polar_cursor_errors(
 @pytest.mark.parametrize(
     "mean, masks, colors, axis, expected",
     [
-        (0, [True], CATEGORICAL, 0, CATEGORICAL[0]),  # single value true
-        (0, [False], CATEGORICAL, 0, [0, 0, 0]),  # single value false
+        (0, [True], 'CATEGORICAL', 0, CATEGORICAL[0]),  # single value true
+        (0, [False], 'CATEGORICAL', 0, [0, 0, 0]),  # single value false
         (
             [0, 0],
             [True, True],
-            CATEGORICAL,
+            'CATEGORICAL',
             0,
             numpy.asarray([CATEGORICAL[0], CATEGORICAL[0]]),
         ),  # 1D array
         (
             [0, 0],
             [True, False],
-            CATEGORICAL,
+            'CATEGORICAL',
             0,
             numpy.asarray([CATEGORICAL[0], [0, 0, 0]]),
         ),  # 1D array with false
         (
             [[0, 0], [0, 0]],
             [[True, True], [False, False]],
-            CATEGORICAL,
+            'CATEGORICAL',
             0,
             numpy.asarray(
                 [[CATEGORICAL[0], CATEGORICAL[0]], [[0, 0, 0], [0, 0, 0]]]
@@ -261,21 +261,21 @@ def test_mask_from_polar_cursor_errors(
         (
             0,
             [True, True],
-            CATEGORICAL,
+            'CATEGORICAL',
             0,
             CATEGORICAL[1],
         ),  # single value with two masks
         (
             [0, 0],
             [[True, False], [False, True]],
-            CATEGORICAL,
+            'CATEGORICAL',
             0,
             numpy.asarray([CATEGORICAL[0], CATEGORICAL[1]]),
         ),  # 1D array with two masks
         (
             [0, 0],
             [[True, False], [True, True]],
-            CATEGORICAL,
+            'CATEGORICAL',
             0,
             numpy.asarray([CATEGORICAL[1], CATEGORICAL[1]]),
         ),  # 1D array with two masks all true
@@ -317,22 +317,22 @@ def test_pseudo_color(mean, masks, colors, axis, expected):
         (
             [[0], [0]],
             [[True, True], [True, False]],
-            CATEGORICAL,
+            'CATEGORICAL',
             0,
         ),  # masks an mean same dimensions, incompatible shape
         (
             0,
             [[True, True], [True, False]],
-            CATEGORICAL,
+            'CATEGORICAL',
             0,
         ),  # masks shape along axis not compatible with mean shape
         (0, True, [0, 0, 0], 0),  # colors is not 2D
         (0, True, [[0, 0]], 0),  # colors last dimension is not 3
-        (0, [True, True], CATEGORICAL, 1),  # axis out of bounds
+        (0, [True, True], 'CATEGORICAL', 1),  # axis out of bounds
         (
             [0, 0],
             [[True, True], [True, False]],
-            CATEGORICAL,
+            'CATEGORICAL',
             2,
         ),  # axis out of bounds
     ],

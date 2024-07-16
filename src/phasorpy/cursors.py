@@ -1,16 +1,13 @@
 """Select regions of interest (cursors) from phasor coordinates.
 
-    The ``phasorpy.cursors`` module provides functions to:
+The ``phasorpy.cursors`` module provides functions to:
 
 - create masks for regions of interests in the phasor space:
 
   - :py:func:`mask_from_circular_cursor`
-
-- create masks for regions of interests in the polar space:
-
   - :py:func:`mask_from_polar_cursor`
 
-- create a pseudo-color array of average signal from cursor regions:
+- create pseudo-color image from average signal and cursor masks:
 
   - :py:func:`pseudo_color`
 
@@ -75,8 +72,11 @@ def mask_from_circular_cursor(
     ValueError
         The array shapes of `real` and `imag`, or `center_real` and
         `center_imag` do not match.
-        Any of the radii is negative.
         The axis is out of bounds.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_phasorpy_cursors.py`
 
     Examples
     --------
@@ -104,8 +104,6 @@ def mask_from_circular_cursor(
         raise ValueError(f'{real.shape=} != {imag.shape=}')
     if center_real.shape != center_imag.shape:
         raise ValueError(f'{center_real.shape=} != {center_imag.shape=}')
-    if numpy.any(radius < 0):
-        raise ValueError('all radii must be positive')
 
     if numpy.ndim(center_real) or numpy.ndim(radius) > 0:
         real = numpy.expand_dims(real, axis=-1)
@@ -139,22 +137,22 @@ def mask_from_polar_cursor(
 
     Parameters
     ----------
-    - phase: array_like
+    phase: array_like
         Angular component of polar coordinates in radians.
-    - modulation: array_like
+    modulation: array_like
         Radial component of polar coordinates.
-    - phase_range: array_like, shape (..., 2)
+    phase_range: array_like, shape (..., 2)
         Angular range of the cursors in radians.
         The start and end of the range must be in the last dimension.
-    - modulation_range: array_like, shape (..., 2)
+    modulation_range: array_like, shape (..., 2)
         Radial range of the cursors.
         The start and end of the range must be in the last dimension.
-    - axis: int, optional
+    axis: int, optional
         Axis along which the masks are returned. Default is 0.
 
     Returns
     -------
-    - masks: ndarray
+    masks: ndarray
         Polar coordinates masked for each polar cursor.
 
     Raises
@@ -164,6 +162,10 @@ def mask_from_polar_cursor(
         `modulation_range` do not match.
         The last dimension of `phase_range` and `modulation_range` is not 2.
         The axis is out of bounds.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_phasorpy_cursors.py`
 
     Example
     -------
@@ -223,26 +225,26 @@ def pseudo_color(
     masks: NDArray,
     /,
     *,
-    colors: ArrayLike = CATEGORICAL,
+    colors: ArrayLike = 'CATEGORICAL',
     axis: int = 0,
 ) -> NDArray[Any]:
     """Return the average of signal pseudo-colored for each cursor.
 
     Parameters
     ----------
-    - mean: NDArray
+    mean: ndarray
         Average of signal (zero harmonic).
-    - masks: NDArray
+    masks: ndarray
         Masks for each cursor.
-    - colors: array_like, optional, shape (N, 3)
+    colors: array_like, optional, shape (N, 3)
         Colors assigned to each cursor. Last dimension must contain the
-        RGB values. Default is `CATEGORICAL` from ``phasorpy.color`` module.
-    - axis: int, optional
+        RGB values. Default is :py:data:`phasorpy.color.CATEGORICAL`.
+    axis: int, optional
         Axis with masks. Default is 0.
 
     Returns
     -------
-    - pseudocolor: ndarray
+    pseudocolor: ndarray
         Average of signal replaced by colors for each cursor.
 
     Raises
@@ -252,6 +254,10 @@ def pseudo_color(
         not of size 3 (must contain RGB values).
         The `masks` shape along axis does not match `mean` shape.
         Axis is out of bounds.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_phasorpy_cursors.py`
 
     Example
     -------
@@ -270,12 +276,14 @@ def pseudo_color(
     """
     mean = numpy.asarray(mean)
     masks = numpy.atleast_1d(masks)
-    colors = numpy.asarray(colors)
-
-    if colors.ndim != 2:
-        raise ValueError(f'{colors.ndim=} != 2')
-    if colors.shape[-1] != 3:
-        raise ValueError(f'{colors.shape[-1]=} != 3')
+    if colors == 'CATEGORICAL':
+        colors = CATEGORICAL
+    else:
+        colors = numpy.asarray(colors)
+        if colors.ndim != 2:
+            raise ValueError(f'{colors.ndim=} != 2')
+        if colors.shape[-1] != 3:
+            raise ValueError(f'{colors.shape[-1]=} != 3')
     if not (-masks.ndim <= axis < masks.ndim):
         raise ValueError(
             f'Invalid {axis=}.'
