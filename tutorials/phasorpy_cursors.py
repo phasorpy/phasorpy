@@ -9,8 +9,10 @@ An introduction to selecting phasor coordinates using cursors.
 # %%
 # Import required modules, functions, and classes:
 
-import tifffile
 import matplotlib.pyplot as plt
+import tifffile
+
+from phasorpy.color import CATEGORICAL
 from phasorpy.cursors import (
     mask_from_circular_cursor,
     mask_from_polar_cursor,
@@ -19,7 +21,6 @@ from phasorpy.cursors import (
 from phasorpy.datasets import fetch
 from phasorpy.phasor import phasor_from_signal, phasor_to_polar
 from phasorpy.plot import PhasorPlot
-from phasorpy.color import CATEGORICAL
 
 # %%
 # Circular cursors
