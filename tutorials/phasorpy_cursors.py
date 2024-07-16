@@ -1,6 +1,6 @@
 """
-Phasor Cursors
-==============
+Cursors
+=======
 
 An introduction to selecting phasor coordinates using cursors.
 
@@ -9,95 +9,92 @@ An introduction to selecting phasor coordinates using cursors.
 # %%
 # Import required modules, functions, and classes:
 
-import math
-
-import numpy
 import tifffile
-from matplotlib import pyplot
-
-from phasorpy.cursors import *
+import matplotlib.pyplot as plt
+from phasorpy.cursors import mask_from_circular_cursor, mask_from_polar_cursor, pseudo_color
 from phasorpy.datasets import fetch
 from phasorpy.phasor import phasor_from_signal, phasor_to_polar
 from phasorpy.plot import PhasorPlot
+from phasorpy.color import CATEGORICAL
 
 # %%
 # Circular cursors
 # ----------------
 #
-# Use circular cursors in the phasor space to segment the images:
+# Use circular cursors in the phasor space to mask regions of interest:
 
 signal = tifffile.imread(fetch('paramecium.lsm'))
 mean, real, imag = phasor_from_signal(signal, axis=0)
-
-mask_c1 = mask_from_circular_cursor(real, imag, (-0.33, -0.72), 0.2)
-mask_c2 = mask_from_circular_cursor(real, imag, (0.55, -0.72), 0.2)
+cursors_real = [-0.33, 0.55]
+cursors_imag = [-0.72, -0.72]
+circular_mask = mask_from_circular_cursor(real, imag, cursors_real, cursors_imag, radius=0.2)
 
 # %%
 # Show the circular cursors in the phasor plot:
 
 threshold = mean > 1
 
-plot = PhasorPlot(allquadrants=True, title='Circular cursors')
+plot = PhasorPlot(allquadrants=True, title='Two circular cursors')
 plot.hist2d(real[threshold], imag[threshold])
-plot.cursor(-0.33, -0.72, radius=0.2, color='tab:blue', linestyle='-')
-plot.cursor(0.55, -0.72, radius=0.2, color='tab:red', linestyle='-')
+for i in range(len(cursors_real)):
+    plot.cursor(
+        cursors_real[i],
+        cursors_imag[i],
+        radius=0.2,
+        color=CATEGORICAL[i],
+        linestyle='-',
+    )
 
 # %%
-# Show segmented image with circular cursors:
-mask = numpy.stack([mask_c1, mask_c2], axis=-1)
-cursors_colors = [[0, 0, 255], [255, 0, 0]]
-segmented = segmentate_with_cursors(mask, cursors_colors, mean)
-
-fig, ax = pyplot.subplots()
-ax.set_title('Segmented image with circular cursors')
-plt = ax.imshow(segmented)
-# %%
-# Phase and modulation cursor
-# ---------------------------
+# Polar cursor
+# ------------
 #
 # Create a mask with phase and modulation values:
 
-mean, real, imag = phasor_from_signal(signal, axis=0)
 phase, mod = phasor_to_polar(real, imag)
-threshold = mean > 1
 
-xrange1 = [-2.27, -1.57]
-yrange1 = [0.7, 0.9]
-maskc1 = mask_from_cursor(phase, mod, xrange1, yrange1)
-
-xrange2 = [-1.22, -0.70]
-yrange2 = [0.8, 1.0]
-maskc2 = mask_from_cursor(phase, mod, xrange2, yrange2)
+phase_range = [[-2.27, -1.57], [-1.22, -0.70]]
+modulation_range = [[0.7, 0.9], [0.8, 1.0]]
+polar_mask = mask_from_polar_cursor(phase, mod, phase_range, modulation_range)
 
 # %%
 # Show cursors in the phasor plot:
 
-plot = PhasorPlot(allquadrants=True, title='Phase/Modulation cursors')
+plot = PhasorPlot(allquadrants=True, title='Two polar cursors')
 plot.hist2d(real[threshold], imag[threshold], cmap='Blues')
-plot.polar_cursor(
-    phase=xrange1[0],
-    phase_limit=xrange1[1],
-    modulation=yrange1[0],
-    modulation_limit=yrange1[1],
-    color='tab:blue',
-    linestyle='-',
-)
-plot.polar_cursor(
-    phase=xrange2[0],
-    phase_limit=xrange2[1],
-    modulation=yrange2[0],
-    modulation_limit=yrange2[1],
-    color='tab:red',
-    linestyle='-',
-)
+for i in range(len(phase_range[0])):
+    plot.polar_cursor(
+        phase=phase_range[i][0],
+        phase_limit=phase_range[i][1],
+        modulation=modulation_range[i][0],
+        modulation_limit=modulation_range[i][1],
+        color=CATEGORICAL[i+2],
+        linestyle='-',
+    )
 
 # %%
-# Segmented intensity image with cursors
-mask = numpy.stack([maskc1, maskc2], axis=-1)
-cursors_colors = [[0, 0, 255], [255, 0, 0]]
-segmented = segmentate_with_cursors(mask, cursors_colors, mean)
+# Pseudo-color
+# ------------
+#
+# Average images can be pseudo-colored (segmented) using cursor's masks.
+# Segmented image with circular cursors:
 
-fig, ax = pyplot.subplots()
-ax.set_title('Segmented image with cursors')
-plt = ax.imshow(segmented)
-plot.show()
+segmented_image = pseudo_color(mean, circular_mask)
+
+fig, ax = plt.subplots()
+ax.set_title('Segmented image with circular cursors')
+ax.imshow(segmented_image)
+plt.show()
+
+#%%
+# Segmented image with polar cursors:
+
+segmented_image = pseudo_color(mean, polar_mask, colors=CATEGORICAL[2:])
+
+fig, ax = plt.subplots()
+ax.set_title('Segmented image with polar cursors')
+ax.imshow(segmented_image)
+plt.show()
+
+# %%
+# sphinx_gallery_thumbnail_number = 1
