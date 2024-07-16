@@ -10,7 +10,7 @@ An introduction to selecting phasor coordinates using cursors.
 # Import required modules, functions, and classes:
 
 import tifffile
-from matplotlib import pyplot
+import matplotlib.pyplot as plt
 from phasorpy.cursors import mask_from_circular_cursor, mask_from_polar_cursor, pseudo_color
 from phasorpy.datasets import fetch
 from phasorpy.phasor import phasor_from_signal, phasor_to_polar
@@ -81,18 +81,20 @@ for i in range(len(phase_range[0])):
 
 segmented_image = pseudo_color(mean, circular_mask)
 
-fig, ax = pyplot.subplots()
+fig, ax = plt.subplots()
 ax.set_title('Segmented image with circular cursors')
 ax.imshow(segmented_image)
+plt.show()
 
 #%%
 # Segmented image with polar cursors:
 
 segmented_image = pseudo_color(mean, polar_mask, colors=CATEGORICAL[2:])
 
-fig, ax = pyplot.subplots()
+fig, ax = plt.subplots()
 ax.set_title('Segmented image with polar cursors')
 ax.imshow(segmented_image)
+plt.show()
 
 # %%
 # sphinx_gallery_thumbnail_number = 1
