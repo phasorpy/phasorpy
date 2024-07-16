@@ -225,7 +225,7 @@ def pseudo_color(
     masks: NDArray,
     /,
     *,
-    colors: ArrayLike = 'CATEGORICAL',
+    colors: ArrayLike | None = None,
     axis: int = 0,
 ) -> NDArray[Any]:
     """Return the average of signal pseudo-colored for each cursor.
@@ -276,7 +276,7 @@ def pseudo_color(
     """
     mean = numpy.asarray(mean)
     masks = numpy.atleast_1d(masks)
-    if colors == 'CATEGORICAL':
+    if colors is None:
         colors = CATEGORICAL
     else:
         colors = numpy.asarray(colors)
