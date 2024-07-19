@@ -126,7 +126,7 @@ def mask_from_circular_cursor(
     )
     if moveaxis:
         mask = numpy.moveaxis(mask, -1, 0)
-    return mask.astype(numpy.bool)
+    return mask.astype(numpy.bool_)
 
 
 def mask_from_polar_cursor(
@@ -236,7 +236,7 @@ def mask_from_polar_cursor(
     )
     if moveaxis:
         mask = numpy.moveaxis(mask, -1, 0)
-    return mask.astype(numpy.bool)
+    return mask.astype(numpy.bool_)
 
 
 def pseudo_color(
