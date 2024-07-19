@@ -11,6 +11,9 @@
 # these lines must be at top of module
 # TODO: https://github.com/cython/cython/issues/6064
 
+# TODO: replace short with unsigned char when Cython supports it
+# https://github.com/cython/cython/pull/6196#issuecomment-2209509572
+
 cimport numpy
 
 numpy.import_array()
@@ -26,8 +29,10 @@ from libc.math cimport (
     NAN,
     atan,
     atan2,
+    copysign,
     cos,
     fabs,
+    hypot,
     sin,
     sqrt,
     tan,
@@ -516,14 +521,8 @@ cdef (double, double) _phasor_from_fret_acceptor(
         + atan2(acceptor_imag, acceptor_real)
     )
     mod = (
-        sqrt(
-            quenched_real * quenched_real
-            + quenched_imag * quenched_imag
-        )
-        * sqrt(
-            acceptor_real * acceptor_real
-            + acceptor_imag * acceptor_imag
-        )
+        hypot(quenched_real, quenched_imag)
+        * hypot(acceptor_real, acceptor_imag)
     )
     sensitized_real = mod * cos(phi)
     sensitized_imag = mod * sin(phi)
@@ -774,12 +773,8 @@ cdef (double, double) _polar_from_reference_phasor(
     cdef:
         double measured_phase = atan2(measured_imag, measured_real)
         double known_phase = atan2(known_imag, known_real)
-        double measured_modulation = sqrt(
-            measured_real * measured_real + measured_imag * measured_imag
-        )
-        double known_modulation = sqrt(
-            known_real * known_real + known_imag * known_imag
-        )
+        double measured_modulation = hypot(measured_real, measured_imag)
+        double known_modulation = hypot(known_real, known_imag)
 
     if fabs(measured_modulation) == 0.0:
         return known_phase - measured_phase, INFINITY
@@ -806,3 +801,561 @@ cdef (double, double) _phasor_at_harmonic(
     )
 
     return real, sqrt(real - real * real)
+
+
+@cython.ufunc
+cdef short _is_inside_range(
+    float_t x,  # point
+    float_t y,
+    float_t xmin,  # x range
+    float_t xmax,
+    float_t ymin,  # y range
+    float_t ymax,
+    short mask,
+) noexcept nogil:
+    """Return whether point is inside range.
+
+    Range includes lower but not upper limit.
+
+    """
+    return mask and x >= xmin and x < xmax and y >= ymin and y < ymax
+
+
+@cython.ufunc
+cdef short _is_inside_rectangle(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # segment start
+    float_t y0,
+    float_t x1,  # segment end
+    float_t y1,
+    float_t r,  # half width
+    short mask,
+) noexcept nogil:
+    """Return whether point is in rectangle.
+
+    The rectangle is defined by central line segment and half width.
+
+    """
+    cdef:
+        float_t t
+
+    if not mask or r <= 0.0:
+        return False
+    # normalize coordinates
+    # x1 = 0
+    # y1 = 0
+    x0 -= x1
+    y0 -= y1
+    x -= x1
+    y -= y1
+    # square of line length
+    t = x0 * x0 + y0 * y0
+    if t <= 0.0:
+        return x * x + y * y <= r * r
+    # projection of point on line using clamped dot product
+    t = (x * x0 + y * y0) / t
+    if t < 0.0 or t > 1.0:
+        return False
+    # compare square of lengths of projection and radius
+    x -= t * x0
+    y -= t * y0
+    return x * x + y * y <= r * r
+
+
+@cython.ufunc
+cdef short _is_inside_polar_rectangle(
+    float_t x,  # point
+    float_t y,
+    float_t angle_min,  # phase, -pi to pi
+    float_t angle_max,
+    float_t distance_min,  # modulation
+    float_t distance_max,
+    short mask,
+) noexcept nogil:
+    """Return whether point is inside polar rectangle.
+
+    Angles should be in range -pi to pi, else performance is degraded.
+
+    """
+    cdef:
+        double t
+
+    if not mask:
+        return False
+
+    if distance_min > distance_max:
+        distance_min, distance_max = distance_max, distance_min
+    t = hypot(x, y)
+    if t < distance_min or t > distance_max or t == 0.0:
+        return False
+
+    if angle_min < -M_PI or angle_min > M_PI:
+        angle_min = <float_t> atan2(sin(angle_min), cos(angle_min))
+    if angle_max < -M_PI or angle_max > M_PI:
+        angle_max = <float_t> atan2(sin(angle_max), cos(angle_max))
+    if angle_min > angle_max:
+        angle_min, angle_max = angle_max, angle_min
+    t = <float_t> atan2(y, x)
+    if t < angle_min or t > angle_max:
+        return False
+
+    return True
+
+
+@cython.ufunc
+cdef short _is_inside_circle(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # circle center
+    float_t y0,
+    float_t r,  # circle radius
+    short mask,
+) noexcept nogil:
+    """Return whether point is inside circle."""
+    if not mask or r <= 0.0:
+        return False
+    x -= x0
+    y -= y0
+    return x * x + y * y <= r * r
+
+
+@cython.ufunc
+cdef short _is_inside_ellipse(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # ellipse center
+    float_t y0,
+    float_t a,  # ellipse radii
+    float_t b,
+    float_t phi,  # ellipse angle
+    short mask,
+) noexcept nogil:
+    """Return whether point is inside ellipse.
+
+    Same as _is_inside_circle if a == b.
+    Consider using _is_inside_ellipse_ instead, which should be faster
+    for arrays.
+
+    """
+    cdef:
+        float_t sina, cosa
+
+    if not mask or a <= 0.0 or b <= 0.0:
+        return False
+    x -= x0
+    y -= y0
+    if a == b:
+        # circle
+        return x * x + y * y <= a * a
+    sina = <float_t> sin(phi)
+    cosa = <float_t> cos(phi)
+    x0 = (cosa * x + sina * y) / a
+    y0 = (sina * x - cosa * y) / b
+    return x0 * x0 + y0 * y0 <= 1.0
+
+
+@cython.ufunc
+cdef short _is_inside_ellipse_(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # ellipse center
+    float_t y0,
+    float_t a,  # ellipse radii
+    float_t b,
+    float_t sina,  # sin/cos of ellipse angle
+    float_t cosa,
+    short mask,
+) noexcept nogil:
+    """Return whether point is inside ellipse.
+
+    Use pre-calculated sin(angle) and cos(angle).
+
+    """
+    if not mask or a <= 0.0 or b <= 0.0:
+        return False
+    x -= x0
+    y -= y0
+    if a == b:
+        # circle
+        return x * x + y * y <= a * a
+    x0 = (cosa * x + sina * y) / a
+    y0 = (sina * x - cosa * y) / b
+    return x0 * x0 + y0 * y0 <= 1.0
+
+
+@cython.ufunc
+cdef short _is_inside_stadium(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # line start
+    float_t y0,
+    float_t x1,  # line end
+    float_t y1,
+    float_t r,  # radius
+    short mask,
+) noexcept nogil:
+    """Return whether point is inside stadium.
+
+    A stadium shape is a thick line with rounded ends.
+    Same as _is_near_segment.
+
+    """
+    cdef:
+        float_t t
+
+    if not mask or r <= 0.0:
+        return False
+    # normalize coordinates
+    # x1 = 0
+    # y1 = 0
+    x0 -= x1
+    y0 -= y1
+    x -= x1
+    y -= y1
+    # square of line length
+    t = x0 * x0 + y0 * y0
+    if t <= 0.0:
+        return x * x + y * y <= r * r
+    # projection of point on line using clamped dot product
+    t = (x * x0 + y * y0) / t
+    t = <float_t> max(0.0, min(1.0, t))
+    # compare square of lengths of projection and radius
+    x -= t * x0
+    y -= t * y0
+    return x * x + y * y <= r * r
+
+
+# function alias
+_is_near_segment = _is_inside_stadium
+
+
+@cython.ufunc
+cdef short _is_near_line(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # line start
+    float_t y0,
+    float_t x1,  # line end
+    float_t y1,
+    float_t r,  # distance
+    short mask,
+) noexcept nogil:
+    """Return whether point is close to line."""
+    cdef:
+        float_t t
+
+    if not mask or r <= 0.0:
+        return False
+    # normalize coordinates
+    # x1 = 0
+    # y1 = 0
+    x0 -= x1
+    y0 -= y1
+    x -= x1
+    y -= y1
+    # square of line length
+    t = x0 * x0 + y0 * y0
+    if t <= 0.0:
+        return x * x + y * y <= r * r
+    # projection of point on line using clamped dot product
+    t = (x * x0 + y * y0) / t
+    # compare square of lengths of projection and radius
+    x -= t * x0
+    y -= t * y0
+    return x * x + y * y <= r * r
+
+
+@cython.ufunc
+cdef (double, double) _point_on_segment(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # segment start
+    float_t y0,
+    float_t x1,  # segment end
+    float_t y1,
+) noexcept nogil:
+    """Return point projected onto line segment."""
+    cdef:
+        float_t t
+
+    # normalize coordinates
+    # x1 = 0
+    # y1 = 0
+    x0 -= x1
+    y0 -= y1
+    x -= x1
+    y -= y1
+    # square of line length
+    t = x0 * x0 + y0 * y0
+    if t <= 0.0:
+        return x0, y0
+    # projection of point on line
+    t = (x * x0 + y * y0) / t
+    # clamp to line segment
+    if t < 0.0:
+        t = 0.0
+    elif t > 1.0:
+        t = 1.0
+    x1 += t * x0
+    y1 += t * y0
+    return x1, y1
+
+
+@cython.ufunc
+cdef (double, double) _point_on_line(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # line start
+    float_t y0,
+    float_t x1,  # line end
+    float_t y1,
+) noexcept nogil:
+    """Return point projected onto line."""
+    cdef:
+        float_t t
+
+    # normalize coordinates
+    # x1 = 0
+    # y1 = 0
+    x0 -= x1
+    y0 -= y1
+    x -= x1
+    y -= y1
+    # square of line length
+    t = x0 * x0 + y0 * y0
+    if t <= 0.0:
+        return x0, y0
+    # projection of point on line
+    t = (x * x0 + y * y0) / t
+    x1 += t * x0
+    y1 += t * y0
+    return x1, y1
+
+
+@cython.ufunc
+cdef double _fraction_on_segment(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # segment start
+    float_t y0,
+    float_t x1,  # segment end
+    float_t y1,
+) noexcept nogil:
+    """Return normalized fraction of point projected onto line segment."""
+    cdef:
+        float_t t
+
+    # normalize coordinates
+    x -= x1
+    y -= y1
+    x0 -= x1
+    y0 -= y1
+    # x1 = 0
+    # y1 = 0
+    # square of line length
+    t = x0 * x0 + y0 * y0
+    if t <= 0.0:
+        # not a line segment
+        return 0.0
+    # projection of point on line
+    t = (x * x0 + y * y0) / t
+    # clamp to line segment
+    if t < 0.0:
+        t = 0.0
+    elif t > 1.0:
+        t = 1.0
+    return t
+
+
+@cython.ufunc
+cdef double _fraction_on_line(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # line start
+    float_t y0,
+    float_t x1,  # line end
+    float_t y1,
+) noexcept nogil:
+    """Return normalized fraction of point projected onto line."""
+    cdef:
+        float_t t
+
+    # normalize coordinates
+    x -= x1
+    y -= y1
+    x0 -= x1
+    y0 -= y1
+    # x1 = 0
+    # y1 = 0
+    # square of line length
+    t = x0 * x0 + y0 * y0
+    if t <= 0.0:
+        # not a line segment
+        return 1.0
+    # projection of point on line
+    t = (x * x0 + y * y0) / t
+    return t
+
+
+@cython.ufunc
+cdef double _distance_from_point(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # other point
+    float_t y0,
+) noexcept nogil:
+    """Return distance from point."""
+    return hypot(x - x0, y - y0)
+
+
+@cython.ufunc
+cdef double _distance_from_segment(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # segment start
+    float_t y0,
+    float_t x1,  # segment end
+    float_t y1,
+) noexcept nogil:
+    """Return distance from segment."""
+    cdef:
+        float_t t
+
+    # normalize coordinates
+    # x1 = 0
+    # y1 = 0
+    x0 -= x1
+    y0 -= y1
+    x -= x1
+    y -= y1
+    # square of line length
+    t = x0 * x0 + y0 * y0
+    if t <= 0.0:
+        return hypot(x, y)
+    # projection of point on line using dot product
+    t = (x * x0 + y * y0) / t
+    if t > 1.0:
+        x -= x0
+        y -= y0
+    elif t > 0.0:
+        x -= t * x0
+        y -= t * y0
+    return hypot(x, y)
+
+
+@cython.ufunc
+cdef double _distance_from_line(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # line start
+    float_t y0,
+    float_t x1,  # line end
+    float_t y1,
+) noexcept nogil:
+    """Return distance from line."""
+    cdef:
+        float_t t
+
+    # normalize coordinates
+    # x1 = 0
+    # y1 = 0
+    x0 -= x1
+    y0 -= y1
+    x -= x1
+    y -= y1
+    # square of line length
+    t = x0 * x0 + y0 * y0
+    if t <= 0.0:
+        return hypot(x, y)
+    # projection of point on line using dot product
+    t = (x * x0 + y * y0) / t
+    x -= t * x0
+    y -= t * y0
+    return hypot(x, y)
+
+
+@cython.ufunc
+cdef (double, double, double) _segment_direction_and_length(
+    float_t x0,  # segment start
+    float_t y0,
+    float_t x1,  # segment end
+    float_t y1,
+) noexcept nogil:
+    """Return direction and length of line segment."""
+    cdef:
+        float_t length
+
+    x1 -= x0
+    y1 -= y0
+    length = <float_t> hypot(x1, y1)
+    if length <= 0.0:
+        return NAN, NAN, 0.0
+    x1 /= length
+    y1 /= length
+    return x1, y1, length
+
+
+@cython.ufunc
+cdef (double, double, double, double) _intersection_circle_circle(
+    float_t x0,  # circle 0
+    float_t y0,
+    float_t r0,
+    float_t x1,  # circle 1
+    float_t y1,
+    float_t r1,
+) noexcept nogil:
+    """Return coordinates of intersections of two circles."""
+    cdef:
+        double dx, dy, dr, ll, dd, hd, ld
+
+    dx = x1 - x0
+    dy = y1 - y0
+    dr = hypot(dx, dy)
+    if dr <= 0.0:
+        # circle positions identical
+        return NAN, NAN, NAN, NAN
+    ll = (r0 * r0 - r1 * r1 + dr * dr) / (dr + dr)
+    dd = r0 * r0 - ll * ll
+    if dd < 0.0 or dr <= 0.0:
+        # circles not intersecting
+        return NAN, NAN, NAN, NAN
+    hd = sqrt(dd) / dr
+    ld = ll / dr
+    return (
+        ld * dx + hd * dy + x0,
+        ld * dy - hd * dx + y0,
+        ld * dx - hd * dy + x0,
+        ld * dy + hd * dx + y0,
+    )
+
+
+@cython.ufunc
+cdef (double, double, double, double) _intersection_circle_line(
+    float_t x,  # circle
+    float_t y,
+    float_t r,
+    float_t x0,  # line start
+    float_t y0,
+    float_t x1,  # line end
+    float_t y1,
+) noexcept nogil:
+    """Return coordinates of intersections of circle and line."""
+    cdef:
+        double dx, dy, dr, dd, rdd
+
+    dx = x1 - x0
+    dy = y1 - y0
+    dr = dx * dx + dy * dy
+    dd = (x0 - x) * (y1 - y) - (x1 - x) * (y0 - y)
+    rdd = r * r * dr - dd * dd  # discriminant
+    if rdd < 0.0 or dr <= 0.0:
+        # no intersection
+        return NAN, NAN, NAN, NAN
+    rdd = sqrt(rdd)
+    return (
+        x + (dd * dy + copysign(1.0, dy) * dx * rdd) / dr,
+        y + (-dd * dx + abs(dy) * rdd) / dr,
+        x + (dd * dy - copysign(1.0, dy) * dx * rdd) / dr,
+        y + (-dd * dx - abs(dy) * rdd) / dr,
+    )

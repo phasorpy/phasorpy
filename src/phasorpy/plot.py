@@ -38,9 +38,9 @@ from matplotlib.path import Path
 from matplotlib.patheffects import AbstractPathEffect
 from matplotlib.widgets import Slider
 
+from ._phasorpy import _intersection_circle_circle, _intersection_circle_line
 from ._utils import (
-    circle_circle_intersection,
-    circle_line_intersection,
+    dilate_coordinates,
     parse_kwargs,
     phasor_from_polar_scalar,
     phasor_to_polar_scalar,
@@ -101,9 +101,6 @@ class PhasorPlot:
     _full: bool
     """Show all quadrants of phasor space."""
 
-    _lines: list[Line2D]
-    """Last lines created."""
-
     _semicircle_ticks: SemicircleTicks | None
     """Last SemicircleTicks instance created."""
 
@@ -124,7 +121,6 @@ class PhasorPlot:
         self._ax = pyplot.subplots()[1] if ax is None else ax
         self._ax.format_coord = self._on_format_coord  # type: ignore
 
-        self._lines = []
         self._semicircle_ticks = None
 
         self._full = bool(allquadrants)
@@ -174,6 +170,15 @@ class PhasorPlot:
         """Matplotlib :py:class:`matplotlib.figure.Figure`."""
         return self._ax.get_figure()
 
+    @property
+    def dataunit_to_point(self) -> float:
+        """Factor to convert data to point unit."""
+        fig = self._ax.get_figure()
+        assert fig is not None
+        length = fig.bbox_inches.height * self._ax.get_position().height * 72.0
+        vrange = numpy.diff(self._ax.get_ylim()).item()
+        return length / vrange
+
     def show(self) -> None:
         """Display all open figures. Call :py:func:`matplotlib.pyplot.show`."""
         # self.fig.show()
@@ -207,7 +212,7 @@ class PhasorPlot:
         *,
         label: str | Sequence[str] | None = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> list[Line2D]:
         """Plot imag versus real coordinates as markers and/or lines.
 
         Parameters
@@ -227,7 +232,19 @@ class PhasorPlot:
             Additional parameters passed to
             :py:meth:`matplotlib.axes.Axes.plot`.
 
+        Returns
+        -------
+        list[matplotlib.lines.Line2D]
+            Lines representing data plotted last.
+
         """
+        lines = []
+        if fmt == 'o':
+            if 'marker' in kwargs:
+                fmt = ''
+                if 'linestyle' not in kwargs and 'ls' not in kwargs:
+                    kwargs['linestyle'] = ''
+        args = (fmt,) if fmt else ()
         ax = self._ax
         if label is not None and (
             isinstance(label, str) or not isinstance(label, Sequence)
@@ -248,10 +265,11 @@ class PhasorPlot:
                     lbl = label[i]
                 except IndexError:
                     pass
-            self._lines = ax.plot(re, im, fmt, label=lbl, **kwargs)
+            lines = ax.plot(re, im, *args, label=lbl, **kwargs)
         if label is not None:
             ax.legend()
         self._reset_limits()
+        return lines
 
     def _histogram2d(
         self,
@@ -378,6 +396,8 @@ class PhasorPlot:
         imag: ArrayLike,
         /,
         fraction: ArrayLike | None = None,
+        labels: Sequence[str] | None = None,
+        label_offset: float | None = None,
         **kwargs: Any,
     ) -> None:
         """Plot linear combinations of phasor coordinates or ranges thereof.
@@ -394,32 +414,74 @@ class PhasorPlot:
             combinations of components.
             Else, draw lines from the component coordinates to the weighted
             average.
+        labels : Sequence of str, optional
+            Text label for each component.
+        label_offset : float, optional
+            Distance of text label to component coordinate.
         **kwargs
             Additional parameters passed to
-            :py:class:`matplotlib.patches.Polygon` or
-            :py:class:`matplotlib.lines.Line2D`.
+            :py:class:`matplotlib.patches.Polygon`,
+            :py:class:`matplotlib.lines.Line2D`, or
+            :py:class:`matplotlib.axes.Axes.annotate`
 
         """
-        real = numpy.asanyarray(real)
-        imag = numpy.asanyarray(imag)
-        if real.ndim != 1 or real.shape != imag.shape:
-            raise ValueError(f'invalid {real.shape=} or {imag.shape=}')
+        # TODO: use convex hull for outline
+        # TODO: improve automatic placement of labels
+        # TODO: catch more annotate properties?
+        real, imag, indices = sort_coordinates(real, imag)
+
+        marker = kwargs.pop('marker', None)
+        color = kwargs.pop('color', None)
+        fontsize = kwargs.pop('fontsize', 12)
+        fontweight = kwargs.pop('fontweight', 'bold')
+        horizontalalignment = kwargs.pop('horizontalalignment', 'center')
+        verticalalignment = kwargs.pop('verticalalignment', 'center')
+        if label_offset is None:
+            label_offset = numpy.diff(self._ax.get_xlim()).item() * 0.04
+
+        if labels is not None:
+            if len(labels) != real.size:
+                raise ValueError(
+                    f'number labels={len(labels)} != components={real.size}'
+                )
+            labels = [labels[i] for i in indices]
+            textposition = dilate_coordinates(real, imag, label_offset)
+            for label, re, im, x, y in zip(labels, real, imag, *textposition):
+                if not label:
+                    continue
+                self._ax.annotate(
+                    label,
+                    (re, im),
+                    xytext=(x, y),
+                    color=color,
+                    fontsize=fontsize,
+                    fontweight=fontweight,
+                    horizontalalignment=horizontalalignment,
+                    verticalalignment=verticalalignment,
+                )
+
         if fraction is None:
             update_kwargs(
                 kwargs,
-                edgecolor=GRID_COLOR,
+                edgecolor=GRID_COLOR if color is None else color,
                 linestyle=GRID_LINESTYLE,
                 linewidth=GRID_LINEWIDH,
                 fill=GRID_FILL,
             )
-            self._ax.add_patch(
-                Polygon(numpy.vstack(sort_coordinates(real, imag)).T, **kwargs)
-            )
+            self._ax.add_patch(Polygon(numpy.vstack((real, imag)).T, **kwargs))
+            if marker is not None:
+                self._ax.plot(
+                    real,
+                    imag,
+                    marker=marker,
+                    linestyle='',
+                    color=color,
+                )
             return
 
         update_kwargs(
             kwargs,
-            color=GRID_COLOR,
+            color=GRID_COLOR if color is None else color,
             linestyle=GRID_LINESTYLE,
             linewidth=GRID_LINEWIDH,
         )
@@ -430,7 +492,11 @@ class PhasorPlot:
             self._ax.add_line(
                 Line2D([center_re, re], [center_im, im], **kwargs)
             )
-            # TODO: add fraction labels?
+        if marker is not None:
+            self._ax.plot(real, imag, marker=marker, linestyle='', color=color)
+            self._ax.plot(
+                center_re, center_im, marker=marker, linestyle='', color=color
+            )
 
     def line(
         self,
@@ -438,7 +504,7 @@ class PhasorPlot:
         imag: ArrayLike,
         /,
         **kwargs: Any,
-    ) -> None:
+    ) -> list[Line2D]:
         """Draw grid line.
 
         Parameters
@@ -451,6 +517,11 @@ class PhasorPlot:
             Additional parameters passed to
             :py:class:`matplotlib.lines.Line2D`.
 
+        Returns
+        -------
+        list[matplotlib.lines.Line2D]
+            List containing plotted line.
+
         """
         update_kwargs(
             kwargs,
@@ -458,7 +529,7 @@ class PhasorPlot:
             linestyle=GRID_LINESTYLE,
             linewidth=GRID_LINEWIDH,
         )
-        self._lines = [self._ax.add_line(Line2D(real, imag, **kwargs))]
+        return [self._ax.add_line(Line2D(real, imag, **kwargs))]
 
     def circle(
         self,
@@ -593,16 +664,20 @@ class PhasorPlot:
             if _circle_only:
                 return
             del kwargs['fill']
-            p0, p1 = circle_line_intersection(x, y, radius, 0, 0, x, y)
-            ax.add_line(Line2D((p0[0], p1[0]), (p0[1], p1[1]), **kwargs))
-            p0, p1 = circle_circle_intersection(0, 0, modulation, x, y, radius)
+            x0, y0, x1, y1 = _intersection_circle_line(
+                x, y, radius, 0, 0, x, y
+            )
+            ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
+            x0, y0, x1, y1 = _intersection_circle_circle(
+                0, 0, modulation, x, y, radius
+            )
             ax.add_patch(
                 Arc(
                     (0, 0),
                     modulation * 2,
                     modulation * 2,
-                    theta1=math.degrees(math.atan2(p0[1], p0[0])),
-                    theta2=math.degrees(math.atan2(p1[1], p1[0])),
+                    theta1=math.degrees(math.atan2(y0, x0)),
+                    theta2=math.degrees(math.atan2(y1, x1)),
                     fill=False,
                     **kwargs,
                 )
@@ -694,7 +769,7 @@ class PhasorPlot:
         show_circle: bool = True,
         use_lines: bool = False,
         **kwargs,
-    ) -> None:
+    ) -> list[Line2D]:
         """Draw universal semicircle.
 
         Parameters
@@ -722,6 +797,11 @@ class PhasorPlot:
             :py:class:`matplotlib.patches.Arc` and
             :py:meth:`matplotlib.axes.Axes.plot`.
 
+        Returns
+        -------
+        list[matplotlib.lines.Line2D]
+            Lines representing plotted semicircle and ticks.
+
         """
         if frequency is not None:
             self._frequency = float(frequency)
@@ -740,9 +820,11 @@ class PhasorPlot:
             phasor_reference = phasor_from_polar_scalar(*polar_reference)
         ax = self._ax
 
+        lines = []
+
         if show_circle:
             if use_lines:
-                self._lines = [
+                lines = [
                     ax.add_line(
                         Line2D(
                             *phasor_transform(
@@ -769,15 +851,18 @@ class PhasorPlot:
             # draw ticks and labels
             lifetime, labels = _semicircle_ticks(frequency, lifetime, labels)
             self._semicircle_ticks = SemicircleTicks(labels=labels)
-            self._lines = ax.plot(
-                *phasor_transform(
-                    *phasor_from_lifetime(frequency, lifetime),
-                    *polar_reference,
-                ),
-                path_effects=[self._semicircle_ticks],
-                **kwargs,
+            lines.extend(
+                ax.plot(
+                    *phasor_transform(
+                        *phasor_from_lifetime(frequency, lifetime),
+                        *polar_reference,
+                    ),
+                    path_effects=[self._semicircle_ticks],
+                    **kwargs,
+                )
             )
         self._reset_limits()
+        return lines
 
     def _on_format_coord(self, x: float, y: float, /) -> str:
         """Callback function to update coordinates displayed in toolbar."""
@@ -963,109 +1048,109 @@ class PhasorPlotFret(PhasorPlot):
         )
 
         # add plots
-        self.semicircle(frequency=frequency)
-        self._donor_semicircle_line = self._lines[0]
+        lines = self.semicircle(frequency=frequency)
+        self._donor_semicircle_line = lines[0]
         self._donor_semicircle_ticks = self._semicircle_ticks
 
-        self.semicircle(
+        lines = self.semicircle(
             phasor_reference=(float(acceptor_real), float(acceptor_imag)),
             use_lines=True,
         )
-        self._acceptor_semicircle_line = self._lines[0]
+        self._acceptor_semicircle_line = lines[0]
 
         if donor_freting < 1.0 and donor_background == 0.0:
-            self.line(
+            lines = self.line(
                 [donor_real, donor_fret_real],
                 [donor_imag, donor_fret_imag],
             )
         else:
-            self.line([0.0, 0.0], [0.0, 0.0])
-        self._donor_donor_line = self._lines[0]
+            lines = self.line([0.0, 0.0], [0.0, 0.0])
+        self._donor_donor_line = lines[0]
 
         if acceptor_background > 0.0:
-            self.line(
+            lines = self.line(
                 [float(acceptor_real), float(background_real)],
                 [float(acceptor_imag), float(background_imag)],
             )
         else:
-            self.line([0.0, 0.0], [0.0, 0.0])
-        self._acceptor_background_line = self._lines[0]
+            lines = self.line([0.0, 0.0], [0.0, 0.0])
+        self._acceptor_background_line = lines[0]
 
         if donor_background > 0.0:
-            self.line(
+            lines = self.line(
                 [float(donor_real), float(background_real)],
                 [float(donor_imag), float(background_imag)],
             )
         else:
-            self.line([0.0, 0.0], [0.0, 0.0])
-        self._donor_background_line = self._lines[0]
+            lines = self.line([0.0, 0.0], [0.0, 0.0])
+        self._donor_background_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             donor_trajectory_real,
             donor_trajectory_imag,
-            fmt='-',
+            '-',
             color='tab:green',
         )
-        self._donor_trajectory_line = self._lines[0]
+        self._donor_trajectory_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             acceptor_trajectory_real,
             acceptor_trajectory_imag,
-            fmt='-',
+            '-',
             color='tab:red',
         )
-        self._acceptor_trajectory_line = self._lines[0]
+        self._acceptor_trajectory_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             donor_real,
             donor_imag,
-            fmt='.',
+            '.',
             color='tab:green',
         )
-        self._donor_only_line = self._lines[0]
+        self._donor_only_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             donor_real,
             donor_imag,
-            fmt='.',
+            '.',
             color='tab:green',
         )
-        self._donor_fret_line = self._lines[0]
+        self._donor_fret_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             acceptor_real,
             acceptor_imag,
-            fmt='.',
+            '.',
             color='tab:red',
         )
-        self._acceptor_only_line = self._lines[0]
+        self._acceptor_only_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             donor_trajectory_real[int(fret_efficiency * 100.0)],
             donor_trajectory_imag[int(fret_efficiency * 100.0)],
-            fmt='o',
+            'o',
             color='tab:green',
             label='Donor',
         )
-        self._donor_line = self._lines[0]
+        self._donor_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             acceptor_trajectory_real[int(fret_efficiency * 100.0)],
             acceptor_trajectory_imag[int(fret_efficiency * 100.0)],
-            fmt='o',
+            'o',
             color='tab:red',
             label='Acceptor',
         )
-        self._acceptor_line = self._lines[0]
+        self._acceptor_line = lines[0]
 
-        self.plot(
+        lines = self.plot(
             background_real,
             background_imag,
-            fmt='o',
+            'o',
             color='black',
             label='Background',
         )
-        self._background_line = self._lines[0]
+        self._background_line = lines[0]
 
         if not interactive:
             return
