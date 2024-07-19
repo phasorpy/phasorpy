@@ -10,7 +10,6 @@ An introduction to selecting phasor coordinates using cursors.
 # Import required modules, functions, and classes:
 
 import matplotlib.pyplot as plt
-import tifffile
 
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursors import (
@@ -19,29 +18,35 @@ from phasorpy.cursors import (
     pseudo_color,
 )
 from phasorpy.datasets import fetch
-from phasorpy.phasor import phasor_from_signal, phasor_to_polar
+from phasorpy.io import read_lsm
+from phasorpy.phasor import phasor_from_signal
 from phasorpy.plot import PhasorPlot
+
+# %%
+# Open a hyperspectral dataset used throughout this tutorial:
+
+signal = read_lsm(fetch('paramecium.lsm'))
+mean, real, imag = phasor_from_signal(signal, axis=0)
 
 # %%
 # Circular cursors
 # ----------------
 #
-# Use circular cursors in the phasor space to mask regions of interest:
+# Use circular cursors to mask regions of interest in the phasor space:
 
-signal = tifffile.imread(fetch('paramecium.lsm'))
-mean, real, imag = phasor_from_signal(signal, axis=0)
 cursors_real = [-0.33, 0.55]
 cursors_imag = [-0.72, -0.72]
+
 circular_mask = mask_from_circular_cursor(
     real, imag, cursors_real, cursors_imag, radius=0.2
 )
 
 # %%
-# Show the circular cursors in the phasor plot:
+# Show the circular cursors in a phasor plot:
 
 threshold = mean > 1
 
-plot = PhasorPlot(allquadrants=True, title='Two circular cursors')
+plot = PhasorPlot(allquadrants=True, title='Circular cursors')
 plot.hist2d(real[threshold], imag[threshold])
 for i in range(len(cursors_real)):
     plot.cursor(
@@ -51,56 +56,65 @@ for i in range(len(cursors_real)):
         color=CATEGORICAL[i],
         linestyle='-',
     )
+plot.show()
 
 # %%
-# Polar cursor
-# ------------
+# Polar cursors
+# -------------
 #
-# Create a mask with phase and modulation values:
+# Create a mask with two ranges of phase and modulation values:
 
-phase, mod = phasor_to_polar(real, imag)
+phase_min = [-2.27, -1.22]
+phase_max = [-1.57, -0.70]
+modulation_min = [0.7, 0.8]
+modulation_max = [0.9, 1.0]
 
-phase_range = [[-2.27, -1.57], [-1.22, -0.70]]
-modulation_range = [[0.7, 0.9], [0.8, 1.0]]
-polar_mask = mask_from_polar_cursor(phase, mod, phase_range, modulation_range)
+polar_mask = mask_from_polar_cursor(
+    real, imag, phase_min, phase_max, modulation_min, modulation_max
+)
 
 # %%
-# Show cursors in the phasor plot:
+# Show the polar cursors in a phasor plot:
 
-plot = PhasorPlot(allquadrants=True, title='Two polar cursors')
-plot.hist2d(real[threshold], imag[threshold], cmap='Blues')
-for i in range(len(phase_range[0])):
+plot = PhasorPlot(allquadrants=True, title='Polar cursors')
+plot.hist2d(real[threshold], imag[threshold])
+for i in range(len(phase_min)):
     plot.polar_cursor(
-        phase=phase_range[i][0],
-        phase_limit=phase_range[i][1],
-        modulation=modulation_range[i][0],
-        modulation_limit=modulation_range[i][1],
+        phase=phase_min[i],
+        phase_limit=phase_max[i],
+        modulation=modulation_min[i],
+        modulation_limit=modulation_max[i],
         color=CATEGORICAL[i + 2],
         linestyle='-',
     )
+plot.show()
 
 # %%
-# Pseudo-color
-# ------------
+# Pseudo-color images
+# -------------------
 #
-# Average images can be pseudo-colored (segmented) using cursor's masks.
-# Segmented image with circular cursors:
+# The cursor masks and optionally the intensity image can be
+# blended to produce pseudo-colored images.
+# Blending the masks from the circular cursors:
 
-segmented_image = pseudo_color(mean, circular_mask)
+pseudo_color_image = pseudo_color(*circular_mask)
 
 fig, ax = plt.subplots()
-ax.set_title('Segmented image with circular cursors')
-ax.imshow(segmented_image)
+ax.set_title('Pseudo-color image from circular cursors')
+ax.imshow(pseudo_color_image)
 plt.show()
 
 # %%
-# Segmented image with polar cursors:
+# Using the mean intensity image as a base layer to overlay the masks from
+# the polar cursors:
 
-segmented_image = pseudo_color(mean, polar_mask, colors=CATEGORICAL[2:])
+pseudo_color_image = pseudo_color(
+    *polar_mask, intensity=mean, colors=CATEGORICAL[2:]
+)
 
 fig, ax = plt.subplots()
-ax.set_title('Segmented image with polar cursors')
-ax.imshow(segmented_image)
+ax.set_title('Pseudo-color image from polar cursors and intensity')
+ax.imshow(pseudo_color_image)
 plt.show()
 
 # %%

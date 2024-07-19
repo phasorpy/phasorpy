@@ -9,6 +9,12 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from phasorpy._phasorpy import _is_near_segment  # same as _is_inside_stadium
 from phasorpy._phasorpy import (
+    _blend_darken,
+    _blend_lighten,
+    _blend_multiply,
+    _blend_normal,
+    _blend_overlay,
+    _blend_screen,
     _distance_from_line,
     _distance_from_point,
     _distance_from_segment,
@@ -364,3 +370,57 @@ def test_geometric_ufunc_on_grid():
         pyplot.show()
     else:
         pyplot.close()
+
+
+@pytest.mark.parametrize(
+    'a, b, expected',
+    [(0.1, 0.6, 0.6), (0.6, 0.1, 0.1), (0.1, nan, 0.1), (nan, 0.6, 0.6)],
+)
+def test_blend_normal(a, b, expected):
+    """Test _blend_normal function."""
+    assert_allclose(_blend_normal(a, b), expected)
+
+
+@pytest.mark.parametrize(
+    'a, b, expected',
+    [(0.1, 0.6, 0.06), (0.6, 0.1, 0.06), (0.1, nan, 0.1), (nan, 0.6, nan)],
+)
+def test_blend_multiply(a, b, expected):
+    """Test _blend_multiply function."""
+    assert_allclose(_blend_multiply(a, b), expected)
+
+
+@pytest.mark.parametrize(
+    'a, b, expected',
+    [(0.1, 0.6, 0.64), (0.6, 0.1, 0.64), (0.1, nan, 0.1), (nan, 0.6, nan)],
+)
+def test_blend_screen(a, b, expected):
+    """Test _blend_screen function."""
+    assert_allclose(_blend_screen(a, b), expected)
+
+
+@pytest.mark.parametrize(
+    'a, b, expected',
+    [(0.1, 0.6, 0.12), (0.6, 0.1, 0.28), (0.1, nan, 0.1), (nan, 0.6, nan)],
+)
+def test_blend_overlay(a, b, expected):
+    """Test _blend_overlay function."""
+    assert_allclose(_blend_overlay(a, b), expected)
+
+
+@pytest.mark.parametrize(
+    'a, b, expected',
+    [(0.1, 0.6, 0.1), (0.6, 0.1, 0.1), (0.1, nan, 0.1), (nan, 0.6, nan)],
+)
+def test_blend_darken(a, b, expected):
+    """Test _blend_darken function."""
+    assert_allclose(_blend_darken(a, b), expected)
+
+
+@pytest.mark.parametrize(
+    'a, b, expected',
+    [(0.1, 0.6, 0.6), (0.6, 0.1, 0.6), (0.1, nan, 0.1), (nan, 0.6, nan)],
+)
+def test_blend_lighten(a, b, expected):
+    """Test _blend_lighten function."""
+    assert_allclose(_blend_lighten(a, b), expected)
