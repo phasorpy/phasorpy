@@ -88,7 +88,16 @@ real, imag, weights = numpy.array(
 )
 
 plot = PhasorPlot(frequency=80.0, title='Component mixtures')
-plot.components(real, imag, linestyle='', fill=True, facecolor='lightyellow')
+plot.components(
+    real,
+    imag,
+    linestyle='',
+    marker='o',
+    labels=['A', 'B', 'C', 'D'],
+    color='tab:blue',
+    fill=True,
+    facecolor='lightyellow',
+)
 plot.components(real, imag, weights)
 plot.show()
 
@@ -187,7 +196,7 @@ pyplot.show()
 
 from phasorpy.plot import plot_phasor
 
-plot_phasor(real[0, :32], imag[0, :32], fmt='.', frequency=80.0)
+plot_phasor(real[0, :32], imag[0, :32], marker='.', frequency=80.0)
 
 # %%
 # sphinx_gallery_thumbnail_number = 10
