@@ -1,5 +1,5 @@
 """
-Principle components
+Principal components
 ====================
 
 Project multi-harmonic phasor coordinates onto principal plane.
@@ -80,7 +80,7 @@ plot.show()
 # ----------------------------
 #
 # The projection of the multi-harmonic phasor coordinates onto the
-# principle plane should give an overall good representation of the
+# principal plane should give an overall good representation of the
 # distribution.
 #
 # The transformation matrix can be used to project other multi-harmonic

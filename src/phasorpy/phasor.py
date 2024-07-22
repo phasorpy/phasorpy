@@ -1996,7 +1996,7 @@ def phasor_to_principal_plane(
     --------
     The phasor coordinates of multi-exponential decays may be almost
     indistinguishable at certain frequencies but are separated in the
-    projection on the principle plane:
+    projection on the principal plane:
 
     >>> real = [[0.495, 0.502], [0.354, 0.304]]
     >>> imag = [[0.333, 0.334], [0.301, 0.349]]
@@ -2069,7 +2069,7 @@ def phasor_to_principal_plane(
             transformation_matrix,
         )
 
-    # project multi-frequency phasor coordinates onto principle plane
+    # project multi-frequency phasor coordinates onto principal plane
     coordinates += center
     coordinates = numpy.dot(transformation_matrix, coordinates)
 
