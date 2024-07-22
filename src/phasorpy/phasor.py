@@ -1992,6 +1992,25 @@ def phasor_to_principal_plane(
                 transformation_matrix,
             ).reshape(2, *real.shape[1:])
 
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_phasorpy_principal_components.py`
+
+    Notes
+    -----
+
+    An application of PCA to full-harmonic phasor coordinates from MRI signals
+    can be found in [1]_.
+
+    References
+    ----------
+
+    .. [1] Franssen WMJ, Vergeldt FJ, Bader AN, van Amerongen H, & Terenzi C.
+      `Full-harmonics phasor analysis: unravelling multiexponential trends
+      in magnetic resonance imaging data
+      <https://doi.org/10.1021/acs.jpclett.0c02319>`_.
+      *J Phys Chem Lett*, 11(21): 9152-9158 (2020)
+
     Examples
     --------
     The phasor coordinates of multi-exponential decays may be almost
