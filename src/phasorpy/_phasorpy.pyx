@@ -4,7 +4,6 @@
 # cython: wraparound = False
 # cython: cdivision = True
 # cython: nonecheck = False
-# cython: linetrace = True
 
 """Cython implementation of low-level functions for the PhasorPy package."""
 
@@ -33,6 +32,7 @@ from libc.math cimport (
     cos,
     fabs,
     hypot,
+    isnan,
     sin,
     sqrt,
     tan,
@@ -377,6 +377,9 @@ def _phasor_from_lifetime(
     )
 
 
+###############################################################################
+# FRET model
+
 @cython.ufunc
 cdef (double, double) _phasor_from_fret_donor(
     double omega,
@@ -575,6 +578,9 @@ cdef inline (double, double) linear_combination(
         (int1 * imag1 + int2 * imag2) / frac
     )
 
+
+###############################################################################
+# Phasor conversions
 
 cdef inline (double, double) phasor_from_lifetime(
     float_t lifetime,
@@ -802,6 +808,9 @@ cdef (double, double) _phasor_at_harmonic(
 
     return real, sqrt(real - real * real)
 
+
+###############################################################################
+# Geometry ufuncs
 
 @cython.ufunc
 cdef short _is_inside_range(
@@ -1359,3 +1368,74 @@ cdef (double, double, double, double) _intersection_circle_line(
         x + (dd * dy - copysign(1.0, dy) * dx * rdd) / dr,
         y + (-dd * dx - abs(dy) * rdd) / dr,
     )
+
+###############################################################################
+# Blend ufuncs
+
+
+@cython.ufunc
+cdef float _blend_normal(
+    float_t a,  # base layer
+    float_t b,  # blend layer
+) noexcept nogil:
+    """Return blended layers using `normal` mode."""
+    if isnan(b):
+        return <float> a
+    return <float> b
+
+
+@cython.ufunc
+cdef float _blend_multiply(
+    float_t a,  # base layer
+    float_t b,  # blend layer
+) noexcept nogil:
+    """Return blended layers using `multiply` mode."""
+    if isnan(b):
+        return <float> a
+    return <float> (a * b)
+
+
+@cython.ufunc
+cdef float _blend_screen(
+    float_t a,  # base layer
+    float_t b,  # blend layer
+) noexcept nogil:
+    """Return blended layers using `screen` mode."""
+    if isnan(b):
+        return <float> a
+    return <float> (1.0 - (1.0 - a) * (1.0 - b))
+
+
+@cython.ufunc
+cdef float _blend_overlay(
+    float_t a,  # base layer
+    float_t b,  # blend layer
+) noexcept nogil:
+    """Return blended layers using `overlay` mode."""
+    if isnan(b):
+        return <float> a
+    if a < 0.5:
+        return <float> (2.0 * a * b)
+    return <float> (1.0 - 2.0 * (1.0 - a) * (1.0 - b))
+
+
+@cython.ufunc
+cdef float _blend_darken(
+    float_t a,  # base layer
+    float_t b,  # blend layer
+) noexcept nogil:
+    """Return blended layers using `darken` mode."""
+    if isnan(b):
+        return <float> a
+    return <float> (min(a, b))
+
+
+@cython.ufunc
+cdef float _blend_lighten(
+    float_t a,  # base layer
+    float_t b,  # blend layer
+) noexcept nogil:
+    """Return blended layers using `lighten` mode."""
+    if isnan(b):
+        return <float> a
+    return <float> (max(a, b))
