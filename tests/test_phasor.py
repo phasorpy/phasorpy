@@ -40,6 +40,7 @@ from phasorpy.phasor import (
     phasor_semicircle,
     phasor_to_apparent_lifetime,
     phasor_to_polar,
+    phasor_to_principal_plane,
     phasor_transform,
     polar_from_apparent_lifetime,
     polar_from_reference,
@@ -51,6 +52,8 @@ SYNTH_DATA_ARRAY = numpy.array([[50, 1], [1, 1]])
 SYNTH_DATA_LIST = [1, 2, 4]
 SYNTH_PHI = numpy.array([[0.5, 0.5], [0.5, 0.5]])
 SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
+
+numpy.random.seed(42)
 
 
 @pytest.mark.parametrize('fft', (True, False))
@@ -1498,6 +1501,59 @@ def test_phasor_at_harmonic():
         phasor_at_harmonic(0.5, 0, 1)
     with pytest.raises(ValueError):
         phasor_at_harmonic(0.5, 1, 0)
+
+
+def test_phasor_to_principal_plane():
+    """Test phasor_to_principal_plane function."""
+    # see phasorpy_principal_components.py for comments and visualization
+
+    def distribution(values, stddev=0.05, samples=100):
+        return numpy.ascontiguousarray(
+            numpy.vstack(
+                [
+                    numpy.random.normal(value, stddev, samples)
+                    for value in values
+                ]
+            ).T
+        )
+
+    frequency = [80, 160, 240, 320, 400]
+    real0, imag0 = phasor_from_lifetime(
+        frequency,
+        lifetime=distribution([0.5, 4.0]),
+        fraction=distribution([0.4, 0.6]),
+    )
+    real1, imag1 = phasor_from_lifetime(
+        frequency,
+        lifetime=distribution([1.0, 8.0]),
+        fraction=distribution([0.6, 0.4]),
+    )
+    real = numpy.hstack([real0, real1])
+    imag = numpy.hstack([imag0, imag1])
+
+    x, y, transformation_matrix = phasor_to_principal_plane(real, imag)
+    assert x.shape == (200,)
+    assert y.shape == (200,)
+    assert transformation_matrix.shape == (2, 10)
+    assert_allclose(x.mean(), 0.306839, atol=1e-2)
+    assert_allclose(y.mean(), 0.281617, atol=1e-2)
+
+    # for single harmonics, reoriented projection matches phasor coordinates
+    real = real[:1]
+    imag = imag[:1]
+    x, y, transformation_matrix = phasor_to_principal_plane(real, imag)
+    assert_allclose(x, real[0], atol=1e-3)
+    assert_allclose(y, imag[0], atol=1e-3)
+
+    x, y, transformation_matrix = phasor_to_principal_plane(
+        real, imag, reorient=False
+    )
+    with pytest.raises(AssertionError):
+        assert_allclose(x, real[0], atol=1e-3)
+
+    # exception
+    with pytest.raises(ValueError):
+        phasor_to_principal_plane([0.0, 1.0], [0.0])
 
 
 def test_parse_skip_axis():

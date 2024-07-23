@@ -29,9 +29,10 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`polar_from_reference`
   - :py:func:`polar_from_reference_phasor`
 
-- reduce arrays of phasor coordinates to single coordinates:
+- reduce dimensionality of arrays of phasor coordinates:
 
   - :py:func:`phasor_center`
+  - :py:phasor_to_principal_plane`
 
 - calculate phasor coordinates for FRET donor and acceptor channels:
 
@@ -71,6 +72,7 @@ __all__ = [
     'phasor_from_polar',
     'phasor_from_signal',
     'phasor_from_signal_fft',
+    'phasor_to_principal_plane',
     'phasor_semicircle',
     'phasor_to_apparent_lifetime',
     'phasor_to_polar',
@@ -1931,6 +1933,169 @@ def phasor_from_fret_acceptor(
         background_real,
         background_imag,
         **kwargs,
+    )
+
+
+def phasor_to_principal_plane(
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    *,
+    reorient: bool = True,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """Return multi-harmonic phasor coordinates projected onto principal plane.
+
+    The Principal Component Analysis (PCA) is used to project
+    multi-harmonic phasor coordinates onto a plane, along which
+    coordinate axes the phasor coordinates have the largest variations.
+
+    The transformed coordinates are not phasor coordinates. However, the
+    coordinates can be used in visualization and cursor analysis since
+    the transformation is affine (preserving collinearity and ratios
+    of distances).
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of multi-harmonic phasor coordinates.
+        The first axis is the frequency dimension.
+        If less than 2-dimensional, size-1 dimensions are prepended.
+    imag : array_like
+        Imaginary component of multi-harmonic phasor coordinates.
+        Must be of same shape as `real`.
+    reorient : bool, optional, default: True
+        Reorient coordinates for easier visualization.
+        The projected coordinates are rotated and scaled, such that
+        the center lies in same quadrant and the projection
+        of [1, 0] lies at [1, 0].
+
+    Returns
+    -------
+    x : ndarray
+        X-coordinates of projected phasor coordinates.
+        If not `reorient`, this is the coordinate on the first principal axis.
+        The shape is ``real.shape[1:]``.
+    y : ndarray
+        Y-coordinates of projected phasor coordinates.
+        If not `reorient`, this is the coordinate on the second principal axis.
+    transformation_matrix : ndarray
+        Affine transformation matrix used to project phasor coordinates.
+        The shape is ``(2, 2 * real.shape[0])``.
+        The matrix can be used to project multi-harmonic phasor coordinates,
+        where the first axis is the frequency::
+
+            x, y = numpy.dot(
+                numpy.vstack(
+                    real.reshape(real.shape[0], -1),
+                    imag.reshape(imag.shape[0], -1),
+                ),
+                transformation_matrix,
+            ).reshape(2, *real.shape[1:])
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_phasorpy_pca.py`
+
+    Notes
+    -----
+
+    An application of PCA to full-harmonic phasor coordinates from MRI signals
+    can be found in [1]_.
+
+    References
+    ----------
+
+    .. [1] Franssen WMJ, Vergeldt FJ, Bader AN, van Amerongen H, & Terenzi C.
+      `Full-harmonics phasor analysis: unravelling multiexponential trends
+      in magnetic resonance imaging data
+      <https://doi.org/10.1021/acs.jpclett.0c02319>`_.
+      *J Phys Chem Lett*, 11(21): 9152-9158 (2020)
+
+    Examples
+    --------
+    The phasor coordinates of multi-exponential decays may be almost
+    indistinguishable at certain frequencies but are separated in the
+    projection on the principal plane:
+
+    >>> real = [[0.495, 0.502], [0.354, 0.304]]
+    >>> imag = [[0.333, 0.334], [0.301, 0.349]]
+    >>> x, y, transformation_matrix = phasor_to_principal_plane(real, imag)
+    >>> x, y  # doctest: +SKIP
+    (array([0.294, 0.262]), array([0.192, 0.242]))
+    >>> transformation_matrix  # doctest: +SKIP
+    array([[0.67, 0.33, -0.09, -0.41], [0.52, -0.52, -0.04, 0.44]])
+
+    """
+    re, im = numpy.atleast_2d(real, imag)
+    if re.shape != im.shape:
+        raise ValueError(f'real={re.shape} != imag={im.shape}')
+
+    # reshape to variables in row, observations in column
+    frequencies = re.shape[0]
+    shape = re.shape[1:]
+    re = re.reshape(re.shape[0], -1)
+    im = im.reshape(im.shape[0], -1)
+
+    # vector of multi-frequency phasor coordinates
+    coordinates = numpy.vstack((re, im))
+
+    # vector of centered coordinates
+    center = coordinates.mean(1, keepdims=True)
+    coordinates -= center
+
+    # covariance matrix (scatter matrix would also work)
+    cov = numpy.cov(coordinates, rowvar=True)
+
+    # calculate eigenvectors
+    _, eigvec = numpy.linalg.eigh(cov)
+
+    # projection matrix: two eigenvectors with largest eigenvalues
+    transformation_matrix = eigvec.T[-2:][::-1]
+
+    if reorient:
+        # for single harmonic, this should restore original coordinates.
+
+        # 1. rotate and scale such that projection of [1, 0] lies at [1, 0]
+        x, y = numpy.dot(
+            transformation_matrix,
+            numpy.vstack(([[1.0]] * frequencies, [[0.0]] * frequencies)),
+        )
+        x = x.item()
+        y = y.item()
+        angle = -math.atan2(y, x)
+        if angle < 0:
+            angle += 2.0 * math.pi
+        cos = math.cos(angle)
+        sin = math.sin(angle)
+        transformation_matrix = numpy.dot(
+            [[cos, -sin], [sin, cos]], transformation_matrix
+        )
+        scale_factor = 1.0 / math.hypot(x, y)
+        transformation_matrix = numpy.dot(
+            [[scale_factor, 0], [0, scale_factor]], transformation_matrix
+        )
+
+        # 2. mirror such that projected center lies in same quadrant
+        cs = math.copysign
+        x, y = numpy.dot(transformation_matrix, center)
+        x = x.item()
+        y = y.item()
+        transformation_matrix = numpy.dot(
+            [
+                [-1 if cs(1, x) != cs(1, center[0][0]) else 1, 0],
+                [0, -1 if cs(1, y) != cs(1, center[1][0]) else 1],
+            ],
+            transformation_matrix,
+        )
+
+    # project multi-frequency phasor coordinates onto principal plane
+    coordinates += center
+    coordinates = numpy.dot(transformation_matrix, coordinates)
+
+    return (
+        coordinates[0].reshape(shape),  # x coordinates
+        coordinates[1].reshape(shape),  # y coordinates
+        transformation_matrix,
     )
 
 
