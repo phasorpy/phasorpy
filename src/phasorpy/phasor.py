@@ -1994,7 +1994,7 @@ def phasor_to_principal_plane(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_phasorpy_principal_components.py`
+    :ref:`sphx_glr_tutorials_phasorpy_pca.py`
 
     Notes
     -----
