@@ -7,6 +7,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursors import (
     mask_from_circular_cursor,
+    mask_from_elliptic_cursor,
     mask_from_polar_cursor,
     pseudo_color,
 )
@@ -14,7 +15,10 @@ from phasorpy.phasor import phasor_from_polar
 
 
 @pytest.mark.parametrize(
-    "real, imag, center_real, center_imag, radius, expected",
+    'func', [mask_from_circular_cursor, mask_from_elliptic_cursor]
+)
+@pytest.mark.parametrize(
+    'real, imag, center_real, center_imag, radius, expected',
     [
         (
             -0.5,
@@ -76,39 +80,63 @@ from phasorpy.phasor import phasor_from_polar
     ],
 )
 def test_mask_from_circular_cursor(
-    real, imag, center_real, center_imag, radius, expected
+    func, real, imag, center_real, center_imag, radius, expected
 ):
-    """Test mask_from_circular_cursor function."""
-    assert_array_equal(
-        mask_from_circular_cursor(
-            real, imag, center_real, center_imag, radius=radius
-        ),
-        expected,
-    )
+    """Test mask_from_circular/elliptic_cursor functions."""
+    mask = func(real, imag, center_real, center_imag, radius=radius)
+    assert_array_equal(mask, expected)
 
 
 @pytest.mark.parametrize(
-    "real, imag, center_real, center_imag, radius",
+    'func', [mask_from_circular_cursor, mask_from_elliptic_cursor]
+)
+@pytest.mark.parametrize(
+    'real, imag, center_real, center_imag, radius',
     [
-        ([0], [0, 0], 0, 0, 0.1),
-        ([0, 0], [0], 0, 0, 0.1),
-        # (0, 0, 0, [0, 0], 0.1),  # passes with broadcasting
-        # (0, 0, [0, 0], 0, 0.1),  # passes with broadcasting
-        (0, 0, [[0, 0], [0, 0]], [[0, 0], [0, 0]], 0.1),
+        ([0.0], [0, 0], 0, 0, 0.1),
+        ([0.0, 0.0], [0], 0, 0, 0.1),
+        (0.0, 0.0, [[0, 0], [0, 0]], [[0, 0], [0, 0]], 0.1),
     ],
 )
 def test_mask_from_circular_cursor_errors(
-    real, imag, center_real, center_imag, radius
+    func, real, imag, center_real, center_imag, radius
 ):
-    """Test errors for mask_from_circular_cursor function."""
+    """Test errors for mask_from_circular/elliptic_cursor functions."""
     with pytest.raises(ValueError):
-        mask_from_circular_cursor(
-            real, imag, center_real, center_imag, radius=radius
-        )
+        func(real, imag, center_real, center_imag, radius=radius)
 
 
 @pytest.mark.parametrize(
-    "phase, modulation, phase_min, phase_max, modulation_min, modulation_max, expected",
+    'radius, radius_b, angle, expected',
+    [
+        ([0.1, 0.05], 0.15, None, [[True, False], [False, True]]),
+        (0.1, [0.15, 0.1], None, [[True, False], [False, True]]),
+        ([0.1, 0.05], [0.15, 0.1], None, [[True, False], [False, True]]),
+        ([0.1, 0.05], [0.15, 0.1], 3.1, [[True, False], [False, True]]),
+        ([0.1, 0.05], [0.15, 0.1], [3.1, 1.6], [[True, False], [False, True]]),
+        (0.5, 0.5, 0.0, [[True, True], [True, True]]),
+    ],
+)
+def test_mask_from_elliptic_cursor(radius, radius_b, angle, expected):
+    """Test mask_from_elliptic_cursor function."""
+    # the function is also tested in test_mask_from_circular_cursor
+    mask = mask_from_elliptic_cursor(
+        [0.2, 0.5],
+        [0.4, 0.5],
+        [0.2, 0.5],
+        [0.4, 0.5],
+        radius=radius,
+        radius_b=radius_b,
+        angle=angle,
+    )
+    assert_array_equal(mask, expected)
+
+
+@pytest.mark.parametrize(
+    'phase, modulation, '
+    'phase_min, phase_max, '
+    'modulation_min, modulation_max, '
+    'expected',
     [
         (
             10,
@@ -208,7 +236,7 @@ def test_mask_from_polar_cursor(
 
 
 @pytest.mark.parametrize(
-    "real, imag, phase_range, modulation_range",
+    'real, imag, phase_range, modulation_range',
     [
         (
             [0],
@@ -233,8 +261,56 @@ def test_mask_from_polar_cursor_errors(
         mask_from_polar_cursor(real, imag, *phase_range, *modulation_range)
 
 
+def test_cursors_on_grid():
+    """Plot cursor functions on grid of points."""
+    from math import pi
+
+    from matplotlib import pyplot
+
+    show = False  # enable to see figure
+
+    def plot_mask(real, imag, mask, **kwargs):
+        show = 'ax' not in kwargs
+        ax = kwargs.pop('ax') if not show else pyplot.subplot()
+        mask = mask.astype(bool)
+        ax.set(
+            aspect='equal',
+            xlim=[0, 1],
+            ylim=[0, 1],
+            xticks=[],
+            yticks=[],
+            **kwargs,
+        )
+        ax.plot(real[mask], imag[mask], ',')
+        if show:
+            pyplot.show()
+
+    coords = numpy.linspace(0.0, 1.0, 501)
+    real, imag = numpy.meshgrid(coords, coords)
+
+    _, ax = pyplot.subplots(3, 1, figsize=(3.2, 8), layout='constrained')
+
+    mask = mask_from_circular_cursor(real, imag, 0.5, 0.5, radius=0.1)
+    plot_mask(real, imag, mask, title='mask_from_circular_cursor', ax=ax[0])
+
+    mask = mask_from_elliptic_cursor(
+        real, imag, 0.5, 0.5, radius=0.05, radius_b=0.15, angle=pi / 4
+    )
+    plot_mask(real, imag, mask, title='mask_from_elliptic_cursor', ax=ax[1])
+
+    mask = mask_from_polar_cursor(
+        real, imag, pi / 5, pi / 3 + 4 * pi, 0.6071, 0.8071
+    )
+    plot_mask(real, imag, mask, title='mask_from_polar_cursor', ax=ax[2])
+
+    if show:
+        pyplot.show()
+    else:
+        pyplot.close()
+
+
 @pytest.mark.parametrize(
-    "masks, mean, colors, expected",
+    'masks, mean, colors, expected',
     [
         ([True], None, None, CATEGORICAL[0]),  # single value true
         ([False], None, None, [0, 0, 0]),  # single value false

@@ -1412,7 +1412,7 @@ cdef float _blend_overlay(
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `overlay` mode."""
-    if isnan(b):
+    if isnan(b) or isnan(a):
         return <float> a
     if a < 0.5:
         return <float> (2.0 * a * b)
@@ -1425,7 +1425,7 @@ cdef float _blend_darken(
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `darken` mode."""
-    if isnan(b):
+    if isnan(b) or isnan(a):
         return <float> a
     return <float> (min(a, b))
 
@@ -1436,6 +1436,6 @@ cdef float _blend_lighten(
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `lighten` mode."""
-    if isnan(b):
+    if isnan(b) or isnan(a):
         return <float> a
     return <float> (max(a, b))

@@ -183,6 +183,7 @@ class TestPhasorPlot:
         plot.cursor(0.4, 0.3, color='tab:blue', linestyle='-')
         plot.cursor(0.52, 0.3, 0.78, 0.16, color='tab:orange')
         plot.cursor(0.9, 0.3, radius=0.05, color='tab:green')
+        plot.cursor(0.9, 0.1, radius=0.05, radius_b=0.1, fill=True, alpha=0.5)
         self.show(plot)
 
     def test_cursor_allquadrants(self):
@@ -191,6 +192,8 @@ class TestPhasorPlot:
         plot.cursor(-0.4, -0.3, color='tab:blue', linestyle='-')
         plot.cursor(-0.52, -0.3, -0.78, -0.16, color='tab:orange')
         plot.cursor(-0.9, -0.3, radius=0.1, color='tab:green')
+        plot.cursor(-0.3, -0.6, radius=0.1, radius_b=0.2, fill=True, alpha=0.5)
+        plot.cursor(-0.5, 0.5, radius=0.1, radius_b=0.2, angle=math.pi / 4)
         self.show(plot)
 
     def test_polar_cursor(self):

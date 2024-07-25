@@ -33,7 +33,7 @@ from matplotlib import pyplot
 from matplotlib.font_manager import FontProperties
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
-from matplotlib.patches import Arc, Circle, Polygon
+from matplotlib.patches import Arc, Circle, Ellipse, Polygon
 from matplotlib.path import Path
 from matplotlib.patheffects import AbstractPathEffect
 from matplotlib.widgets import Slider
@@ -571,6 +571,8 @@ class PhasorPlot:
         real_limit: float | None = None,
         imag_limit: float | None = None,
         radius: float | None = None,
+        radius_b: float | None = None,
+        angle: float | None = None,
         **kwargs: Any,
     ) -> None:
         """Plot phase and modulation grid lines and arcs at phasor coordinates.
@@ -587,6 +589,14 @@ class PhasorPlot:
             Imaginary component of limiting phasor coordinate.
         radius : float, optional
             Radius of circle limiting phase and modulation grid lines and arcs.
+        radius_b : float, optional
+            Radius of ellipse along semi-major axis.
+            limiting phase and modulation grid lines and arcs.
+            By default, the cursor is circular (`radius_b` == `radius`).
+        angle : float, optional
+            Rotation angle of semi-major axis of ellipse in radians.
+            If None (default), the angle is defined by `real` and `imag`,
+            depending on `allquadrants` used to initialize the plot.
         **kwargs
             Additional parameters passed to
             :py:class:`matplotlib.lines.Line2D`,
@@ -603,11 +613,15 @@ class PhasorPlot:
                 *phasor_to_polar_scalar(real, imag),
                 *phasor_to_polar_scalar(real_limit, imag_limit),
                 radius=radius,
+                radius_b=radius_b,
+                angle=angle,
                 **kwargs,
             )
         return self.polar_cursor(
             *phasor_to_polar_scalar(real, imag),
             radius=radius,
+            radius_b=radius_b,
+            angle=angle,
             # _circle_only=True,
             **kwargs,
         )
@@ -619,6 +633,8 @@ class PhasorPlot:
         phase_limit: float | None = None,
         modulation_limit: float | None = None,
         radius: float | None = None,
+        radius_b: float | None = None,
+        angle: float | None = None,
         **kwargs: Any,
     ) -> None:
         """Plot phase and modulation grid lines and arcs.
@@ -637,10 +653,19 @@ class PhasorPlot:
             Phase grid lines are drawn from `modulation` to `modulation_limit`.
         radius : float, optional
             Radius of circle limiting phase and modulation grid lines and arcs.
+        radius_b : float, optional
+            Radius of ellipse along semi-major axis.
+            limiting phase and modulation grid lines and arcs.
+            By default, the cursor is circular (`radius_b` == `radius`).
+        angle : float, optional
+            Rotation angle of semi-major axis of ellipse in radians.
+            If None (default), the angle is defined by `real` and `imag`,
+            depending on `allquadrants` used to initialize the plot.
         **kwargs
             Additional parameters passed to
             :py:class:`matplotlib.lines.Line2D`,
-            :py:class:`matplotlib.patches.Circle`, and
+            :py:class:`matplotlib.patches.Circle`,
+            :py:class:`matplotlib.patches.Ellipse`, or
             :py:class:`matplotlib.patches.Arc`.
 
         See Also
@@ -660,9 +685,21 @@ class PhasorPlot:
         if radius is not None and phase is not None and modulation is not None:
             x = modulation * math.cos(phase)
             y = modulation * math.sin(phase)
+            if radius_b is not None and radius_b != radius:
+                if angle is None:
+                    # orient ellipse along semicircle or full circle
+                    angle = phase if self._full else math.atan2(y, x - 0.5)
+                angle = math.degrees(angle)
+                ax.add_patch(
+                    Ellipse(
+                        (x, y), radius * 2, radius_b * 2, angle=angle, **kwargs
+                    )
+                )
+                # TODO: implement gridlines intersecting with ellipse
+                return None
             ax.add_patch(Circle((x, y), radius, **kwargs))
             if _circle_only:
-                return
+                return None
             del kwargs['fill']
             x0, y0, x1, y1 = _intersection_circle_line(
                 x, y, radius, 0, 0, x, y
@@ -682,7 +719,7 @@ class PhasorPlot:
                     **kwargs,
                 )
             )
-            return
+            return None
 
         del kwargs['fill']
         for phi in (phase, phase_limit):
@@ -717,6 +754,7 @@ class PhasorPlot:
                         **kwargs,
                     )
                 )
+        return None
 
     def polar_grid(self, **kwargs) -> None:
         """Draw polar coordinate system.

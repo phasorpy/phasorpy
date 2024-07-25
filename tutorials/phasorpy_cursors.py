@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursors import (
     mask_from_circular_cursor,
+    mask_from_elliptic_cursor,
     mask_from_polar_cursor,
     pseudo_color,
 )
@@ -28,35 +29,89 @@ from phasorpy.plot import PhasorPlot
 signal = read_lsm(fetch('paramecium.lsm'))
 mean, real, imag = phasor_from_signal(signal, axis=0)
 
+threshold = mean > 1
+
 # %%
 # Circular cursors
 # ----------------
 #
 # Use circular cursors to mask regions of interest in the phasor space:
 
-cursors_real = [-0.33, 0.55]
-cursors_imag = [-0.72, -0.72]
+cursors_real = [-0.33, 0.54]
+cursors_imag = [-0.72, -0.74]
+radius = [0.2, 0.22]
 
 circular_mask = mask_from_circular_cursor(
-    real, imag, cursors_real, cursors_imag, radius=0.2
+    real, imag, cursors_real, cursors_imag, radius=radius
 )
 
 # %%
 # Show the circular cursors in a phasor plot:
 
-threshold = mean > 1
-
 plot = PhasorPlot(allquadrants=True, title='Circular cursors')
-plot.hist2d(real[threshold], imag[threshold])
+plot.hist2d(real[threshold], imag[threshold], cmap='Greys')
 for i in range(len(cursors_real)):
     plot.cursor(
         cursors_real[i],
         cursors_imag[i],
-        radius=0.2,
+        radius=radius[i],
         color=CATEGORICAL[i],
         linestyle='-',
     )
 plot.show()
+
+# %%
+#
+# The cursor masks can be blended to produce a pseudo-colored image:
+
+pseudo_color_image = pseudo_color(*circular_mask)
+
+fig, ax = plt.subplots()
+ax.set_title('Pseudo-color image from circular cursors')
+ax.imshow(pseudo_color_image)
+plt.show()
+
+# %%
+# Elliptic cursors
+# ----------------
+#
+# Use elliptic cursors to mask morde defined regions of interest in the
+# phasor space:
+
+radius = [0.1, 0.06]
+radius_b = [0.3, 0.25]
+
+elliptic_mask = mask_from_elliptic_cursor(
+    real, imag, cursors_real, cursors_imag, radius=radius, radius_b=radius_b
+)
+
+# %%
+# Show the elliptic cursors in a phasor plot:
+
+plot = PhasorPlot(allquadrants=True, title='Elliptic cursors')
+plot.hist2d(real[threshold], imag[threshold], cmap='Greys')
+for i in range(len(cursors_real)):
+    plot.cursor(
+        cursors_real[i],
+        cursors_imag[i],
+        radius=radius[i],
+        radius_b=radius_b[i],
+        color=CATEGORICAL[i],
+        linestyle='-',
+    )
+plot.show()
+
+# %%
+#
+# The mean intensity image can be used as a base layer to overlay
+# the masks from the elliptic cursors:
+
+pseudo_color_image = pseudo_color(*elliptic_mask, intensity=mean)
+
+fig, ax = plt.subplots()
+ax.set_title('Pseudo-color image from elliptic cursors and intensity')
+ax.imshow(pseudo_color_image)
+plt.show()
 
 # %%
 # Polar cursors
@@ -77,7 +132,7 @@ polar_mask = mask_from_polar_cursor(
 # Show the polar cursors in a phasor plot:
 
 plot = PhasorPlot(allquadrants=True, title='Polar cursors')
-plot.hist2d(real[threshold], imag[threshold])
+plot.hist2d(real[threshold], imag[threshold], cmap='Greys')
 for i in range(len(phase_min)):
     plot.polar_cursor(
         phase=phase_min[i],
@@ -90,23 +145,8 @@ for i in range(len(phase_min)):
 plot.show()
 
 # %%
-# Pseudo-color images
-# -------------------
-#
-# The cursor masks and optionally the intensity image can be
-# blended to produce pseudo-colored images.
-# Blending the masks from the circular cursors:
-
-pseudo_color_image = pseudo_color(*circular_mask)
-
-fig, ax = plt.subplots()
-ax.set_title('Pseudo-color image from circular cursors')
-ax.imshow(pseudo_color_image)
-plt.show()
-
-# %%
-# Using the mean intensity image as a base layer to overlay the masks from
-# the polar cursors:
+# The mean intensity image can be used as a base layer to overlay
+# the masks from the polar cursors:
 
 pseudo_color_image = pseudo_color(
     *polar_mask, intensity=mean, colors=CATEGORICAL[2:]

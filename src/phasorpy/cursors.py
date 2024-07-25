@@ -17,6 +17,7 @@ from __future__ import annotations
 
 __all__ = [
     'mask_from_circular_cursor',
+    'mask_from_elliptic_cursor',
     'mask_from_polar_cursor',
     'pseudo_color',
 ]
@@ -37,6 +38,7 @@ from ._phasorpy import (
     _blend_normal,
     _blend_overlay,
     _is_inside_circle,
+    _is_inside_ellipse_,
     _is_inside_polar_rectangle,
 )
 
@@ -123,6 +125,141 @@ def mask_from_circular_cursor(
 
     mask = _is_inside_circle(
         real, imag, center_real, center_imag, radius, True
+    )
+    if moveaxis:
+        mask = numpy.moveaxis(mask, -1, 0)
+    return mask.astype(numpy.bool_)
+
+
+def mask_from_elliptic_cursor(
+    real: ArrayLike,
+    imag: ArrayLike,
+    center_real: ArrayLike,
+    center_imag: ArrayLike,
+    /,
+    *,
+    radius: ArrayLike = 0.05,
+    radius_b: ArrayLike | None = None,
+    angle: ArrayLike | None = None,
+) -> NDArray[numpy.bool_]:
+    """Return masks for elliptic cursors of phasor coordinates.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    center_real : array_like, shape (n,)
+        Real coordinates of ellipses centers.
+    center_imag : array_like, shape (n,)
+        Imaginary coordinates of ellipses centers.
+    radius : array_like, optional, shape (n,)
+        Radii of ellipses along semi-major axis.
+    radius_b : array_like, optional, shape (n,)
+        Radii of ellipses along semi-major axis.
+        By default, `radius_b` is equal to `radius` (the ellipse is circular).
+    angle : array_like, optional, shape (n,)
+        Rotation angles of semi-major axis of ellipses in radians.
+        If None, the angle defined by `center_real` and `center_imag` is used.
+
+    Returns
+    -------
+    masks : ndarray
+        Boolean array of shape `(n, *real.shape)`.
+        The first dimension is omitted if `center*`, `radius*`, and `angle`
+        are scalars.
+        Values are True if phasor coordinates are inside elliptic cursor,
+        else False.
+
+    Raises
+    ------
+    ValueError
+        The array shapes of `real` and `imag` do not match.
+        The array shapes of `center*`, `radius*`, or `angle` have more than
+        one dimension.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_phasorpy_cursors.py`
+
+    Examples
+    --------
+    Create mask for a single elliptic cursor:
+
+    >>> mask_from_elliptic_cursor([0.2, 0.5], [0.4, 0.5], 0.2, 0.4, radius=0.1)
+    array([ True, False])
+
+    Create masks for two elliptic cursors with different radii:
+
+    >>> mask_from_elliptic_cursor(
+    ...     [0.2, 0.5],
+    ...     [0.4, 0.5],
+    ...     [0.2, 0.5],
+    ...     [0.4, 0.5],
+    ...     radius=[0.1, 0.05],
+    ...     radius_b=[0.15, 0.1],
+    ...     angle=[math.pi, math.pi / 2],
+    ... )
+    array([[ True, False],
+           [False,  True]])
+
+    """
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    center_real = numpy.asarray(center_real)
+    center_imag = numpy.asarray(center_imag)
+    radius_a = numpy.asarray(radius)
+    if radius_b is None:
+        # circular by default
+        radius_b = radius_a
+        angle = 0.0
+    else:
+        radius_b = numpy.asarray(radius_b)
+    if angle is None:
+        # TODO: add option for semicircle
+        # angle = numpy.arctan2(center_real - 0.5, center_imag)
+        angle = numpy.arctan2(center_real, center_imag)
+    angle_sin = numpy.sin(angle)
+    angle_cos = numpy.cos(angle)
+
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if (
+        center_real.ndim > 1
+        or center_imag.ndim > 1
+        or radius_a.ndim > 1
+        or radius_b.ndim > 1
+        or angle_sin.ndim > 1
+    ):
+        raise ValueError(
+            f'{center_real.ndim=}, {center_imag.ndim=}, '
+            f'radius.ndim={radius_a.ndim}, {radius_b.ndim=} or '
+            f'angle.ndim={angle_sin.ndim}, > 1'
+        )
+
+    moveaxis = False
+    if real.ndim > 0 and (
+        center_real.ndim > 0
+        or center_imag.ndim > 0
+        or radius_a.ndim > 0
+        or radius_b.ndim > 0
+        or angle_sin.ndim > 0
+    ):
+        moveaxis = True
+        real = numpy.expand_dims(real, axis=-1)
+        imag = numpy.expand_dims(imag, axis=-1)
+
+    mask = _is_inside_ellipse_(
+        real,
+        imag,
+        center_real,
+        center_imag,
+        radius_a,
+        radius_b,
+        angle_sin,
+        angle_cos,
+        True,
     )
     if moveaxis:
         mask = numpy.moveaxis(mask, -1, 0)
