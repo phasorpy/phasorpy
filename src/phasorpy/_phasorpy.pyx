@@ -31,12 +31,12 @@ from libc.math cimport (
     copysign,
     cos,
     fabs,
+    floor,
     hypot,
     isnan,
     sin,
     sqrt,
     tan,
-    floor,
 )
 from libc.stdint cimport (
     int8_t,
@@ -48,8 +48,7 @@ from libc.stdint cimport (
     uint32_t,
     uint64_t,
 )
-from libc.stdlib cimport malloc, free
-
+from libc.stdlib cimport free, malloc
 
 ctypedef fused float_t:
     float

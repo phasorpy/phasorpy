@@ -17,9 +17,8 @@ if TYPE_CHECKING:
 
 import numpy
 
-from ._phasorpy import (
-    _apply_2D_filter,
-)
+from ._phasorpy import _apply_2D_filter
+
 
 def number_threads(
     num_threads: int | None = None,
@@ -78,12 +77,12 @@ def number_threads(
 
 
 def median_filter(
-        image: ArrayLike,
-        /,
-        *,
-        kernel_size: int = 3,
-        reflect: bool = False,
-        num_iter: int = 1,
+    image: ArrayLike,
+    /,
+    *,
+    kernel_size: int = 3,
+    reflect: bool = False,
+    num_iter: int = 1,
 ) -> NDArray[Any]:
     """Apply a median filter to an image using Cython.
 
