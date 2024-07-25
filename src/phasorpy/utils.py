@@ -82,7 +82,6 @@ def median_filter(
     *,
     kernel_size: int = 3,
     reflect: bool = False,
-    num_iter: int = 1,
 ) -> NDArray[Any]:
     """Apply a median filter to an image using Cython.
 
@@ -95,8 +94,6 @@ def median_filter(
     reflect : bool, optional
         If True, the image is padded by reflection.
         If False, the image borders are kept intact. Default is False.
-    num_iter : int, optional
-        Number of iterations to apply the filter. Default is 1.
 
     Returns
     -------
@@ -108,7 +105,6 @@ def median_filter(
     ValueError
         If `kernel_size` is not an odd number.
         If `image` is not a 2D array.
-        If `num_iter` is less than 1.
 
     Examples
     --------
@@ -133,11 +129,8 @@ def median_filter(
         raise ValueError(f'{image.ndim=} != 2')
     if kernel_size % 2 == 0:
         raise ValueError("The kernel size must be an odd number.")
-    if num_iter < 1:
-        raise ValueError(f'{num_iter=} < 1')
 
     filtered_image = numpy.copy(image)
-    for _ in range(num_iter):
-        _apply_2D_filter(image, filtered_image, kernel_size, reflect)
+    _apply_2D_filter(image, filtered_image, kernel_size, reflect)
 
     return filtered_image
