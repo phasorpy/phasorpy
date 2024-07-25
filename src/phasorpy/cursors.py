@@ -5,6 +5,7 @@ The ``phasorpy.cursors`` module provides functions to:
 - create masks for regions of interests in the phasor space:
 
   - :py:func:`mask_from_circular_cursor`
+  - :py:func:`mask_from_elliptic_cursor`
   - :py:func:`mask_from_polar_cursor`
 
 - create pseudo-color image from average signal and cursor masks:

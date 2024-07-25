@@ -75,7 +75,7 @@ plt.show()
 # Elliptic cursors
 # ----------------
 #
-# Use elliptic cursors to mask morde defined regions of interest in the
+# Use elliptic cursors to mask more defined regions of interest in the
 # phasor space:
 
 radius = [0.1, 0.06]
