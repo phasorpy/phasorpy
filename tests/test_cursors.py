@@ -107,17 +107,25 @@ def test_mask_from_circular_cursor_errors(
 
 
 @pytest.mark.parametrize(
-    'radius, radius_b, angle, expected',
+    'radius, radius_minor, angle, align_semicircle, expected',
     [
-        ([0.1, 0.05], 0.15, None, [[True, False], [False, True]]),
-        (0.1, [0.15, 0.1], None, [[True, False], [False, True]]),
-        ([0.1, 0.05], [0.15, 0.1], None, [[True, False], [False, True]]),
-        ([0.1, 0.05], [0.15, 0.1], 3.1, [[True, False], [False, True]]),
-        ([0.1, 0.05], [0.15, 0.1], [3.1, 1.6], [[True, False], [False, True]]),
-        (0.5, 0.5, 0.0, [[True, True], [True, True]]),
+        ([0.1, 0.05], 0.15, None, None, [[True, False], [False, True]]),
+        (0.1, [0.15, 0.1], None, None, [[True, False], [False, True]]),
+        ([0.1, 0.05], [0.15, 0.1], None, True, [[True, False], [False, True]]),
+        ([0.1, 0.05], [0.15, 0.1], 3.1, None, [[True, False], [False, True]]),
+        (
+            [0.1, 0.05],
+            [0.15, 0.1],
+            [3.1, 1.6],
+            None,
+            [[True, False], [False, True]],
+        ),
+        (0.5, 0.5, 0.0, None, [[True, True], [True, True]]),
     ],
 )
-def test_mask_from_elliptic_cursor(radius, radius_b, angle, expected):
+def test_mask_from_elliptic_cursor(
+    radius, radius_minor, angle, align_semicircle, expected
+):
     """Test mask_from_elliptic_cursor function."""
     # the function is also tested in test_mask_from_circular_cursor
     mask = mask_from_elliptic_cursor(
@@ -126,8 +134,9 @@ def test_mask_from_elliptic_cursor(radius, radius_b, angle, expected):
         [0.2, 0.5],
         [0.4, 0.5],
         radius=radius,
-        radius_b=radius_b,
+        radius_minor=radius_minor,
         angle=angle,
+        align_semicircle=align_semicircle,
     )
     assert_array_equal(mask, expected)
 
@@ -288,20 +297,58 @@ def test_cursors_on_grid():
     coords = numpy.linspace(0.0, 1.0, 501)
     real, imag = numpy.meshgrid(coords, coords)
 
-    _, ax = pyplot.subplots(3, 1, figsize=(3.2, 8), layout='constrained')
+    _, ax = pyplot.subplots(4, 1, figsize=(3.2, 9), layout='constrained')
 
     mask = mask_from_circular_cursor(real, imag, 0.5, 0.5, radius=0.1)
     plot_mask(real, imag, mask, title='mask_from_circular_cursor', ax=ax[0])
+    assert_array_equal(
+        mask, mask_from_elliptic_cursor(real, imag, 0.5, 0.5, radius=0.1)
+    )
 
     mask = mask_from_elliptic_cursor(
-        real, imag, 0.5, 0.5, radius=0.05, radius_b=0.15, angle=pi / 4
+        real, imag, 0.5, 0.5, radius=0.15, radius_minor=0.05  # , angle=pi / 4
     )
     plot_mask(real, imag, mask, title='mask_from_elliptic_cursor', ax=ax[1])
+    assert_array_equal(
+        mask,
+        mask_from_elliptic_cursor(
+            real,
+            imag,
+            0.5,
+            0.5,
+            radius=0.15,
+            radius_minor=0.05,
+            angle=numpy.pi / 4,
+        ),
+    )
+
+    mask = mask_from_elliptic_cursor(
+        real,
+        imag,
+        0.5,
+        0.5,
+        radius=0.15,
+        radius_minor=0.05,
+        align_semicircle=True,
+    )
+    plot_mask(real, imag, mask, title='align_semicircle=True', ax=ax[2])
+    assert_array_equal(
+        mask,
+        mask_from_elliptic_cursor(
+            real,
+            imag,
+            0.5,
+            0.5,
+            radius=0.15,
+            radius_minor=0.05,
+            angle=numpy.pi / 2,
+        ),
+    )
 
     mask = mask_from_polar_cursor(
         real, imag, pi / 5, pi / 3 + 4 * pi, 0.6071, 0.8071
     )
-    plot_mask(real, imag, mask, title='mask_from_polar_cursor', ax=ax[2])
+    plot_mask(real, imag, mask, title='mask_from_polar_cursor', ax=ax[3])
 
     if show:
         pyplot.show()

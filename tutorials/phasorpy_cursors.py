@@ -79,10 +79,15 @@ plt.show()
 # phasor space:
 
 radius = [0.1, 0.06]
-radius_b = [0.3, 0.25]
+radius_minor = [0.3, 0.25]
 
 elliptic_mask = mask_from_elliptic_cursor(
-    real, imag, cursors_real, cursors_imag, radius=radius, radius_b=radius_b
+    real,
+    imag,
+    cursors_real,
+    cursors_imag,
+    radius=radius,
+    radius_minor=radius_minor,
 )
 
 # %%
@@ -95,7 +100,7 @@ for i in range(len(cursors_real)):
         cursors_real[i],
         cursors_imag[i],
         radius=radius[i],
-        radius_b=radius_b[i],
+        radius_minor=radius_minor[i],
         color=CATEGORICAL[i],
         linestyle='-',
     )

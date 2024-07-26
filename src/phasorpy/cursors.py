@@ -140,8 +140,9 @@ def mask_from_elliptic_cursor(
     /,
     *,
     radius: ArrayLike = 0.05,
-    radius_b: ArrayLike | None = None,
+    radius_minor: ArrayLike | None = None,
     angle: ArrayLike | None = None,
+    align_semicircle: bool = False,
 ) -> NDArray[numpy.bool_]:
     """Return masks for elliptic cursors of phasor coordinates.
 
@@ -157,12 +158,17 @@ def mask_from_elliptic_cursor(
         Imaginary coordinates of ellipses centers.
     radius : array_like, optional, shape (n,)
         Radii of ellipses along semi-major axis.
-    radius_b : array_like, optional, shape (n,)
-        Radii of ellipses along semi-major axis.
-        By default, `radius_b` is equal to `radius` (the ellipse is circular).
+    radius_minor : array_like, optional, shape (n,)
+        Radii of ellipses along semi-minor axis.
+        By default, the ellipses are circular.
     angle : array_like, optional, shape (n,)
-        Rotation angles of semi-major axis of ellipses in radians.
-        If None, the angle defined by `center_real` and `center_imag` is used.
+        Rotation angles of semi-major axes of ellipses in radians.
+        By default, the ellipses are automatically oriented depending on
+        `align_semicircle`.
+    align_semicircle : bool, optional
+        Determines orientation of ellipses if `angle` is not provided.
+        If true, align the minor axes of the ellipses with the closest tangent
+        on the universal semicircle, else the unit circle (default).
 
     Returns
     -------
@@ -199,7 +205,7 @@ def mask_from_elliptic_cursor(
     ...     [0.2, 0.5],
     ...     [0.4, 0.5],
     ...     radius=[0.1, 0.05],
-    ...     radius_b=[0.15, 0.1],
+    ...     radius_minor=[0.15, 0.1],
     ...     angle=[math.pi, math.pi / 2],
     ... )
     array([[ True, False],
@@ -211,16 +217,18 @@ def mask_from_elliptic_cursor(
     center_real = numpy.asarray(center_real)
     center_imag = numpy.asarray(center_imag)
     radius_a = numpy.asarray(radius)
-    if radius_b is None:
-        # circular by default
-        radius_b = radius_a
+    if radius_minor is None:
+        radius_b = radius_a  # circular by default
         angle = 0.0
     else:
-        radius_b = numpy.asarray(radius_b)
+        radius_b = numpy.asarray(radius_minor)
     if angle is None:
-        # TODO: add option for semicircle
-        # angle = numpy.arctan2(center_real - 0.5, center_imag)
-        angle = numpy.arctan2(center_real, center_imag)
+        # TODO: vectorize align_semicircle?
+        if align_semicircle:
+            angle = numpy.arctan2(center_imag, center_real - 0.5)
+        else:
+            angle = numpy.arctan2(center_imag, center_real)
+
     angle_sin = numpy.sin(angle)
     angle_cos = numpy.cos(angle)
 
@@ -235,7 +243,8 @@ def mask_from_elliptic_cursor(
     ):
         raise ValueError(
             f'{center_real.ndim=}, {center_imag.ndim=}, '
-            f'radius.ndim={radius_a.ndim}, {radius_b.ndim=} or '
+            f'radius.ndim={radius_a.ndim}, '
+            f'radius_minor.ndim={radius_b.ndim}, or '
             f'angle.ndim={angle_sin.ndim}, > 1'
         )
 

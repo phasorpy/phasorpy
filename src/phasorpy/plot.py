@@ -571,8 +571,9 @@ class PhasorPlot:
         real_limit: float | None = None,
         imag_limit: float | None = None,
         radius: float | None = None,
-        radius_b: float | None = None,
+        radius_minor: float | None = None,
         angle: float | None = None,
+        align_semicircle: bool = False,
         **kwargs: Any,
     ) -> None:
         """Plot phase and modulation grid lines and arcs at phasor coordinates.
@@ -589,18 +590,23 @@ class PhasorPlot:
             Imaginary component of limiting phasor coordinate.
         radius : float, optional
             Radius of circle limiting phase and modulation grid lines and arcs.
-        radius_b : float, optional
-            Radius of ellipse along semi-major axis.
-            limiting phase and modulation grid lines and arcs.
-            By default, the cursor is circular (`radius_b` == `radius`).
+        radius_minor : float, optional
+            Radius of elliptic cursor along semi-minor axis.
+            By default, `radius_minor` is equal to `radius`, that is,
+            the ellipse is circular.
         angle : float, optional
-            Rotation angle of semi-major axis of ellipse in radians.
-            If None (default), the angle is defined by `real` and `imag`,
-            depending on `allquadrants` used to initialize the plot.
+            Rotation angle of semi-major axis of elliptic cursor in radians.
+            If None (default), orient ellipse cursor according to
+            `align_semicircle`.
+        align_semicircle : bool, optional
+            Determines elliptic cursor orientation if `angle` is not provided.
+            If true, align the minor axis of the ellipse with the closest
+            tangent on the universal semicircle, else align to the unit circle.
         **kwargs
             Additional parameters passed to
             :py:class:`matplotlib.lines.Line2D`,
-            :py:class:`matplotlib.patches.Circle`, and
+            :py:class:`matplotlib.patches.Circle`,
+            :py:class:`matplotlib.patches.Ellipse`, or
             :py:class:`matplotlib.patches.Arc`.
 
         See Also
@@ -613,15 +619,17 @@ class PhasorPlot:
                 *phasor_to_polar_scalar(real, imag),
                 *phasor_to_polar_scalar(real_limit, imag_limit),
                 radius=radius,
-                radius_b=radius_b,
+                radius_minor=radius_minor,
                 angle=angle,
+                align_semicircle=align_semicircle,
                 **kwargs,
             )
         return self.polar_cursor(
             *phasor_to_polar_scalar(real, imag),
             radius=radius,
-            radius_b=radius_b,
+            radius_minor=radius_minor,
             angle=angle,
+            align_semicircle=align_semicircle,
             # _circle_only=True,
             **kwargs,
         )
@@ -633,8 +641,9 @@ class PhasorPlot:
         phase_limit: float | None = None,
         modulation_limit: float | None = None,
         radius: float | None = None,
-        radius_b: float | None = None,
+        radius_minor: float | None = None,
         angle: float | None = None,
+        align_semicircle: bool = False,
         **kwargs: Any,
     ) -> None:
         """Plot phase and modulation grid lines and arcs.
@@ -653,14 +662,18 @@ class PhasorPlot:
             Phase grid lines are drawn from `modulation` to `modulation_limit`.
         radius : float, optional
             Radius of circle limiting phase and modulation grid lines and arcs.
-        radius_b : float, optional
-            Radius of ellipse along semi-major axis.
-            limiting phase and modulation grid lines and arcs.
-            By default, the cursor is circular (`radius_b` == `radius`).
+        radius_minor : float, optional
+            Radius of elliptic cursor along semi-minor axis.
+            By default, `radius_minor` is equal to `radius`, that is,
+            the ellipse is circular.
         angle : float, optional
-            Rotation angle of semi-major axis of ellipse in radians.
-            If None (default), the angle is defined by `real` and `imag`,
-            depending on `allquadrants` used to initialize the plot.
+            Rotation angle of semi-major axis of elliptic cursor in radians.
+            If None (default), orient ellipse cursor according to
+            `align_semicircle`.
+        align_semicircle : bool, optional
+            Determines elliptic cursor orientation if `angle` is not provided.
+            If true, align the minor axis of the ellipse with the closest
+            tangent on the universal semicircle, else align to the unit circle.
         **kwargs
             Additional parameters passed to
             :py:class:`matplotlib.lines.Line2D`,
@@ -685,14 +698,20 @@ class PhasorPlot:
         if radius is not None and phase is not None and modulation is not None:
             x = modulation * math.cos(phase)
             y = modulation * math.sin(phase)
-            if radius_b is not None and radius_b != radius:
+            if radius_minor is not None and radius_minor != radius:
                 if angle is None:
-                    # orient ellipse along semicircle or full circle
-                    angle = phase if self._full else math.atan2(y, x - 0.5)
+                    if align_semicircle:
+                        angle = math.atan2(y, x - 0.5)
+                    else:
+                        angle = phase
                 angle = math.degrees(angle)
                 ax.add_patch(
                     Ellipse(
-                        (x, y), radius * 2, radius_b * 2, angle=angle, **kwargs
+                        (x, y),
+                        radius * 2,
+                        radius_minor * 2,
+                        angle=angle,
+                        **kwargs,
                     )
                 )
                 # TODO: implement gridlines intersecting with ellipse
