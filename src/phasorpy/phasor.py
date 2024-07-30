@@ -234,7 +234,11 @@ def phasor_from_signal(
 
     """
     signal = numpy.asarray(signal, order='C')
+    if signal.dtype.kind not in 'uif':
+        raise TypeError(f'signal must be real valued, not {signal.dtype=}')
     samples = numpy.size(signal, axis)  # this also verifies axis and ndim >= 1
+    if samples < 3:
+        raise ValueError(f'not enough {samples=} along {axis=}')
 
     harmonic, keepdims = _parse_harmonic(harmonic, samples)
     num_harmonics = len(harmonic)
@@ -360,7 +364,9 @@ def phasor_from_signal_fft(
 
     """
     signal = numpy.asarray(signal)
-    samples = numpy.size(signal, axis)
+    if signal.dtype.kind not in 'uif':
+        raise TypeError(f'signal must be real valued, not {signal.dtype=}')
+    samples = numpy.size(signal, axis)  # this also verifies axis and ndim >= 1
     if samples < 3:
         raise ValueError(f'not enough {samples=} along {axis=}')
 
