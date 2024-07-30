@@ -31,7 +31,6 @@ from libc.math cimport (
     copysign,
     cos,
     fabs,
-    floor,
     hypot,
     isnan,
     sin,
@@ -48,7 +47,6 @@ from libc.stdint cimport (
     uint32_t,
     uint64_t,
 )
-from libc.stdlib cimport free, malloc
 
 ctypedef fused float_t:
     float
@@ -1414,7 +1412,7 @@ cdef float _blend_overlay(
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `overlay` mode."""
-    if isnan(b):
+    if isnan(b) or isnan(a):
         return <float> a
     if a < 0.5:
         return <float> (2.0 * a * b)
@@ -1427,7 +1425,7 @@ cdef float _blend_darken(
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `darken` mode."""
-    if isnan(b):
+    if isnan(b) or isnan(a):
         return <float> a
     return <float> (min(a, b))
 
@@ -1438,109 +1436,6 @@ cdef float _blend_lighten(
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `lighten` mode."""
-    if isnan(b):
+    if isnan(b) or isnan(a):
         return <float> a
     return <float> (max(a, b))
-
-
-###############################################################################
-# Filtering functions
-
-
-cdef signal_t _quickselect(signal_t *arr, int left, int right, int k) nogil:
-    """Quickselect algorithm to find the k-th smallest element."""
-    cdef int i, j, pivotIndex, pivotNewIndex
-    cdef signal_t pivotValue, temp
-
-    while left <= right:
-        pivotIndex = left + (right - left) // 2
-        pivotValue = arr[pivotIndex]
-        temp = arr[pivotIndex]
-        arr[pivotIndex] = arr[right]
-        arr[right] = temp
-        pivotNewIndex = left
-        for i in range(left, right):
-            if arr[i] < pivotValue:
-                temp = arr[i]
-                arr[i] = arr[pivotNewIndex]
-                arr[pivotNewIndex] = temp
-                pivotNewIndex += 1
-        temp = arr[right]
-        arr[right] = arr[pivotNewIndex]
-        arr[pivotNewIndex] = temp
-
-        if pivotNewIndex == k:
-            return arr[k]
-        elif pivotNewIndex < k:
-            left = pivotNewIndex + 1
-        else:
-            right = pivotNewIndex - 1
-
-    return arr[k]
-
-
-cdef signal_t _median(signal_t *values, int n) nogil:
-    """Calculate the median of an array of values."""
-    if n % 2 == 0:
-        return (_quickselect(values, 0, n-1, n//2 - 1) + _quickselect(values, 0, n-1, n//2)) / 2
-    else:
-        return _quickselect(values, 0, n-1, n//2)
-
-
-
-def _apply_2D_filter(signal_t[:, :] image, signal_t[:,:] filtered_image, const int kernel_size, bint reflect):
-    """Apply a median filter to the input image.
-
-    Parameters
-    ----------
-    image :
-        The input image to be filtered. Must be a 2D image.
-    filtered_image :
-        The output image where the filtered result will be stored.
-    kernel_size : int
-        The size of the kernel to be used for filtering. Must be an odd number.
-    reflect : bool
-        If True, the borders are handled by padding with the nearest value.
-        If False, the borders are not processed.
-    
-    """
-    cdef:
-        int rows = image.shape[0]
-        int cols = image.shape[1]
-        int k = kernel_size // 2
-        int i, j, di, dj
-        int ki, kj
-        signal_t* kernel = <signal_t*>malloc(kernel_size * kernel_size * sizeof(signal_t))
-
-    if reflect:
-        for i in range(rows):
-            for j in range(cols):
-                # Fill the kernel with the values, handling borders based on the reflect parameter
-                for di in range(kernel_size):
-                    for dj in range(kernel_size):
-                        ki = i - k + di
-                        kj = j - k + dj
-                        # Pad with nearest border value
-                        if ki < 0:
-                            ki = 0
-                        elif ki >= rows:
-                            ki = rows - 1
-                        if kj < 0:
-                            kj = 0
-                        elif kj >= cols:
-                            kj = cols - 1
-                        kernel[di * kernel_size + dj] = image[ki, kj]
-                
-                filtered_image[i, j] = _median(kernel, kernel_size * kernel_size)
-    else:
-        # Process only the central part of the image, keep the borders intact
-        for i in range(k, rows - k):
-            for j in range(k, cols - k):
-                # Fill the kernel with the values
-                for di in range(kernel_size):
-                    for dj in range(kernel_size):
-                        kernel[di * kernel_size + dj] = image[i - k + di, j - k + dj]
-
-                filtered_image[i, j] = _median(kernel, kernel_size * kernel_size)
-
-    free(kernel)

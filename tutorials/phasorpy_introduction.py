@@ -146,12 +146,9 @@ real, imag = phasor_calibrate(
 # Applying median filter to the calibrated phasor coordinates,
 # often multiple times, improves contrast:
 
-# TODO: replace this with a ``phasor_filter`` function?
-from skimage.filters import median
+from phasorpy.utils import phasor_filter
 
-for _ in range(2):
-    real = median(real)
-    imag = median(imag)
+real, imag = phasor_filter(real, imag, method='median', size=3, repeat=2)
 
 # %%
 # Pixels with low intensities are commonly excluded from analysis and

@@ -7,7 +7,7 @@ that do not naturally fit into other modules.
 
 from __future__ import annotations
 
-__all__ = ['number_threads', 'median_filter']
+__all__ = ['number_threads', 'phasor_filter']
 
 import os
 from typing import TYPE_CHECKING
@@ -16,8 +16,7 @@ if TYPE_CHECKING:
     from ._typing import Any, ArrayLike, NDArray
 
 import numpy
-
-from ._phasorpy import _apply_2D_filter
+from scipy.ndimage import median_filter
 
 
 def number_threads(
@@ -76,61 +75,155 @@ def number_threads(
     return min(num_threads, max(max_threads, 1))
 
 
-def median_filter(
-    image: ArrayLike,
+def phasor_filter(
+    real: ArrayLike,
+    imag: ArrayLike,
     /,
     *,
-    kernel_size: int = 3,
-    reflect: bool = False,
-) -> NDArray[Any]:
-    """Apply a median filter to an image using Cython.
+    method: str = 'median',
+    repeat: int = 1,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Apply a filter to phasor coordinates.
+
+    By default a median filter is applied to the real and imaginary
+    components of phasor coordinates once with a kernel size of 3
+    multiplied by the number of dimensions of the input arrays.
 
     Parameters
     ----------
-    image : array_like
-        Input image.
-    kernel_size : int, optional
-        Size of the kernel.
-    reflect : bool, optional
-        If True, the image is padded by reflection.
-        If False, the image borders are kept intact. Default is False.
+    real : array_like
+        Real component of phasor coordinates to be filtered.
+    imag : array_like
+        Imaginary component of phasor coordinates to be filtered.
+    method : str, optional
+        Method used for filtering:
+
+        - ``'median'``: Spatial median of phasor coordinates.
+
+    repeat : int, optional
+        The number of times to apply the median filter. Default is 1.
+    **kwargs
+        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
 
     Returns
     -------
-    filtered_image : ndarray
-        Filtered image.
+    real : ndarray
+        Filtered real component of phasor coordinates.
+    imag : ndarray
+        Filtered imaginary component of phasor coordinates.
 
     Raises
     ------
     ValueError
-        If `kernel_size` is not an odd number.
-        If `image` is not a 2D array.
+        If the specified method is not supported.
+        The array shapes of `real` and `imag` do not match.
+        If `repeat` is less than 1.
+
+    Notes
+    -----
+    For now only the median filter method is implemented.
+    Additional filtering methods may be added in the future.
 
     Examples
     --------
-    Apply a median filter with a kernel size of 3 and keeping intact borders:
+    Apply once a median filter with a kernel size of 3:
 
-    >>> median_filter([[2, 2, 2], [1, 1, 1], [3, 3, 3]], kernel_size=3)
-    array([[2, 2, 2],
-        [1, 2, 1],
-        [3, 3, 3]])
+    >>> phasor_filter(
+    ...     [[2, 2, 2], [1, 1, 1], [3, 3, 3]],
+    ...     [[4, 4, 4], [6, 6, 6], [5, 5, 5]],
+    ... )
+    (array([[2, 2, 2],
+            [2, 2, 2],
+            [3, 3, 3]]),
+    array([[4, 4, 4],
+            [5, 5, 5],
+            [5, 5, 5]]))
 
-    Apply a median filter with a kernel size of 3 using 'reflect' padding:
+    Apply 3 times a median filter with a kernel size of 3:
 
-    >>> median_filter([[2, 2, 2], [1, 1, 1], [3, 3, 3]], reflect=True)
-    array([[2, 2, 2],
-        [2, 2, 2],
-        [3, 3, 3]])
+    >>> phasor_filter(
+    ...     [[0, 0, 0], [5, 5, 5], [2, 2, 2]],
+    ...     [[3, 3, 3], [6, 6, 6], [4, 4, 4]],
+    ...     size=3,
+    ...     repeat=3,
+    ... )
+    (array([[0, 0, 0],
+            [2, 2, 2],
+            [2, 2, 2]]),
+    array([[3, 3, 3],
+            [4, 4, 4],
+            [4, 4, 4]]))
 
     """
-    image = numpy.asarray(image)
+    supported_methods = ['median']
+    if method not in supported_methods:
+        raise ValueError(
+            f"Method not supported, supported methods are: "
+            f"{', '.join(supported_methods)}"
+        )
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
 
-    if image.ndim != 2:
-        raise ValueError(f'{image.ndim=} != 2')
-    if kernel_size % 2 == 0:
-        raise ValueError("The kernel size must be an odd number.")
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if repeat < 1:
+        raise ValueError(f'{repeat=} < 1')
 
-    filtered_image = numpy.copy(image)
-    _apply_2D_filter(image, filtered_image, kernel_size, reflect)
+    return {
+        'median': _median_filter,
+    }[
+        method
+    ](real, imag, repeat, **kwargs)
 
-    return filtered_image
+
+def _median_filter(
+    real: ArrayLike,
+    imag: ArrayLike,
+    repeat: int = 1,
+    size: int = 3,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return the phasor coordinates after applying a median filter.
+
+    Convenience wrapper around :py:func:`scipy.ndimage.median_filter`.
+
+    Parameters
+    ----------
+    real : numpy.ndarray
+        Real components of the phasor coordinates.
+    imag : numpy.ndarray
+        Imaginary components of the phasor coordinates.
+    repeat : int, optional
+        The number of times to apply the median filter. Default is 1.
+    size : int, optional
+        The size of the median filter kernel. Default is 3.
+    **kwargs
+        Optional arguments passed to :py:func:`numpy.median`.
+
+    Returns
+    -------
+    real : ndarray
+        Filtered real component of phasor coordinates.
+    imag : ndarray
+        Filtered imaginary component of phasor coordinates.
+
+    Examples
+    --------
+    >>> median_filter(
+    ...     [[2, 2, 2], [1, 1, 1], [3, 3, 3]],
+    ...     [[4, 4, 4], [6, 6, 6], [5, 5, 5]],
+    ... )
+    (array([[2, 2, 2],
+            [2, 2, 2],
+            [3, 3, 3]]),
+    array([[4, 4, 4],
+            [5, 5, 5],
+            [5, 5, 5]]))
+
+    """
+    for _ in range(repeat):
+        real = median_filter(real, size=size, **kwargs)
+        imag = median_filter(imag, size=size, **kwargs)
+
+    return numpy.asarray(real), numpy.asarray(imag)
