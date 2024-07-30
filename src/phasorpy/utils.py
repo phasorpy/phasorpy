@@ -210,7 +210,7 @@ def _median_filter(
 
     Examples
     --------
-    >>> median_filter(
+    >>> _median_filter(
     ...     [[2, 2, 2], [1, 1, 1], [3, 3, 3]],
     ...     [[4, 4, 4], [6, 6, 6], [5, 5, 5]],
     ... )
