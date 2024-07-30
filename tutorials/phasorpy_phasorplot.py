@@ -66,15 +66,36 @@ plot = PhasorPlot(frequency=80.0, title='Cursors')
 plot.cursor(0.4, 0.3)
 plot.cursor(0.5, 0.3, 0.8, 0.15)
 plot.cursor(0.9, 0.3, radius=0.05)
+plot.cursor(0.4, 0.3, radius=0.05, radius_minor=0.1)
+plot.cursor(0.1, 0.3, radius=0.05, radius_minor=0.1, align_semicircle=True)
 plot.show()
 
 # %%
-# Alternatively, use polar coordinates:
+# Alternatively, use polar coordinates, here demonstrated with various options:
 
 plot = PhasorPlot(frequency=80.0, title='Polar cursors')
 plot.polar_cursor(0.6435, 0.5, linestyle='-')
 plot.polar_cursor(0.5236, 0.6, 0.1963, 0.8, linewidth=2)
 plot.polar_cursor(0.3233, 0.9482, radius=0.05, color='tab:red')
+plot.polar_cursor(
+    0.6435,
+    0.5,
+    radius=0.05,
+    radius_minor=0.1,
+    color='tab:blue',
+    fill=True,
+    alpha=0.5,
+)
+plot.polar_cursor(
+    0.6435,
+    0.5,
+    radius=0.1,
+    radius_minor=0.05,
+    angle=0.0,
+    color='tab:green',
+    fill=True,
+    alpha=0.5,
+)
 plot.show()
 
 # %%
