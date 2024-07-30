@@ -7,6 +7,10 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_from_signal`
   - :py:func:`phasor_from_signal_fft`
 
+- reconstruct signals from phasor coordinates:
+
+  - :py:func:`phasor_to_signal`
+
 - convert between phasor coordinates and single- or multi-component
   fluorescence lifetimes:
 
@@ -72,18 +76,20 @@ __all__ = [
     'phasor_from_polar',
     'phasor_from_signal',
     'phasor_from_signal_fft',
-    'phasor_to_principal_plane',
     'phasor_semicircle',
     'phasor_to_apparent_lifetime',
     'phasor_to_polar',
+    'phasor_to_principal_plane',
+    'phasor_to_signal',
     'phasor_transform',
+    'polar_from_apparent_lifetime',
     'polar_from_reference',
     'polar_from_reference_phasor',
-    'polar_from_apparent_lifetime',
     'polar_to_apparent_lifetime',
 ]
 
 import math
+import numbers
 import warnings
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
@@ -144,7 +150,10 @@ def phasor_from_signal(
         Axis over which to compute phasor coordinates.
         The default is the last axis (-1).
     harmonic : int or sequence of int, optional
-        Harmonics to return. Must be >= 1.
+        Harmonics to return.
+        If zero, return all harmonics for `signal` samples along `axis`.
+        Else, harmonics must be at least one and no larger than half the
+        number of `signal` samples along `axis`.
         The default is the first harmonic (fundamental frequency).
     sample_phase : array_like, optional
         Phase values (in radians) of `signal` samples along `axis`.
@@ -163,7 +172,7 @@ def phasor_from_signal(
     Returns
     -------
     mean : ndarray
-        Average of signal along axis (zero harmonic).
+        Average of `signal` along `axis` (zero harmonic).
     real : ndarray
         Real component of phasor coordinates at `harmonic` along `axis`.
     imag : ndarray
@@ -212,9 +221,7 @@ def phasor_from_signal(
     Calculate phasor coordinates of a phase-shifted sinusoidal waveform:
 
     >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)[::-1]
-    >>> signal = 1.1 * (
-    ...     numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1
-    ... )
+    >>> signal = 1.1 * (numpy.cos(sample_phase - 0.785398) * 2 * 0.707107 + 1)
     >>> phasor_from_signal(
     ...     signal, sample_phase=sample_phase
     ... )  # doctest: +NUMBER
@@ -229,28 +236,17 @@ def phasor_from_signal(
     signal = numpy.asarray(signal, order='C')
     samples = numpy.size(signal, axis)  # this also verifies axis and ndim >= 1
 
+    harmonic, keepdims = _parse_harmonic(harmonic, samples)
+    num_harmonics = len(harmonic)
+
     if sample_phase is not None:
-        if harmonic is not None:
-            raise ValueError('sample_phase cannot be used with harmonic')
-        harmonics = [1]  # value not used
+        if num_harmonics > 1 or harmonic[0] != 1:
+            raise ValueError('sample_phase cannot be used with harmonic != 1')
         sample_phase = numpy.atleast_1d(
             numpy.asarray(sample_phase, dtype=numpy.float64)
         )
         if sample_phase.ndim != 1 or sample_phase.size != samples:
             raise ValueError(f'{sample_phase.shape=} != ({samples},)')
-
-    max_harmonic = samples // 2 + 1
-    if harmonic is None:
-        harmonics = [1]
-    elif isinstance(harmonic, int):
-        harmonics = [harmonic]
-    else:
-        a = numpy.atleast_1d(numpy.asarray(harmonic))
-        if a.dtype.kind not in 'iu' or a.ndim != 1:
-            raise TypeError(f'invalid {harmonic=} type')
-        harmonics = a.tolist()
-        del a
-    num_harmonics = len(harmonics)
 
     num_threads = number_threads(num_threads)
 
@@ -266,11 +262,7 @@ def phasor_from_signal(
     # return mean, real, imag
 
     sincos = numpy.empty((num_harmonics, samples, 2))
-    for i, h in enumerate(harmonics):
-        if h < 1 or h >= max_harmonic:
-            raise IndexError(
-                f'harmonic={h} out of range 1..{max_harmonic - 1}'
-            )
+    for i, h in enumerate(harmonic):
         if sample_phase is None:
             phase = numpy.linspace(
                 0,
@@ -298,7 +290,7 @@ def phasor_from_signal(
     # restore original shape
     shape = shape0 + shape1
     mean = phasor[0].reshape(shape)
-    if num_harmonics > 1:
+    if keepdims:
         shape = (num_harmonics,) + shape
     real = phasor[1 : num_harmonics + 1].reshape(shape)
     imag = phasor[1 + num_harmonics :].reshape(shape)
@@ -313,7 +305,7 @@ def phasor_from_signal_fft(
     *,
     axis: int = -1,
     harmonic: int | Sequence[int] | None = None,
-    fft_func: Callable[..., NDArray[Any]] | None = None,
+    rfft_func: Callable[..., NDArray[Any]] | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates from signal using fast Fourier transform.
 
@@ -326,16 +318,19 @@ def phasor_from_signal_fft(
         Axis over which to compute phasor coordinates.
         The default is the last axis (-1).
     harmonic : int or sequence of int, optional
-        Harmonics to return. Must be >= 1.
+        Harmonics to return.
+        If zero, return all harmonics for `signal` samples along `axis`.
+        Else, harmonics must be at least one and no larger than half the
+        number of `signal` samples along `axis`.
         The default is the first harmonic (fundamental frequency).
-    fft_func : callable, optional
-        A drop-in replacement function for ``numpy.fft.fft``.
-        For example, ``scipy.fft.fft`` or ``mkl_fft._numpy_fft.fft``.
+    rfft_func : callable, optional
+        A drop-in replacement function for ``numpy.fft.rfft``.
+        For example, ``scipy.fft.rfft`` or ``mkl_fft._numpy_fft.rfft``.
 
     Returns
     -------
     mean : ndarray
-        Average of signal along axis (zero harmonic).
+        Average of `signal` along `axis` (zero harmonic).
     real : ndarray
         Real component of phasor coordinates at `harmonic` along `axis`.
     imag : ndarray
@@ -344,7 +339,7 @@ def phasor_from_signal_fft(
     Raises
     ------
     ValueError
-        The `signal` has less than three samples along `axis`.
+        `signal` has less than three samples along `axis`.
     IndexError
         `harmonic` is smaller than 1 or greater than half the samples along
         `axis`.
@@ -359,11 +354,9 @@ def phasor_from_signal_fft(
     Calculate phasor coordinates of a phase-shifted sinusoidal signal:
 
     >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
-    >>> signal = 1.1 * (
-    ...     numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1
-    ... )
+    >>> signal = 1.1 * (numpy.cos(sample_phase - 0.785398) * 2 * 0.707107 + 1)
     >>> phasor_from_signal_fft(signal, harmonic=[1, 2])  # doctest: +NUMBER
-    (1.1, array([0.5, 0.0]), array([0.5, -0]))
+    (1.1, array([0.5, 0.0]), array([0.5, -0.0]))
 
     """
     signal = numpy.asarray(signal)
@@ -371,46 +364,213 @@ def phasor_from_signal_fft(
     if samples < 3:
         raise ValueError(f'not enough {samples=} along {axis=}')
 
-    max_harmonic = samples // 2
-    if harmonic is None:
-        harmonic = 1
-    elif isinstance(harmonic, int):
-        if harmonic < 1 or harmonic > max_harmonic:
-            raise IndexError(
-                f'harmonic={harmonic} out of range 1..{max_harmonic}'
-            )
-    else:
-        a = numpy.atleast_1d(numpy.asarray(harmonic))
-        if a.dtype.kind not in 'iu' or a.ndim != 1:
-            raise TypeError(f'invalid {harmonic=} type')
-        if numpy.any(a < 1) or numpy.any(a > max_harmonic):
-            raise IndexError(f'{harmonic=} out of range 1..{max_harmonic}')
-        harmonic = a.tolist()
-        del a
+    harmonic, keepdims = _parse_harmonic(harmonic, samples)
 
-    if fft_func is None:
-        fft_func = numpy.fft.fft
+    if rfft_func is None:
+        rfft_func = numpy.fft.rfft
 
-    fft: NDArray = fft_func(signal, axis=axis, norm='forward')
+    fft: NDArray = rfft_func(signal, axis=axis, norm='forward')
 
     mean = fft.take(0, axis=axis).real.copy()
     fft = fft.take(harmonic, axis=axis)  # type: ignore
-    if mean.ndim == fft.ndim:
-        dc = mean
-    elif fft.shape[axis] == 1:
+
+    if not keepdims and fft.shape[axis] == 1:
         dc = mean
         fft = fft.squeeze(axis)
     else:
         dc = numpy.expand_dims(mean, 0)
         fft = numpy.moveaxis(fft, axis, 0)
+
     real = fft.real.copy()
     imag = fft.imag.copy()
     with warnings.catch_warnings():
         warnings.simplefilter('ignore', category=RuntimeWarning)
         real /= dc
         imag /= dc
-    imag *= -1
+    numpy.negative(imag, out=imag)
+
     return mean, real, imag
+
+
+def phasor_to_signal(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    *,
+    samples: int = 64,
+    harmonic: int | Sequence[int] | None = None,
+    axis: int = -1,
+    irfft_func: Callable[..., NDArray[Any]] | None = None,
+) -> NDArray[numpy.float64]:
+    """Return signal from phasor coordinates using inverse Fourier transform.
+
+    Parameters
+    ----------
+    mean : array_like
+        Average signal intensity (DC).
+        If not scalar, shape must match the last two dimensions of `real`.
+    real : array_like
+        Real component of phasor coordinates.
+        Multiple harmonics, if any, must be in the first axis.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+        Must be same shape as `real`.
+    samples : int, default: 64
+        Number of signal samples to return. Must be at least three.
+    harmonic : int or sequence of int, optional
+        Harmonics included in first axis of `real` and `imag`.
+        If None, lower harmonics are inferred from the shapes of phasor
+        coordinates (most commonly, lower harmonics are present if the number
+        of dimensions of `mean` is one less than `real`).
+        If zero, the harmonics in the first axis of phasor coordinates are
+        the lower harmonics.
+        Else, harmonics must be at least one and no larger than half of
+        `samples`.
+        The phasor coordinates of missing harmonics are zeroed
+        if `samples` is greater than twice the number of harmonics.
+    axis : int, optional
+        Axis at which to return signal samples.
+        The default is the last axis (-1).
+    irfft_func : callable, optional
+        A drop-in replacement function for ``numpy.fft.irfft``.
+        For example, ``scipy.fft.irfft`` or ``mkl_fft._numpy_fft.irfft``.
+
+    Returns
+    -------
+    signal : ndarray
+        Reconstructed signal with samples of one period along last axis.
+
+    Examples
+    --------
+    Reconstruct exact signal from phasor coordinates at all harmonics:
+
+    >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
+    >>> signal = 1.1 * (numpy.cos(sample_phase - 0.785398) * 2 * 0.707107 + 1)
+    >>> signal
+    array([2.2, 2.486, 0.8566, -0.4365, 0.3938])
+    >>> phasor_to_signal(
+    ...     *phasor_from_signal_fft(signal, harmonic=0),
+    ...     harmonic=0,
+    ...     samples=len(signal)
+    ... )  # doctest: +NUMBER
+    array([2.2, 2.486, 0.8566, -0.4365, 0.3938])
+
+    Reconstruct a single-frequency waveform from phasor coordinates at
+    first harmonic:
+
+    >>> phasor_to_signal(1.1, 0.5, 0.5, samples=5)  # doctest: +NUMBER
+    array([2.2, 2.486, 0.8566, -0.4365, 0.3938])
+
+    """
+    mean = numpy.array(mean, ndmin=0, copy=True)
+    real = numpy.array(real, ndmin=0, copy=True)
+    imag = numpy.array(imag, ndmin=1, copy=True)
+
+    if isinstance(harmonic, numbers.Integral) and harmonic == 0:
+        # harmonics are expected in the first axes of real and imag
+        samples_ = 2 * imag.shape[0]
+    else:
+        samples_ = samples
+
+    harmonic_ = harmonic
+    harmonic, has_harmonic_axis = _parse_harmonic(harmonic, samples_)
+
+    if real.ndim == 1 and len(harmonic) > 1 and real.shape[0] == len(harmonic):
+        # single axis contains harmonic
+        has_harmonic_axis = True
+        real = real[..., None]
+        imag = imag[..., None]
+        keepdims = mean.ndim > 0
+    else:
+        keepdims = mean.ndim > 0 or real.ndim > 0
+
+    mean, real = numpy.atleast_1d(mean, real)
+
+    if real.dtype.kind != 'f' or imag.dtype.kind != 'f':
+        raise ValueError(f'{real.dtype=} or {imag.dtype=} not floating point')
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+
+    if (
+        harmonic_ is None
+        and mean.size > 1
+        and mean.ndim + 1 == real.ndim
+        and mean.shape == real.shape[1:]
+    ):
+        # infer harmonic from shapes of mean and real
+        harmonic = list(range(1, real.shape[0] + 1))
+        has_harmonic_axis = True
+
+    if not has_harmonic_axis:
+        real = real[None, ...]
+        imag = imag[None, ...]
+
+    if len(harmonic) != real.shape[0]:
+        raise ValueError(f'{len(harmonic)=} != {real.shape[0]=}')
+
+    real *= mean
+    imag *= mean
+    numpy.negative(imag, out=imag)
+
+    fft: NDArray = numpy.zeros(
+        (samples // 2 + 1, *real.shape[1:]), dtype=numpy.complex128
+    )
+    fft.real[[0]] = mean
+    fft.real[harmonic] = real[: len(harmonic)]
+    fft.imag[harmonic] = imag[: len(harmonic)]
+
+    if irfft_func is None:
+        irfft_func = numpy.fft.irfft
+
+    signal: NDArray = irfft_func(fft, samples, axis=0, norm='forward')
+
+    if not keepdims:
+        signal = signal[:, 0]
+    elif axis != 0:
+        signal = numpy.moveaxis(signal, 0, axis)
+    return signal
+
+
+def _parse_harmonic(
+    harmonic: int | Sequence[int] | None, samples: int
+) -> tuple[list[int], bool]:
+    """Return parsed harmonic parameter.
+
+    Raises
+    ------
+    IndexError
+        Any element is out of range [1..harmonic_max].
+    TypeError
+        Any element is not an integer.
+    ValueError
+        Elements are not unique.
+
+    """
+    if samples < 3:
+        raise ValueError(f'{samples=} < 3')
+
+    if harmonic is None:
+        return [1], False
+
+    harmonic_max = samples // 2
+    if isinstance(harmonic, numbers.Integral):
+        if harmonic == 0:
+            return list(range(1, harmonic_max + 1)), True
+        if harmonic < 1 or harmonic > harmonic_max:
+            raise IndexError(f'{harmonic=} out of range [1..{harmonic_max}]')
+        return [int(harmonic)], False
+
+    h = numpy.atleast_1d(numpy.asarray(harmonic))
+    if h.dtype.kind not in 'iu' or h.ndim != 1:
+        raise TypeError(f'{harmonic=} element not an integer')
+    if numpy.any(h < 1) or numpy.any(h > harmonic_max):
+        raise IndexError(
+            f'{harmonic=} element out of range [1..{harmonic_max}]'
+        )
+    if numpy.unique(h).size != h.size:
+        raise ValueError(f'{harmonic=} elements must be unique')
+    return h.tolist(), True
 
 
 def phasor_semicircle(
