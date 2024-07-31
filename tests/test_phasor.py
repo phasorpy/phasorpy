@@ -1277,6 +1277,8 @@ def test_phasor_calibrate(args, kwargs, expected):
     """Test `phasor_calibrate` function with various inputs."""
     result = phasor_calibrate(*args, **kwargs)
     assert_almost_equal(result, expected)
+    result = phasor_calibrate(*result, *args[2:], reverse=True, **kwargs)
+    assert_almost_equal(result, args[:2])
 
 
 def test_phasor_calibrate_exceptions():

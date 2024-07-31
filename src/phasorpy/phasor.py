@@ -646,6 +646,7 @@ def phasor_calibrate(
     fraction: ArrayLike | None = None,
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
+    reverse: bool = False,
     method: Literal['mean', 'median'] = 'mean',
     skip_axis: int | Sequence[int] | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
@@ -687,6 +688,8 @@ def phasor_calibrate(
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
+    reverse : bool, optional
+        Reverse calibration.
     method : str, optional
         Method used for calculating center of `reference_real` and
         `reference_imag`:
@@ -743,6 +746,17 @@ def phasor_calibrate(
             ),
         )
 
+    Calibration can be reversed such that
+
+    .. code-block:: python
+
+        real, imag == phasor_calibrate(
+            *phasor_calibrate(real, imag, *args, **kwargs),
+            *args,
+            reverse=True,
+            **kwargs
+        )
+
     Examples
     --------
     >>> phasor_calibrate(
@@ -754,6 +768,19 @@ def phasor_calibrate(
     ...     lifetime=4,
     ... )  # doctest: +NUMBER
     (array([0.0658, 0.132, 0.198]), array([0.2657, 0.332, 0.399]))
+
+    Undo the previous calibration:
+
+    >>> phasor_calibrate(
+    ...     [0.0658, 0.132, 0.198],
+    ...     [0.2657, 0.332, 0.399],
+    ...     [0.2, 0.3, 0.4],
+    ...     [0.5, 0.6, 0.7],
+    ...     frequency=80,
+    ...     lifetime=4,
+    ...     reverse=True,
+    ... )  # doctest: +NUMBER
+    (array([0.1, 0.2, 0.3]), array([0.4, 0.5, 0.6]))
 
     """
     re = numpy.asarray(real)
@@ -781,6 +808,9 @@ def phasor_calibrate(
         measured_re, measured_im, known_re, known_im
     )
     if numpy.ndim(phi_zero) > 0:
+        if reverse:
+            numpy.negative(phi_zero, out=phi_zero)
+            numpy.reciprocal(mod_zero, out=mod_zero)
         _, axis = _parse_skip_axis(skip_axis, re.ndim)
         if axis is not None:
             phi_zero = numpy.expand_dims(
@@ -791,6 +821,9 @@ def phasor_calibrate(
                 mod_zero,
                 axis=axis,
             )
+    elif reverse:
+        phi_zero = -phi_zero
+        mod_zero = 1.0 / mod_zero
     return phasor_transform(re, im, phi_zero, mod_zero)
 
 
