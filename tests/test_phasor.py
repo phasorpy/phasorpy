@@ -452,6 +452,9 @@ def test_phasor_to_signal_error():
     with pytest.raises(ValueError):
         # len(harmonic) != real.shape[0]
         phasor_to_signal(1.1, [0.5, 0.5], [0.5, 0.5], harmonic=[1], samples=5)
+    with pytest.raises(ValueError):
+        # samples < 3
+        phasor_to_signal(1.1, [0.5, 0.5], [0.5, 0.5], samples=2)
 
 
 def test_phasor_semicircle():
