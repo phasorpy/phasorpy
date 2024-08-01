@@ -61,6 +61,10 @@ The ``phasorpy.phasor`` module provides functions to:
 
   - :py:func:`phasor_filter`
 
+- threshold phasor coordinates based on mean intensity:
+
+  - :py:func:`phasor_threshold`
+
 """
 
 from __future__ import annotations
@@ -82,6 +86,7 @@ __all__ = [
     'phasor_from_signal',
     'phasor_from_signal_fft',
     'phasor_semicircle',
+    'phasor_threshold',
     'phasor_to_apparent_lifetime',
     'phasor_to_polar',
     'phasor_to_principal_plane',
@@ -2387,6 +2392,64 @@ def phasor_filter(
         raise ValueError(f'{repeat=} < 1')
 
     return methods[method](real, imag, repeat, **kwargs)
+
+
+def phasor_threshold(
+    mean: ArrayLike, real: ArrayLike, imag: ArrayLike, /, threshold: float,
+):
+    """Return phasor coordinates with mean below threshold set to NaN.
+
+    Parameters
+    ----------
+    mean : array_like
+        Mean intensity of phasor coordinates.
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    threshold : float
+        Threshold value for mean intensity.
+
+    Returns
+    -------
+    mean : ndarray
+        Thresholded mean intensity of phasor coordinates.
+    real : ndarray
+        Thresholded real component of phasor coordinates.
+    imag : ndarray
+        Thresholded imaginary component of phasor coordinates.
+
+    Raises
+    ------
+    ValueError
+        If the shapes of `mean`, `real`, and `imag` do not match.
+        If the shapes of `mean`, `real`, and `imag` are not broadcastable.
+
+    Examples
+    --------
+    Set phasor coordinates to NaN if mean intensity is below threshold:
+
+    >>> phasor_threshold(
+    ...     [0.1, 0.2, 0.3], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0], 0.2
+    ... )
+    (array([nan, 0.2, 0.3]), array([nan, 2, 3]), array([nan, 5, 6]))
+
+    """
+    mean = numpy.asarray(mean)
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+
+    try:
+        numpy.broadcast(mean, real, imag).shape
+    except ValueError:
+        raise ValueError("`mean`, `real`, and `imag`. are not broadcastable")
+
+    mask = mean < threshold
+    mean[mask] = numpy.nan
+    real[mask] = numpy.nan
+    imag[mask] = numpy.nan
+
+    return mean, real, imag
 
 
 def phasor_center(

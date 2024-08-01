@@ -39,6 +39,7 @@ from phasorpy.phasor import (
     phasor_from_signal,
     phasor_from_signal_fft,
     phasor_semicircle,
+    phasor_threshold,
     phasor_to_apparent_lifetime,
     phasor_to_polar,
     phasor_to_principal_plane,
@@ -1920,3 +1921,34 @@ def test_phasor_filter_errors():
         phasor_filter([[0]], [[0]], repeat=0)  # repeat = 0
     with pytest.raises(ValueError):
         phasor_filter([[0]], [[0]], repeat=-3)  # repeat < 1
+
+
+def test_phasor_threshold():
+    """Test `phasor_threshold` function."""
+    nan = numpy.nan
+    assert_allclose(
+        phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, 0.5], threshold=0.5),
+        ([0.5, nan], [0.2, nan], [0.3, nan]),
+    )
+    assert_allclose(
+        phasor_threshold([0.5, nan], [0.2, 0.5], [0.3, 0.5], threshold=1),
+        ([nan, nan], [nan, 0.5], [nan, 0.5]),
+    )  # nan in mean
+    mean, real, imag = phasor_threshold(
+        [0.5, 0.4],
+        [[0.1, 0.2], [0.3, 0.4]],
+        [[0.5, 0.6], [0.7, 0.8]],
+        threshold=0.5,
+    )  # broadcast mean to real and imag
+    assert_array_equal(mean, [0.5, nan])
+    assert_allclose(
+        (real, imag), ([[0.1, 0.2], [nan, nan]], [[0.5, 0.6], [nan, nan]])
+    )
+    with pytest.raises(ValueError):
+        phasor_threshold(
+            [0.5, 0.5], [0.5, 0.5, 0.5], [0.5, 0.5, 0.5], threshold=0.5
+        )
+    with pytest.raises(ValueError):
+        phasor_threshold(
+            [0.5, 0.5, 0.5], [0.5, 0.5], [0.5, 0.5], threshold=0.5
+        )
