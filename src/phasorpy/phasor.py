@@ -69,6 +69,7 @@ __all__ = [
     'phasor_at_harmonic',
     'phasor_calibrate',
     'phasor_center',
+    'phasor_filter',
     'phasor_from_apparent_lifetime',
     'phasor_from_fret_acceptor',
     'phasor_from_fret_donor',
