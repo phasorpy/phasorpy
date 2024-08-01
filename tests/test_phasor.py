@@ -91,7 +91,7 @@ def test_phasor_from_signal(fft):
     assert_allclose(im, [0.2, 0.0], atol=1e-6)
 
     # all harmonics
-    dc, re, im = func(signal, harmonic=0)
+    dc, re, im = func(signal, harmonic='all')
     assert_array_equal(signal, signal_copy)
     assert_allclose(dc, 1.1, atol=1e-6)
     assert_allclose(re, (0.4, 0.0, 0.0), atol=1e-6)
@@ -125,6 +125,10 @@ def test_phasor_from_signal(fft):
         func(signal, harmonic=[])
     with pytest.raises(TypeError):
         func(signal, harmonic=[1.0])
+    with pytest.raises(IndexError):
+        func(signal, harmonic=0)
+    with pytest.raises(ValueError):
+        func(signal, harmonic='none')
     with pytest.raises(IndexError):
         func(signal, harmonic=[0])
     with pytest.raises(IndexError):
@@ -232,7 +236,7 @@ def test_phasor_from_signal_noncontig(fft):
 
 
 @pytest.mark.parametrize('scalar', (True, False))
-@pytest.mark.parametrize('harmonic', (0, 1, 2, 8, [1], [1, 2, 8]))
+@pytest.mark.parametrize('harmonic', ('all', 1, 2, 8, [1], [1, 2, 8]))
 def test_phasor_from_signal_harmonic(scalar, harmonic):
     """Test phasor_from_signal functions harmonic parameter."""
     rng = numpy.random.default_rng(1)
@@ -286,12 +290,12 @@ def test_phasor_to_signal_roundtrip(shape, axis):
     signal0 = numpy.random.normal(1.1, 0.1, shape)
 
     # get all harmonics
-    mean, real, imag = phasor_from_signal(signal0, harmonic=0, axis=axis)
+    mean, real, imag = phasor_from_signal(signal0, harmonic='all', axis=axis)
     assert_allclose(numpy.mean(mean), 1.1, atol=0.1)
 
     # synthesize all harmonics
     signal1 = phasor_to_signal(
-        mean, real, imag, samples=samples, harmonic=0, axis=axis
+        mean, real, imag, samples=samples, harmonic='all', axis=axis
     )
     assert_allclose(signal1, signal0, atol=1e-4)
 
@@ -412,7 +416,7 @@ def test_phasor_to_signal():
 
     phasor = phasor_from_lifetime(frequency, lifetime)
     assert_allclose(
-        phasor_to_signal([1.1, 1.2], *phasor, samples=6, harmonic=0),
+        phasor_to_signal([1.1, 1.2], *phasor, samples=6, harmonic='all'),
         [
             [6.351575, 0.775947, -0.243349, 0.034261, 0.1511, -0.469533],
             [4.554442, 3.124505, -0.143694, 0.115879, 0.21576, -0.666891],
@@ -422,14 +426,14 @@ def test_phasor_to_signal():
 
     phasor = phasor_from_lifetime(frequency, lifetime, fraction, keepdims=True)
     assert_allclose(
-        phasor_to_signal(1.1, *phasor, samples=6, harmonic=0),
+        phasor_to_signal(1.1, *phasor, samples=6, harmonic='all'),
         [[4.610239, 2.446493, -0.154045, 0.09183, 0.188444, -0.58296]],
         atol=1e-4,
     )
 
     phasor = phasor_from_lifetime(frequency, lifetime, fraction)
     assert_allclose(
-        phasor_to_signal(1.1, *phasor, samples=6, harmonic=0),
+        phasor_to_signal(1.1, *phasor, samples=6, harmonic='all'),
         [4.610239, 2.446493, -0.154045, 0.09183, 0.188444, -0.58296],
         atol=1e-4,
     )
@@ -455,6 +459,12 @@ def test_phasor_to_signal_error():
     with pytest.raises(ValueError):
         # samples < 3
         phasor_to_signal(1.1, [0.5, 0.5], [0.5, 0.5], samples=2)
+    with pytest.raises(IndexError):
+        # harmonic < 1
+        phasor_to_signal(1.1, [0.5, 0.5], [0.5, 0.5], harmonic=0)
+    with pytest.raises(ValueError):
+        # harmonic str != 'all'
+        phasor_to_signal(1.1, [0.5, 0.5], [0.5, 0.5], harmonic='none')
 
 
 def test_phasor_semicircle():

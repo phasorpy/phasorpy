@@ -132,7 +132,7 @@ def phasor_from_signal(
     /,
     *,
     axis: int = -1,
-    harmonic: int | Sequence[int] | None = None,
+    harmonic: int | Sequence[int] | Literal['all'] | None = None,
     sample_phase: ArrayLike | None = None,
     dtype: DTypeLike = None,
     num_threads: int | None = None,
@@ -148,9 +148,9 @@ def phasor_from_signal(
     axis : int, optional
         Axis over which to compute phasor coordinates.
         The default is the last axis (-1).
-    harmonic : int or sequence of int, optional
+    harmonic : int, sequence of int, or 'all', optional
         Harmonics to return.
-        If zero, return all harmonics for `signal` samples along `axis`.
+        If `'all'`, return all harmonics for `signal` samples along `axis`.
         Else, harmonics must be at least one and no larger than half the
         number of `signal` samples along `axis`.
         The default is the first harmonic (fundamental frequency).
@@ -307,7 +307,7 @@ def phasor_from_signal_fft(
     /,
     *,
     axis: int = -1,
-    harmonic: int | Sequence[int] | None = None,
+    harmonic: int | Sequence[int] | Literal['all'] | None = None,
     rfft_func: Callable[..., NDArray[Any]] | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates from signal using fast Fourier transform.
@@ -320,9 +320,9 @@ def phasor_from_signal_fft(
     axis : int, optional
         Axis over which to compute phasor coordinates.
         The default is the last axis (-1).
-    harmonic : int or sequence of int, optional
+    harmonic : int, sequence of int, or 'all', optional
         Harmonics to return.
-        If zero, return all harmonics for `signal` samples along `axis`.
+        If `'all'`, return all harmonics for `signal` samples along `axis`.
         Else, harmonics must be at least one and no larger than half the
         number of `signal` samples along `axis`.
         The default is the first harmonic (fundamental frequency).
@@ -422,12 +422,12 @@ def phasor_to_signal(
         Must be same shape as `real`.
     samples : int, default: 64
         Number of signal samples to return. Must be at least three.
-    harmonic : int or sequence of int, optional
+    harmonic : int, sequence of int, or 'all', optional
         Harmonics included in first axis of `real` and `imag`.
         If None, lower harmonics are inferred from the shapes of phasor
         coordinates (most commonly, lower harmonics are present if the number
         of dimensions of `mean` is one less than `real`).
-        If zero, the harmonics in the first axis of phasor coordinates are
+        If `'all'`, the harmonics in the first axis of phasor coordinates are
         the lower harmonics.
         Else, harmonics must be at least one and no larger than half of
         `samples`.
@@ -454,8 +454,8 @@ def phasor_to_signal(
     >>> signal
     array([2.2, 2.486, 0.8566, -0.4365, 0.3938])
     >>> phasor_to_signal(
-    ...     *phasor_from_signal_fft(signal, harmonic=0),
-    ...     harmonic=0,
+    ...     *phasor_from_signal_fft(signal, harmonic='all'),
+    ...     harmonic='all',
     ...     samples=len(signal)
     ... )  # doctest: +NUMBER
     array([2.2, 2.486, 0.8566, -0.4365, 0.3938])
@@ -537,7 +537,7 @@ def phasor_to_signal(
 
 
 def _parse_harmonic(
-    harmonic: int | Sequence[int] | None, samples: int
+    harmonic: int | Sequence[int] | Literal['all'] | None, samples: int
 ) -> tuple[list[int], bool]:
     """Return parsed harmonic parameter.
 
@@ -559,11 +559,14 @@ def _parse_harmonic(
 
     harmonic_max = samples // 2
     if isinstance(harmonic, numbers.Integral):
-        if harmonic == 0:
-            return list(range(1, harmonic_max + 1)), True
         if harmonic < 1 or harmonic > harmonic_max:
             raise IndexError(f'{harmonic=} out of range [1..{harmonic_max}]')
         return [int(harmonic)], False
+
+    if isinstance(harmonic, str):
+        if harmonic == 'all':
+            return list(range(1, harmonic_max + 1)), True
+        raise ValueError(f'{harmonic=!r} is not a valid harmonic')
 
     h = numpy.atleast_1d(numpy.asarray(harmonic))
     if h.dtype.kind not in 'iu' or h.ndim != 1:
