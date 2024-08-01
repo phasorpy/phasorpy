@@ -1715,7 +1715,7 @@ def plot_phasor_image(
         if mean.ndim < 2:
             raise ValueError(f'not an image {mean.ndim=} < 2')
         shape = mean.shape
-        mean = numpy.mean(mean.reshape(-1, *mean.shape[-2:]), axis=0)
+        mean = numpy.nanmean(mean.reshape(-1, *mean.shape[-2:]), axis=0)
 
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
@@ -1738,8 +1738,8 @@ def plot_phasor_image(
         raise ValueError(f'shape mismatch {real.shape[1:]=} != {shape}')
 
     # average extra image dimensions, but not harmonics
-    real = numpy.mean(real.reshape(nh, -1, *real.shape[-2:]), axis=1)
-    imag = numpy.mean(imag.reshape(nh, -1, *imag.shape[-2:]), axis=1)
+    real = numpy.nanmean(real.reshape(nh, -1, *real.shape[-2:]), axis=1)
+    imag = numpy.nanmean(imag.reshape(nh, -1, *imag.shape[-2:]), axis=1)
 
     # for MyPy
     assert isinstance(mean, numpy.ndarray) or mean is None
@@ -1887,14 +1887,14 @@ def plot_signal_image(
     del axes[axis]
     ax = fig.add_subplot(gs[0, 1])
     ax.set_title(f'mean, axis {axis}')
-    ax.plot(signal.mean(axis=tuple(axes)))
+    ax.plot(numpy.nanmean(signal, axis=tuple(axes)))
 
     # image
     axes = list(sorted(axes[:-2] + [axis]))
     ax = fig.add_subplot(gs[0, 0])
     _imshow(
         ax,
-        signal.mean(axis=tuple(axes)),
+        numpy.nanmean(signal, axis=tuple(axes)),
         percentile=percentile,
         shrink=0.5,
         title='mean',

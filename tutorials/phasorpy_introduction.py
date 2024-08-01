@@ -140,6 +140,20 @@ real, imag = phasor_calibrate(
 )
 
 # %%
+# If necessary, the calibration can be undone/reversed using the
+# same reference:
+
+uncalibrated_real, uncalibrated_imag = phasor_calibrate(
+    real,
+    imag,
+    reference_real,
+    reference_imag,
+    frequency=frequency,
+    lifetime=4.2,
+    reverse=True,
+)
+
+# %%
 # Filter phasor coordinates
 # -------------------------
 #
@@ -181,7 +195,7 @@ plot.show()
 # For comparison, the uncalibrated, unfiltered phasor coordinates:
 
 plot = PhasorPlot(allquadrants=True, title='Raw phasor coordinates')
-plot.hist2d(*phasor_from_signal(signal, axis=0)[1:])
+plot.hist2d(uncalibrated_real, uncalibrated_imag)
 plot.semicircle()
 plot.show()
 
