@@ -11,7 +11,7 @@ coordinates from time-resolved or spectral signals:
   implemented mostly in Cython for efficiency.
 
 - :py:func:`phasorpy.phasor.phasor_from_signal_fft`,
-  a pure Python reference implementation based on ``numpy.fft.fft``.
+  a pure Python reference implementation based on ``numpy.fft.rfft``.
 
 This tutorial compares the performance of the two implementations.
 
@@ -25,12 +25,12 @@ from phasorpy.phasor import phasor_from_signal, phasor_from_signal_fft
 from phasorpy.utils import number_threads
 
 try:
-    from scipy.fft import fft as scipy_fft
+    from scipy.fft import rfft as scipy_fft
 except ImportError:
     scipy_fft = None
 
 try:
-    from mkl_fft._numpy_fft import fft as mkl_fft
+    from mkl_fft._numpy_fft import rfft as mkl_fft
 except ImportError:
     mkl_fft = None
 
@@ -72,7 +72,7 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
 
         num_threads = number_threads(0, 6)
         if num_threads > 1:
-            kwargs = dict(num_threads=num_threads)
+            kwargs = {'num_threads': num_threads}
             t = timeit(statement, number=number, globals=globals())
             print_(f'  threads {num_threads}', t)
 
@@ -85,63 +85,62 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
             fft_func = globals()[fft_name]
             if fft_func is None:
                 continue
-            kwargs = dict(fft_func=fft_func)
+            kwargs = {'rfft_func': fft_func}
             t = timeit(statement, number=number, globals=globals())
             print_(f'  {fft_name}', t)
 
 # %%
 # For reference, the results on a Core i7-14700K CPU::
 #
-#     harmonics 1
-#       axis -1
-#         phasor_from_signal       0.034s   1.00
-#           threads 6              0.006s   0.17
-#         phasor_from_signal_fft   0.347s  10.22
-#           scipy_fft              0.395s  11.62
-#           mkl_fft                0.160s   4.71
-#       axis 0
-#         phasor_from_signal       0.162s   4.77
-#           threads 6              0.037s   1.10
-#         phasor_from_signal_fft   2.236s  65.80
-#           scipy_fft              0.922s  27.14
-#           mkl_fft                0.195s   5.73
-#       axis 2
-#         phasor_from_signal       0.037s   1.09
-#           threads 6              0.008s   0.22
-#         phasor_from_signal_fft   0.360s  10.60
-#           scipy_fft              0.395s  11.62
-#           mkl_fft                0.169s   4.98
-#     harmonics 8
-#       axis -1
-#         phasor_from_signal       0.281s   8.26
-#           threads 6              0.046s   1.35
-#         phasor_from_signal_fft   0.367s  10.79
-#           scipy_fft              0.410s  12.06
-#           mkl_fft                0.180s   5.31
-#       axis 0
-#         phasor_from_signal       1.211s  35.63
-#           threads 6              0.345s  10.16
-#         phasor_from_signal_fft   2.263s  66.58
-#           scipy_fft              0.936s  27.54
-#           mkl_fft                0.200s   5.89
-#       axis 2
-#         phasor_from_signal       0.284s   8.37
-#           threads 6              0.046s   1.34
-#         phasor_from_signal_fft   0.377s  11.10
-#           scipy_fft              0.431s  12.69
-#           mkl_fft                0.185s   5.44
+#      harmonics 1
+#        axis -1
+#          phasor_from_signal       0.035s   1.00
+#            threads 6              0.008s   0.24
+#          phasor_from_signal_fft   0.270s   7.72
+#            scipy_fft              0.236s   6.74
+#            mkl_fft                0.128s   3.67
+#        axis 0
+#          phasor_from_signal       0.158s   4.50
+#            threads 6              0.036s   1.02
+#          phasor_from_signal_fft   0.724s  20.66
+#            scipy_fft              0.516s  14.72
+#            mkl_fft                0.177s   5.04
+#        axis 2
+#          phasor_from_signal       0.035s   1.01
+#            threads 6              0.007s   0.19
+#          phasor_from_signal_fft   0.273s   7.79
+#            scipy_fft              0.243s   6.93
+#            mkl_fft                0.131s   3.73
+#      harmonics 8
+#        axis -1
+#          phasor_from_signal       0.268s   7.65
+#            threads 6              0.040s   1.15
+#          phasor_from_signal_fft   0.289s   8.26
+#            scipy_fft              0.252s   7.19
+#            mkl_fft                0.148s   4.21
+#        axis 0
+#          phasor_from_signal       1.260s  35.96
+#            threads 6              0.308s   8.78
+#          phasor_from_signal_fft   0.718s  20.49
+#            scipy_fft              0.528s  15.06
+#            mkl_fft                0.172s   4.91
+#        axis 2
+#          phasor_from_signal       0.274s   7.82
+#            threads 6              0.041s   1.18
+#          phasor_from_signal_fft   0.283s   8.06
+#            scipy_fft              0.253s   7.21
+#            mkl_fft                0.143s   4.08
 
 # %%
 # Results
 # -------
 #
-# - The ``phasor_from_signal`` implementation is an order of magnitude faster
-#   than the ``numpy.fft`` based reference implementation for single harmonics.
-# - The FFT functions from ``scipy`` and ``mkl_fft`` usually outperform
-#   numpy.fft.
+# - The ``phasor_from_signal`` implementation is significantly faster than
+#   the ``numpy.fft`` based reference implementation for single harmonics.
+# - The FFT functions from ``scipy`` and ``mkl_fft`` outperform numpy.fft.
+#   ``mkl_fft`` is very performant.
 # - Using FFT becomes more competitive when calculating larger number of
 #   harmonics.
-# - ``mkl_fft`` is very performant for first and last axes.
 # - Computing over the last axis is significantly faster compared to the first
 #   axis. That is because the samples in the last dimension are contiguous,
 #   closer together in memory.

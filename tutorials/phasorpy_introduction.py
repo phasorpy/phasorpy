@@ -140,18 +140,29 @@ real, imag = phasor_calibrate(
 )
 
 # %%
+# If necessary, the calibration can be undone/reversed using the
+# same reference:
+
+uncalibrated_real, uncalibrated_imag = phasor_calibrate(
+    real,
+    imag,
+    reference_real,
+    reference_imag,
+    frequency=frequency,
+    lifetime=4.2,
+    reverse=True,
+)
+
+# %%
 # Filter phasor coordinates
 # -------------------------
 #
 # Applying median filter to the calibrated phasor coordinates,
 # often multiple times, improves contrast:
 
-# TODO: replace this with a ``phasor_filter`` function?
-from skimage.filters import median
+from phasorpy.phasor import phasor_filter
 
-for _ in range(2):
-    real = median(real)
-    imag = median(imag)
+real, imag = phasor_filter(real, imag, method='median', size=3, repeat=2)
 
 # %%
 # Pixels with low intensities are commonly excluded from analysis and
@@ -184,7 +195,7 @@ plot.show()
 # For comparison, the uncalibrated, unfiltered phasor coordinates:
 
 plot = PhasorPlot(allquadrants=True, title='Raw phasor coordinates')
-plot.hist2d(*phasor_from_signal(signal, axis=0)[1:])
+plot.hist2d(uncalibrated_real, uncalibrated_imag)
 plot.semicircle()
 plot.show()
 
