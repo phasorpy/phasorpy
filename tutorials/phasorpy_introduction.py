@@ -146,7 +146,7 @@ real, imag = phasor_calibrate(
 # Applying median filter to the calibrated phasor coordinates,
 # often multiple times, improves contrast:
 
-from phasorpy.utils import phasor_filter
+from phasorpy.phasor import phasor_filter
 
 real, imag = phasor_filter(real, imag, method='median', size=3, repeat=2)
 
