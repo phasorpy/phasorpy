@@ -18,12 +18,12 @@ and Excel software.
 # Import required modules and functions:
 
 import numpy
-from skimage.filters import median
 
 from phasorpy.datasets import fetch
 from phasorpy.io import read_ref
 from phasorpy.phasor import (
     fraction_from_amplitude,
+    phasor_filter,
     phasor_from_fret_donor,
     phasor_from_lifetime,
     phasor_from_polar,
@@ -183,7 +183,7 @@ plot_phasor(
     title=f'2nd Harmonics ({frequency * 2} MHz)',
 )
 
-# %%#
+# %%
 # The two phasor plots show the pixel phasor distribution for the first and
 # second harmonics (for the two-photon systems these would be 80 MHz and 160
 # MHz).
@@ -195,20 +195,18 @@ plot_phasor(
 #
 # If high spatial resolution is needed, make sure to have at least 100
 # photons in each pixel of the image.
-#
+
+real1, imag1 = phasor_filter(real1, imag1, method='median', repeat=2)
+real2, imag2 = phasor_filter(real2, imag2, method='median', repeat=2)
+
+# %%
 # In addition, small amounts of room light will appear towards the lower
 # left-hand corner of the phasor (room light is uncorrelated, so it has
 # zero modulation depth). This can be eliminated by setting a threshold.
 #
 # .. todo::
 #
-#     Use a ``phasor_filter`` function?
-
-for _ in range(2):
-    real1 = median(real1)
-    imag1 = median(imag1)
-    real2 = median(real2)
-    imag2 = median(imag2)
+#     Use a ``phasor_threshold`` function?
 
 threshold = (mean > 20) & (real1 > 0) & (imag1 > 0) & (real2 > 0) & (imag2 > 0)
 real1 = real1[threshold]
@@ -402,11 +400,8 @@ plot.show()
 # Set the intensity threshold to 32 to remove any room light
 # and smooth the phasor.
 
-for _ in range(2):
-    real1 = median(real1)
-    imag1 = median(imag1)
-    real2 = median(real2)
-    imag2 = median(imag2)
+real1, imag1 = phasor_filter(real1, imag1, method='median', repeat=2)
+real2, imag2 = phasor_filter(real2, imag2, method='median', repeat=2)
 
 threshold = (mean1 > 32) & (real1 > 0) & (imag1 > 0)
 real1 = real1[threshold]
@@ -458,9 +453,7 @@ mean = numpy.vstack((mean1, mean2))
 real = numpy.vstack((real1, real2))
 imag = numpy.vstack((imag1, imag2))
 
-for _ in range(2):
-    real = median(real)
-    imag = median(imag)
+real, imag = phasor_filter(real, imag, method='median', repeat=2)
 
 threshold = (mean > 6202) & (real > 0) & (imag > 0)
 real = real[threshold]
