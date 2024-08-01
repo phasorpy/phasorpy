@@ -19,7 +19,7 @@ dependencies = [
     "tqdm",
     "xarray",
     "tifffile",
-    # "scipy",
+    "scipy",
     # "scikit-image",
     # "scikit-learn",
     # "pandas",

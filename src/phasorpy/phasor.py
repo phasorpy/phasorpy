@@ -57,6 +57,10 @@ The ``phasorpy.phasor`` module provides functions to:
 
   - :py:func:`phasor_at_harmonic`
 
+- filter phasor coordinates:
+
+  - :py:func:`phasor_filter`
+
 """
 
 from __future__ import annotations
@@ -69,6 +73,7 @@ __all__ = [
     'phasor_at_harmonic',
     'phasor_calibrate',
     'phasor_center',
+    'phasor_filter',
     'phasor_from_apparent_lifetime',
     'phasor_from_fret_acceptor',
     'phasor_from_fret_donor',
@@ -2299,6 +2304,91 @@ def phasor_to_principal_plane(
     )
 
 
+def phasor_filter(
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    *,
+    method: Literal['median'] = 'median',
+    repeat: int = 1,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return filtered phasor coordinates.
+
+    By default, a median filter is applied to the real and imaginary
+    components of phasor coordinates once with a kernel size of 3
+    multiplied by the number of dimensions of the input arrays.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates to be filtered.
+    imag : array_like
+        Imaginary component of phasor coordinates to be filtered.
+    method : str, optional
+        Method used for filtering:
+
+        - ``'median'``: Spatial median of phasor coordinates.
+
+    repeat : int, optional
+        Number of times to apply filter. The default is 1.
+    **kwargs
+        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
+
+    Returns
+    -------
+    real : ndarray
+        Filtered real component of phasor coordinates.
+    imag : ndarray
+        Filtered imaginary component of phasor coordinates.
+
+    Raises
+    ------
+    ValueError
+        If the specified method is not supported.
+        The array shapes of `real` and `imag` do not match.
+        If `repeat` is less than 1.
+
+    Notes
+    -----
+    For now, only the median filter method is implemented.
+    Additional filtering methods may be added in the future.
+
+    Examples
+    --------
+    Apply three times a median filter with a kernel size of three:
+
+    >>> phasor_filter(
+    ...     [[0, 0, 0], [5, 5, 5], [2, 2, 2]],
+    ...     [[3, 3, 3], [6, 6, 6], [4, 4, 4]],
+    ...     size=3,
+    ...     repeat=3,
+    ... )
+    (array([[0, 0, 0],
+            [2, 2, 2],
+            [2, 2, 2]]),
+    array([[3, 3, 3],
+            [4, 4, 4],
+            [4, 4, 4]]))
+
+    """
+    methods = {'median': _median_filter}
+    if method not in methods:
+        raise ValueError(
+            f"Method not supported, supported methods are: "
+            f"{', '.join(methods)}"
+        )
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if repeat < 1:
+        raise ValueError(f'{repeat=} < 1')
+
+    return methods[method](real, imag, repeat, **kwargs)
+
+
 def phasor_center(
     real: ArrayLike,
     imag: ArrayLike,
@@ -2355,11 +2445,14 @@ def phasor_center(
     (2.0, 5.0)
 
     """
-    supported_methods = ['mean', 'median']
-    if method not in supported_methods:
+    methods = {
+        'mean': _mean,
+        'median': _median,
+    }
+    if method not in methods:
         raise ValueError(
             f"Method not supported, supported methods are: "
-            f"{', '.join(supported_methods)}"
+            f"{', '.join(methods)}"
         )
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
@@ -2368,12 +2461,7 @@ def phasor_center(
 
     _, axis = _parse_skip_axis(skip_axis, real.ndim)
 
-    return {
-        'mean': _mean,
-        'median': _median,
-    }[
-        method
-    ](real, imag, axis=axis, **kwargs)
+    return methods[method](real, imag, axis=axis, **kwargs)
 
 
 def _mean(
@@ -2434,6 +2522,47 @@ def _median(
 
     """
     return numpy.median(real, **kwargs), numpy.median(imag, **kwargs)
+
+
+def _median_filter(
+    real: ArrayLike,
+    imag: ArrayLike,
+    repeat: int = 1,
+    size: int | tuple[int] | None = 3,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return the phasor coordinates after applying a median filter.
+
+    Convenience wrapper around :py:func:`scipy.ndimage.median_filter`.
+
+    Parameters
+    ----------
+    real : numpy.ndarray
+        Real components of the phasor coordinates.
+    imag : numpy.ndarray
+        Imaginary components of the phasor coordinates.
+    repeat : int, optional
+        Number of times to apply filter. The default is 1.
+    size : int or tuple of int, optional
+        The size of the median filter kernel. Default is 3.
+    **kwargs
+        Optional arguments passed to :py:func:`numpy.median`.
+
+    Returns
+    -------
+    real : ndarray
+        Filtered real component of phasor coordinates.
+    imag : ndarray
+        Filtered imaginary component of phasor coordinates.
+
+    """
+    from scipy.ndimage import median_filter
+
+    for _ in range(repeat):
+        real = median_filter(real, size=size, **kwargs)
+        imag = median_filter(imag, size=size, **kwargs)
+
+    return numpy.asarray(real), numpy.asarray(imag)
 
 
 def _parse_skip_axis(
