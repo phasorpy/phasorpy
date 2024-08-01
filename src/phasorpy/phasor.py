@@ -2395,7 +2395,11 @@ def phasor_filter(
 
 
 def phasor_threshold(
-    mean: ArrayLike, real: ArrayLike, imag: ArrayLike, /, threshold: float,
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    threshold: float,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates with mean below threshold set to NaN.
 
