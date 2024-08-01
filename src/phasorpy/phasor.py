@@ -90,7 +90,6 @@ __all__ = [
 
 import math
 import numbers
-import warnings
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -389,8 +388,7 @@ def phasor_from_signal_fft(
 
     real = fft.real.copy()
     imag = fft.imag.copy()
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', category=RuntimeWarning)
+    with numpy.errstate(divide='ignore', invalid='ignore'):
         real /= dc
         imag /= dc
     numpy.negative(imag, out=imag)
