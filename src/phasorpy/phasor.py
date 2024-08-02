@@ -413,7 +413,7 @@ def phasor_to_signal(
     /,
     *,
     samples: int = 64,
-    harmonic: int | Sequence[int] | None = None,
+    harmonic: int | Sequence[int] | Literal['all'] | None = None,
     axis: int = -1,
     irfft_func: Callable[..., NDArray[Any]] | None = None,
 ) -> NDArray[numpy.float64]:
