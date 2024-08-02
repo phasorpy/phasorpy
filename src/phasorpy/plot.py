@@ -430,7 +430,7 @@ class PhasorPlot:
         # TODO: catch more annotate properties?
         real, imag, indices = sort_coordinates(real, imag)
 
-        label = kwargs.pop('label', None)
+        label_ = kwargs.pop('label', None)
         marker = kwargs.pop('marker', None)
         color = kwargs.pop('color', None)
         fontsize = kwargs.pop('fontsize', 12)
@@ -477,9 +477,9 @@ class PhasorPlot:
                     marker=marker,
                     linestyle='',
                     color=color,
-                    label=label,
+                    label=label_,
                 )
-                if label is not None:
+                if label_ is not None:
                     self._ax.legend()
             return
 
@@ -505,9 +505,9 @@ class PhasorPlot:
                 marker=marker,
                 linestyle='',
                 color=color,
-                label=label,
+                label=label_,
             )
-            if label is not None:
+            if label_ is not None:
                 self._ax.legend()
 
     def line(

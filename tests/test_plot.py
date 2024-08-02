@@ -150,9 +150,22 @@ class TestPhasorPlot:
             real, imag, fill=True, linestyle=':', facecolor='lightyellow'
         )
         plot.components(real, imag, weights, linestyle='-', color='tab:blue')
-        plot.components(real, imag, marker='D', linestyle='', color='tab:red')
         plot.components(
-            real, imag, weights, linestyle='-', marker='.', color='tab:blue'
+            real,
+            imag,
+            marker='D',
+            linestyle='',
+            color='tab:red',
+            label='components',
+        )
+        plot.components(
+            real,
+            imag,
+            weights,
+            linestyle='-',
+            marker='.',
+            color='tab:blue',
+            label='mixture',
         )
         plot.components(
             real,

@@ -118,8 +118,9 @@ plot.components(
     color='tab:blue',
     fill=True,
     facecolor='lightyellow',
+    label='components',
 )
-plot.components(real, imag, weights)
+plot.components(real, imag, weights, marker='o', label='mixture')
 plot.show()
 
 # %%
