@@ -430,6 +430,7 @@ class PhasorPlot:
         # TODO: catch more annotate properties?
         real, imag, indices = sort_coordinates(real, imag)
 
+        label_ = kwargs.pop('label', None)
         marker = kwargs.pop('marker', None)
         color = kwargs.pop('color', None)
         fontsize = kwargs.pop('fontsize', 12)
@@ -476,9 +477,13 @@ class PhasorPlot:
                     marker=marker,
                     linestyle='',
                     color=color,
+                    label=label_,
                 )
+                if label_ is not None:
+                    self._ax.legend()
             return
 
+        fraction = numpy.asarray(fraction)[indices]
         update_kwargs(
             kwargs,
             color=GRID_COLOR if color is None else color,
@@ -495,8 +500,15 @@ class PhasorPlot:
         if marker is not None:
             self._ax.plot(real, imag, marker=marker, linestyle='', color=color)
             self._ax.plot(
-                center_re, center_im, marker=marker, linestyle='', color=color
+                center_re,
+                center_im,
+                marker=marker,
+                linestyle='',
+                color=color,
+                label=label_,
             )
+            if label_ is not None:
+                self._ax.legend()
 
     def line(
         self,
