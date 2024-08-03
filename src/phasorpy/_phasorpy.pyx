@@ -809,8 +809,40 @@ cdef (double, double) _phasor_at_harmonic(
     return real, sqrt(real - real * real)
 
 
+@cython.ufunc
+cdef (double, double) _phasor_multiply(
+    float_t real1,
+    float_t imag1,
+    float_t real2,
+    float_t imag2,
+):
+    """Return multiplication of two phasors."""
+    return real1 * real2 - imag1 * imag2, real1 * imag2 + imag1 * real2
+
+
+@cython.ufunc
+cdef (double, double) _phasor_divide(
+    float_t real1,
+    float_t imag1,
+    float_t real2,
+    float_t imag2,
+):
+    """Return division of two phasors."""
+    cdef:
+        float_t denom = real2 * real2 + imag2 * imag2
+
+    if denom == 0.0:
+        return NAN, NAN
+
+    return (
+        (real1 * real2 + imag1 * imag2) / denom,
+        (imag1 * real2 - real1 * imag2) / denom
+    )
+
+
 ###############################################################################
 # Geometry ufuncs
+
 
 @cython.ufunc
 cdef short _is_inside_range(

@@ -30,6 +30,7 @@ from phasorpy.phasor import (
     phasor_at_harmonic,
     phasor_calibrate,
     phasor_center,
+    phasor_divide,
     phasor_filter,
     phasor_from_apparent_lifetime,
     phasor_from_fret_acceptor,
@@ -38,8 +39,10 @@ from phasorpy.phasor import (
     phasor_from_polar,
     phasor_from_signal,
     phasor_from_signal_fft,
+    phasor_multiply,
     phasor_semicircle,
     phasor_to_apparent_lifetime,
+    phasor_to_complex,
     phasor_to_polar,
     phasor_to_principal_plane,
     phasor_to_signal,
@@ -717,10 +720,81 @@ def test_polar_from_reference_functions():
     assert_allclose(mod0, mod1, atol=1e-3)
 
 
+def test_phasor_to_complex():
+    """Test phasor_to_complex function."""
+    real = [numpy.nan, 0.1, 0.2]
+    imag = [numpy.nan, 0.3, 0.4]
+    assert_allclose(phasor_to_complex(real, imag).real, real)
+    assert_allclose(phasor_to_complex(real, imag).imag, imag)
+    assert_allclose(phasor_to_complex(0, imag).real, 0)
+    assert_allclose(phasor_to_complex(real, 0).imag, 0)
+
+    assert (
+        phasor_to_complex(real, imag, dtype=numpy.complex64).dtype
+        == numpy.complex64
+    )
+
+    assert (
+        phasor_to_complex(
+            numpy.array(real, dtype=numpy.float32),
+            numpy.array(imag, dtype=numpy.float32),
+        ).dtype
+        == numpy.complex64
+    )
+
+    assert (
+        phasor_to_complex(
+            numpy.array(real, dtype=numpy.float64),
+            numpy.array(imag, dtype=numpy.float32),
+        ).dtype
+        == numpy.complex128
+    )
+
+    with pytest.raises(ValueError):
+        phasor_to_complex(0.0, 0.0, dtype=numpy.float64)
+
+
+def test_phasor_multiply():
+    """Test phasor_multiply function."""
+    real1 = [0.0, 0.1, 0.2]
+    imag1 = [0.0, 0.3, 0.4]
+    real2 = [0.0, 0.5, 0.6]
+    imag2 = [0.0, 0.7, 0.8]
+    real = [0.0, -0.16, -0.2]
+    imag = [0.0, 0.22, 0.4]
+
+    assert_allclose(
+        phasor_to_complex(*phasor_multiply(real1, imag1, real2, imag2)),
+        phasor_to_complex(real, imag),
+    )
+    assert_allclose(
+        phasor_to_complex(real1, imag1) * phasor_to_complex(real2, imag2),
+        phasor_to_complex(real, imag),
+    )
+
+
+def test_phasor_divide():
+    """Test phasor_divide function."""
+    real1 = [0.0, -0.16, -0.2]
+    imag1 = [0.0, 0.22, 0.4]
+    real2 = [0.0, 0.5, 0.6]
+    imag2 = [0.0, 0.7, 0.8]
+    real = [numpy.nan, 0.1, 0.2]
+    imag = [numpy.nan, 0.3, 0.4]
+
+    assert_allclose(
+        phasor_to_complex(*phasor_divide(real1, imag1, real2, imag2)),
+        phasor_to_complex(real, imag),
+    )
+    with pytest.warns(RuntimeWarning):
+        assert_allclose(
+            phasor_to_complex(real1, imag1) / phasor_to_complex(real2, imag2),
+            phasor_to_complex(real, imag),
+        )
+
+
 @pytest.mark.parametrize(
-    """real, imag,
-    phase_zero, modulation_zero,
-    expected_real, expected_imag""",
+    'real, imag, phase, modulation, expected_real, expected_imag',
     [
         (2, 2, None, None, 2, 2),
         (2, 2, 0, 1, 2, 2),
@@ -795,23 +869,23 @@ def test_polar_from_reference_functions():
             SYNTH_MOD,
             numpy.array([[39.81570233, 0.79631405], [0.79631405, 0.79631405]]),
             numpy.array([[135.70081005, 2.7140162], [2.7140162, 2.7140162]]),
-        ),  # test with phase_zero and modulation_zero as arrays
+        ),  # test with phase and modulation as arrays
     ],
 )
 def test_phasor_transform(
     real,
     imag,
-    phase_zero,
-    modulation_zero,
+    phase,
+    modulation,
     expected_real,
     expected_imag,
 ):
-    """Test `phasor_transform` function with various inputs."""
+    """Test phasor_transform function with various inputs."""
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
-    if phase_zero is not None and modulation_zero is not None:
+    if phase is not None and modulation is not None:
         calibrated_real, calibrated_imag = phasor_transform(
-            real_copy, imag_copy, phase_zero, modulation_zero
+            real_copy, imag_copy, phase, modulation
         )
     else:
         calibrated_real, calibrated_imag = phasor_transform(

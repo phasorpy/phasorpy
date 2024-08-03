@@ -25,18 +25,23 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`polar_from_apparent_lifetime`
   - :py:func:`polar_to_apparent_lifetime`
 
+- transform phasor coordinates:
+
+  - :py:func:`phasor_transform`
+  - :py:func:`phasor_multiply`
+  - :py:func:`phasor_divide`
+
 - calibrate phasor coordinates with reference of known fluorescence
   lifetime:
 
   - :py:func:`phasor_calibrate`
-  - :py:func:`phasor_transform`
   - :py:func:`polar_from_reference`
   - :py:func:`polar_from_reference_phasor`
 
 - reduce dimensionality of arrays of phasor coordinates:
 
   - :py:func:`phasor_center`
-  - :py:phasor_to_principal_plane`
+  - :py:func:`phasor_to_principal_plane`
 
 - calculate phasor coordinates for FRET donor and acceptor channels:
 
@@ -73,6 +78,7 @@ __all__ = [
     'phasor_at_harmonic',
     'phasor_calibrate',
     'phasor_center',
+    'phasor_divide',
     'phasor_filter',
     'phasor_from_apparent_lifetime',
     'phasor_from_fret_acceptor',
@@ -81,8 +87,10 @@ __all__ = [
     'phasor_from_polar',
     'phasor_from_signal',
     'phasor_from_signal_fft',
+    'phasor_multiply',
     'phasor_semicircle',
     'phasor_to_apparent_lifetime',
+    'phasor_to_complex',
     'phasor_to_polar',
     'phasor_to_principal_plane',
     'phasor_to_signal',
@@ -112,6 +120,7 @@ import numpy
 
 from ._phasorpy import (
     _phasor_at_harmonic,
+    _phasor_divide,
     _phasor_from_apparent_lifetime,
     _phasor_from_fret_acceptor,
     _phasor_from_fret_donor,
@@ -119,6 +128,7 @@ from ._phasorpy import (
     _phasor_from_polar,
     _phasor_from_signal,
     _phasor_from_single_lifetime,
+    _phasor_multiply,
     _phasor_to_apparent_lifetime,
     _phasor_to_polar,
     _phasor_transform,
@@ -640,6 +650,181 @@ def phasor_semicircle(
     return real, imag
 
 
+def phasor_to_complex(
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    *,
+    dtype: DTypeLike = None,
+) -> NDArray[numpy.complex64 | numpy.complex128]:
+    """Return phasor coordinates as complex numbers.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    dtype : dtype_like, optional
+        Data type of output array. Either complex64 or complex128.
+        By default, complex64 if `real` and `imag` are float32,
+        else complex128.
+
+    Returns
+    -------
+    complex : ndarray
+        Phasor coordinates as complex numbers.
+
+    Examples
+    --------
+    Convert phasor coordinates to complex number arrays:
+
+    >>> phasor_to_complex([0.4, 0.5], [0.2, 0.3])
+    array([0.4+0.2j, 0.5+0.3j])
+
+    """
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    if dtype is None:
+        if real.dtype == numpy.float32 and imag.dtype == numpy.float32:
+            dtype = numpy.complex64
+        else:
+            dtype = numpy.complex128
+    else:
+        dtype = numpy.dtype(dtype)
+        if dtype.kind != 'c':
+            raise ValueError(f'{dtype=} not a complex type')
+
+    c = numpy.empty(numpy.broadcast(real, imag).shape, dtype)
+    c.real = real
+    c.imag = imag
+    return c
+
+
+def phasor_multiply(
+    real: ArrayLike,
+    imag: ArrayLike,
+    factor_real: ArrayLike,
+    factor_imag: ArrayLike,
+    /,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    r"""Return complex multiplication of two phasors.
+
+    Complex multiplication can be used, for example, to convolve two signals
+    such as exponential decay and instrument response functions.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates to multiply.
+    imag : array_like
+        Imaginary component of phasor coordinates to multiply.
+    factor_real : array_like
+        Real component of phasor coordinates to multiply by.
+    factor_imag : array_like
+        Imaginary component of phasor coordinates to multiply by.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    real : ndarray
+        Real component of complex multiplication.
+    imag : ndarray
+        Imaginary component of complex multiplication.
+
+    Notes
+    -----
+    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
+    are multiplied by phasor coordinates `factor_real` (:math:`g`)
+    and `factor_imag` (:math:`s`) according to:
+
+    .. math::
+
+        G' &= G \cdot g - S \cdot s
+
+        S' &= G \cdot s + S \cdot g
+
+    Examples
+    --------
+    Multiply two sets of phasor coordinates:
+
+    >>> phasor_multiply([0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8])
+    (array([-0.16, -0.2]), array([0.22, 0.4]))
+
+    """
+    # c = phasor_to_complex(real, imag) * phasor_to_complex(
+    #     factor_real, factor_imag
+    # )
+    # return c.real, c.imag
+    return _phasor_multiply(real, imag, factor_real, factor_imag, **kwargs)
+
+
+def phasor_divide(
+    real: ArrayLike,
+    imag: ArrayLike,
+    divisor_real: ArrayLike,
+    divisor_imag: ArrayLike,
+    /,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    r"""Return complex division of two phasors.
+
+    Complex division can be used, for example, to deconvolve two signals
+    such as exponential decay and instrument response functions.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates to divide.
+    imag : array_like
+        Imaginary component of phasor coordinates to divide.
+    divisor_real : array_like
+        Real component of phasor coordinates to divide by.
+    divisor_imag : array_like
+        Imaginary component of phasor coordinates to divide by.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    real : ndarray
+        Real component of complex division.
+    imag : ndarray
+        Imaginary component of complex division.
+
+    Notes
+    -----
+    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
+    are divided by phasor coordinates `divisor_real` (:math:`g`)
+    and `divisor_imag` (:math:`s`) according to:
+
+    .. math::
+
+        d &= g \cdot g + s \cdot s
+
+        G' &= (G \cdot g + S \cdot s) / d
+
+        S' &= (G \cdot s - S \cdot g) / d
+
+    Examples
+    --------
+    Divide two sets of phasor coordinates:
+
+    >>> phasor_divide([-0.16, -0.2], [0.22, 0.4], [0.5, 0.6], [0.7, 0.8])
+    (array([0.1, 0.2]), array([0.3, 0.4]))
+
+    """
+    # c = phasor_to_complex(real, imag) / phasor_to_complex(
+    #     divisor_real, divisor_imag
+    # )
+    # return c.real, c.imag
+    return _phasor_divide(real, imag, divisor_real, divisor_imag, **kwargs)
+
+
 def phasor_calibrate(
     real: ArrayLike,
     imag: ArrayLike,
@@ -836,8 +1021,8 @@ def phasor_calibrate(
 def phasor_transform(
     real: ArrayLike,
     imag: ArrayLike,
-    phase_zero: ArrayLike = 0.0,
-    modulation_zero: ArrayLike = 1.0,
+    phase: ArrayLike = 0.0,
+    modulation: ArrayLike = 1.0,
     /,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
@@ -853,9 +1038,9 @@ def phasor_transform(
         Real component of phasor coordinates to transform.
     imag : array_like
         Imaginary component of phasor coordinates to transform.
-    phase_zero : array_like, optional, default: 0.0
+    phase : array_like, optional, default: 0.0
         Rotation angle in radians.
-    modulation_zero : array_like, optional, default: 1.0
+    modulation : array_like, optional, default: 1.0
         Uniform scale factor.
     **kwargs
         Optional `arguments passed to numpy universal functions
@@ -870,20 +1055,20 @@ def phasor_transform(
 
     Notes
     -----
-    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`) are
-    rotated by `phase_zero` (:math:`\phi_{0}`) and scaled by
-    `modulation_zero` (:math:`M_{0}`) around the origin according to:
+    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
+    are rotated by `phase` (:math:`\phi`)
+    and scaled by `modulation_zero` (:math:`M`)
+    around the origin according to:
 
     .. math::
 
-        g &= M_{0} \cdot \cos{\phi_{0}}
+        g &= M \cdot \cos{\phi}
 
-        s &= M_{0} \cdot \sin{\phi_{0}}
+        s &= M \cdot \sin{\phi}
 
         G' &= G \cdot g - S \cdot s
 
         S' &= G \cdot s + S \cdot g
-
 
     Examples
     --------
@@ -902,14 +1087,14 @@ def phasor_transform(
     (array([0.00927, 0.0193, 0.0328]), array([0.206, 0.106, 0.1986]))
 
     """
-    if numpy.ndim(phase_zero) == 0 and numpy.ndim(modulation_zero) == 0:
+    if numpy.ndim(phase) == 0 and numpy.ndim(modulation) == 0:
         return _phasor_transform_const(
             real,
             imag,
-            modulation_zero * numpy.cos(phase_zero),
-            modulation_zero * numpy.sin(phase_zero),
+            modulation * numpy.cos(phase),
+            modulation * numpy.sin(phase),
         )
-    return _phasor_transform(real, imag, phase_zero, modulation_zero, **kwargs)
+    return _phasor_transform(real, imag, phase, modulation, **kwargs)
 
 
 def polar_from_reference_phasor(
