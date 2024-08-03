@@ -815,7 +815,7 @@ cdef (double, double) _phasor_multiply(
     float_t imag1,
     float_t real2,
     float_t imag2,
-):
+) noexcept nogil:
     """Return multiplication of two phasors."""
     return real1 * real2 - imag1 * imag2, real1 * imag2 + imag1 * real2
 
@@ -826,7 +826,7 @@ cdef (double, double) _phasor_divide(
     float_t imag1,
     float_t real2,
     float_t imag2,
-):
+) noexcept nogil:
     """Return division of two phasors."""
     cdef:
         float_t denom = real2 * real2 + imag2 * imag2
