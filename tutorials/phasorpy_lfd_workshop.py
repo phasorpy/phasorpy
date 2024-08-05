@@ -12,6 +12,11 @@ using the PhasorPy library instead of the
 `Globals for Images · SimFCS <https://www.lfd.uci.edu/globals/>`_
 and Excel software.
 
+.. note::
+
+    This tutorial is work in progress. Not all of SimFCS's functionality is
+    available in the PhasorPy library yet.
+
 """
 
 # %%
@@ -95,7 +100,11 @@ signal, instrument_response, times = lifetime_to_signal(
 )
 
 fig, ax = pyplot.subplots()
-ax.set(title='Multi-exponential', xlabel='Times [ns]', ylabel='Intensity [au]')
+ax.set(
+    title='Multi-exponential decay',
+    xlabel='Times [ns]',
+    ylabel='Intensity [au]',
+)
 ax.plot(times, signal)
 pyplot.show()
 
