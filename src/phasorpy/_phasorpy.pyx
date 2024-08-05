@@ -30,7 +30,9 @@ from libc.math cimport (
     atan2,
     copysign,
     cos,
+    exp,
     fabs,
+    floor,
     hypot,
     isnan,
     sin,
@@ -377,6 +379,32 @@ def _phasor_from_lifetime(
     )
 
 
+def _gaussian_signal(
+    double[::1] signal,
+    const double mean,
+    const double stdev,
+):
+    """Return normal distribution, wrapped around at borders."""
+    cdef:
+        ssize_t samples = signal.shape[0]
+        ssize_t folds = 1  # TODO: calculate from stddev and samples
+        ssize_t i
+        double t, c
+
+    if stdev <= 0.0 or samples < 1:
+        return
+
+    with nogil:
+        c = 1.0 / sqrt(2.0 * M_PI) * stdev
+
+        for i in range(-folds * samples, (folds + 1) * samples):
+            t = (<double> i - mean) / stdev
+            t *= t
+            t = c * exp(-t / 2.0)
+            # i %= samples
+            i -= samples * <ssize_t> floor(<double> i / samples)
+            signal[i] += t
+
 ###############################################################################
 # FRET model
 
@@ -577,7 +605,6 @@ cdef inline (double, double) linear_combination(
         (int1 * real1 + int2 * real2) / frac,
         (int1 * imag1 + int2 * imag2) / frac
     )
-
 
 ###############################################################################
 # Phasor conversions
@@ -807,6 +834,37 @@ cdef (double, double) _phasor_at_harmonic(
     )
 
     return real, sqrt(real - real * real)
+
+
+@cython.ufunc
+cdef (double, double) _phasor_multiply(
+    float_t real1,
+    float_t imag1,
+    float_t real2,
+    float_t imag2,
+) noexcept nogil:
+    """Return multiplication of two phasors."""
+    return real1 * real2 - imag1 * imag2, real1 * imag2 + imag1 * real2
+
+
+@cython.ufunc
+cdef (double, double) _phasor_divide(
+    float_t real1,
+    float_t imag1,
+    float_t real2,
+    float_t imag2,
+) noexcept nogil:
+    """Return division of two phasors."""
+    cdef:
+        float_t denom = real2 * real2 + imag2 * imag2
+
+    if denom == 0.0:
+        return NAN, NAN
+
+    return (
+        (real1 * real2 + imag1 * imag2) / denom,
+        (imag1 * real2 - real1 * imag2) / denom
+    )
 
 
 ###############################################################################

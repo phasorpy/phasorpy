@@ -7,9 +7,10 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_from_signal`
   - :py:func:`phasor_from_signal_fft`
 
-- reconstruct signals from phasor coordinates:
+- synthesize signals from phasor coordinates or lifetimes:
 
   - :py:func:`phasor_to_signal`
+  - :py:func:`lifetime_to_signal`
 
 - convert between phasor coordinates and single- or multi-component
   fluorescence lifetimes:
@@ -25,18 +26,23 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`polar_from_apparent_lifetime`
   - :py:func:`polar_to_apparent_lifetime`
 
+- transform phasor coordinates:
+
+  - :py:func:`phasor_transform`
+  - :py:func:`phasor_multiply`
+  - :py:func:`phasor_divide`
+
 - calibrate phasor coordinates with reference of known fluorescence
   lifetime:
 
   - :py:func:`phasor_calibrate`
-  - :py:func:`phasor_transform`
   - :py:func:`polar_from_reference`
   - :py:func:`polar_from_reference_phasor`
 
 - reduce dimensionality of arrays of phasor coordinates:
 
   - :py:func:`phasor_center`
-  - :py:phasor_to_principal_plane`
+  - :py:func:`phasor_to_principal_plane`
 
 - calculate phasor coordinates for FRET donor and acceptor channels:
 
@@ -45,13 +51,13 @@ The ``phasorpy.phasor`` module provides functions to:
 
 - convert between single component lifetimes and optimal frequency:
 
-  - :py:func:`frequency_from_lifetime`
-  - :py:func:`frequency_to_lifetime`
+  - :py:func:`lifetime_to_frequency`
+  - :py:func:`lifetime_from_frequency`
 
 - convert between fractional intensities and pre-exponential amplitudes:
 
-  - :py:func:`fraction_from_amplitude`
-  - :py:func:`fraction_to_amplitude`
+  - :py:func:`lifetime_fraction_from_amplitude`
+  - :py:func:`lifetime_fraction_to_amplitude`
 
 - calculate phasor coordinates on semicircle at other harmonics:
 
@@ -66,13 +72,15 @@ The ``phasorpy.phasor`` module provides functions to:
 from __future__ import annotations
 
 __all__ = [
-    'fraction_from_amplitude',
-    'fraction_to_amplitude',
-    'frequency_from_lifetime',
-    'frequency_to_lifetime',
+    'lifetime_fraction_from_amplitude',
+    'lifetime_fraction_to_amplitude',
+    'lifetime_from_frequency',
+    'lifetime_to_frequency',
+    'lifetime_to_signal',
     'phasor_at_harmonic',
     'phasor_calibrate',
     'phasor_center',
+    'phasor_divide',
     'phasor_filter',
     'phasor_from_apparent_lifetime',
     'phasor_from_fret_acceptor',
@@ -81,8 +89,10 @@ __all__ = [
     'phasor_from_polar',
     'phasor_from_signal',
     'phasor_from_signal_fft',
+    'phasor_multiply',
     'phasor_semicircle',
     'phasor_to_apparent_lifetime',
+    'phasor_to_complex',
     'phasor_to_polar',
     'phasor_to_principal_plane',
     'phasor_to_signal',
@@ -111,7 +121,9 @@ if TYPE_CHECKING:
 import numpy
 
 from ._phasorpy import (
+    _gaussian_signal,
     _phasor_at_harmonic,
+    _phasor_divide,
     _phasor_from_apparent_lifetime,
     _phasor_from_fret_acceptor,
     _phasor_from_fret_donor,
@@ -119,6 +131,7 @@ from ._phasorpy import (
     _phasor_from_polar,
     _phasor_from_signal,
     _phasor_from_single_lifetime,
+    _phasor_multiply,
     _phasor_to_apparent_lifetime,
     _phasor_to_polar,
     _phasor_transform,
@@ -541,48 +554,191 @@ def phasor_to_signal(
     return signal
 
 
-def _parse_harmonic(
-    harmonic: int | Sequence[int] | Literal['all'] | None, samples: int
-) -> tuple[list[int], bool]:
-    """Return parsed harmonic parameter.
+def lifetime_to_signal(
+    frequency: float,
+    lifetime: ArrayLike,
+    fraction: ArrayLike | None = None,
+    *,
+    mean: ArrayLike | None = None,
+    background: ArrayLike | None = None,
+    samples: int = 64,
+    harmonic: int | Sequence[int] | Literal['all'] | None = None,
+    zero_phase: float | None = None,
+    zero_stdev: float | None = None,
+    preexponential: bool = False,
+    unit_conversion: float = 1e-3,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    r"""Return synthetic signal from lifetime components.
 
-    Raises
-    ------
-    IndexError
-        Any element is out of range [1..harmonic_max].
-    TypeError
-        Any element is not an integer.
-    ValueError
-        Elements are not unique.
+    Return synthetic signal, instrument response function (IRF), and
+    time axis, sampled over one period of the fundamental frequency.
+    The signal is convoluted with the IRF, which is approximated by a
+    normal distribution.
+
+    Parameters
+    ----------
+    frequency : float
+        Fundamental laser pulse or modulation frequency in MHz.
+    lifetime : array_like
+        Lifetime components in ns.
+    fraction : array_like, optional
+        Fractional intensities or pre-exponential amplitudes of the lifetime
+        components. Fractions are normalized to sum to 1.
+        Must be specified if `lifetime` is not a scalar.
+    mean : array_like, optional, default: 1.0
+        Average signal intensity (DC). Must be scalar for now.
+    background : array_like, optional, default: 0.0
+        Background signal intensity. Must be smaller than `mean`.
+    samples : int, default: 64
+        Number of signal samples to return. Must be at least 16.
+    harmonic : int, sequence of int, or 'all', optional, default: 'all'
+        Harmonics used to synthesize signal.
+        If `'all'`, all harmonics are used.
+        Else, harmonics must be at least one and no larger than half of
+        `samples`.
+        Use `'all'` to synthesize an exponential time-domain decay signal,
+        or `1` to synthesize a homodyne signal.
+    zero_phase : float, optional
+        Position of instrument response function in radians.
+        Must be in range 0.0 to :math:`\pi`. The default is the 8th sample.
+    zero_stdev : float, optional
+        Standard deviation of instrument response function in radians.
+        Must be at least 1.5 samples and no more than one tenth of samples
+        to allow for sufficient sampling of the function.
+        The default is 1.5 samples. Increase `samples` to narrow the IRF.
+    preexponential : bool, optional, default: False
+        If true, `fraction` values are pre-exponential amplitudes,
+        else fractional intensities.
+    unit_conversion : float, optional, default: 1e-3
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+
+    Returns
+    -------
+    signal : ndarray
+        Signal generated from lifetimes at frequency, convoluted with
+        instrument response function.
+    zero : ndarray
+        Instrument response function.
+    time : ndarray
+        Time for each sample in signal in units of `lifetime`.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_lifetime
+    phasorpy.phasor.phasor_to_signal
+    :ref:`sphx_glr_tutorials_phasorpy_lifetime_to_signal.py`
+
+    Notes
+    -----
+    This implementation is based on an inverse digital Fourier transform (DFT).
+    Because DFT cannot be used on signals with discontinuities
+    (for example, an exponential decay starting at zero) without producing
+    strong artifacts (ripples), the signal is convoluted with a continuous
+    instrument response function (IRF). The minimum width of the IRF is
+    limited due to sampling requirements.
+
+    Examples
+    --------
+    Synthesize a multi-exponential time-domain decay signal for two
+    lifetime components of 4.2 and 0.9 ns at 40 MHz:
+
+    >>> signal, zero, times = lifetime_to_signal(
+    ...     40, [4.2, 0.9], fraction=[0.8, 0.2], samples=16
+    ... )
+    >>> signal  # doctest: +NUMBER
+    array([0.2846, 0.1961, 0.1354, ..., 0.8874, 0.6029, 0.4135])
+
+    Synthesize a homodyne frequency-domain waveform signal for
+    a single lifetime:
+
+    >>> signal, zero, times = lifetime_to_signal(
+    ...     40.0, 4.2, samples=16, harmonic=1
+    ... )
+    >>> signal  # doctest: +NUMBER
+    array([0.2047, -0.05602, -0.156, ..., 1.471, 1.031, 0.5865])
 
     """
-    if samples < 3:
-        raise ValueError(f'{samples=} < 3')
-
     if harmonic is None:
-        return [1], False
+        harmonic = 'all'
+    all_hamonics = harmonic == 'all'
+    harmonic, _ = _parse_harmonic(harmonic, samples)
 
-    harmonic_max = samples // 2
-    if isinstance(harmonic, numbers.Integral):
-        if harmonic < 1 or harmonic > harmonic_max:
-            raise IndexError(f'{harmonic=} out of range [1..{harmonic_max}]')
-        return [int(harmonic)], False
+    if samples < 16:
+        raise ValueError(f'{samples=} < 16')
 
-    if isinstance(harmonic, str):
-        if harmonic == 'all':
-            return list(range(1, harmonic_max + 1)), True
-        raise ValueError(f'{harmonic=!r} is not a valid harmonic')
+    if background is None:
+        background = 0.0
+    background = numpy.asarray(background)
 
-    h = numpy.atleast_1d(numpy.asarray(harmonic))
-    if h.dtype.kind not in 'iu' or h.ndim != 1:
-        raise TypeError(f'{harmonic=} element not an integer')
-    if numpy.any(h < 1) or numpy.any(h > harmonic_max):
-        raise IndexError(
-            f'{harmonic=} element out of range [1..{harmonic_max}]'
+    if mean is None:
+        mean = 1.0
+    mean = numpy.asarray(mean)
+    mean -= background
+    if numpy.any(mean <= 0.0):
+        raise ValueError('mean - background must not be less than zero')
+
+    scale = samples / (2.0 * math.pi)
+    if zero_phase is None:
+        zero_phase = 8.0 / scale
+    phase = zero_phase * scale  # in sample units
+    if zero_stdev is None:
+        zero_stdev = 1.5 / scale
+    stdev = zero_stdev * scale  # in sample units
+
+    if zero_phase < 0 or zero_phase > 2.0 * math.pi:
+        raise ValueError(f'{zero_phase=} out of range [0 .. 2 pi]')
+    if stdev < 1.5:
+        raise ValueError(
+            f'{zero_stdev=} < {1.5 / scale} cannot be sampled sufficiently'
         )
-    if numpy.unique(h).size != h.size:
-        raise ValueError(f'{harmonic=} elements must be unique')
-    return h.tolist(), True
+    if stdev >= samples / 10:
+        raise ValueError(f'{zero_stdev=} > pi / 5 not supported')
+
+    frequencies = numpy.atleast_1d(frequency)
+    if frequencies.size > 1 or frequencies[0] <= 0.0:
+        raise ValueError('frequency must be scalar and positive')
+    frequencies = numpy.linspace(
+        frequency, samples // 2 * frequency, samples // 2
+    )
+    frequencies = frequencies[[h - 1 for h in harmonic]]
+
+    real, imag = phasor_from_lifetime(
+        frequencies,
+        lifetime,
+        fraction,
+        preexponential=preexponential,
+        unit_conversion=unit_conversion,
+    )
+    real, imag = numpy.atleast_1d(real, imag)
+
+    zero = numpy.zeros(samples, dtype=numpy.float64)
+    _gaussian_signal(zero, phase, stdev)
+    zero_mean, zero_real, zero_imag = phasor_from_signal(
+        zero, harmonic=harmonic
+    )
+    if real.ndim > 1:
+        # make broadcastable with real and imag
+        zero_real = zero_real[:, None]
+        zero_imag = zero_imag[:, None]
+    if not all_hamonics:
+        zero = phasor_to_signal(
+            zero_mean, zero_real, zero_imag, samples=samples, harmonic=harmonic
+        )
+
+    phasor_multiply(real, imag, zero_real, zero_imag, out=(real, imag))
+
+    if len(harmonic) == 1:
+        harmonic = harmonic[0]
+    signal = phasor_to_signal(
+        mean, real, imag, samples=samples, harmonic=harmonic
+    )
+    signal += numpy.asarray(background)
+
+    time = numpy.linspace(0, 1.0 / (unit_conversion * frequency), samples)
+
+    return signal.squeeze(), zero.squeeze(), time
 
 
 def phasor_semicircle(
@@ -638,6 +794,181 @@ def phasor_semicircle(
     imag = numpy.sin(arange)
     imag *= 0.5
     return real, imag
+
+
+def phasor_to_complex(
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    *,
+    dtype: DTypeLike = None,
+) -> NDArray[numpy.complex64 | numpy.complex128]:
+    """Return phasor coordinates as complex numbers.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    dtype : dtype_like, optional
+        Data type of output array. Either complex64 or complex128.
+        By default, complex64 if `real` and `imag` are float32,
+        else complex128.
+
+    Returns
+    -------
+    complex : ndarray
+        Phasor coordinates as complex numbers.
+
+    Examples
+    --------
+    Convert phasor coordinates to complex number arrays:
+
+    >>> phasor_to_complex([0.4, 0.5], [0.2, 0.3])
+    array([0.4+0.2j, 0.5+0.3j])
+
+    """
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    if dtype is None:
+        if real.dtype == numpy.float32 and imag.dtype == numpy.float32:
+            dtype = numpy.complex64
+        else:
+            dtype = numpy.complex128
+    else:
+        dtype = numpy.dtype(dtype)
+        if dtype.kind != 'c':
+            raise ValueError(f'{dtype=} not a complex type')
+
+    c = numpy.empty(numpy.broadcast(real, imag).shape, dtype)
+    c.real = real
+    c.imag = imag
+    return c
+
+
+def phasor_multiply(
+    real: ArrayLike,
+    imag: ArrayLike,
+    factor_real: ArrayLike,
+    factor_imag: ArrayLike,
+    /,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    r"""Return complex multiplication of two phasors.
+
+    Complex multiplication can be used, for example, to convolve two signals
+    such as exponential decay and instrument response functions.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates to multiply.
+    imag : array_like
+        Imaginary component of phasor coordinates to multiply.
+    factor_real : array_like
+        Real component of phasor coordinates to multiply by.
+    factor_imag : array_like
+        Imaginary component of phasor coordinates to multiply by.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    real : ndarray
+        Real component of complex multiplication.
+    imag : ndarray
+        Imaginary component of complex multiplication.
+
+    Notes
+    -----
+    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
+    are multiplied by phasor coordinates `factor_real` (:math:`g`)
+    and `factor_imag` (:math:`s`) according to:
+
+    .. math::
+
+        G' &= G \cdot g - S \cdot s
+
+        S' &= G \cdot s + S \cdot g
+
+    Examples
+    --------
+    Multiply two sets of phasor coordinates:
+
+    >>> phasor_multiply([0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8])
+    (array([-0.16, -0.2]), array([0.22, 0.4]))
+
+    """
+    # c = phasor_to_complex(real, imag) * phasor_to_complex(
+    #     factor_real, factor_imag
+    # )
+    # return c.real, c.imag
+    return _phasor_multiply(real, imag, factor_real, factor_imag, **kwargs)
+
+
+def phasor_divide(
+    real: ArrayLike,
+    imag: ArrayLike,
+    divisor_real: ArrayLike,
+    divisor_imag: ArrayLike,
+    /,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    r"""Return complex division of two phasors.
+
+    Complex division can be used, for example, to deconvolve two signals
+    such as exponential decay and instrument response functions.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates to divide.
+    imag : array_like
+        Imaginary component of phasor coordinates to divide.
+    divisor_real : array_like
+        Real component of phasor coordinates to divide by.
+    divisor_imag : array_like
+        Imaginary component of phasor coordinates to divide by.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    real : ndarray
+        Real component of complex division.
+    imag : ndarray
+        Imaginary component of complex division.
+
+    Notes
+    -----
+    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
+    are divided by phasor coordinates `divisor_real` (:math:`g`)
+    and `divisor_imag` (:math:`s`) according to:
+
+    .. math::
+
+        d &= g \cdot g + s \cdot s
+
+        G' &= (G \cdot g + S \cdot s) / d
+
+        S' &= (G \cdot s - S \cdot g) / d
+
+    Examples
+    --------
+    Divide two sets of phasor coordinates:
+
+    >>> phasor_divide([-0.16, -0.2], [0.22, 0.4], [0.5, 0.6], [0.7, 0.8])
+    (array([0.1, 0.2]), array([0.3, 0.4]))
+
+    """
+    # c = phasor_to_complex(real, imag) / phasor_to_complex(
+    #     divisor_real, divisor_imag
+    # )
+    # return c.real, c.imag
+    return _phasor_divide(real, imag, divisor_real, divisor_imag, **kwargs)
 
 
 def phasor_calibrate(
@@ -836,8 +1167,8 @@ def phasor_calibrate(
 def phasor_transform(
     real: ArrayLike,
     imag: ArrayLike,
-    phase_zero: ArrayLike = 0.0,
-    modulation_zero: ArrayLike = 1.0,
+    phase: ArrayLike = 0.0,
+    modulation: ArrayLike = 1.0,
     /,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
@@ -853,9 +1184,9 @@ def phasor_transform(
         Real component of phasor coordinates to transform.
     imag : array_like
         Imaginary component of phasor coordinates to transform.
-    phase_zero : array_like, optional, default: 0.0
+    phase : array_like, optional, default: 0.0
         Rotation angle in radians.
-    modulation_zero : array_like, optional, default: 1.0
+    modulation : array_like, optional, default: 1.0
         Uniform scale factor.
     **kwargs
         Optional `arguments passed to numpy universal functions
@@ -870,20 +1201,20 @@ def phasor_transform(
 
     Notes
     -----
-    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`) are
-    rotated by `phase_zero` (:math:`\phi_{0}`) and scaled by
-    `modulation_zero` (:math:`M_{0}`) around the origin according to:
+    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
+    are rotated by `phase` (:math:`\phi`)
+    and scaled by `modulation_zero` (:math:`M`)
+    around the origin according to:
 
     .. math::
 
-        g &= M_{0} \cdot \cos{\phi_{0}}
+        g &= M \cdot \cos{\phi}
 
-        s &= M_{0} \cdot \sin{\phi_{0}}
+        s &= M \cdot \sin{\phi}
 
         G' &= G \cdot g - S \cdot s
 
         S' &= G \cdot s + S \cdot g
-
 
     Examples
     --------
@@ -902,14 +1233,14 @@ def phasor_transform(
     (array([0.00927, 0.0193, 0.0328]), array([0.206, 0.106, 0.1986]))
 
     """
-    if numpy.ndim(phase_zero) == 0 and numpy.ndim(modulation_zero) == 0:
+    if numpy.ndim(phase) == 0 and numpy.ndim(modulation) == 0:
         return _phasor_transform_const(
             real,
             imag,
-            modulation_zero * numpy.cos(phase_zero),
-            modulation_zero * numpy.sin(phase_zero),
+            modulation * numpy.cos(phase),
+            modulation * numpy.sin(phase),
         )
-    return _phasor_transform(real, imag, phase_zero, modulation_zero, **kwargs)
+    return _phasor_transform(real, imag, phase, modulation, **kwargs)
 
 
 def polar_from_reference_phasor(
@@ -1301,7 +1632,7 @@ def phasor_from_apparent_lifetime(
     )
 
 
-def frequency_from_lifetime(
+def lifetime_to_frequency(
     lifetime: ArrayLike,
     *,
     unit_conversion: float = 1e-3,
@@ -1339,7 +1670,7 @@ def frequency_from_lifetime(
     Measurements of a lifetime near 4 ns should be made at 47 MHz,
     near 1 ns at 186 MHz:
 
-    >>> frequency_from_lifetime([4.0, 1.0])  # doctest: +NUMBER
+    >>> lifetime_to_frequency([4.0, 1.0])  # doctest: +NUMBER
     array([46.5, 186])
 
     """
@@ -1348,7 +1679,7 @@ def frequency_from_lifetime(
     return t
 
 
-def frequency_to_lifetime(
+def lifetime_from_frequency(
     frequency: ArrayLike,
     *,
     unit_conversion: float = 1e-3,
@@ -1385,7 +1716,7 @@ def frequency_to_lifetime(
     Measurements at frequencies of 47 and 186 MHz are best for measuring
     lifetimes near 4 and 1 ns respectively:
 
-    >>> frequency_to_lifetime([46.5, 186])  # doctest: +NUMBER
+    >>> lifetime_from_frequency([46.5, 186])  # doctest: +NUMBER
     array([4, 1])
 
     """
@@ -1394,7 +1725,7 @@ def frequency_to_lifetime(
     return t
 
 
-def fraction_to_amplitude(
+def lifetime_fraction_to_amplitude(
     lifetime: ArrayLike, fraction: ArrayLike, *, axis: int = -1
 ) -> NDArray[numpy.float64]:
     r"""Return pre-exponential amplitude from fractional intensity.
@@ -1418,7 +1749,7 @@ def fraction_to_amplitude(
 
     See Also
     --------
-    phasorpy.phasor.fraction_from_amplitude
+    phasorpy.phasor.lifetime_fraction_from_amplitude
 
     Notes
     -----
@@ -1431,7 +1762,9 @@ def fraction_to_amplitude(
 
     Examples
     --------
-    >>> fraction_to_amplitude([4.0, 1.0], [1.6, 0.4])  # doctest: +NUMBER
+    >>> lifetime_fraction_to_amplitude(
+    ...     [4.0, 1.0], [1.6, 0.4]
+    ... )  # doctest: +NUMBER
     array([0.2, 0.2])
 
     """
@@ -1441,7 +1774,7 @@ def fraction_to_amplitude(
     return t
 
 
-def fraction_from_amplitude(
+def lifetime_fraction_from_amplitude(
     lifetime: ArrayLike, amplitude: ArrayLike, *, axis: int = -1
 ) -> NDArray[numpy.float64]:
     r"""Return fractional intensity from pre-exponential amplitude.
@@ -1463,7 +1796,7 @@ def fraction_from_amplitude(
 
     See Also
     --------
-    phasorpy.phasor.fraction_to_amplitude
+    phasorpy.phasor.lifetime_fraction_to_amplitude
 
     Notes
     -----
@@ -1476,7 +1809,9 @@ def fraction_from_amplitude(
 
     Examples
     --------
-    >>> fraction_from_amplitude([4.0, 1.0], [1.0, 1.0])  # doctest: +NUMBER
+    >>> lifetime_fraction_from_amplitude(
+    ...     [4.0, 1.0], [1.0, 1.0]
+    ... )  # doctest: +NUMBER
     array([0.8, 0.2])
 
     """
@@ -2611,3 +2946,47 @@ def _parse_skip_axis(
     skip_axis = tuple(sorted(int(i % ndim) for i in skip_axis))
     other_axis = tuple(i for i in range(ndim) if i not in skip_axis)
     return skip_axis, other_axis
+
+
+def _parse_harmonic(
+    harmonic: int | Sequence[int] | Literal['all'] | None, samples: int
+) -> tuple[list[int], bool]:
+    """Return parsed harmonic parameter.
+
+    Raises
+    ------
+    IndexError
+        Any element is out of range [1..harmonic_max].
+    TypeError
+        Any element is not an integer.
+    ValueError
+        Elements are not unique.
+
+    """
+    if samples < 3:
+        raise ValueError(f'{samples=} < 3')
+
+    if harmonic is None:
+        return [1], False
+
+    harmonic_max = samples // 2
+    if isinstance(harmonic, numbers.Integral):
+        if harmonic < 1 or harmonic > harmonic_max:
+            raise IndexError(f'{harmonic=} out of range [1..{harmonic_max}]')
+        return [int(harmonic)], False
+
+    if isinstance(harmonic, str):
+        if harmonic == 'all':
+            return list(range(1, harmonic_max + 1)), True
+        raise ValueError(f'{harmonic=!r} is not a valid harmonic')
+
+    h = numpy.atleast_1d(numpy.asarray(harmonic))
+    if h.dtype.kind not in 'iu' or h.ndim != 1:
+        raise TypeError(f'{harmonic=} element not an integer')
+    if numpy.any(h < 1) or numpy.any(h > harmonic_max):
+        raise IndexError(
+            f'{harmonic=} element out of range [1..{harmonic_max}]'
+        )
+    if numpy.unique(h).size != h.size:
+        raise ValueError(f'{harmonic=} elements must be unique')
+    return h.tolist(), True

@@ -12,17 +12,24 @@ using the PhasorPy library instead of the
 `Globals for Images · SimFCS <https://www.lfd.uci.edu/globals/>`_
 and Excel software.
 
+.. note::
+
+    This tutorial is work in progress. Not all of SimFCS's functionality is
+    available in the PhasorPy library yet.
+
 """
 
 # %%
 # Import required modules and functions:
 
 import numpy
+from matplotlib import pyplot
 
 from phasorpy.datasets import fetch
 from phasorpy.io import read_ref
 from phasorpy.phasor import (
-    fraction_from_amplitude,
+    lifetime_fraction_from_amplitude,
+    lifetime_to_signal,
     phasor_filter,
     phasor_from_fret_donor,
     phasor_from_lifetime,
@@ -65,7 +72,9 @@ phasor_combined = phasor_from_lifetime(
 )
 
 plot = PhasorPlot(frequency=frequency)
-plot.components(*phasor_single, fraction_from_amplitude(lifetimes, amplitudes))
+plot.components(
+    *phasor_single, lifetime_fraction_from_amplitude(lifetimes, amplitudes)
+)
 plot.plot(*phasor_single, label='single components')
 plot.plot(*phasor_combined, label='combined components')
 plot.show()
@@ -85,11 +94,19 @@ plot_polar_frequency(frequencies, phase, modulation)
 
 # %%
 # - the time-domain fluorescence decay:
-#
-# .. todo::
-#
-#     Generate time-domain signal.
 
+signal, instrument_response, times = lifetime_to_signal(
+    frequency, lifetimes, amplitudes, preexponential=True, samples=256
+)
+
+fig, ax = pyplot.subplots()
+ax.set(
+    title='Multi-exponential decay',
+    xlabel='Times [ns]',
+    ylabel='Intensity [au]',
+)
+ax.plot(times, signal)
+pyplot.show()
 
 # %%
 # Two state equilibrium
