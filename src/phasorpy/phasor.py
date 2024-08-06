@@ -116,6 +116,7 @@ if TYPE_CHECKING:
 import numpy
 
 from ._phasorpy import (
+    _mask_threshold,
     _phasor_at_harmonic,
     _phasor_from_apparent_lifetime,
     _phasor_from_fret_acceptor,
@@ -2399,7 +2400,13 @@ def phasor_threshold(
     real: ArrayLike,
     imag: ArrayLike,
     /,
-    threshold: float,
+    mean_lower: float = -numpy.inf,
+    mean_upper: float = numpy.inf,
+    *,
+    phasor_lower: float = -numpy.inf,
+    phasor_upper: float = numpy.inf,
+    fill_value: Any = numpy.nan,
+    out: tuple[NDArray[Any], NDArray[Any], NDArray[Any]] | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates with mean below threshold set to NaN.
 
@@ -2411,8 +2418,19 @@ def phasor_threshold(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    threshold : float
-        Threshold value for mean intensity.
+    mean_lower : float, optional
+        Lower bound threshold for mean intensity. The default is 0.0.
+    mean_upper : float, optional
+        Upper bound threshold for mean intensity. The default is infinity.
+    phasor_lower : float, optional
+        Lower bound threshold for phasor coordinates. The default is -infinity.
+    phasor_upper : float, optional
+        Upper bound threshold for phasor coordinates. The default is infinity.
+    fill_value : scalar, optional
+        Value used to fill thresholded elements. The default is NaN.
+    out : tuple of ndarrays, optional
+        Output array for the thresholded average signal and phasor
+        coordinates. If not provided, new arrays are created.
 
     Returns
     -------
@@ -2423,37 +2441,28 @@ def phasor_threshold(
     imag : ndarray
         Thresholded imaginary component of phasor coordinates.
 
-    Raises
-    ------
-    ValueError
-        If the shapes of `mean`, `real`, and `imag` do not match.
-        If the shapes of `mean`, `real`, and `imag` are not broadcastable.
-
     Examples
     --------
-    Set phasor coordinates to NaN if mean intensity is below threshold:
+    Set phasor coordinates to NaN if mean intensity is not inside threshold:
 
     >>> phasor_threshold(
-    ...     [0.1, 0.2, 0.3], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0], 0.2
+    ...     [0.1, 0.2, 0.3], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0], mean_lower=0.2, mean_upper=0.4
     ... )
-    (array([nan, 0.2, 0.3]), array([nan, 2, 3]), array([nan, 5, 6]))
+    (array([nan, nan, 0.3]), array([nan, nan, 3]), array([nan, nan, 6]))
 
     """
     mean = numpy.asarray(mean)
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
 
-    try:
-        numpy.broadcast(mean, real, imag).shape
-    except ValueError:
-        raise ValueError("`mean`, `real`, and `imag`. are not broadcastable")
+    if out is None:
+        out = (mean.copy(), real.copy(), imag.copy())
 
-    mask = mean < threshold
-    mean[mask] = numpy.nan
-    real[mask] = numpy.nan
-    imag[mask] = numpy.nan
-
-    return mean, real, imag
+    return _mask_threshold(
+        *out, mean_lower, mean_upper, phasor_lower, phasor_upper, fill_value
+    )
 
 
 def phasor_center(
