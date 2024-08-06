@@ -127,6 +127,7 @@ import numpy
 
 from ._phasorpy import (
     _gaussian_signal,
+    _mask_threshold,
     _phasor_at_harmonic,
     _phasor_divide,
     _phasor_from_apparent_lifetime,

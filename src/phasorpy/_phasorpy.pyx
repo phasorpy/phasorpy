@@ -1504,3 +1504,30 @@ cdef float_t _blend_lighten(
     if isnan(b) or isnan(a):
         return a
     return <float_t> max(a, b)
+
+###############################################################################
+# Threshold ufunc
+
+
+@cython.ufunc
+cdef (double, double, double) _mask_threshold(
+    float_t mean,
+    float_t real,
+    float_t imag,
+    float_t mean_lower,
+    float_t mean_upper,
+    float_t phasor_lower,
+    float_t phasor_upper,
+    float_t fill,
+) noexcept nogil:
+    """Return thresholded values."""
+    cdef double nan = NAN
+
+    if isnan(mean) or isnan(real) or isnan(imag):
+        return nan, nan, nan
+    if (mean_lower < mean < mean_upper and
+            phasor_lower < real < phasor_upper and
+            phasor_lower < imag < phasor_upper):
+        return mean, real, imag
+    else:
+        return fill, fill, fill
