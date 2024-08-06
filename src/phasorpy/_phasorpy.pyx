@@ -7,16 +7,11 @@
 
 """Cython implementation of low-level functions for the PhasorPy package."""
 
-# these lines must be at top of module
-# TODO: https://github.com/cython/cython/issues/6064
-
 # TODO: replace short with unsigned char when Cython supports it
 # https://github.com/cython/cython/pull/6196#issuecomment-2209509572
 
-cimport numpy
-
-numpy.import_array()
-numpy.import_ufunc()
+# TODO: use fused return types for functions returning more than two items
+# https://github.com/cython/cython/issues/6328
 
 cimport cython
 
@@ -30,7 +25,9 @@ from libc.math cimport (
     atan2,
     copysign,
     cos,
+    exp,
     fabs,
+    floor,
     hypot,
     isnan,
     sin,
@@ -209,7 +206,7 @@ def _phasor_from_signal(
 
 
 def _phasor_from_lifetime(
-    double[:, :, ::1] phasor,
+    float_t[:, :, ::1] phasor,
     const double[::1] frequency,
     const double[:, ::1] lifetime,
     const double[:, ::1] fraction,
@@ -250,7 +247,6 @@ def _phasor_from_lifetime(
         ssize_t ntau = lifetime.shape[0]  # number lifetimes
         ssize_t nfrac = fraction.shape[0]  # number fractions
         double twopi = 2.0 * M_PI * unit_conversion
-        double nan = NAN  # float('NaN')
         double freq, tau, frac, sum, re, im, gs
         ssize_t f, t, s
 
@@ -265,8 +261,8 @@ def _phasor_from_lifetime(
         # scalar
         tau = lifetime[0, 0] * frequency[0] * twopi  # omega_tau
         gs = 1.0 / (1.0 + tau * tau)
-        phasor[0, 0, 0] = gs
-        phasor[1, 0, 0] = gs * tau
+        phasor[0, 0, 0] = <float_t> gs
+        phasor[1, 0, 0] = <float_t> (gs * tau)
         return
 
     if ntau == nfrac:
@@ -287,8 +283,8 @@ def _phasor_from_lifetime(
                         for s in range(ncomp):
                             sum += fraction[t, s]
                     if fabs(sum) < 1e-16:
-                        phasor[0, f, t] = nan
-                        phasor[1, f, t] = nan
+                        phasor[0, f, t] = <float_t> NAN
+                        phasor[1, f, t] = <float_t> NAN
                         continue
                     for s in range(ncomp):
                         tau = lifetime[t, s]
@@ -299,8 +295,8 @@ def _phasor_from_lifetime(
                         gs = frac / (1.0 + tau * tau)
                         re += gs
                         im += gs * tau
-                    phasor[0, f, t] = re
-                    phasor[1, f, t] = im
+                    phasor[0, f, t] = <float_t> re
+                    phasor[1, f, t] = <float_t> im
         return
 
     if ntau > 1 and nfrac == 1:
@@ -320,8 +316,8 @@ def _phasor_from_lifetime(
                         for s in range(ncomp):
                             sum += fraction[0, s] * lifetime[t, s]  # Fdc
                     if fabs(sum) < 1e-16:
-                        phasor[0, f, t] = nan
-                        phasor[1, f, t] = nan
+                        phasor[0, f, t] = <float_t> NAN
+                        phasor[1, f, t] = <float_t> NAN
                         continue
                     re = 0.0
                     im = 0.0
@@ -334,8 +330,8 @@ def _phasor_from_lifetime(
                         gs = frac / (1.0 + tau * tau)
                         re += gs
                         im += gs * tau
-                    phasor[0, f, t] = re
-                    phasor[1, f, t] = im
+                    phasor[0, f, t] = <float_t> re
+                    phasor[1, f, t] = <float_t> im
         return
 
     if ntau == 1 and nfrac > 1:
@@ -356,8 +352,8 @@ def _phasor_from_lifetime(
                         for s in range(ncomp):
                             sum += fraction[t, s]
                     if fabs(sum) < 1e-16:
-                        phasor[0, f, t] = nan
-                        phasor[1, f, t] = nan
+                        phasor[0, f, t] = <float_t> NAN
+                        phasor[1, f, t] = <float_t> NAN
                         continue
                     for s in range(ncomp):
                         tau = lifetime[0, s]
@@ -368,13 +364,40 @@ def _phasor_from_lifetime(
                         gs = frac / (1.0 + tau * tau)
                         re += gs
                         im += gs * tau
-                    phasor[0, f, t] = re
-                    phasor[1, f, t] = im
+                    phasor[0, f, t] = <float_t> re
+                    phasor[1, f, t] = <float_t> im
         return
 
     raise ValueError(
         f'{lifetime.shape[0]=} and {fraction.shape[0]=} do not match'
     )
+
+
+def _gaussian_signal(
+    float_t[::1] signal,
+    const double mean,
+    const double stdev,
+):
+    """Return normal distribution, wrapped around at borders."""
+    cdef:
+        ssize_t samples = signal.shape[0]
+        ssize_t folds = 1  # TODO: calculate from stddev and samples
+        ssize_t i
+        double t, c
+
+    if stdev <= 0.0 or samples < 1:
+        return
+
+    with nogil:
+        c = 1.0 / sqrt(2.0 * M_PI) * stdev
+
+        for i in range(-folds * samples, (folds + 1) * samples):
+            t = (<double> i - mean) / stdev
+            t *= t
+            t = c * exp(-t / 2.0)
+            # i %= samples
+            i -= samples * <ssize_t> floor(<double> i / samples)
+            signal[i] += <float_t> t
 
 
 ###############################################################################
@@ -578,11 +601,10 @@ cdef inline (double, double) linear_combination(
         (int1 * imag1 + int2 * imag2) / frac
     )
 
-
 ###############################################################################
 # Phasor conversions
 
-cdef inline (double, double) phasor_from_lifetime(
+cdef inline (float_t, float_t) phasor_from_lifetime(
     float_t lifetime,
     float_t omega,
 ) noexcept nogil:
@@ -592,10 +614,10 @@ cdef inline (double, double) phasor_from_lifetime(
         double mod = 1.0 / sqrt(1.0 + t * t)
         double phi = atan(t)
 
-    return mod * cos(phi), mod * sin(phi)
+    return <float_t> (mod * cos(phi)), <float_t> (mod * sin(phi))
 
 
-cdef inline (double, double) phasor_to_apparent_lifetime(
+cdef inline (float_t, float_t) phasor_to_apparent_lifetime(
     float_t real,
     float_t imag,
     float_t omega,
@@ -614,10 +636,10 @@ cdef inline (double, double) phasor_to_apparent_lifetime(
         else:
             taumod = 0.0
 
-    return tauphi, taumod
+    return <float_t> tauphi, <float_t> taumod
 
 
-cdef inline (double, double) phasor_from_apparent_lifetime(
+cdef inline (float_t, float_t) phasor_from_apparent_lifetime(
     float_t tauphi,
     float_t taumod,
     float_t omega,
@@ -628,11 +650,11 @@ cdef inline (double, double) phasor_from_apparent_lifetime(
         double mod = 1.0 / sqrt(1.0 + t * t)
         double phi = atan(omega * tauphi)
 
-    return mod * cos(phi), mod * sin(phi)
+    return <float_t> (mod * cos(phi)), <float_t> (mod * sin(phi))
 
 
 @cython.ufunc
-cdef (double, double) _phasor_transform(
+cdef (float_t, float_t) _phasor_transform(
     float_t real,
     float_t imag,
     float_t angle,
@@ -643,11 +665,11 @@ cdef (double, double) _phasor_transform(
         double g = scale * cos(angle)
         double s = scale * sin(angle)
 
-    return real * g - imag * s, real * s + imag * g
+    return <float_t> (real * g - imag * s), <float_t> (real * s + imag * g)
 
 
 @cython.ufunc
-cdef (double, double) _phasor_transform_const(
+cdef (float_t, float_t) _phasor_transform_const(
     float_t real,
     float_t imag,
     float_t real2,
@@ -658,25 +680,31 @@ cdef (double, double) _phasor_transform_const(
 
 
 @cython.ufunc
-cdef (double, double) _phasor_to_polar(
+cdef (float_t, float_t) _phasor_to_polar(
     float_t real,
     float_t imag,
 ) noexcept nogil:
     """Return polar from phasor coordinates."""
-    return atan2(imag, real), sqrt(real * real + imag * imag)
+    return (
+        <float_t> atan2(imag, real),
+        <float_t> sqrt(real * real + imag * imag)
+    )
 
 
 @cython.ufunc
-cdef (double, double) _phasor_from_polar(
+cdef (float_t, float_t) _phasor_from_polar(
     float_t phase,
     float_t modulation,
 ) noexcept nogil:
     """Return phasor from polar coordinates."""
-    return modulation * cos(phase), modulation * sin(phase)
+    return (
+        modulation * <float_t> cos(phase),
+        modulation * <float_t> sin(phase)
+    )
 
 
 @cython.ufunc
-cdef (double, double) _phasor_to_apparent_lifetime(
+cdef (float_t, float_t) _phasor_to_apparent_lifetime(
     float_t real,
     float_t imag,
     float_t omega,
@@ -686,7 +714,7 @@ cdef (double, double) _phasor_to_apparent_lifetime(
 
 
 @cython.ufunc
-cdef (double, double) _phasor_from_apparent_lifetime(
+cdef (float_t, float_t) _phasor_from_apparent_lifetime(
     float_t tauphi,
     float_t taumod,
     float_t omega,
@@ -696,7 +724,7 @@ cdef (double, double) _phasor_from_apparent_lifetime(
 
 
 @cython.ufunc
-cdef (double, double) _phasor_from_single_lifetime(
+cdef (float_t, float_t) _phasor_from_single_lifetime(
     float_t lifetime,
     float_t omega,
 ) noexcept nogil:
@@ -706,11 +734,11 @@ cdef (double, double) _phasor_from_single_lifetime(
         double phi = atan(t)
         double mod = 1.0 / sqrt(1.0 + t * t)
 
-    return mod * cos(phi), mod * sin(phi)
+    return <float_t> (mod * cos(phi)), <float_t> (mod * sin(phi))
 
 
 @cython.ufunc
-cdef (double, double) _polar_from_single_lifetime(
+cdef (float_t, float_t) _polar_from_single_lifetime(
     float_t lifetime,
     float_t omega,
 ) noexcept nogil:
@@ -718,11 +746,11 @@ cdef (double, double) _polar_from_single_lifetime(
     cdef:
         double t = omega * lifetime
 
-    return atan(t), 1.0 / sqrt(1.0 + t * t)
+    return <float_t> atan(t), <float_t> (1.0 / sqrt(1.0 + t * t))
 
 
 @cython.ufunc
-cdef (double, double) _polar_to_apparent_lifetime(
+cdef (float_t, float_t) _polar_to_apparent_lifetime(
     float_t phase,
     float_t modulation,
     float_t omega,
@@ -739,11 +767,11 @@ cdef (double, double) _polar_to_apparent_lifetime(
             taumod = sqrt(1.0 / t - 1.0) / omega
         else:
             taumod = 0.0
-    return tauphi, taumod
+    return <float_t> tauphi, <float_t> taumod
 
 
 @cython.ufunc
-cdef (double, double) _polar_from_apparent_lifetime(
+cdef (float_t, float_t) _polar_from_apparent_lifetime(
     float_t tauphi,
     float_t taumod,
     float_t omega,
@@ -752,11 +780,14 @@ cdef (double, double) _polar_from_apparent_lifetime(
     cdef:
         double t = omega * taumod
 
-    return atan(omega * tauphi), 1.0 / sqrt(1.0 + t * t)
+    return (
+        <float_t> (atan(omega * tauphi)),
+        <float_t> (1.0 / sqrt(1.0 + t * t))
+    )
 
 
 @cython.ufunc
-cdef (double, double) _polar_from_reference(
+cdef (float_t, float_t) _polar_from_reference(
     float_t measured_phase,
     float_t measured_modulation,
     float_t known_phase,
@@ -764,12 +795,12 @@ cdef (double, double) _polar_from_reference(
 ) noexcept nogil:
     """Return polar coordinates for calibration from reference coordinates."""
     if fabs(measured_modulation) == 0.0:
-        return known_phase - measured_phase, INFINITY
+        return known_phase - measured_phase, <float_t> INFINITY
     return known_phase - measured_phase, known_modulation / measured_modulation
 
 
 @cython.ufunc
-cdef (double, double) _polar_from_reference_phasor(
+cdef (float_t, float_t) _polar_from_reference_phasor(
     float_t measured_real,
     float_t measured_imag,
     float_t known_real,
@@ -783,12 +814,15 @@ cdef (double, double) _polar_from_reference_phasor(
         double known_modulation = hypot(known_real, known_imag)
 
     if fabs(measured_modulation) == 0.0:
-        return known_phase - measured_phase, INFINITY
-    return known_phase - measured_phase, known_modulation / measured_modulation
+        return <float_t> (known_phase - measured_phase), <float_t> INFINITY
+    return (
+        <float_t> (known_phase - measured_phase),
+        <float_t> (known_modulation / measured_modulation)
+    )
 
 
 @cython.ufunc
-cdef (double, double) _phasor_at_harmonic(
+cdef (float_t, float_t) _phasor_at_harmonic(
     float_t real,
     int harmonic,
     int other_harmonic,
@@ -806,7 +840,38 @@ cdef (double, double) _phasor_at_harmonic(
         harmonic * real / (other_harmonic + (harmonic - other_harmonic) * real)
     )
 
-    return real, sqrt(real - real * real)
+    return real, <float_t> sqrt(real - real * real)
+
+
+@cython.ufunc
+cdef (float_t, float_t) _phasor_multiply(
+    float_t real1,
+    float_t imag1,
+    float_t real2,
+    float_t imag2,
+) noexcept nogil:
+    """Return multiplication of two phasors."""
+    return real1 * real2 - imag1 * imag2, real1 * imag2 + imag1 * real2
+
+
+@cython.ufunc
+cdef (float_t, float_t) _phasor_divide(
+    float_t real1,
+    float_t imag1,
+    float_t real2,
+    float_t imag2,
+) noexcept nogil:
+    """Return division of two phasors."""
+    cdef:
+        float_t denom = real2 * real2 + imag2 * imag2
+
+    if denom == 0.0:
+        return NAN, NAN
+
+    return (
+        (real1 * real2 + imag1 * imag2) / denom,
+        (imag1 * real2 - real1 * imag2) / denom
+    )
 
 
 ###############################################################################
@@ -1076,7 +1141,7 @@ cdef short _is_near_line(
 
 
 @cython.ufunc
-cdef (double, double) _point_on_segment(
+cdef (float_t, float_t) _point_on_segment(
     float_t x,  # point
     float_t y,
     float_t x0,  # segment start
@@ -1112,7 +1177,7 @@ cdef (double, double) _point_on_segment(
 
 
 @cython.ufunc
-cdef (double, double) _point_on_line(
+cdef (float_t, float_t) _point_on_line(
     float_t x,  # point
     float_t y,
     float_t x0,  # line start
@@ -1143,7 +1208,7 @@ cdef (double, double) _point_on_line(
 
 
 @cython.ufunc
-cdef double _fraction_on_segment(
+cdef float_t _fraction_on_segment(
     float_t x,  # point
     float_t y,
     float_t x0,  # segment start
@@ -1178,7 +1243,7 @@ cdef double _fraction_on_segment(
 
 
 @cython.ufunc
-cdef double _fraction_on_line(
+cdef float_t _fraction_on_line(
     float_t x,  # point
     float_t y,
     float_t x0,  # line start
@@ -1208,18 +1273,18 @@ cdef double _fraction_on_line(
 
 
 @cython.ufunc
-cdef double _distance_from_point(
+cdef float_t _distance_from_point(
     float_t x,  # point
     float_t y,
     float_t x0,  # other point
     float_t y0,
 ) noexcept nogil:
     """Return distance from point."""
-    return hypot(x - x0, y - y0)
+    return <float_t> hypot(x - x0, y - y0)
 
 
 @cython.ufunc
-cdef double _distance_from_segment(
+cdef float_t _distance_from_segment(
     float_t x,  # point
     float_t y,
     float_t x0,  # segment start
@@ -1241,7 +1306,7 @@ cdef double _distance_from_segment(
     # square of line length
     t = x0 * x0 + y0 * y0
     if t <= 0.0:
-        return hypot(x, y)
+        return <float_t> hypot(x, y)
     # projection of point on line using dot product
     t = (x * x0 + y * y0) / t
     if t > 1.0:
@@ -1250,11 +1315,11 @@ cdef double _distance_from_segment(
     elif t > 0.0:
         x -= t * x0
         y -= t * y0
-    return hypot(x, y)
+    return <float_t> hypot(x, y)
 
 
 @cython.ufunc
-cdef double _distance_from_line(
+cdef float_t _distance_from_line(
     float_t x,  # point
     float_t y,
     float_t x0,  # line start
@@ -1276,12 +1341,12 @@ cdef double _distance_from_line(
     # square of line length
     t = x0 * x0 + y0 * y0
     if t <= 0.0:
-        return hypot(x, y)
+        return <float_t> hypot(x, y)
     # projection of point on line using dot product
     t = (x * x0 + y * y0) / t
     x -= t * x0
     y -= t * y0
-    return hypot(x, y)
+    return <float_t> hypot(x, y)
 
 
 @cython.ufunc
@@ -1374,95 +1439,68 @@ cdef (double, double, double, double) _intersection_circle_line(
 
 
 @cython.ufunc
-cdef float _blend_normal(
+cdef float_t _blend_normal(
     float_t a,  # base layer
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `normal` mode."""
     if isnan(b):
-        return <float> a
-    return <float> b
+        return a
+    return b
 
 
 @cython.ufunc
-cdef float _blend_multiply(
+cdef float_t _blend_multiply(
     float_t a,  # base layer
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `multiply` mode."""
     if isnan(b):
-        return <float> a
-    return <float> (a * b)
+        return a
+    return a * b
 
 
 @cython.ufunc
-cdef float _blend_screen(
+cdef float_t _blend_screen(
     float_t a,  # base layer
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `screen` mode."""
     if isnan(b):
-        return <float> a
-    return <float> (1.0 - (1.0 - a) * (1.0 - b))
+        return a
+    return <float_t> (1.0 - (1.0 - a) * (1.0 - b))
 
 
 @cython.ufunc
-cdef float _blend_overlay(
+cdef float_t _blend_overlay(
     float_t a,  # base layer
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `overlay` mode."""
     if isnan(b) or isnan(a):
-        return <float> a
+        return a
     if a < 0.5:
-        return <float> (2.0 * a * b)
-    return <float> (1.0 - 2.0 * (1.0 - a) * (1.0 - b))
+        return <float_t> (2.0 * a * b)
+    return <float_t> (1.0 - 2.0 * (1.0 - a) * (1.0 - b))
 
 
 @cython.ufunc
-cdef float _blend_darken(
+cdef float_t _blend_darken(
     float_t a,  # base layer
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `darken` mode."""
     if isnan(b) or isnan(a):
-        return <float> a
-    return <float> (min(a, b))
+        return a
+    return <float_t> min(a, b)
 
 
 @cython.ufunc
-cdef float _blend_lighten(
+cdef float_t _blend_lighten(
     float_t a,  # base layer
     float_t b,  # blend layer
 ) noexcept nogil:
     """Return blended layers using `lighten` mode."""
     if isnan(b) or isnan(a):
-        return <float> a
-    return <float> (max(a, b))
-
-###############################################################################
-# Threshold
-
-
-@cython.ufunc
-cdef (double, double, double) _mask_threshold(
-    float_t mean,
-    float_t real,
-    float_t imag,
-    float_t mean_lower,
-    float_t mean_upper,
-    float_t phasor_lower,
-    float_t phasor_upper,
-    float_t fill,
-) noexcept nogil:
-    """Return thresholded values."""
-    cdef double nan = NAN
-
-    if isnan(mean) or isnan(real) or isnan(imag):
-        return nan, nan, nan
-    if (mean_lower < mean < mean_upper and
-            phasor_lower < real < phasor_upper and
-            phasor_lower < imag < phasor_upper):
-        return mean, real, imag
-    else:
-        return fill, fill, fill
+        return a
+    return <float_t> max(a, b)
