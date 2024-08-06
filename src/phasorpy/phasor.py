@@ -67,6 +67,10 @@ The ``phasorpy.phasor`` module provides functions to:
 
   - :py:func:`phasor_filter`
 
+- threshold phasor coordinates based on mean intensity:
+
+  - :py:func:`phasor_threshold`
+
 """
 
 from __future__ import annotations
@@ -91,6 +95,7 @@ __all__ = [
     'phasor_from_signal_fft',
     'phasor_multiply',
     'phasor_semicircle',
+    'phasor_threshold',
     'phasor_to_apparent_lifetime',
     'phasor_to_complex',
     'phasor_to_polar',
@@ -122,6 +127,7 @@ import numpy
 
 from ._phasorpy import (
     _gaussian_signal,
+    _mask_threshold,
     _phasor_at_harmonic,
     _phasor_divide,
     _phasor_from_apparent_lifetime,
@@ -2722,6 +2728,76 @@ def phasor_filter(
         raise ValueError(f'{repeat=} < 1')
 
     return methods[method](real, imag, repeat, **kwargs)
+
+
+def phasor_threshold(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    mean_lower: float = -numpy.inf,
+    mean_upper: float = numpy.inf,
+    *,
+    phasor_lower: float = -numpy.inf,
+    phasor_upper: float = numpy.inf,
+    fill_value: Any = numpy.nan,
+    out: tuple[NDArray[Any], NDArray[Any], NDArray[Any]] | None = None,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """Return phasor coordinates with mean below threshold set to NaN.
+
+    Parameters
+    ----------
+    mean : array_like
+        Mean intensity of phasor coordinates.
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    mean_lower : float, optional
+        Lower bound threshold for mean intensity. The default is 0.0.
+    mean_upper : float, optional
+        Upper bound threshold for mean intensity. The default is infinity.
+    phasor_lower : float, optional
+        Lower bound threshold for phasor coordinates. The default is -infinity.
+    phasor_upper : float, optional
+        Upper bound threshold for phasor coordinates. The default is infinity.
+    fill_value : scalar, optional
+        Value used to fill thresholded elements. The default is NaN.
+    out : tuple of ndarrays, optional
+        Output array for the thresholded average signal and phasor
+        coordinates. If not provided, new arrays are created.
+
+    Returns
+    -------
+    mean : ndarray
+        Thresholded mean intensity of phasor coordinates.
+    real : ndarray
+        Thresholded real component of phasor coordinates.
+    imag : ndarray
+        Thresholded imaginary component of phasor coordinates.
+
+    Examples
+    --------
+    Set phasor coordinates to NaN if mean intensity is not inside threshold:
+
+    >>> phasor_threshold(
+    ...     [0.1, 0.2, 0.3], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0], mean_lower=0.2, mean_upper=0.4
+    ... )
+    (array([nan, nan, 0.3]), array([nan, nan, 3]), array([nan, nan, 6]))
+
+    """
+    mean = numpy.asarray(mean)
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+
+    if out is None:
+        out = (mean.copy(), real.copy(), imag.copy())
+
+    return _mask_threshold(
+        *out, mean_lower, mean_upper, phasor_lower, phasor_upper, fill_value
+    )
 
 
 def phasor_center(
