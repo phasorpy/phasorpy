@@ -6,7 +6,7 @@ About PhasorPy
 Events
 ------
 
-The PhasorPy project was, or is about to, be presented at the following events:
+The PhasorPy project was, or is about to be, presented at the following events:
 
 - | `18th LFD Workshop in Advanced Fluorescence Imaging and Dynamics
     <https://www.lfd.uci.edu/workshop/>`_.
