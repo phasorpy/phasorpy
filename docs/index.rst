@@ -12,11 +12,11 @@ lifetime and hyperspectral images using the :doc:`phasor_approach`.
     It is not nearly feature complete.
     Large, backwards-incompatible changes may occur between revisions.
 
-Quickstart
-==========
+Overview
+========
 
-The PhasorPy library and documentation are released under the permissive
-:doc:`license`.
+This :doc:`index` thoroughly documents all aspects of the PhasorPy library
+and organization.
 
 The :doc:`tutorials/index` demonstrate the use the library, from simple
 examples to advanced applications.
@@ -33,6 +33,9 @@ submit bug fixes, or improve documentation.
 The :doc:`code_of_conduct` should be honored by everyone participating in
 the PhasorPy community.
 
+The PhasorPy library and documentation are released under the permissive
+:doc:`license`.
+
 The library's source code and documentation are maintained in the
 `PhasorPy repository on GitHub <https://github.com/phasorpy/phasorpy>`_.
 
@@ -45,8 +48,8 @@ Please report issues with the code or documentation on the
 Questions about the usage of the PhasorPy library are answered on the
 `issue tracker on GitHub <https://github.com/phasorpy/phasorpy/issues>`_.
 
-The :doc:`acknowledgments` list individuals and organizations that
-contributed to the development of PhasorPy.
+Read more :doc:`about` such as dissemination :ref:`events`
+and :ref:`acknowledgments` of individuals and organizations.
 
 Please cite the PhasorPy library as:
 
@@ -65,9 +68,9 @@ Contents
     api/index
     contributing
     release
-    acknowledgments
     code_of_conduct
     license
+    about
 
 Indices and tables
 ------------------
