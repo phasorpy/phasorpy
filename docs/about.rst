@@ -1,30 +1,6 @@
 About PhasorPy
 ==============
 
-.. _events:
-
-Events
-------
-
-The PhasorPy project was, or is about to be, presented at the following events:
-
-- | `18th LFD Workshop in Advanced Fluorescence Imaging and Dynamics
-    <https://www.lfd.uci.edu/workshop/>`_.
-  | October 21-24, 2024. Laboratory for Fluorescence Dynamics,
-    University of California, Irvine.
-
-- | Leonel Malacrida. PhasorPy: a Python open-source library as SimFCS legacy
-    for phasor analysis of FLIM and HSI data.
-  | `Frontiers in Biological Fluorescence 2024
-    <https://www.lfd.uci.edu/frontiers/>`_.
-  | May 10, 2024. University of California, Irvine.
-
-- | Christoph Gohlke and Leonel Malacrida. Introduction to PhasorPy.
-  | `17th LFD Workshop in Advanced Fluorescence Imaging and Dynamics
-    <https://www.lfd.uci.edu/workshop/>`_.
-  | October 23-27, 2023. Laboratory for Fluorescence Dynamics,
-    University of California, Irvine.
-
 .. _acknowledgments:
 
 Acknowledgments
@@ -50,8 +26,7 @@ Contributors
 ------------
 
 The following people (in alphabetical order) contributed significantly to
-the development of PhasorPy by providing code, documentation, tutorials,
-bug fixes, or expertise:
+the development of PhasorPy:
 
 - :user:`Christoph Gohlke <cgohlke>`
 - Enrico Gratton
@@ -61,3 +36,27 @@ bug fixes, or expertise:
 
 See also `GitHub contributors
 <https://github.com/phasorpy/phasorpy/graphs/contributors>`_.
+
+.. _events:
+
+Events
+------
+
+The PhasorPy project was, or is about to be, presented at the following events:
+
+- | `18th LFD Workshop in Advanced Fluorescence Imaging and Dynamics
+    <https://www.lfd.uci.edu/workshop/>`_.
+  | October 21-24, 2024. Laboratory for Fluorescence Dynamics,
+    University of California, Irvine.
+
+- | Leonel Malacrida. PhasorPy: a Python open-source library as SimFCS legacy
+    for phasor analysis of FLIM and HSI data.
+  | `Frontiers in Biological Fluorescence 2024
+    <https://www.lfd.uci.edu/frontiers/>`_.
+  | May 10, 2024. University of California, Irvine.
+
+- | Christoph Gohlke and Leonel Malacrida. Introduction to PhasorPy.
+  | `17th LFD Workshop in Advanced Fluorescence Imaging and Dynamics
+    <https://www.lfd.uci.edu/workshop/>`_.
+  | October 23-27, 2023. Laboratory for Fluorescence Dynamics,
+    University of California, Irvine.
