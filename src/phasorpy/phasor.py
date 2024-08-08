@@ -5,7 +5,6 @@ The ``phasorpy.phasor`` module provides functions to:
 - calculate phasor coordinates from time-resolved and spectral signals:
 
   - :py:func:`phasor_from_signal`
-  - :py:func:`phasor_from_signal_fft`
 
 - synthesize signals from phasor coordinates or lifetimes:
 
@@ -88,7 +87,6 @@ __all__ = [
     'phasor_from_lifetime',
     'phasor_from_polar',
     'phasor_from_signal',
-    'phasor_from_signal_fft',
     'phasor_multiply',
     'phasor_semicircle',
     'phasor_to_apparent_lifetime',
@@ -152,6 +150,8 @@ def phasor_from_signal(
     axis: int = -1,
     harmonic: int | Sequence[int] | Literal['all'] | None = None,
     sample_phase: ArrayLike | None = None,
+    use_fft: bool | None = None,
+    rfft: Callable[..., NDArray[Any]] | None = None,
     dtype: DTypeLike = None,
     num_threads: int | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
@@ -177,11 +177,22 @@ def phasor_from_signal(
         If None (default), samples are assumed to be uniformly spaced along
         one period.
         The array size must equal the number of samples along `axis`.
-        Cannot be used with `harmonic`.
+        Cannot be used with `harmonic!=1` or `use_fft=True`.
+    use_fft : bool, optional
+        If true, use a real forward Fast Fourier Transform (FFT).
+        If false, use a Cython implementation that is optimized (faster and
+        resource saving) for calculating few harmonics.
+        By default, FFT is only used when all or at least 8 harmonics are
+        calculated, or `rfft` is specified.
+    rfft : callable, optional
+        Drop-in replacement function for ``numpy.fft.rfft``.
+        For example, ``scipy.fft.rfft`` or ``mkl_fft._numpy_fft.rfft``.
+        Used to calculate the real forward FFT.
     dtype : dtype_like, optional
-        Data type of output arrays. Either float32 or float64 (default).
+        Data type of output arrays. Either float32 or float64.
+        The default is float64 unless the `signal` is float32.
     num_threads : int, optional
-        Number of OpenMP threads to use for parallelization.
+        Number of OpenMP threads to use for parallelization when not using FFT.
         By default, multi-threading is disabled.
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
@@ -195,32 +206,6 @@ def phasor_from_signal(
     imag : ndarray
         Imaginary component of phasor coordinates at `harmonic` along `axis`.
 
-    See Also
-    --------
-    phasorpy.phasor.phasor_from_signal_fft
-    :ref:`sphx_glr_tutorials_benchmarks_phasorpy_phasor_from_signal.py`
-
-    Notes
-    -----
-    Compared to the :py:func:`phasor_from_signal_fft` reference implementation,
-    this function does not use FFT, uses less memory, should be faster for
-    few harmonics, supports out-of-order samples, and returns zeros instead
-    of nan, inf, or excessively large values.
-
-    The phasor coordinates `real` (:math:`G`), `imag` (:math:`S`), and
-    `mean` (:math:`F_{DC}`) are calculated from :math:`K` samples of the
-    signal :math:`F` af `harmonic` :math:`h` according to:
-
-    .. math::
-
-        F_{DC} &= \frac{1}{K} \sum_{k=0}^{K-1} F_{k}
-
-        G &= \frac{1}{K} \sum_{k=0}^{K-1} F_{k}
-        \cos{\left (2 \pi h \frac{k}{K} \right )} \cdot \frac{1}{F_{DC}}
-
-        S &= \frac{1}{K} \sum_{k=0}^{K-1} F_{k}
-        \sin{\left (2 \pi h \frac{k}{K} \right )} \cdot \frac{1}{F_{DC}}
-
     Raises
     ------
     ValueError
@@ -233,15 +218,42 @@ def phasor_from_signal(
     TypeError
         The `signal`, `dtype`, or `harmonic` types are not supported.
 
+    See Also
+    --------
+    phasorpy.phasor.phasor_to_signal
+    :ref:`sphx_glr_tutorials_benchmarks_phasorpy_phasor_from_signal.py`
+
+    Notes
+    -----
+    The phasor coordinates `real` (:math:`G`), `imag` (:math:`S`), and
+    `mean` (:math:`F_{DC}`) are calculated from :math:`K\ge3` samples of the
+    signal :math:`F` af `harmonic` :math:`h` according to:
+
+    .. math::
+
+        F_{DC} &= \frac{1}{K} \sum_{k=0}^{K-1} F_{k}
+
+        G &= \frac{1}{K} \sum_{k=0}^{K-1} F_{k}
+        \cos{\left (2 \pi h \frac{k}{K} \right )} \cdot \frac{1}{F_{DC}}
+
+        S &= \frac{1}{K} \sum_{k=0}^{K-1} F_{k}
+        \sin{\left (2 \pi h \frac{k}{K} \right )} \cdot \frac{1}{F_{DC}}
+
+    If :math:`F_{DC} = 0`, the phasor coordinates are undefined
+    (:math:`NaN` or :math:`\infty`).
+    Use `NaN`-aware software to further process the phasor coordinates.
+
+    The phasor coordinates may be zero, for example, in case of only constant
+    background in time-resolved signals, or as the result of linear
+    combination of non-zero spectral phasors coordinates.
+
     Examples
     --------
     Calculate phasor coordinates of a phase-shifted sinusoidal waveform:
 
-    >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)[::-1]
+    >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
     >>> signal = 1.1 * (numpy.cos(sample_phase - 0.785398) * 2 * 0.707107 + 1)
-    >>> phasor_from_signal(
-    ...     signal, sample_phase=sample_phase
-    ... )  # doctest: +NUMBER
+    >>> phasor_from_signal(signal)  # doctest: +NUMBER
     (1.1, 0.5, 0.5)
 
     The sinusoidal signal does not have a second harmonic component:
@@ -250,6 +262,8 @@ def phasor_from_signal(
     (1.1, 0.0, 0.0)
 
     """
+    # TODO: C-order not required by rfft?
+    # TODO: preserve array subtypes?
     signal = numpy.asarray(signal, order='C')
     if signal.dtype.kind not in 'uif':
         raise TypeError(f'signal must be real valued, not {signal.dtype=}')
@@ -257,10 +271,18 @@ def phasor_from_signal(
     if samples < 3:
         raise ValueError(f'not enough {samples=} along {axis=}')
 
+    if dtype is None:
+        dtype = numpy.float32 if signal.dtype.char == 'f' else numpy.float64
+    dtype = numpy.dtype(dtype)
+    if dtype.kind != 'f':
+        raise TypeError(f'{dtype=} not supported')
+
     harmonic, keepdims = _parse_harmonic(harmonic, samples)
     num_harmonics = len(harmonic)
 
     if sample_phase is not None:
+        if use_fft:
+            raise ValueError('sample_phase cannot be used with FFT')
         if num_harmonics > 1 or harmonic[0] != 1:
             raise ValueError('sample_phase cannot be used with harmonic != 1')
         sample_phase = numpy.atleast_1d(
@@ -269,18 +291,49 @@ def phasor_from_signal(
         if sample_phase.ndim != 1 or sample_phase.size != samples:
             raise ValueError(f'{sample_phase.shape=} != ({samples},)')
 
-    num_threads = number_threads(num_threads)
+    if use_fft is None:
+        use_fft = sample_phase is None and (
+            rfft is not None
+            or num_harmonics > 7
+            or num_harmonics == samples // 2
+        )
 
-    # pure numpy implementation for reference:
-    # shape = [1] * signal.ndim
-    # shape[axis] = sample_phase.size
-    # sample_phase = sample_phase.reshape(shape)  # make broadcastable
-    # mean = numpy.mean(signal, axis=axis)
-    # real = numpy.mean(signal * numpy.cos(sample_phase), axis=axis)
-    # real /= mean
-    # imag = numpy.mean(signal * numpy.sin(sample_phase), axis=axis)
-    # imag /= mean
-    # return mean, real, imag
+    if use_fft:
+
+        if rfft is None:
+            rfft = numpy.fft.rfft
+
+        fft: NDArray = rfft(signal, axis=axis, norm='forward')
+
+        mean = fft.take(0, axis=axis).real
+        if not mean.ndim == 0:
+            mean = numpy.ascontiguousarray(mean, dtype)
+        fft = fft.take(harmonic, axis=axis)  # type: ignore
+        real = numpy.ascontiguousarray(fft.real, dtype)
+        imag = numpy.ascontiguousarray(fft.imag, dtype)
+        del fft
+
+        if not keepdims and real.shape[axis] == 1:
+            dc = mean
+            real = real.squeeze(axis)
+            imag = imag.squeeze(axis)
+        else:
+            # make broadcastable
+            dc = numpy.expand_dims(mean, 0)
+            real = numpy.moveaxis(real, axis, 0)
+            imag = numpy.moveaxis(imag, axis, 0)
+
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            real /= dc
+            imag /= dc
+        numpy.negative(imag, out=imag)
+
+        if not keepdims and real.ndim == 0:
+            return mean, real.item(), imag.item()
+
+        return mean, real, imag
+
+    num_threads = number_threads(num_threads)
 
     sincos = numpy.empty((num_harmonics, samples, 2))
     for i, h in enumerate(harmonic):
@@ -320,100 +373,6 @@ def phasor_from_signal(
     return mean.item(), real.item(), imag.item()
 
 
-def phasor_from_signal_fft(
-    signal: ArrayLike,
-    /,
-    *,
-    axis: int = -1,
-    harmonic: int | Sequence[int] | Literal['all'] | None = None,
-    rfft_func: Callable[..., NDArray[Any]] | None = None,
-) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-    """Return phasor coordinates from signal using fast Fourier transform.
-
-    Parameters
-    ----------
-    signal : array_like
-        Frequency-domain, time-domain, or hyperspectral data.
-        A minimum of three uniformly spaced samples are required along `axis`.
-    axis : int, optional
-        Axis over which to compute phasor coordinates.
-        The default is the last axis (-1).
-    harmonic : int, sequence of int, or 'all', optional
-        Harmonics to return.
-        If `'all'`, return all harmonics for `signal` samples along `axis`.
-        Else, harmonics must be at least one and no larger than half the
-        number of `signal` samples along `axis`.
-        The default is the first harmonic (fundamental frequency).
-    rfft_func : callable, optional
-        A drop-in replacement function for ``numpy.fft.rfft``.
-        For example, ``scipy.fft.rfft`` or ``mkl_fft._numpy_fft.rfft``.
-
-    Returns
-    -------
-    mean : ndarray
-        Average of `signal` along `axis` (zero harmonic).
-    real : ndarray
-        Real component of phasor coordinates at `harmonic` along `axis`.
-    imag : ndarray
-        Imaginary component of phasor coordinates at `harmonic` along `axis`.
-
-    Raises
-    ------
-    ValueError
-        `signal` has less than three samples along `axis`.
-    IndexError
-        `harmonic` is smaller than 1 or greater than half the samples along
-        `axis`.
-
-    See Also
-    --------
-    phasorpy.phasor.phasor_from_signal
-    :ref:`sphx_glr_tutorials_benchmarks_phasorpy_phasor_from_signal.py`
-
-    Examples
-    --------
-    Calculate phasor coordinates of a phase-shifted sinusoidal signal:
-
-    >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
-    >>> signal = 1.1 * (numpy.cos(sample_phase - 0.785398) * 2 * 0.707107 + 1)
-    >>> phasor_from_signal_fft(signal, harmonic=[1, 2])  # doctest: +NUMBER
-    (1.1, array([0.5, 0.0]), array([0.5, -0.0]))
-
-    """
-    signal = numpy.asarray(signal)
-    if signal.dtype.kind not in 'uif':
-        raise TypeError(f'signal must be real valued, not {signal.dtype=}')
-    samples = numpy.size(signal, axis)  # this also verifies axis and ndim >= 1
-    if samples < 3:
-        raise ValueError(f'not enough {samples=} along {axis=}')
-
-    harmonic, keepdims = _parse_harmonic(harmonic, samples)
-
-    if rfft_func is None:
-        rfft_func = numpy.fft.rfft
-
-    fft: NDArray = rfft_func(signal, axis=axis, norm='forward')
-
-    mean = fft.take(0, axis=axis).real.copy()
-    fft = fft.take(harmonic, axis=axis)  # type: ignore
-
-    if not keepdims and fft.shape[axis] == 1:
-        dc = mean
-        fft = fft.squeeze(axis)
-    else:
-        dc = numpy.expand_dims(mean, 0)
-        fft = numpy.moveaxis(fft, axis, 0)
-
-    real = fft.real.copy()
-    imag = fft.imag.copy()
-    with numpy.errstate(divide='ignore', invalid='ignore'):
-        real /= dc
-        imag /= dc
-    numpy.negative(imag, out=imag)
-
-    return mean, real, imag
-
-
 def phasor_to_signal(
     mean: ArrayLike,
     real: ArrayLike,
@@ -423,7 +382,7 @@ def phasor_to_signal(
     samples: int = 64,
     harmonic: int | Sequence[int] | Literal['all'] | None = None,
     axis: int = -1,
-    irfft_func: Callable[..., NDArray[Any]] | None = None,
+    irfft: Callable[..., NDArray[Any]] | None = None,
 ) -> NDArray[numpy.float64]:
     """Return signal from phasor coordinates using inverse Fourier transform.
 
@@ -454,14 +413,19 @@ def phasor_to_signal(
     axis : int, optional
         Axis at which to return signal samples.
         The default is the last axis (-1).
-    irfft_func : callable, optional
-        A drop-in replacement function for ``numpy.fft.irfft``.
+    irfft : callable, optional
+        Drop-in replacement function for ``numpy.fft.irfft``.
         For example, ``scipy.fft.irfft`` or ``mkl_fft._numpy_fft.irfft``.
+        Used to calculate the real inverse FFT.
 
     Returns
     -------
     signal : ndarray
         Reconstructed signal with samples of one period along last axis.
+
+    See Also
+    --------
+    phasorpy.phasor.phasor_from_signal
 
     Examples
     --------
@@ -472,7 +436,7 @@ def phasor_to_signal(
     >>> signal
     array([2.2, 2.486, 0.8566, -0.4365, 0.3938])
     >>> phasor_to_signal(
-    ...     *phasor_from_signal_fft(signal, harmonic='all'),
+    ...     *phasor_from_signal(signal, harmonic='all'),
     ...     harmonic='all',
     ...     samples=len(signal)
     ... )  # doctest: +NUMBER
@@ -542,10 +506,10 @@ def phasor_to_signal(
     fft.real[harmonic] = real[: len(harmonic)]
     fft.imag[harmonic] = imag[: len(harmonic)]
 
-    if irfft_func is None:
-        irfft_func = numpy.fft.irfft
+    if irfft is None:
+        irfft = numpy.fft.irfft
 
-    signal: NDArray = irfft_func(fft, samples, axis=0, norm='forward')
+    signal: NDArray = irfft(fft, samples, axis=0, norm='forward')
 
     if not keepdims:
         signal = signal[:, 0]
