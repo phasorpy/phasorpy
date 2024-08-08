@@ -2751,8 +2751,8 @@ def phasor_center(
         - ``'median'``: Spatial median of phasor coordinates.
 
     **kwargs
-        Optional arguments passed to :py:func:`numpy.mean` or
-        :py:func:`numpy.median`.
+        Optional arguments passed to :py:func:`numpy.nanmean` or
+        :py:func:`numpy.nanmedian`.
 
     Returns
     -------
@@ -2811,7 +2811,7 @@ def _mean(
     imag : numpy.ndarray
         Imaginary components of phasor coordinates.
     **kwargs
-        Optional arguments passed to :py:func:`numpy.mean`.
+        Optional arguments passed to :py:func:`numpy.nanmean`.
 
     Returns
     -------
@@ -2826,7 +2826,7 @@ def _mean(
     (2.0, 5.0)
 
     """
-    return numpy.mean(real, **kwargs), numpy.mean(imag, **kwargs)
+    return numpy.nanmean(real, **kwargs), numpy.nanmean(imag, **kwargs)
 
 
 def _median(
@@ -2841,7 +2841,7 @@ def _median(
     imag : numpy.ndarray
         Imaginary components of the phasor coordinates.
     **kwargs
-        Optional arguments passed to :py:func:`numpy.median`.
+        Optional arguments passed to :py:func:`numpy.nanmedian`.
 
     Returns
     -------
@@ -2856,7 +2856,7 @@ def _median(
     (2.0, 5.0)
 
     """
-    return numpy.median(real, **kwargs), numpy.median(imag, **kwargs)
+    return numpy.nanmedian(real, **kwargs), numpy.nanmedian(imag, **kwargs)
 
 
 def _median_filter(
@@ -2881,7 +2881,7 @@ def _median_filter(
     size : int or tuple of int, optional
         The size of the median filter kernel. Default is 3.
     **kwargs
-        Optional arguments passed to :py:func:`numpy.median`.
+        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
 
     Returns
     -------

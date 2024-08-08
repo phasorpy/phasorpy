@@ -55,6 +55,7 @@ from phasorpy.phasor import (
 )
 
 SYNTH_DATA_ARRAY = numpy.array([[50, 1], [1, 1]])
+SYNTH_DATA_NAN = numpy.array([[50, numpy.nan], [1, 1]])
 SYNTH_DATA_LIST = [1, 2, 4]
 SYNTH_PHI = numpy.array([[0.5, 0.5], [0.5, 0.5]])
 SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
@@ -1013,8 +1014,7 @@ def test_phasor_transform_more():
 
 
 @pytest.mark.parametrize(
-    """real, imag, kwargs,
-    expected_real_center, expected_imag_center""",
+    'real, imag, kwargs, expected_real_center, expected_imag_center',
     [
         (1.0, 4.0, {'skip_axis': None, 'method': 'mean'}, 1.0, 4.0),
         (1.0, -4.0, {'skip_axis': None, 'method': 'median'}, 1.0, -4.0),
@@ -1068,6 +1068,20 @@ def test_phasor_transform_more():
             [[13.25]],
             [[13.25]],
         ),  # with kwargs for numpy functions
+        (
+            SYNTH_DATA_NAN,
+            SYNTH_DATA_NAN,
+            {'skip_axis': None, 'method': 'median'},
+            1.0,
+            1.0,
+        ),
+        (
+            SYNTH_DATA_NAN,
+            SYNTH_DATA_NAN,
+            {'skip_axis': None, 'method': 'mean'},
+            52 / 3,
+            52 / 3,
+        ),
     ],
 )
 def test_phasor_center(
@@ -1077,7 +1091,7 @@ def test_phasor_center(
     expected_real_center,
     expected_imag_center,
 ):
-    """Test `phasor_center` function with various inputs and methods."""
+    """Test phasor_center function with various inputs and methods."""
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
     real_center, imag_center = phasor_center(real_copy, imag_copy, **kwargs)
@@ -1088,7 +1102,7 @@ def test_phasor_center(
 
 
 def test_phasor_center_exceptions():
-    """Test exceptions in `phasor_center` function."""
+    """Test exceptions in phasor_center function."""
     with pytest.raises(ValueError):
         phasor_center(0, 0, method='method_not_supported')
     with pytest.raises(ValueError):
