@@ -135,14 +135,14 @@ def _phasor_from_signal(
                             dc = dc + sample
                             re = re + sample * sincos[h, k, 0]
                             im = im + sample * sincos[h, k, 1]
-                        if dc > 1e-16:
+                        if dc != 0.0:
                             re = re / dc
                             im = im / dc
                             dc = dc /samples
                         else:
                             dc = 0.0
-                            re = 0.0  # inf?
-                            im = 0.0  # inf?
+                            re = NAN if re == 0.0 else re * INFINITY
+                            im = NAN if im == 0.0 else im * INFINITY
                         if h == 0:
                             mean[i, j] = <float_t> dc
                         real[h, i, j] = <float_t> re
@@ -163,14 +163,14 @@ def _phasor_from_signal(
                             dc = dc + sample
                             re = re + sample * sincos[h, k, 0]
                             im = im + sample * sincos[h, k, 1]
-                        if dc > 1e-16:
+                        if dc != 0.0:
                             re = re / dc
                             im = im / dc
                             dc = dc /samples
                         else:
                             dc = 0.0
-                            re = 0.0  # inf?
-                            im = 0.0  # inf?
+                            re = NAN if re == 0.0 else re * INFINITY
+                            im = NAN if im == 0.0 else im * INFINITY
                         if h == 0:
                             mean[i, j] = <float_t> dc
                         real[h, i, j] = <float_t> re
@@ -191,14 +191,14 @@ def _phasor_from_signal(
                             dc += sample
                             re += sample * sincos[h, k, 0]
                             im += sample * sincos[h, k, 1]
-                        if dc > 1e-16:
+                        if dc != 0.0:
                             re /= dc
                             im /= dc
                             dc /= samples
                         else:
                             dc = 0.0
-                            re = 0.0  # inf?
-                            im = 0.0  # inf?
+                            re = NAN if re == 0.0 else re * INFINITY
+                            im = NAN if im == 0.0 else im * INFINITY
                         if h == 0:
                             mean[i, j] = <float_t> dc
                         real[h, i, j] = <float_t> re
@@ -282,7 +282,7 @@ def _phasor_from_lifetime(
                     else:
                         for s in range(ncomp):
                             sum += fraction[t, s]
-                    if fabs(sum) < 1e-16:
+                    if fabs(sum) < 1e-15:
                         phasor[0, f, t] = <float_t> NAN
                         phasor[1, f, t] = <float_t> NAN
                         continue
@@ -315,7 +315,7 @@ def _phasor_from_lifetime(
                         sum = 0.0
                         for s in range(ncomp):
                             sum += fraction[0, s] * lifetime[t, s]  # Fdc
-                    if fabs(sum) < 1e-16:
+                    if fabs(sum) < 1e-15:
                         phasor[0, f, t] = <float_t> NAN
                         phasor[1, f, t] = <float_t> NAN
                         continue
@@ -351,7 +351,7 @@ def _phasor_from_lifetime(
                     else:
                         for s in range(ncomp):
                             sum += fraction[t, s]
-                    if fabs(sum) < 1e-16:
+                    if fabs(sum) < 1e-15:
                         phasor[0, f, t] = <float_t> NAN
                         phasor[1, f, t] = <float_t> NAN
                         continue
@@ -594,7 +594,7 @@ cdef inline (double, double) linear_combination(
     int1 *= frac
     int2 *= 1.0 - frac
     frac = int1 + int2
-    if frac == 0.0:
+    if fabs(frac) < 1e-15:
         return real, imag
     return (
         (int1 * real1 + int2 * real2) / frac,
@@ -795,7 +795,11 @@ cdef (float_t, float_t) _polar_from_reference(
 ) noexcept nogil:
     """Return polar coordinates for calibration from reference coordinates."""
     if fabs(measured_modulation) == 0.0:
-        return known_phase - measured_phase, <float_t> INFINITY
+        # return known_phase - measured_phase, <float_t> INFINITY
+        return (
+            known_phase - measured_phase,
+            <float_t> (NAN if known_modulation == 0.0 else INFINITY)
+        )
     return known_phase - measured_phase, known_modulation / measured_modulation
 
 
@@ -814,7 +818,11 @@ cdef (float_t, float_t) _polar_from_reference_phasor(
         double known_modulation = hypot(known_real, known_imag)
 
     if fabs(measured_modulation) == 0.0:
-        return <float_t> (known_phase - measured_phase), <float_t> INFINITY
+        # return <float_t> (known_phase - measured_phase), <float_t> INFINITY
+        return (
+            <float_t> (known_phase - measured_phase),
+            <float_t> (NAN if known_modulation == 0.0 else INFINITY)
+        )
     return (
         <float_t> (known_phase - measured_phase),
         <float_t> (known_modulation / measured_modulation)
@@ -1429,9 +1437,9 @@ cdef (double, double, double, double) _intersection_circle_line(
     rdd = sqrt(rdd)
     return (
         x + (dd * dy + copysign(1.0, dy) * dx * rdd) / dr,
-        y + (-dd * dx + abs(dy) * rdd) / dr,
+        y + (-dd * dx + fabs(dy) * rdd) / dr,
         x + (dd * dy - copysign(1.0, dy) * dx * rdd) / dr,
-        y + (-dd * dx - abs(dy) * rdd) / dr,
+        y + (-dd * dx - fabs(dy) * rdd) / dr,
     )
 
 ###############################################################################
