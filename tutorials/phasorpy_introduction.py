@@ -170,7 +170,7 @@ real, imag = phasor_filter(real, imag, method='median', size=3, repeat=2)
 
 from phasorpy.phasor import phasor_threshold
 
-mean, real, imag = phasor_threshold(mean, real, imag, mean_lower=1)
+mean, real, imag = phasor_threshold(mean, real, imag, 1)
 
 # %%
 # Plot phasor coordinates
