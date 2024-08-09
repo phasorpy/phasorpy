@@ -1,7 +1,8 @@
 """Plot phasor coordinates and related data.
 
 The ``phasorpy.plot`` module provides functions and classes to visualize
-phasor coordinates and related data using the matplotlib library.
+phasor coordinates and related data using the
+`matplotlib <https://matplotlib.org/>`_ library.
 
 """
 
@@ -1727,7 +1728,11 @@ def plot_phasor_image(
         if mean.ndim < 2:
             raise ValueError(f'not an image {mean.ndim=} < 2')
         shape = mean.shape
-        mean = numpy.nanmean(mean.reshape(-1, *mean.shape[-2:]), axis=0)
+        mean = mean.reshape(-1, *mean.shape[-2:])
+        if mean.shape[0] == 1:
+            mean = mean[0]
+        else:
+            mean = numpy.nanmean(mean, axis=0)
 
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
@@ -1749,9 +1754,14 @@ def plot_phasor_image(
     else:
         raise ValueError(f'shape mismatch {real.shape[1:]=} != {shape}')
 
-    # average extra image dimensions, but not harmonics
-    real = numpy.nanmean(real.reshape(nh, -1, *real.shape[-2:]), axis=1)
-    imag = numpy.nanmean(imag.reshape(nh, -1, *imag.shape[-2:]), axis=1)
+    real = real.reshape(nh, -1, *real.shape[-2:])
+    imag = imag.reshape(nh, -1, *imag.shape[-2:])
+    if real.shape[1] == 1:
+        real = real[:, 0]
+        imag = imag[:, 0]
+    else:
+        real = numpy.nanmean(real, axis=1)
+        imag = numpy.nanmean(imag, axis=1)
 
     # for MyPy
     assert isinstance(mean, numpy.ndarray) or mean is None

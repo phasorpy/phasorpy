@@ -2,6 +2,7 @@
 
 import io
 import math
+import warnings
 
 import numpy
 import pytest
@@ -520,4 +521,14 @@ def test_plot_phasor_image():
     with pytest.raises(ValueError):
         # percentile out of range
         plot_phasor_image(d, d, d, percentile=50, show=False)
+    pyplot.close()
+
+
+def test_plot_phasor_image_runtimewarning():
+    """Test 'RuntimeWarning: Mean of empty slice' is not raised."""
+    data = numpy.zeros((3, 4, 5))
+    data[0, 0, 0] = numpy.nan
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        plot_phasor_image(data[0], data, data, show=False)
     pyplot.close()
