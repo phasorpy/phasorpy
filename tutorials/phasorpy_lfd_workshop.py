@@ -222,8 +222,12 @@ real2, imag2 = phasor_filter(real2, imag2, method='median', repeat=2)
 # left-hand corner of the phasor (room light is uncorrelated, so it has
 # zero modulation depth). This can be eliminated by setting a threshold.
 
-_, real1, imag1 = phasor_threshold(mean, real1, imag1, 20, real_min=0, imag_min=0)
-_, real2, imag2 = phasor_threshold(mean, real2, imag2, 20, real_min=0, imag_min=0)
+_, real1, imag1 = phasor_threshold(
+    mean, real1, imag1, 20, real_min=0, imag_min=0
+)
+_, real2, imag2 = phasor_threshold(
+    mean, real2, imag2, 20, real_min=0, imag_min=0
+)
 # %%
 plot_phasor(
     real1,
@@ -413,8 +417,12 @@ plot.show()
 real1, imag1 = phasor_filter(real1, imag1, method='median', repeat=2)
 real2, imag2 = phasor_filter(real2, imag2, method='median', repeat=2)
 
-_, real1, imag1 = phasor_threshold(mean, real1, imag1, 32, real_min=0, imag_min=0)
-_, real2, imag2 = phasor_threshold(mean, real2, imag2, 32, real_min=0, imag_min=0)
+_, real1, imag1 = phasor_threshold(
+    mean, real1, imag1, 32, real_min=0, imag_min=0
+)
+_, real2, imag2 = phasor_threshold(
+    mean, real2, imag2, 32, real_min=0, imag_min=0
+)
 
 plot = PhasorPlot(
     frequency=frequency,
@@ -460,7 +468,9 @@ imag = numpy.vstack((imag1, imag2))
 
 real, imag = phasor_filter(real, imag, method='median', repeat=2)
 
-_, real, imag = phasor_threshold(mean, real, imag, 6202, real_min=0, imag_min=0)
+_, real, imag = phasor_threshold(
+    mean, real, imag, 6202, real_min=0, imag_min=0
+)
 
 plot = PhasorPlot(
     frequency=frequency,
