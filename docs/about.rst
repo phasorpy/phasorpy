@@ -44,19 +44,31 @@ Events
 
 The PhasorPy project was, or is about to be, presented at the following events:
 
-- | `18th LFD Workshop in Advanced Fluorescence Imaging and Dynamics
-    <https://www.lfd.uci.edu/workshop/>`_.
-  | October 21-24, 2024. Laboratory for Fluorescence Dynamics,
-    University of California, Irvine.
+- `18th LFD Workshop in Advanced Fluorescence Imaging and Dynamics
+  <https://www.lfd.uci.edu/workshop/>`_.
+  October 21-24, 2024. Laboratory for Fluorescence Dynamics,
+  University of California, Irvine.
 
-- | Leonel Malacrida. PhasorPy: a Python open-source library as SimFCS legacy
-    for phasor analysis of FLIM and HSI data.
-  | `Frontiers in Biological Fluorescence 2024
-    <https://www.lfd.uci.edu/frontiers/>`_.
-  | May 10, 2024. University of California, Irvine.
+- Leonel Malacrida. PhasorPy: a Python open-source library for phasor
+  analysis of FLIM and HSI data.
+  `CZI Open Science 2024
+  <https://chanzuckerberg.com/science/programs-resources/open-science/>`_.
+  June 11-14, 2024. Boston.
 
-- | Christoph Gohlke and Leonel Malacrida. Introduction to PhasorPy.
-  | `17th LFD Workshop in Advanced Fluorescence Imaging and Dynamics
-    <https://www.lfd.uci.edu/workshop/>`_.
-  | October 23-27, 2023. Laboratory for Fluorescence Dynamics,
-    University of California, Irvine.
+- Leonel Malacrida. The phasor plot analysis for hyperspectral imaging and
+  time-resolved imaging: PhasorPy developments and its applications.
+  `Latin American Hub for Bioimaging Through Open Hardware (LIBRE Hub)
+  Seminars <https://librehub.github.io/2024/04/03/leonel-malacrida.html>`_.
+  May 15, 2024.
+
+- Leonel Malacrida. PhasorPy: a Python open-source library as SimFCS legacy
+  for phasor analysis of FLIM and HSI data.
+  `Frontiers in Biological Fluorescence 2024
+  <https://www.lfd.uci.edu/frontiers/>`_.
+  May 10, 2024. University of California, Irvine.
+
+- Christoph Gohlke and Leonel Malacrida. Introduction to PhasorPy.
+  `17th LFD Workshop in Advanced Fluorescence Imaging and Dynamics
+  <https://www.lfd.uci.edu/workshop/>`_.
+  October 23-27, 2023. Laboratory for Fluorescence Dynamics,
+  University of California, Irvine.
