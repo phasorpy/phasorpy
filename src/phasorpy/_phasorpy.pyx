@@ -1506,28 +1506,67 @@ cdef float_t _blend_lighten(
     return <float_t> max(a, b)
 
 ###############################################################################
-# Threshold ufunc
+# Threshold ufuncs
 
 
 @cython.ufunc
-cdef (double, double, double) _mask_threshold(
+cdef (double, double, double) _phasor_threshold(
     float_t mean,
     float_t real,
     float_t imag,
-    float_t mean_lower,
-    float_t mean_upper,
-    float_t phasor_lower,
-    float_t phasor_upper,
+    float_t mean_min,
+    float_t mean_max,
+    float_t real_min,
+    float_t real_max,
+    float_t imag_min,
+    float_t imag_max,
     float_t fill,
 ) noexcept nogil:
     """Return thresholded values."""
-    cdef double nan = NAN
-
     if isnan(mean) or isnan(real) or isnan(imag):
-        return nan, nan, nan
-    if (mean_lower < mean < mean_upper and
-            phasor_lower < real < phasor_upper and
-            phasor_lower < imag < phasor_upper):
+        return NAN, NAN, NAN
+    if (
+        mean_min <= mean < mean_max
+        and real_min <= real < real_max
+        and imag_min <= imag < imag_max
+    ):
         return mean, real, imag
-    else:
-        return fill, fill, fill
+    return fill, fill, fill
+
+
+@cython.ufunc
+cdef (double, double, double) _phasor_polar_threshold(
+    float_t mean,
+    float_t real,
+    float_t imag,
+    float_t mean_min,
+    float_t mean_max,
+    float_t real_min,
+    float_t real_max,
+    float_t imag_min,
+    float_t imag_max,
+    float_t phase_min,
+    float_t phase_max,
+    float_t modulation_min,
+    float_t modulation_max,
+    float_t fill,
+) noexcept nogil:
+    """Return thresholded values."""
+    cdef:
+        float_t phi
+        float_t mod
+    if isnan(mean) or isnan(real) or isnan(imag):
+        return NAN, NAN, NAN
+    if (
+        mean_min <= mean < mean_max
+        and real_min <= real < real_max
+        and imag_min <= imag < imag_max
+    ):
+        phi = atan2(imag, real)
+        mod = sqrt(real * real + imag * imag)
+        if (
+            phase_min <= phi < phase_max
+            and modulation_min <= mod < modulation_max
+        ):
+            return mean, real, imag
+    return fill, fill, fill
