@@ -254,12 +254,12 @@ def phasor_from_signal(
     >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
     >>> signal = 1.1 * (numpy.cos(sample_phase - 0.785398) * 2 * 0.707107 + 1)
     >>> phasor_from_signal(signal)  # doctest: +NUMBER
-    (1.1, 0.5, 0.5)
+    (array(1.1), array(0.5), array(0.5))
 
     The sinusoidal signal does not have a second harmonic component:
 
     >>> phasor_from_signal(signal, harmonic=2)  # doctest: +NUMBER
-    (1.1, 0.0, 0.0)
+    (array(1.1), array(0.0), array(0.0))
 
     """
     # TODO: C-order not required by rfft?
@@ -329,7 +329,7 @@ def phasor_from_signal(
         numpy.negative(imag, out=imag)
 
         if not keepdims and real.ndim == 0:
-            return mean, real.item(), imag.item()
+            return mean.squeeze(), real.squeeze(), imag.squeeze()
 
         return mean, real, imag
 
@@ -370,7 +370,7 @@ def phasor_from_signal(
     imag = phasor[1 + num_harmonics :].reshape(shape)
     if shape:
         return mean, real, imag
-    return mean.item(), real.item(), imag.item()
+    return mean.squeeze(), real.squeeze(), imag.squeeze()
 
 
 def phasor_to_signal(

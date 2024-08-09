@@ -72,9 +72,9 @@ def test_phasor_from_signal(use_fft):
 
     # test scalar type
     mean, real, imag = phasor_from_signal(signal, use_fft=use_fft)
-    assert isinstance(mean, float)
-    assert isinstance(real, float)
-    assert isinstance(imag, float)
+    assert mean.ndim == 0
+    assert real.ndim == 0
+    assert imag.ndim == 0
 
     # default is first harmonic
     assert_allclose(
