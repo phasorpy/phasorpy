@@ -2162,11 +2162,11 @@ def test_phasor_threshold():
     """Test `phasor_threshold` function."""
     nan = numpy.nan
     assert_allclose(
-        phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, 0.5], mean_lower=0.4),
+        phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, 0.5], 0.4),
         ([0.5, nan], [0.2, nan], [0.3, nan]),
     )
     assert_allclose(
-        phasor_threshold([0.5, nan], [0.2, 0.5], [0.3, 0.5], mean_lower=1),
+        phasor_threshold([0.5, nan], [0.2, 0.5], [0.3, 0.5], 1),
         ([nan, nan], [nan, nan], [nan, nan]),
     )  # nan in mean
     # mean, real, imag = phasor_threshold(

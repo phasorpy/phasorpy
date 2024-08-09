@@ -34,6 +34,7 @@ from phasorpy.phasor import (
     phasor_from_fret_donor,
     phasor_from_lifetime,
     phasor_from_polar,
+    phasor_threshold,
     phasor_to_apparent_lifetime,
     phasor_to_polar,
 )
@@ -220,17 +221,9 @@ real2, imag2 = phasor_filter(real2, imag2, method='median', repeat=2)
 # In addition, small amounts of room light will appear towards the lower
 # left-hand corner of the phasor (room light is uncorrelated, so it has
 # zero modulation depth). This can be eliminated by setting a threshold.
-#
-# .. todo::
-#
-#     Use a ``phasor_threshold`` function?
 
-threshold = (mean > 20) & (real1 > 0) & (imag1 > 0) & (real2 > 0) & (imag2 > 0)
-real1 = real1[threshold]
-imag1 = imag1[threshold]
-real2 = real2[threshold]
-imag2 = imag2[threshold]
-
+_, real1, imag1 = phasor_threshold(mean, real1, imag1, 20, real_min=0, imag_min=0)
+_, real2, imag2 = phasor_threshold(mean, real2, imag2, 20, real_min=0, imag_min=0)
 # %%
 plot_phasor(
     real1,
@@ -420,13 +413,8 @@ plot.show()
 real1, imag1 = phasor_filter(real1, imag1, method='median', repeat=2)
 real2, imag2 = phasor_filter(real2, imag2, method='median', repeat=2)
 
-threshold = (mean1 > 32) & (real1 > 0) & (imag1 > 0)
-real1 = real1[threshold]
-imag1 = imag1[threshold]
-
-threshold = (mean2 > 32) & (real2 > 0) & (imag2 > 0)
-real2 = real2[threshold]
-imag2 = imag2[threshold]
+_, real1, imag1 = phasor_threshold(mean, real1, imag1, 32, real_min=0, imag_min=0)
+_, real2, imag2 = phasor_threshold(mean, real2, imag2, 32, real_min=0, imag_min=0)
 
 plot = PhasorPlot(
     frequency=frequency,
@@ -472,9 +460,7 @@ imag = numpy.vstack((imag1, imag2))
 
 real, imag = phasor_filter(real, imag, method='median', repeat=2)
 
-threshold = (mean > 6202) & (real > 0) & (imag > 0)
-real = real[threshold]
-imag = imag[threshold]
+_, real, imag = phasor_threshold(mean, real, imag, 6202, real_min=0, imag_min=0)
 
 plot = PhasorPlot(
     frequency=frequency,
