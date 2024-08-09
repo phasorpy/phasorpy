@@ -4,6 +4,7 @@ import copy
 import math
 
 import numpy
+import numpy.fft as numpy_fft
 import pytest
 from numpy.testing import (
     assert_allclose,
@@ -39,7 +40,6 @@ from phasorpy.phasor import (
     phasor_from_lifetime,
     phasor_from_polar,
     phasor_from_signal,
-    phasor_from_signal_fft,
     phasor_multiply,
     phasor_semicircle,
     phasor_to_apparent_lifetime,
@@ -63,98 +63,145 @@ SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
 numpy.random.seed(42)
 
 
-@pytest.mark.parametrize('fft', (True, False))
-def test_phasor_from_signal(fft):
-    """Test phasor_from_signal functions."""
-    func = phasor_from_signal_fft if fft else phasor_from_signal
+@pytest.mark.parametrize('use_fft', (True, False))
+def test_phasor_from_signal(use_fft):
+    """Test phasor_from_signal function."""
     sample_phase = numpy.linspace(0, 2 * math.pi, 7, endpoint=False)
     signal = 1.1 * (numpy.cos(sample_phase - 0.46364761) * 2 * 0.44721359 + 1)
     signal_copy = signal.copy()
 
+    # test scalar type
+    mean, real, imag = phasor_from_signal(signal, use_fft=use_fft)
+    assert mean.ndim == 0
+    assert real.ndim == 0
+    assert imag.ndim == 0
+
     # default is first harmonic
-    assert_allclose(func(signal), (1.1, 0.4, 0.2), atol=1e-6)
+    assert_allclose(
+        phasor_from_signal(signal, use_fft=use_fft), (1.1, 0.4, 0.2), atol=1e-6
+    )
     assert_array_equal(signal, signal_copy)
 
     # specify first harmonic
-    assert_allclose(func(signal, harmonic=1), (1.1, 0.4, 0.2), atol=1e-6)
+    assert_allclose(
+        phasor_from_signal(signal, harmonic=1, use_fft=use_fft),
+        (1.1, 0.4, 0.2),
+        atol=1e-6,
+    )
     assert_array_equal(signal, signal_copy)
 
     # keep harmonic axis
-    dc, re, im = func(signal, harmonic=[1])
+    dc, re, im = phasor_from_signal(signal, harmonic=[1], use_fft=use_fft)
     assert_array_equal(signal, signal_copy)
     assert_allclose(dc, 1.1, atol=1e-6)
     assert_allclose(re, [0.4], atol=1e-6)
     assert_allclose(im, [0.2], atol=1e-6)
 
     # specific harmonic
-    assert_allclose(func(signal, harmonic=2), (1.1, 0.0, 0.0), atol=1e-6)
+    assert_allclose(
+        phasor_from_signal(signal, harmonic=2, use_fft=use_fft),
+        (1.1, 0.0, 0.0),
+        atol=1e-6,
+    )
 
     # list harmonics
-    dc, re, im = func(signal, harmonic=[1, 2])
+    dc, re, im = phasor_from_signal(signal, harmonic=[1, 2], use_fft=use_fft)
     assert_array_equal(signal, signal_copy)
     assert_allclose(dc, 1.1, atol=1e-6)
     assert_allclose(re, [0.4, 0.0], atol=1e-6)
     assert_allclose(im, [0.2, 0.0], atol=1e-6)
 
     # all harmonics
-    dc, re, im = func(signal, harmonic='all')
+    dc, re, im = phasor_from_signal(signal, harmonic='all', use_fft=use_fft)
     assert_array_equal(signal, signal_copy)
     assert_allclose(dc, 1.1, atol=1e-6)
     assert_allclose(re, (0.4, 0.0, 0.0), atol=1e-6)
     assert_allclose(im, (0.2, 0.0, 0.0), atol=1e-6)
 
-    if not fft:
-        assert_allclose(
-            func(signal[::-1], sample_phase=sample_phase[::-1], num_threads=0),
-            (1.1, 0.4, 0.2),
-            atol=1e-6,
-        )
-        assert_allclose(
-            func(signal[::-1], sample_phase=sample_phase[::-1], harmonic=1),
-            (1.1, 0.4, 0.2),
-            atol=1e-6,
-        )
-        assert_allclose(
-            func(numpy.cos(sample_phase)), [0.0, 0.0, 0.0], atol=1e-6
-        )
+    # zero signal
     assert_allclose(
-        func(numpy.zeros(256)),
-        (0.0, numpy.nan, numpy.nan) if fft else (0.0, 0.0, 0.0),
+        phasor_from_signal(numpy.zeros(256), use_fft=use_fft),
+        (0.0, numpy.nan, numpy.nan),
         atol=1e-6,
     )
 
+    # no modulation
+    assert_allclose(
+        phasor_from_signal(numpy.ones(256), use_fft=use_fft),
+        (1.0, 0.0, 0.0),
+        atol=1e-6,
+    )
+
+    # numerically unstable?
+    # assert_allclose(
+    #     phasor_from_signal(numpy.cos(sample_phase), use_fft=use_fft),
+    #     [0.0, 0.0, 0.0],
+    #     atol=1e-6,
+    # )
+
+    if not use_fft:
+        assert_allclose(
+            phasor_from_signal(
+                signal[::-1],
+                sample_phase=sample_phase[::-1],
+                num_threads=0,
+                use_fft=use_fft,
+            ),
+            (1.1, 0.4, 0.2),
+            atol=1e-6,
+        )
+        assert_allclose(
+            phasor_from_signal(
+                signal[::-1],
+                sample_phase=sample_phase[::-1],
+                harmonic=1,
+                use_fft=use_fft,
+            ),
+            (1.1, 0.4, 0.2),
+            atol=1e-6,
+        )
+
     with pytest.raises(ValueError):
-        func(signal[:2])
+        phasor_from_signal(signal[:2], use_fft=use_fft)
     with pytest.raises(TypeError):
-        func(signal, harmonic=1.0)
+        phasor_from_signal(signal, harmonic=1.0, use_fft=use_fft)
     with pytest.raises(TypeError):
-        func(signal, harmonic=[])
+        phasor_from_signal(signal, harmonic=[], use_fft=use_fft)
     with pytest.raises(TypeError):
-        func(signal, harmonic=[1.0])
+        phasor_from_signal(signal, harmonic=[1.0], use_fft=use_fft)
     with pytest.raises(IndexError):
-        func(signal, harmonic=0)
+        phasor_from_signal(signal, harmonic=0, use_fft=use_fft)
     with pytest.raises(ValueError):
-        func(signal, harmonic='none')
+        phasor_from_signal(signal, harmonic='none', use_fft=use_fft)
     with pytest.raises(IndexError):
-        func(signal, harmonic=[0])
+        phasor_from_signal(signal, harmonic=[0], use_fft=use_fft)
     with pytest.raises(IndexError):
-        func(signal, harmonic=[4])
+        phasor_from_signal(signal, harmonic=[4], use_fft=use_fft)
     with pytest.raises(IndexError):
-        func(signal, harmonic=4)
+        phasor_from_signal(signal, harmonic=4, use_fft=use_fft)
     with pytest.raises(ValueError):
-        func(signal, harmonic=[1, 1])
+        phasor_from_signal(signal, harmonic=[1, 1], use_fft=use_fft)
     with pytest.raises(TypeError):
-        func(signal.astype('complex64'))
-    if not fft:
+        phasor_from_signal(signal.astype('complex64'), use_fft=use_fft)
+    if not use_fft:
         with pytest.raises(ValueError):
-            func(signal, sample_phase=sample_phase, harmonic=2)
+            phasor_from_signal(
+                signal, sample_phase=sample_phase, harmonic=2, use_fft=use_fft
+            )
         with pytest.raises(ValueError):
-            func(signal, sample_phase=sample_phase[::-2])
+            phasor_from_signal(
+                signal, sample_phase=sample_phase[::-2], use_fft=use_fft
+            )
         with pytest.raises(TypeError):
-            func(signal, dtype='int8')
+            phasor_from_signal(signal, dtype='int8', use_fft=use_fft)
+    else:
+        with pytest.raises(ValueError):
+            phasor_from_signal(
+                signal, sample_phase=sample_phase, use_fft=use_fft
+            )
 
 
-@pytest.mark.parametrize('fft', (True, False))
+@pytest.mark.parametrize('use_fft', (True, False))
 @pytest.mark.parametrize(
     'shape, axis, dtype, dtype_out',
     [
@@ -175,13 +222,13 @@ def test_phasor_from_signal(fft):
         # TODO: can't test uint with this
     ],
 )
-def test_phasor_from_signal_param(fft, shape, axis, dtype, dtype_out):
-    """Test phasor_from_signal functions parameters."""
+def test_phasor_from_signal_param(use_fft, shape, axis, dtype, dtype_out):
+    """Test phasor_from_signal function parameters."""
     samples = shape[axis]
     dtype = numpy.dtype(dtype)
     signal = numpy.empty(shape, dtype)
     sample_phase = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
-    if not fft:
+    if not use_fft:
         sample_phase[0] = sample_phase[-1]  # out of order
         sample_phase[-1] = 0.0
     sig = 2.1 * (numpy.cos(sample_phase - 0.46364761) * 2 * 0.44721359 + 1)
@@ -191,8 +238,10 @@ def test_phasor_from_signal_param(fft, shape, axis, dtype, dtype_out):
     reshape = [1] * len(shape)
     reshape[axis] = samples
     signal[:] = sig.reshape(reshape)
-    if fft:
-        mean, real, imag = phasor_from_signal_fft(signal, axis=axis)
+    if use_fft:
+        mean, real, imag = phasor_from_signal(
+            signal, axis=axis, use_fft=True, dtype=dtype_out
+        )
     else:
         num_threads = 4 if signal.size > 4096 else 1
         mean, real, imag = phasor_from_signal(
@@ -201,10 +250,10 @@ def test_phasor_from_signal_param(fft, shape, axis, dtype, dtype_out):
             sample_phase=sample_phase,
             dtype=dtype_out,
             num_threads=num_threads,
+            use_fft=False,
         )
     if isinstance(mean, numpy.ndarray):
-        if not fft:
-            assert mean.dtype == dtype_out
+        assert mean.dtype == dtype_out
         assert mean.shape == shape[:axis] + shape[axis + 1 :]
     if dtype.kind == 'f':
         assert_allclose(numpy.mean(mean), 2.1, 1e-3)
@@ -214,10 +263,11 @@ def test_phasor_from_signal_param(fft, shape, axis, dtype, dtype_out):
     assert_allclose(numpy.mean(imag), 0.2, 1e-3)
 
 
-@pytest.mark.parametrize('fft', (True, False))
-def test_phasor_from_signal_noncontig(fft):
+@pytest.mark.parametrize('use_fft', (True, False))
+@pytest.mark.parametrize('dtype', ('float32', 'float64'))
+def test_phasor_from_signal_noncontig(use_fft, dtype):
     """Test phasor_from_signal functions with non-contiguous input."""
-    dtype = numpy.float64
+    dtype = numpy.dtype(dtype)
     samples = 31
     signal = numpy.empty((7, 19, samples, 11), dtype)
     sample_phase = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
@@ -230,11 +280,12 @@ def test_phasor_from_signal_noncontig(fft):
     assert signal.shape == (7, samples, 19, 11)
     assert not signal.flags['C_CONTIGUOUS']
     signal_copy = signal.copy()
-    if fft:
-        mean, real, imag = phasor_from_signal_fft(signal, axis=-3)
-    else:
-        mean, real, imag = phasor_from_signal(signal, axis=-3, dtype=dtype)
+    mean, real, imag = phasor_from_signal(
+        signal, axis=-3, dtype=dtype, use_fft=use_fft
+    )
     assert_array_equal(signal, signal_copy)
+    assert real.dtype == dtype
+    assert mean.dtype == dtype
     assert mean.shape == signal.shape[:1] + signal.shape[1 + 1 :]
     assert_allclose(numpy.mean(mean), 2.1, 1e-3)
     assert_allclose(numpy.mean(real), 0.4, 1e-3)
@@ -244,32 +295,32 @@ def test_phasor_from_signal_noncontig(fft):
 @pytest.mark.parametrize('scalar', (True, False))
 @pytest.mark.parametrize('harmonic', ('all', 1, 2, 8, [1], [1, 2, 8]))
 def test_phasor_from_signal_harmonic(scalar, harmonic):
-    """Test phasor_from_signal functions harmonic parameter."""
+    """Test phasor_from_signal function harmonic parameter."""
     rng = numpy.random.default_rng(1)
     signal = rng.random((33,) if scalar else (3, 33, 61, 63))
     signal += 1.1
     kwargs = dict(axis=0 if scalar else 1, harmonic=harmonic)
-    mean0, real0, imag0 = phasor_from_signal(signal, **kwargs)
-    mean1, real1, imag1 = phasor_from_signal_fft(signal, **kwargs)
+    mean0, real0, imag0 = phasor_from_signal(signal, use_fft=False, **kwargs)
+    mean1, real1, imag1 = phasor_from_signal(signal, use_fft=True, **kwargs)
     assert_allclose(mean0, mean1, 1e-8)
     assert_allclose(real0, real1, 1e-8)
     assert_allclose(imag0, imag1, 1e-8)
 
 
-@pytest.mark.parametrize('fft', (scipy_fft, mkl_fft))
+@pytest.mark.parametrize('fft', (numpy_fft, scipy_fft, mkl_fft))
 @pytest.mark.parametrize('scalar', (True, False))
 @pytest.mark.parametrize('harmonic', (1, [4], [1, 4]))
 def test_phasor_from_signal_fft_func(fft, scalar, harmonic):
-    """Test phasor_from_signal_fft functions rfft_func parameter."""
+    """Test phasor_from_signal_fft function rfft parameter."""
     if fft is None:
         pytest.skip('rfft function could not be imported')
     rng = numpy.random.default_rng(1)
     signal = rng.random((33,) if scalar else (3, 33, 61, 63))
     signal += 1.1
     kwargs = dict(axis=0 if scalar else 1, harmonic=harmonic)
-    mean0, real0, imag0 = phasor_from_signal_fft(signal, **kwargs)
-    mean1, real1, imag1 = phasor_from_signal_fft(
-        signal, rfft_func=fft.rfft, **kwargs
+    mean0, real0, imag0 = phasor_from_signal(signal, use_fft=True, **kwargs)
+    mean1, real1, imag1 = phasor_from_signal(
+        signal, rfft=fft.rfft, use_fft=True, **kwargs
     )
     assert_allclose(mean0, mean1, 1e-8)
     assert_allclose(real0, real1, 1e-8)
@@ -370,7 +421,7 @@ def test_phasor_to_signal():
     """Test phasor_to_signal function."""
     sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
     signal = 1.1 * (numpy.cos(sample_phase - 0.78539816) * 2 * 0.70710678 + 1)
-    assert_allclose(phasor_from_signal_fft(signal), (1.1, 0.5, 0.5))
+    assert_allclose(phasor_from_signal(signal, use_fft=True), (1.1, 0.5, 0.5))
 
     assert_allclose(
         phasor_to_signal(1.1, 0.5, 0.5, samples=5), signal, atol=1e-4
