@@ -2162,28 +2162,62 @@ def test_phasor_threshold():
     """Test `phasor_threshold` function."""
     nan = numpy.nan
     assert_allclose(
+        phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, 0.5]),
+        ([0.5, 0.4], [0.2, 0.5], [0.3, 0.5]),
+    ) # no threshold
+    assert_allclose(
         phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, 0.5], 0.5),
         ([0.5, nan], [0.2, nan], [0.3, nan]),
-    )
+    ) # lower mean threshold
     assert_allclose(
         phasor_threshold([0.5, nan], [0.2, 0.5], [0.3, 0.5], 0.5),
         ([0.5, nan], [0.2, nan], [0.3, nan]),
-    )  # nan in mean
-    # mean, real, imag = phasor_threshold(
-    #     [0.5, 0.4],
-    #     [[0.1, 0.2], [0.3, 0.4]],
-    #     [[0.5, 0.6], [0.7, 0.8]],
-    #     mean_lower=0.4,
-    # )  # broadcast mean to real and imag
-    # assert_array_equal(mean, [0.5, nan])
-    # assert_allclose(
-    #     (real, imag), ([[0.1, 0.2], [nan, nan]], [[0.5, 0.6], [nan, nan]])
-    # )
-    # with pytest.raises(ValueError):
-    #     phasor_threshold(
-    #         [0.5, 0.5], [0.5, 0.5, 0.5], [0.5, 0.5, 0.5], mean_lower=0.5
-    #     )
-    # with pytest.raises(ValueError):
-    #     phasor_threshold(
-    #         [0.5, 0.5, 0.5], [0.5, 0.5], [0.5, 0.5], mean_lower=0.5
-    #     )
+    )  # nan in mean propagated to real and imag
+    assert_allclose(
+        phasor_threshold([0.5, 0.4], [0.2, nan], [0.3, 0.5], 0.5),
+        ([0.5, nan], [0.2, nan], [0.3, nan]),
+    )  # nan in real propagated to mean and imag
+    assert_allclose(
+        phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, nan], 0.5),
+        ([0.5, nan], [0.2, nan], [0.3, nan]),
+    )  # nan in imag propagated to real and mean
+    assert_allclose(
+        phasor_threshold([[0.5, 0.4], [0.8, 0.6]], [[0.1, 0.2], [0.3, 0.4]], [[0.5, 0.6], [0.7, 0.8]], 0.5),
+        ([[0.5, nan], [0.8, 0.6]], [[0.1, nan], [0.3, 0.4]], [[0.5, nan], [0.7, 0.8]]),
+    ) # 2D array with lower mean threshold
+    assert_allclose(
+        phasor_threshold([[0.5, 0.4], [0.8, 0.6]], [[0.1, 0.2], [0.3, 0.4]], [[0.5, 0.6], [0.7, 0.8]], 0.5, 0.7),
+        ([[0.5, nan], [nan, 0.6]], [[0.1, nan], [nan, 0.4]], [[0.5, nan], [nan, 0.8]]),
+    ) # 2D array with lower and upper mean threshold
+    assert_allclose(
+        phasor_threshold([[0.5, 0.4], [0.8, 0.6]], [[0.1, 0.2], [0.3, 0.4]], [[0.5, 0.6], [0.7, 0.8]], 0.5, real_min=0.3, real_max=0.35),
+        ([[nan, nan], [0.8, nan]], [[nan, nan], [0.3, nan]], [[nan, nan], [0.7, nan]]),
+    ) # 2D array with lower mean and real threshold
+    assert_allclose(
+        phasor_threshold([[0.5, 0.4], [0.8, 0.6]], [[0.1, 0.2], [0.3, 0.4]], [[0.5, 0.6], [0.7, 0.8]], 0.5, imag_min=0.7, imag_max=0.75),
+        ([[nan, nan], [0.8, nan]], [[nan, nan], [0.3, nan]], [[nan, nan], [0.7, nan]]),
+    ) # 2D array with lower mean and imag threshold
+    assert_allclose(
+        phasor_threshold([[[0.4, 0.5]], [[0.8, 0.9]]], [[[0.1, 0.2]], [[0.5, 0.6]]], [[[0.5, 0.3]], [[0.6, 0.7]]], real_min = [[[0.2]], [[0.6]]]),
+        ([[[nan, 0.5]], [[nan, 0.9]]], [[[nan, 0.2]], [[nan, 0.6]]], [[[nan, 0.3]], [[nan, 0.7]]]),
+    ) # 3D array with different real threshold for first dimension
+    assert_allclose(
+        phasor_threshold([[0.5, 0.4], [0.8, 0.6]], [[0.1, 0.2], [0.3, 0.4]], [[0.5, 0.6], [0.7, 0.8]], phase_min=1.2, phase_max=1.3),
+        ([[nan, 0.4], [nan, nan]], [[nan, 0.2], [nan, nan]], [[nan, 0.6], [nan, nan]]),
+    ) # 2D array with lower and upper phase threshold
+    assert_allclose(
+        phasor_threshold([[0.5, 0.4], [0.8, 0.6]], [[0.1, 0.2], [0.3, 0.4]], [[0.5, 0.6], [0.7, 0.8]], modulation_min=0.7, modulation_max=0.8),
+        ([[nan, nan], [0.8, nan]], [[nan, nan], [0.3, nan]], [[nan, nan], [0.7, nan]]),
+    ) # 2D array with lower and upper modulation threshold
+    assert_allclose(
+        phasor_threshold([[0.5, 0.4], [0.8, 0.6]], [[0.1, 0.2], [0.3, 0.4]], [[0.5, 0.6], [0.7, 0.8]], phase_min=1.2, phase_max=1.3, modulation_min=0.7, modulation_max=0.8),
+        ([[nan, nan], [nan, nan]], [[nan, nan], [nan, nan]], [[nan, nan], [nan, nan]]),
+    ) # 2D array with lower and upper phase and modulation threshold
+    assert_allclose(
+        phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, 0.5], 0.5, fill_value=0.0),
+        ([0.5, 0.0], [0.2, 0.0], [0.3, 0.0]),
+    ) # simple fill value
+    assert_allclose(
+        phasor_threshold([[[0.4, 0.5]], [[0.8, 0.9]]], [[[0.1, 0.2]], [[0.5, 0.6]]], [[[0.5, 0.3]], [[0.6, 0.7]]], real_min = [[[0.2]], [[0.6]]], fill_value=[[[nan]], [[0.0]]]),
+        ([[[nan, 0.5]], [[0.0, 0.9]]], [[[nan, 0.2]], [[0.0, 0.6]]], [[[nan, 0.3]], [[0.0, 0.7]]]),
+    ) # broadcast fill value to 3D array

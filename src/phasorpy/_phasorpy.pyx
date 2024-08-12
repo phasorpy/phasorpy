@@ -1528,31 +1528,6 @@ cdef (double, double, double) _phasor_threshold(
     float_t real_max,
     float_t imag_min,
     float_t imag_max,
-    float_t fill,
-) noexcept nogil:
-    """Return thresholded values."""
-    if isnan(mean) or isnan(real) or isnan(imag):
-        return NAN, NAN, NAN
-    if (
-        mean_min <= mean < mean_max
-        and real_min <= real < real_max
-        and imag_min <= imag < imag_max
-    ):
-        return mean, real, imag
-    return fill, fill, fill
-
-
-@cython.ufunc
-cdef (double, double, double) _phasor_polar_threshold(
-    float_t mean,
-    float_t real,
-    float_t imag,
-    float_t mean_min,
-    float_t mean_max,
-    float_t real_min,
-    float_t real_max,
-    float_t imag_min,
-    float_t imag_max,
     float_t phase_min,
     float_t phase_max,
     float_t modulation_min,
@@ -1561,20 +1536,81 @@ cdef (double, double, double) _phasor_polar_threshold(
 ) noexcept nogil:
     """Return thresholded values."""
     cdef:
-        float_t phi
-        float_t mod
+        double phi = NAN
+        double mod = NAN
+
     if isnan(mean) or isnan(real) or isnan(imag):
-        return NAN, NAN, NAN
-    if (
-        mean_min <= mean < mean_max
-        and real_min <= real < real_max
-        and imag_min <= imag < imag_max
-    ):
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN
+
+    if not isnan(mean_min) and mean < mean_min:
+        return fill, fill, fill
+    if not isnan(mean_max) and mean > mean_max:
+        return fill, fill, fill
+
+    if not isnan(real_min) and real < real_min:
+        return fill, fill, fill
+    if not isnan(real_max) and real > real_max:
+        return fill, fill, fill
+
+    if not isnan(imag_min) and imag < imag_min:
+        return fill, fill, fill
+    if not isnan(imag_max) and imag > imag_max:
+        return fill, fill, fill
+
+    if not isnan(modulation_min):
+        mod = hypot(real, imag)
+        if mod < modulation_min:
+            return fill, fill, fill
+    if not isnan(modulation_max):
+        if isnan(mod):
+            mod = hypot(real, imag)
+        if mod > modulation_max:
+            return fill, fill, fill
+
+    if not isnan(phase_min):
         phi = atan2(imag, real)
-        mod = sqrt(real * real + imag * imag)
-        if (
-            phase_min <= phi < phase_max
-            and modulation_min <= mod < modulation_max
-        ):
-            return mean, real, imag
-    return fill, fill, fill
+        if phi < phase_min:
+            return fill, fill, fill
+    if not isnan(phase_max):
+        if isnan(phi):
+            phi = atan2(imag, real)
+        if phi > phase_max:
+            return fill, fill, fill
+
+    return mean, real, imag
+
+
+@cython.ufunc
+cdef (double, double, double) _phasor_threshold_mean(
+    float_t mean,
+    float_t real,
+    float_t imag,
+    float_t mean_min,
+    float_t mean_max,
+    float_t fill,
+) noexcept nogil:
+    """Return thresholded values only by `mean`."""
+
+    if isnan(mean) or isnan(real) or isnan(imag):
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN
+
+    if not isnan(mean_min) and mean < mean_min:
+        return fill, fill, fill
+    if not isnan(mean_max) and mean > mean_max:
+        return fill, fill, fill
+
+    return mean, real, imag
+
+
+@cython.ufunc
+cdef (double, double, double) _phasor_threshold_nan(
+    float_t mean,
+    float_t real,
+    float_t imag,
+) noexcept nogil:
+    """Return the input values if any of them is not NaN."""
+
+    if isnan(mean) or isnan(real) or isnan(imag):
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN
+
+    return mean, real, imag
