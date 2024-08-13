@@ -306,7 +306,6 @@ def phasor_from_signal(
         )
 
     if use_fft:
-
         if rfft is None:
             rfft = numpy.fft.rfft
 
@@ -2720,7 +2719,7 @@ def phasor_threshold(
     coordinates, and phase and modulation.
     Phasor coordinates smaller than minimum thresholds or larger than maximum
     thresholds are replaced NaN.
-    No threshold is applied by default, all intervals are open.
+    No threshold is applied by default.
 
     Parameters
     ----------
@@ -2841,32 +2840,17 @@ def phasor_threshold(
         return _phasor_threshold_nan(mean, real, imag, **kwargs)
 
     if threshold_mean_only:
-        if open_interval:
-            return _phasor_threshold_mean_open(
-                mean, real, imag, mean_min, mean_max, **kwargs
-            )
-        return _phasor_threshold_mean_closed(
-            mean, real, imag, mean_min, mean_max, **kwargs
+        mean_func = (
+            _phasor_threshold_mean_open
+            if open_interval
+            else _phasor_threshold_mean_closed
         )
+        return mean_func(mean, real, imag, mean_min, mean_max, **kwargs)
 
-    if open_interval:
-        return _phasor_threshold_open(
-            mean,
-            real,
-            imag,
-            mean_min,
-            mean_max,
-            real_min,
-            real_max,
-            imag_min,
-            imag_max,
-            phase_min,
-            phase_max,
-            modulation_min,
-            modulation_max,
-            **kwargs,
-        )
-    return _phasor_threshold_closed(
+    func = (
+        _phasor_threshold_open if open_interval else _phasor_threshold_closed
+    )
+    return func(
         mean,
         real,
         imag,
