@@ -168,10 +168,9 @@ real, imag = phasor_filter(real, imag, method='median', size=3, repeat=2)
 # Pixels with low intensities are commonly excluded from analysis and
 # visualization of phasor coordinates:
 
-# TODO: replace this with a ``phasor_mask`` function?
-mask = mean > 1
-real = real[mask]
-imag = imag[mask]
+from phasorpy.phasor import phasor_threshold
+
+mean, real, imag = phasor_threshold(mean, real, imag, 1)
 
 # %%
 # Plot phasor coordinates

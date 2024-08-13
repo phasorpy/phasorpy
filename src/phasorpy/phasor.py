@@ -65,6 +65,7 @@ The ``phasorpy.phasor`` module provides functions to:
 - filter phasor coordinates:
 
   - :py:func:`phasor_filter`
+  - :py:func:`phasor_threshold`
 
 """
 
@@ -89,6 +90,7 @@ __all__ = [
     'phasor_from_signal',
     'phasor_multiply',
     'phasor_semicircle',
+    'phasor_threshold',
     'phasor_to_apparent_lifetime',
     'phasor_to_complex',
     'phasor_to_polar',
@@ -130,6 +132,11 @@ from ._phasorpy import (
     _phasor_from_signal,
     _phasor_from_single_lifetime,
     _phasor_multiply,
+    _phasor_threshold_closed,
+    _phasor_threshold_mean_closed,
+    _phasor_threshold_mean_open,
+    _phasor_threshold_nan,
+    _phasor_threshold_open,
     _phasor_to_apparent_lifetime,
     _phasor_to_polar,
     _phasor_transform,
@@ -299,7 +306,6 @@ def phasor_from_signal(
         )
 
     if use_fft:
-
         if rfft is None:
             rfft = numpy.fft.rfft
 
@@ -2686,6 +2692,180 @@ def phasor_filter(
         raise ValueError(f'{repeat=} < 1')
 
     return methods[method](real, imag, repeat, **kwargs)
+
+
+def phasor_threshold(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    mean_min: ArrayLike | None = None,
+    mean_max: ArrayLike | None = None,
+    *,
+    real_min: ArrayLike | None = None,
+    real_max: ArrayLike | None = None,
+    imag_min: ArrayLike | None = None,
+    imag_max: ArrayLike | None = None,
+    phase_min: ArrayLike | None = None,
+    phase_max: ArrayLike | None = None,
+    modulation_min: ArrayLike | None = None,
+    modulation_max: ArrayLike | None = None,
+    open_interval: bool = False,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """Return phasor coordinates with values out of interval replaced by NaN.
+
+    Interval thresholds can be set for mean intensity, real and imaginary
+    coordinates, and phase and modulation.
+    Phasor coordinates smaller than minimum thresholds or larger than maximum
+    thresholds are replaced NaN.
+    No threshold is applied by default.
+
+    Parameters
+    ----------
+    mean : array_like
+        Mean intensity of phasor coordinates.
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    mean_min : array_like, optional
+        Lower threshold for mean intensity.
+    mean_max : array_like, optional
+        Upper threshold for mean intensity.
+    real_min : array_like, optional
+        Lower threshold for real coordinates.
+    real_max : array_like, optional
+        Upper threshold for real coordinates.
+    imag_min : array_like, optional
+        Lower threshold for imaginary coordinates.
+    imag_max : array_like, optional
+        Upper threshold for imaginary coordinates.
+    phase_min : array_like, optional
+        Lower threshold for phase angle.
+    phase_max : array_like, optional
+        Upper threshold for phase angle.
+    modulation_min : array_like, optional
+        Lower threshold for modulation.
+    modulation_max : array_like, optional
+        Upper threshold for modulation.
+    open_interval : bool, optional
+        If True, the interval is open and the threshold values are
+        not included in the interval.
+        If False, the interval is closed, and the threshold values are
+        included in the interval. The default is False.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    mean : ndarray
+        Thresholded mean intensity of phasor coordinates.
+    real : ndarray
+        Thresholded real component of phasor coordinates.
+    imag : ndarray
+        Thresholded imaginary component of phasor coordinates.
+
+    Examples
+    --------
+    Set phasor coordinates to NaN if mean intensity is smaller than 1.1:
+
+    >>> phasor_threshold([1, 2, 3], [0.1, 0.2, 0.3], [0.4, 0.5, 0.6], 1.1)
+    (array([nan, 2, 3]), array([nan, 0.2, 0.3]), array([nan, 0.5, 0.6]))
+
+    Set phasor coordinates to NaN if real component is smaller than 0.15 or
+    larger than 0.25:
+
+    >>> phasor_threshold(
+    ...     [1.0, 2.0, 3.0],
+    ...     [0.1, 0.2, 0.3],
+    ...     [0.4, 0.5, 0.6],
+    ...     real_min=0.15,
+    ...     real_max=0.25,
+    ... )
+    (array([nan, 2, nan]), array([nan, 0.2, nan]), array([nan, 0.5, nan]))
+
+    Apply NaNs to other input arrays:
+
+    >>> phasor_threshold(
+    ...     [numpy.nan, 2, 3], [0.1, 0.2, 0.3], [0.4, 0.5, numpy.nan]
+    ... )
+    (array([nan, 2, nan]), array([nan, 0.2, nan]), array([nan, 0.5, nan]))
+
+    """
+    threshold_mean_only = None
+    if mean_min is None:
+        mean_min = numpy.nan
+    else:
+        threshold_mean_only = True
+    if mean_max is None:
+        mean_max = numpy.nan
+    else:
+        threshold_mean_only = True
+    if real_min is None:
+        real_min = numpy.nan
+    else:
+        threshold_mean_only = False
+    if real_max is None:
+        real_max = numpy.nan
+    else:
+        threshold_mean_only = False
+    if imag_min is None:
+        imag_min = numpy.nan
+    else:
+        threshold_mean_only = False
+    if imag_max is None:
+        imag_max = numpy.nan
+    else:
+        threshold_mean_only = False
+    if phase_min is None:
+        phase_min = numpy.nan
+    else:
+        threshold_mean_only = False
+    if phase_max is None:
+        phase_max = numpy.nan
+    else:
+        threshold_mean_only = False
+    if modulation_min is None:
+        modulation_min = numpy.nan
+    else:
+        threshold_mean_only = False
+    if modulation_max is None:
+        modulation_max = numpy.nan
+    else:
+        threshold_mean_only = False
+
+    if threshold_mean_only is None:
+        return _phasor_threshold_nan(mean, real, imag, **kwargs)
+
+    if threshold_mean_only:
+        mean_func = (
+            _phasor_threshold_mean_open
+            if open_interval
+            else _phasor_threshold_mean_closed
+        )
+        return mean_func(mean, real, imag, mean_min, mean_max, **kwargs)
+
+    func = (
+        _phasor_threshold_open if open_interval else _phasor_threshold_closed
+    )
+    return func(
+        mean,
+        real,
+        imag,
+        mean_min,
+        mean_max,
+        real_min,
+        real_max,
+        imag_min,
+        imag_max,
+        phase_min,
+        phase_max,
+        modulation_min,
+        modulation_max,
+        **kwargs,
+    )
 
 
 def phasor_center(
