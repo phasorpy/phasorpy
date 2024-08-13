@@ -132,9 +132,11 @@ from ._phasorpy import (
     _phasor_from_signal,
     _phasor_from_single_lifetime,
     _phasor_multiply,
-    _phasor_threshold,
-    _phasor_threshold_mean,
+    _phasor_threshold_closed,
+    _phasor_threshold_mean_closed,
+    _phasor_threshold_mean_open,
     _phasor_threshold_nan,
+    _phasor_threshold_open,
     _phasor_to_apparent_lifetime,
     _phasor_to_polar,
     _phasor_transform,
@@ -2709,7 +2711,7 @@ def phasor_threshold(
     phase_max: ArrayLike | None = None,
     modulation_min: ArrayLike | None = None,
     modulation_max: ArrayLike | None = None,
-    fill_value: ArrayLike | None = None,
+    open_interval: bool = False,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates with values out of interval replaced by NaN.
@@ -2717,7 +2719,7 @@ def phasor_threshold(
     Interval thresholds can be set for mean intensity, real and imaginary
     coordinates, and phase and modulation.
     Phasor coordinates smaller than minimum thresholds or larger than maximum
-    thresholds will be replaced by a fill value, NaN by default.
+    thresholds are replaced NaN.
     No threshold is applied by default, all intervals are open.
 
     Parameters
@@ -2748,8 +2750,11 @@ def phasor_threshold(
         Lower threshold for modulation.
     modulation_max : array_like, optional
         Upper threshold for modulation.
-    fill_value : array_like, optional
-        Value used to fill out of interval elements.
+    open_interval : bool, optional
+        If True, the interval is open and the threshold values are
+        not included in the interval.
+        If False, the interval is closed, and the threshold values are
+        included in the interval. The default is False.
     **kwargs
         Optional `arguments passed to numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
@@ -2831,18 +2836,37 @@ def phasor_threshold(
         modulation_max = numpy.nan
     else:
         threshold_mean_only = False
-    if fill_value is None:
-        fill_value = numpy.nan
 
     if threshold_mean_only is None:
         return _phasor_threshold_nan(mean, real, imag, **kwargs)
 
     if threshold_mean_only:
-        return _phasor_threshold_mean(
-            mean, real, imag, mean_min, mean_max, fill_value, **kwargs
+        if open_interval:
+            return _phasor_threshold_mean_open(
+                mean, real, imag, mean_min, mean_max, **kwargs
+            )
+        return _phasor_threshold_mean_closed(
+            mean, real, imag, mean_min, mean_max, **kwargs
         )
 
-    return _phasor_threshold(
+    if open_interval:
+        return _phasor_threshold_open(
+            mean,
+            real,
+            imag,
+            mean_min,
+            mean_max,
+            real_min,
+            real_max,
+            imag_min,
+            imag_max,
+            phase_min,
+            phase_max,
+            modulation_min,
+            modulation_max,
+            **kwargs,
+        )
+    return _phasor_threshold_closed(
         mean,
         real,
         imag,
@@ -2856,7 +2880,6 @@ def phasor_threshold(
         phase_max,
         modulation_min,
         modulation_max,
-        fill_value,
         **kwargs,
     )
 

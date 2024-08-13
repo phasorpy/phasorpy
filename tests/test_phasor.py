@@ -2044,7 +2044,9 @@ def test_parse_skip_axis():
 @pytest.mark.parametrize(
     "real, imag, method, repeat, kwargs, expected",
     [
-        ([0], [0], 'median', 1, {}, ([0], [0])),  # single element
+        # single element
+        ([0], [0], 'median', 1, {}, ([0], [0])),
+        # all equal
         (
             [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
             [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
@@ -2055,7 +2057,8 @@ def test_parse_skip_axis():
                 [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
                 [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
             ),
-        ),  # all equal
+        ),
+        # random float values
         (
             [[0.5, 0.5, 2.0], [1.0, 2.0, 3.0], [10.0, 5.0, 1.0]],
             [[5.0, 6.0, 2.0], [10.0, 4.0, 8.0], [0.0, 7.0, 8.0]],
@@ -2066,7 +2069,8 @@ def test_parse_skip_axis():
                 [[0.5, 1.0, 2.0], [1.0, 2.0, 2.0], [5.0, 3.0, 2.0]],
                 [[5.0, 5.0, 4.0], [5.0, 6.0, 7.0], [4.0, 7.0, 8.0]],
             ),
-        ),  # random float values
+        ),
+        # 5x5 array with 3x3 filter
         (
             numpy.arange(25).reshape(5, 5),
             numpy.arange(25, 50).reshape(5, 5),
@@ -2089,7 +2093,8 @@ def test_parse_skip_axis():
                     [45, 45, 46, 47, 48],
                 ],
             ),
-        ),  # 5x5 array with 3x3 filter
+        ),
+        # 5x5 array with 3x3 filter repeated 5 times
         (
             numpy.arange(25).reshape(5, 5),
             numpy.arange(25, 50).reshape(5, 5),
@@ -2112,7 +2117,8 @@ def test_parse_skip_axis():
                     [45, 45, 45, 45, 45],
                 ],
             ),
-        ),  # 5x5 array with 3x3 filter repeated 5 times
+        ),
+        # 3x3x3 array with 3x3 filter repeated 3 times along axes 1 and 2
         (
             numpy.arange(27).reshape(3, 3, 3),
             numpy.arange(10, 37).reshape(3, 3, 3),
@@ -2131,7 +2137,7 @@ def test_parse_skip_axis():
                     [[30, 30, 30], [31, 32, 33], [34, 34, 34]],
                 ],
             ),
-        ),  # 3x3x3 array with 3x3 filter repeated 3 times along axes 1 and 2
+        ),
     ],
 )
 def test_phasor_filter(real, imag, method, repeat, kwargs, expected):
@@ -2144,43 +2150,52 @@ def test_phasor_filter(real, imag, method, repeat, kwargs, expected):
 
 def test_phasor_filter_errors():
     """Test `phasor_filter` function errors."""
+    # method not supported
     with pytest.raises(ValueError):
-        phasor_filter(
-            [0], [0], method='error', repeat=1
-        )  # method not supported
+        phasor_filter([0], [0], method='error', repeat=1)
+    # shape mismatch
     with pytest.raises(ValueError):
-        phasor_filter([[0]], [0], repeat=1)  # shape mismatch
+        phasor_filter([[0]], [0], repeat=1)
+    # shape mismatch
     with pytest.raises(ValueError):
-        phasor_filter([0], [[0]], repeat=1)  # shape mismatch
+        phasor_filter([0], [[0]], repeat=1)
+    # repeat = 0
     with pytest.raises(ValueError):
-        phasor_filter([[0]], [[0]], repeat=0)  # repeat = 0
+        phasor_filter([[0]], [[0]], repeat=0)
+    # repeat < 1
     with pytest.raises(ValueError):
-        phasor_filter([[0]], [[0]], repeat=-3)  # repeat < 1
+        phasor_filter([[0]], [[0]], repeat=-3)
 
 
 def test_phasor_threshold():
     """Test `phasor_threshold` function."""
     nan = numpy.nan
+    # no threshold
     assert_allclose(
         phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, 0.5]),
         ([0.5, 0.4], [0.2, 0.5], [0.3, 0.5]),
-    )  # no threshold
+    )
+    # lower mean threshold
     assert_allclose(
         phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, 0.5], 0.5),
         ([0.5, nan], [0.2, nan], [0.3, nan]),
-    )  # lower mean threshold
+    )
+    # nan in mean propagated to real and imag
     assert_allclose(
         phasor_threshold([0.5, nan], [0.2, 0.5], [0.3, 0.5], 0.5),
         ([0.5, nan], [0.2, nan], [0.3, nan]),
-    )  # nan in mean propagated to real and imag
+    )
+    # nan in real propagated to mean and imag
     assert_allclose(
         phasor_threshold([0.5, 0.4], [0.2, nan], [0.3, 0.5], 0.5),
         ([0.5, nan], [0.2, nan], [0.3, nan]),
-    )  # nan in real propagated to mean and imag
+    )
+    # nan in imag propagated to real and mean
     assert_allclose(
         phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, nan], 0.5),
         ([0.5, nan], [0.2, nan], [0.3, nan]),
-    )  # nan in imag propagated to real and mean
+    )
+    # 2D array with lower mean threshold
     assert_allclose(
         phasor_threshold(
             [[0.5, 0.4], [0.8, 0.6]],
@@ -2193,7 +2208,8 @@ def test_phasor_threshold():
             [[0.1, nan], [0.3, 0.4]],
             [[0.5, nan], [0.7, 0.8]],
         ),
-    )  # 2D array with lower mean threshold
+    )
+    # 2D array with lower and upper mean threshold
     assert_allclose(
         phasor_threshold(
             [[0.5, 0.4], [0.8, 0.6]],
@@ -2207,7 +2223,8 @@ def test_phasor_threshold():
             [[0.1, nan], [nan, 0.4]],
             [[0.5, nan], [nan, 0.8]],
         ),
-    )  # 2D array with lower and upper mean threshold
+    )
+    # 2D array with lower mean and real threshold
     assert_allclose(
         phasor_threshold(
             [[0.5, 0.4], [0.8, 0.6]],
@@ -2222,7 +2239,8 @@ def test_phasor_threshold():
             [[nan, nan], [0.3, nan]],
             [[nan, nan], [0.7, nan]],
         ),
-    )  # 2D array with lower mean and real threshold
+    )
+    # 2D array with lower mean and imag threshold
     assert_allclose(
         phasor_threshold(
             [[0.5, 0.4], [0.8, 0.6]],
@@ -2237,7 +2255,8 @@ def test_phasor_threshold():
             [[nan, nan], [0.3, nan]],
             [[nan, nan], [0.7, nan]],
         ),
-    )  # 2D array with lower mean and imag threshold
+    )
+    # 3D array with different real threshold for first dimension
     assert_allclose(
         phasor_threshold(
             [[[0.4, 0.5]], [[0.8, 0.9]]],
@@ -2250,7 +2269,8 @@ def test_phasor_threshold():
             [[[nan, 0.2]], [[nan, 0.6]]],
             [[[nan, 0.3]], [[nan, 0.7]]],
         ),
-    )  # 3D array with different real threshold for first dimension
+    )
+    # 2D array with lower and upper phase threshold
     assert_allclose(
         phasor_threshold(
             [[0.5, 0.4], [0.8, 0.6]],
@@ -2264,7 +2284,8 @@ def test_phasor_threshold():
             [[nan, 0.2], [nan, nan]],
             [[nan, 0.6], [nan, nan]],
         ),
-    )  # 2D array with lower and upper phase threshold
+    )
+    # 2D array with lower and upper modulation threshold
     assert_allclose(
         phasor_threshold(
             [[0.5, 0.4], [0.8, 0.6]],
@@ -2278,7 +2299,8 @@ def test_phasor_threshold():
             [[nan, nan], [0.3, nan]],
             [[nan, nan], [0.7, nan]],
         ),
-    )  # 2D array with lower and upper modulation threshold
+    )
+    # 2D array with lower and upper phase and modulation threshold
     assert_allclose(
         phasor_threshold(
             [[0.5, 0.4], [0.8, 0.6]],
@@ -2294,24 +2316,87 @@ def test_phasor_threshold():
             [[nan, nan], [nan, nan]],
             [[nan, nan], [nan, nan]],
         ),
-    )  # 2D array with lower and upper phase and modulation threshold
+    )
+    # 2D array with open interval, lower and upper mean threshold
     assert_allclose(
         phasor_threshold(
-            [0.5, 0.4], [0.2, 0.5], [0.3, 0.5], 0.5, fill_value=0.0
-        ),
-        ([0.5, 0.0], [0.2, 0.0], [0.3, 0.0]),
-    )  # simple fill value
-    assert_allclose(
-        phasor_threshold(
-            [[[0.4, 0.5]], [[0.8, 0.9]]],
-            [[[0.1, 0.2]], [[0.5, 0.6]]],
-            [[[0.5, 0.3]], [[0.6, 0.7]]],
-            real_min=[[[0.2]], [[0.6]]],
-            fill_value=[[[nan]], [[0.0]]],
+            [[0.5, 0.4], [0.8, 0.6]],
+            [[0.1, 0.2], [0.3, 0.4]],
+            [[0.5, 0.6], [0.7, 0.8]],
+            0.5,
+            0.8,
+            open_interval=True,
         ),
         (
-            [[[nan, 0.5]], [[0.0, 0.9]]],
-            [[[nan, 0.2]], [[0.0, 0.6]]],
-            [[[nan, 0.3]], [[0.0, 0.7]]],
+            [[nan, nan], [nan, 0.6]],
+            [[nan, nan], [nan, 0.4]],
+            [[nan, nan], [nan, 0.8]],
         ),
-    )  # broadcast fill value to 3D array
+    )
+    # 2D array with open interval, lower and upper real threshold
+    assert_allclose(
+        phasor_threshold(
+            [[0.5, 0.4], [0.8, 0.6]],
+            [[0.1, 0.2], [0.3, 0.4]],
+            [[0.5, 0.6], [0.7, 0.8]],
+            real_min=0.2,
+            real_max=0.4,
+            open_interval=True,
+        ),
+        (
+            [[nan, nan], [0.8, nan]],
+            [[nan, nan], [0.3, nan]],
+            [[nan, nan], [0.7, nan]],
+        ),
+    )
+    # 2D array with open interval, lower and upper imag threshold
+    assert_allclose(
+        phasor_threshold(
+            [[0.5, 0.4], [0.8, 0.6]],
+            [[0.1, 0.2], [0.3, 0.4]],
+            [[0.5, 0.6], [0.7, 0.8]],
+            imag_min=0.6,
+            imag_max=0.8,
+            open_interval=True,
+        ),
+        (
+            [[nan, nan], [0.8, nan]],
+            [[nan, nan], [0.3, nan]],
+            [[nan, nan], [0.7, nan]],
+        ),
+    )
+    # 2D array with open interval, lower and upper phase threshold
+    real, imag = phasor_from_polar(
+        [[0.1, 0.2], [0.3, 0.4]], [[0.5, 0.6], [0.7, 0.8]]
+    )
+    assert_allclose(
+        phasor_threshold(
+            [[0.5, 0.4], [0.8, 0.6]],
+            real,
+            imag,
+            phase_min=0.2,
+            phase_max=0.4,
+            open_interval=True,
+        ),
+        (
+            [[nan, nan], [0.8, nan]],
+            [[nan, nan], [real[1][0], nan]],
+            [[nan, nan], [imag[1][0], nan]],
+        ),
+    )
+    # 2D array with open interval, lower and upper modulation threshold
+    assert_allclose(
+        phasor_threshold(
+            [[0.5, 0.4], [0.8, 0.6]],
+            real,
+            imag,
+            modulation_min=0.6,
+            modulation_max=0.8,
+            open_interval=True,
+        ),
+        (
+            [[nan, nan], [0.8, nan]],
+            [[nan, nan], [real[1][0], nan]],
+            [[nan, nan], [imag[1][0], nan]],
+        ),
+    )
