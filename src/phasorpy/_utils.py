@@ -13,14 +13,9 @@ __all__: list[str] = [
     'kwargs_notnone',
     'scale_matrix',
     'sort_coordinates',
+    'dilate_coordinates',
     'phasor_to_polar_scalar',
     'phasor_from_polar_scalar',
-    'circle_line_intersection',
-    'circle_circle_intersection',
-    'project_phasor_to_line',
-    'line_from_components',
-    'mask_cursor',
-    'mask_segment',
 ]
 
 import math
