@@ -124,9 +124,7 @@ def mask_from_circular_cursor(
         real = numpy.expand_dims(real, axis=-1)
         imag = numpy.expand_dims(imag, axis=-1)
 
-    mask = _is_inside_circle(
-        real, imag, center_real, center_imag, radius, True
-    )
+    mask = _is_inside_circle(real, imag, center_real, center_imag, radius)
     if moveaxis:
         mask = numpy.moveaxis(mask, -1, 0)
     return mask.astype(numpy.bool_)
@@ -269,7 +267,6 @@ def mask_from_elliptic_cursor(
         radius_b,
         angle_sin,
         angle_cos,
-        True,
     )
     if moveaxis:
         mask = numpy.moveaxis(mask, -1, 0)
@@ -379,7 +376,7 @@ def mask_from_polar_cursor(
         imag = numpy.expand_dims(imag, axis=-1)
 
     mask = _is_inside_polar_rectangle(
-        real, imag, phase_min, phase_max, modulation_min, modulation_max, True
+        real, imag, phase_min, phase_max, modulation_min, modulation_max
     )
     if moveaxis:
         mask = numpy.moveaxis(mask, -1, 0)

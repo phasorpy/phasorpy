@@ -260,7 +260,6 @@ def graphical_component_analysis(
                         b_real + f * ab_real,  # cursor_real
                         b_imag + f * ab_imag,  # cursor_imag
                         radius,
-                        True,
                     )
                 else:
                     # num_components == 3
@@ -272,7 +271,6 @@ def graphical_component_analysis(
                         components_real[3 - i - j],  # c_real
                         components_imag[3 - i - j],  # c_imag
                         radius,
-                        True,
                     )
                 fraction_counts = numpy.sum(mask)
                 component_counts.append(fraction_counts)

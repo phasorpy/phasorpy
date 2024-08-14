@@ -626,8 +626,12 @@ cdef inline (float_t, float_t) phasor_to_apparent_lifetime(
     cdef:
         double tauphi = INFINITY
         double taumod = INFINITY
-        double t = real * real + imag * imag
+        double t
 
+    if isnan(real) or isnan(imag):
+        return <float_t> NAN, <float_t> NAN
+
+    t = real * real + imag * imag
     if omega > 0.0 and t > 0.0:
         if fabs(real * omega) > 0.0:
             tauphi = imag / (real * omega)
@@ -646,10 +650,14 @@ cdef inline (float_t, float_t) phasor_from_apparent_lifetime(
 ) noexcept nogil:
     """Return phasor coordinates from apparent single lifetimes."""
     cdef:
-        double t = omega * taumod
-        double mod = 1.0 / sqrt(1.0 + t * t)
-        double phi = atan(omega * tauphi)
+        double phi, mod, t
 
+    if isnan(tauphi) or isnan(taumod):
+        return <float_t> NAN, <float_t> NAN
+
+    t = omega * taumod
+    mod = 1.0 / sqrt(1.0 + t * t)
+    phi = atan(omega * tauphi)
     return <float_t> (mod * cos(phi)), <float_t> (mod * sin(phi))
 
 
@@ -662,8 +670,13 @@ cdef (float_t, float_t) _phasor_transform(
 ) noexcept nogil:
     """Return rotated and scaled phasor coordinates."""
     cdef:
-        double g = scale * cos(angle)
-        double s = scale * sin(angle)
+        double g, s = scale * sin(angle)
+
+    if isnan(real) or isnan(imag):
+        return <float_t> NAN, <float_t> NAN
+
+    g = scale * cos(angle)
+    s = scale * sin(angle)
 
     return <float_t> (real * g - imag * s), <float_t> (real * s + imag * g)
 
@@ -676,6 +689,9 @@ cdef (float_t, float_t) _phasor_transform_const(
     float_t imag2,
 ) noexcept nogil:
     """Return rotated and scaled phasor coordinates."""
+    if isnan(real) or isnan(imag):
+        return <float_t> NAN, <float_t> NAN
+
     return real * real2 - imag * imag2, real * imag2 + imag * real2
 
 
@@ -685,6 +701,9 @@ cdef (float_t, float_t) _phasor_to_polar(
     float_t imag,
 ) noexcept nogil:
     """Return polar from phasor coordinates."""
+    if isnan(real) or isnan(imag):
+        return <float_t> NAN, <float_t> NAN
+
     return (
         <float_t> atan2(imag, real),
         <float_t> sqrt(real * real + imag * imag)
@@ -697,6 +716,9 @@ cdef (float_t, float_t) _phasor_from_polar(
     float_t modulation,
 ) noexcept nogil:
     """Return phasor from polar coordinates."""
+    if isnan(phase) or isnan(modulation):
+        return <float_t> NAN, <float_t> NAN
+
     return (
         modulation * <float_t> cos(phase),
         modulation * <float_t> sin(phase)
@@ -759,8 +781,12 @@ cdef (float_t, float_t) _polar_to_apparent_lifetime(
     cdef:
         double tauphi = INFINITY
         double taumod = INFINITY
-        double t = modulation * modulation
+        double t
 
+    if isnan(phase) or isnan(modulation):
+        return <float_t> NAN, <float_t> NAN
+
+    t = modulation * modulation
     if omega > 0.0 and t > 0.0:
         tauphi = tan(phase) / omega
         if t <= 1.0:
@@ -778,8 +804,12 @@ cdef (float_t, float_t) _polar_from_apparent_lifetime(
 ) noexcept nogil:
     """Return polar coordinates from apparent single lifetimes."""
     cdef:
-        double t = omega * taumod
+        double t
 
+    if isnan(tauphi) or isnan(taumod):
+        return <float_t> NAN, <float_t> NAN
+
+    t = omega * taumod
     return (
         <float_t> (atan(omega * tauphi)),
         <float_t> (1.0 / sqrt(1.0 + t * t))
@@ -794,6 +824,9 @@ cdef (float_t, float_t) _polar_from_reference(
     float_t known_modulation,
 ) noexcept nogil:
     """Return polar coordinates for calibration from reference coordinates."""
+    if isnan(measured_phase) or isnan(measured_modulation):
+        return <float_t> NAN, <float_t> NAN
+
     if fabs(measured_modulation) == 0.0:
         # return known_phase - measured_phase, <float_t> INFINITY
         return (
@@ -812,10 +845,16 @@ cdef (float_t, float_t) _polar_from_reference_phasor(
 ) noexcept nogil:
     """Return polar coordinates for calibration from reference phasor."""
     cdef:
-        double measured_phase = atan2(measured_imag, measured_real)
-        double known_phase = atan2(known_imag, known_real)
-        double measured_modulation = hypot(measured_real, measured_imag)
-        double known_modulation = hypot(known_real, known_imag)
+        double measured_phase, measured_modulation
+        double known_phase, known_modulation
+
+    if isnan(measured_real) or isnan(measured_imag):
+        return <float_t> NAN, <float_t> NAN
+
+    measured_phase = atan2(measured_imag, measured_real)
+    known_phase = atan2(known_imag, known_real)
+    measured_modulation = hypot(measured_real, measured_imag)
+    known_modulation = hypot(known_real, known_imag)
 
     if fabs(measured_modulation) == 0.0:
         # return <float_t> (known_phase - measured_phase), <float_t> INFINITY
@@ -836,6 +875,9 @@ cdef (float_t, float_t) _phasor_at_harmonic(
     int other_harmonic,
 ) noexcept nogil:
     """Return phasor coordinates on semicircle at other harmonic."""
+    if isnan(real):
+        return <float_t> NAN, <float_t> NAN
+
     if real <= 0.0:
         return 0.0, 0.0
     if real >= 1.0:
@@ -873,8 +915,8 @@ cdef (float_t, float_t) _phasor_divide(
     cdef:
         float_t denom = real2 * real2 + imag2 * imag2
 
-    if denom == 0.0:
-        return NAN, NAN
+    if isnan(denom) or denom == 0.0:
+        return <float_t> NAN, <float_t> NAN
 
     return (
         (real1 * real2 + imag1 * imag2) / denom,
@@ -892,15 +934,17 @@ cdef short _is_inside_range(
     float_t xmin,  # x range
     float_t xmax,
     float_t ymin,  # y range
-    float_t ymax,
-    short mask,
+    float_t ymax
 ) noexcept nogil:
     """Return whether point is inside range.
 
     Range includes lower but not upper limit.
 
     """
-    return mask and x >= xmin and x < xmax and y >= ymin and y < ymax
+    if isnan(x) or isnan(y):
+        return False
+
+    return x >= xmin and x < xmax and y >= ymin and y < ymax
 
 
 @cython.ufunc
@@ -912,7 +956,6 @@ cdef short _is_inside_rectangle(
     float_t x1,  # segment end
     float_t y1,
     float_t r,  # half width
-    short mask,
 ) noexcept nogil:
     """Return whether point is in rectangle.
 
@@ -922,7 +965,7 @@ cdef short _is_inside_rectangle(
     cdef:
         float_t t
 
-    if not mask or r <= 0.0:
+    if r <= 0.0 or isnan(x) or isnan(y):
         return False
     # normalize coordinates
     # x1 = 0
@@ -953,7 +996,6 @@ cdef short _is_inside_polar_rectangle(
     float_t angle_max,
     float_t distance_min,  # modulation
     float_t distance_max,
-    short mask,
 ) noexcept nogil:
     """Return whether point is inside polar rectangle.
 
@@ -963,7 +1005,7 @@ cdef short _is_inside_polar_rectangle(
     cdef:
         double t
 
-    if not mask:
+    if isnan(x) or isnan(y):
         return False
 
     if distance_min > distance_max:
@@ -992,11 +1034,11 @@ cdef short _is_inside_circle(
     float_t x0,  # circle center
     float_t y0,
     float_t r,  # circle radius
-    short mask,
 ) noexcept nogil:
     """Return whether point is inside circle."""
-    if not mask or r <= 0.0:
+    if r <= 0.0 or isnan(x) or isnan(y):
         return False
+
     x -= x0
     y -= y0
     return x * x + y * y <= r * r
@@ -1011,7 +1053,6 @@ cdef short _is_inside_ellipse(
     float_t a,  # ellipse radii
     float_t b,
     float_t phi,  # ellipse angle
-    short mask,
 ) noexcept nogil:
     """Return whether point is inside ellipse.
 
@@ -1023,8 +1064,9 @@ cdef short _is_inside_ellipse(
     cdef:
         float_t sina, cosa
 
-    if not mask or a <= 0.0 or b <= 0.0:
+    if a <= 0.0 or b <= 0.0 or isnan(x) or isnan(y):
         return False
+
     x -= x0
     y -= y0
     if a == b:
@@ -1047,15 +1089,15 @@ cdef short _is_inside_ellipse_(
     float_t b,
     float_t sina,  # sin/cos of ellipse angle
     float_t cosa,
-    short mask,
 ) noexcept nogil:
     """Return whether point is inside ellipse.
 
     Use pre-calculated sin(angle) and cos(angle).
 
     """
-    if not mask or a <= 0.0 or b <= 0.0:
+    if a <= 0.0 or b <= 0.0 or isnan(x) or isnan(y):
         return False
+
     x -= x0
     y -= y0
     if a == b:
@@ -1075,7 +1117,6 @@ cdef short _is_inside_stadium(
     float_t x1,  # line end
     float_t y1,
     float_t r,  # radius
-    short mask,
 ) noexcept nogil:
     """Return whether point is inside stadium.
 
@@ -1086,7 +1127,7 @@ cdef short _is_inside_stadium(
     cdef:
         float_t t
 
-    if not mask or r <= 0.0:
+    if r <= 0.0 or isnan(x) or isnan(y):
         return False
     # normalize coordinates
     # x1 = 0
@@ -1121,14 +1162,14 @@ cdef short _is_near_line(
     float_t x1,  # line end
     float_t y1,
     float_t r,  # distance
-    short mask,
 ) noexcept nogil:
     """Return whether point is close to line."""
     cdef:
         float_t t
 
-    if not mask or r <= 0.0:
+    if r <= 0.0 or isnan(x) or isnan(y):
         return False
+
     # normalize coordinates
     # x1 = 0
     # y1 = 0
@@ -1160,6 +1201,9 @@ cdef (float_t, float_t) _point_on_segment(
     """Return point projected onto line segment."""
     cdef:
         float_t t
+
+    if isnan(x) or isnan(y):
+        return <float_t> NAN, <float_t> NAN
 
     # normalize coordinates
     # x1 = 0
@@ -1197,6 +1241,9 @@ cdef (float_t, float_t) _point_on_line(
     cdef:
         float_t t
 
+    if isnan(x) or isnan(y):
+        return <float_t> NAN, <float_t> NAN
+
     # normalize coordinates
     # x1 = 0
     # y1 = 0
@@ -1227,6 +1274,9 @@ cdef float_t _fraction_on_segment(
     """Return normalized fraction of point projected onto line segment."""
     cdef:
         float_t t
+
+    if isnan(x) or isnan(y):
+        return <float_t> NAN
 
     # normalize coordinates
     x -= x1
@@ -1263,6 +1313,9 @@ cdef float_t _fraction_on_line(
     cdef:
         float_t t
 
+    if isnan(x) or isnan(y):
+        return <float_t> NAN
+
     # normalize coordinates
     x -= x1
     y -= y1
@@ -1288,6 +1341,9 @@ cdef float_t _distance_from_point(
     float_t y0,
 ) noexcept nogil:
     """Return distance from point."""
+    if isnan(x) or isnan(y):  # or isnan(x0) or isnan(y0)
+        return <float_t> NAN
+
     return <float_t> hypot(x - x0, y - y0)
 
 
@@ -1303,6 +1359,9 @@ cdef float_t _distance_from_segment(
     """Return distance from segment."""
     cdef:
         float_t t
+
+    if isnan(x) or isnan(y):
+        return <float_t> NAN
 
     # normalize coordinates
     # x1 = 0
@@ -1339,6 +1398,9 @@ cdef float_t _distance_from_line(
     cdef:
         float_t t
 
+    if isnan(x) or isnan(y):
+        return <float_t> NAN
+
     # normalize coordinates
     # x1 = 0
     # y1 = 0
@@ -1368,6 +1430,9 @@ cdef (double, double, double) _segment_direction_and_length(
     cdef:
         float_t length
 
+    if isnan(x0) or isnan(y0) or isnan(x1) or isnan(y1):
+        return NAN, NAN, 0.0
+
     x1 -= x0
     y1 -= y0
     length = <float_t> hypot(x1, y1)
@@ -1390,6 +1455,18 @@ cdef (double, double, double, double) _intersection_circle_circle(
     """Return coordinates of intersections of two circles."""
     cdef:
         double dx, dy, dr, ll, dd, hd, ld
+
+    if (
+        isnan(x0)
+        or isnan(y0)
+        or isnan(r0)
+        or isnan(x1)
+        or isnan(y1)
+        or isnan(r1)
+        or r0 == 0.0
+        or r1 == 0.0
+    ):
+        return NAN, NAN, NAN, NAN
 
     dx = x1 - x0
     dy = y1 - y0
@@ -1425,6 +1502,18 @@ cdef (double, double, double, double) _intersection_circle_line(
     """Return coordinates of intersections of circle and line."""
     cdef:
         double dx, dy, dr, dd, rdd
+
+    if (
+        isnan(r)
+        or isnan(x)
+        or isnan(y)
+        or isnan(x0)
+        or isnan(y0)
+        or isnan(x1)
+        or isnan(y1)
+        or r == 0.0
+    ):
+        return NAN, NAN, NAN, NAN
 
     dx = x1 - x0
     dy = y1 - y0

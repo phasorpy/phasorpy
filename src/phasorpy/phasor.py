@@ -2455,7 +2455,7 @@ def phasor_to_principal_plane(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return multi-harmonic phasor coordinates projected onto principal plane.
 
-    The Principal Component Analysis (PCA) is used to project
+    Principal Component Analysis (PCA) is used to project
     multi-harmonic phasor coordinates onto a plane, along which
     coordinate axes the phasor coordinates have the largest variations.
 
@@ -2491,16 +2491,6 @@ def phasor_to_principal_plane(
     transformation_matrix : ndarray
         Affine transformation matrix used to project phasor coordinates.
         The shape is ``(2, 2 * real.shape[0])``.
-        The matrix can be used to project multi-harmonic phasor coordinates,
-        where the first axis is the frequency::
-
-            x, y = numpy.dot(
-                numpy.vstack(
-                    real.reshape(real.shape[0], -1),
-                    imag.reshape(imag.shape[0], -1),
-                ),
-                transformation_matrix,
-            ).reshape(2, *real.shape[1:])
 
     See Also
     --------
@@ -2508,6 +2498,22 @@ def phasor_to_principal_plane(
 
     Notes
     -----
+
+    This implementation does not work with coordinates containing
+    undefined `NaN` values.
+
+    The transformation matrix can be used to project multi-harmonic phasor
+    coordinates, where the first axis is the frequency:
+
+    .. code-block:: python
+
+        x, y = numpy.dot(
+            numpy.vstack(
+                real.reshape(real.shape[0], -1),
+                imag.reshape(imag.shape[0], -1),
+            ),
+            transformation_matrix,
+        ).reshape(2, *real.shape[1:])
 
     An application of PCA to full-harmonic phasor coordinates from MRI signals
     can be found in [1]_.
@@ -2550,7 +2556,7 @@ def phasor_to_principal_plane(
     coordinates = numpy.vstack((re, im))
 
     # vector of centered coordinates
-    center = coordinates.mean(1, keepdims=True)
+    center = numpy.nanmean(coordinates, axis=1, keepdims=True)
     coordinates -= center
 
     # covariance matrix (scatter matrix would also work)
