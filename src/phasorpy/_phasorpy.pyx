@@ -601,8 +601,6 @@ cdef inline (double, double) linear_combination(
         (int1 * imag1 + int2 * imag2) / frac
     )
 
-###############################################################################
-# Phasor conversions
 
 cdef inline (float_t, float_t) phasor_from_lifetime(
     float_t lifetime,
@@ -617,48 +615,8 @@ cdef inline (float_t, float_t) phasor_from_lifetime(
     return <float_t> (mod * cos(phi)), <float_t> (mod * sin(phi))
 
 
-cdef inline (float_t, float_t) phasor_to_apparent_lifetime(
-    float_t real,
-    float_t imag,
-    float_t omega,
-) noexcept nogil:
-    """Return apparent single lifetimes from phasor coordinates."""
-    cdef:
-        double tauphi = INFINITY
-        double taumod = INFINITY
-        double t
-
-    if isnan(real) or isnan(imag):
-        return <float_t> NAN, <float_t> NAN
-
-    t = real * real + imag * imag
-    if omega > 0.0 and t > 0.0:
-        if fabs(real * omega) > 0.0:
-            tauphi = imag / (real * omega)
-        if t <= 1.0:
-            taumod = sqrt(1.0 / t - 1.0) / omega
-        else:
-            taumod = 0.0
-
-    return <float_t> tauphi, <float_t> taumod
-
-
-cdef inline (float_t, float_t) phasor_from_apparent_lifetime(
-    float_t tauphi,
-    float_t taumod,
-    float_t omega,
-) noexcept nogil:
-    """Return phasor coordinates from apparent single lifetimes."""
-    cdef:
-        double phi, mod, t
-
-    if isnan(tauphi) or isnan(taumod):
-        return <float_t> NAN, <float_t> NAN
-
-    t = omega * taumod
-    mod = 1.0 / sqrt(1.0 + t * t)
-    phi = atan(omega * tauphi)
-    return <float_t> (mod * cos(phi)), <float_t> (mod * sin(phi))
+###############################################################################
+# Phasor conversions
 
 
 @cython.ufunc
@@ -672,7 +630,7 @@ cdef (float_t, float_t) _phasor_transform(
     cdef:
         double g, s = scale * sin(angle)
 
-    if isnan(real) or isnan(imag):
+    if isnan(real) or isnan(imag) or isnan(angle) or isnan(scale):
         return <float_t> NAN, <float_t> NAN
 
     g = scale * cos(angle)
@@ -689,7 +647,7 @@ cdef (float_t, float_t) _phasor_transform_const(
     float_t imag2,
 ) noexcept nogil:
     """Return rotated and scaled phasor coordinates."""
-    if isnan(real) or isnan(imag):
+    if isnan(real) or isnan(imag) or isnan(real2) or isnan(imag2):
         return <float_t> NAN, <float_t> NAN
 
     return real * real2 - imag * imag2, real * imag2 + imag * real2
@@ -732,7 +690,24 @@ cdef (float_t, float_t) _phasor_to_apparent_lifetime(
     float_t omega,
 ) noexcept nogil:
     """Return apparent single lifetimes from phasor coordinates."""
-    return phasor_to_apparent_lifetime(real, imag, omega)
+    cdef:
+        double tauphi = INFINITY
+        double taumod = INFINITY
+        double t
+
+    if isnan(real) or isnan(imag):
+        return <float_t> NAN, <float_t> NAN
+
+    t = real * real + imag * imag
+    if omega > 0.0 and t > 0.0:
+        if fabs(real * omega) > 0.0:
+            tauphi = imag / (real * omega)
+        if t <= 1.0:
+            taumod = sqrt(1.0 / t - 1.0) / omega
+        else:
+            taumod = 0.0
+
+    return <float_t> tauphi, <float_t> taumod
 
 
 @cython.ufunc
@@ -742,7 +717,16 @@ cdef (float_t, float_t) _phasor_from_apparent_lifetime(
     float_t omega,
 ) noexcept nogil:
     """Return phasor coordinates from apparent single lifetimes."""
-    return phasor_from_apparent_lifetime(tauphi, taumod, omega)
+    cdef:
+        double phi, mod, t
+
+    if isnan(tauphi) or isnan(taumod):
+        return <float_t> NAN, <float_t> NAN
+
+    t = omega * taumod
+    mod = 1.0 / sqrt(1.0 + t * t)
+    phi = atan(omega * tauphi)
+    return <float_t> (mod * cos(phi)), <float_t> (mod * sin(phi))
 
 
 @cython.ufunc
@@ -752,10 +736,14 @@ cdef (float_t, float_t) _phasor_from_single_lifetime(
 ) noexcept nogil:
     """Return phasor coordinates from single lifetime component."""
     cdef:
-        double t = omega * lifetime
-        double phi = atan(t)
-        double mod = 1.0 / sqrt(1.0 + t * t)
+        double phi, mod, t
 
+    if isnan(lifetime):
+        return <float_t> NAN, <float_t> NAN
+
+    t = omega * lifetime
+    phi = atan(t)
+    mod = 1.0 / sqrt(1.0 + t * t)
     return <float_t> (mod * cos(phi)), <float_t> (mod * sin(phi))
 
 
@@ -766,8 +754,12 @@ cdef (float_t, float_t) _polar_from_single_lifetime(
 ) noexcept nogil:
     """Return polar coordinates from single lifetime component."""
     cdef:
-        double t = omega * lifetime
+        double t
 
+    if isnan(lifetime):
+        return <float_t> NAN, <float_t> NAN
+
+    t = omega * lifetime
     return <float_t> atan(t), <float_t> (1.0 / sqrt(1.0 + t * t))
 
 
@@ -824,7 +816,12 @@ cdef (float_t, float_t) _polar_from_reference(
     float_t known_modulation,
 ) noexcept nogil:
     """Return polar coordinates for calibration from reference coordinates."""
-    if isnan(measured_phase) or isnan(measured_modulation):
+    if (
+        isnan(measured_phase)
+        or isnan(measured_modulation)
+        or isnan(known_phase)
+        or isnan(known_modulation)
+    ):
         return <float_t> NAN, <float_t> NAN
 
     if fabs(measured_modulation) == 0.0:
@@ -848,7 +845,12 @@ cdef (float_t, float_t) _polar_from_reference_phasor(
         double measured_phase, measured_modulation
         double known_phase, known_modulation
 
-    if isnan(measured_real) or isnan(measured_imag):
+    if (
+        isnan(measured_real)
+        or isnan(measured_imag)
+        or isnan(known_real)
+        or isnan(known_imag)
+    ):
         return <float_t> NAN, <float_t> NAN
 
     measured_phase = atan2(measured_imag, measured_real)
@@ -885,7 +887,6 @@ cdef (float_t, float_t) _phasor_at_harmonic(
 
     harmonic *= harmonic
     other_harmonic *= other_harmonic
-
     real = (
         harmonic * real / (other_harmonic + (harmonic - other_harmonic) * real)
     )
@@ -967,6 +968,7 @@ cdef short _is_inside_rectangle(
 
     if r <= 0.0 or isnan(x) or isnan(y):
         return False
+
     # normalize coordinates
     # x1 = 0
     # y1 = 0
@@ -1129,6 +1131,7 @@ cdef short _is_inside_stadium(
 
     if r <= 0.0 or isnan(x) or isnan(y):
         return False
+
     # normalize coordinates
     # x1 = 0
     # y1 = 0
@@ -1739,7 +1742,6 @@ cdef (double, double, double) _phasor_threshold_mean_open(
     float_t mean_max,
 ) noexcept nogil:
     """Return thresholded values only by open interval of `mean`."""
-
     if isnan(mean) or isnan(real) or isnan(imag):
         return <float_t> NAN, <float_t> NAN, <float_t> NAN
 
@@ -1760,7 +1762,6 @@ cdef (double, double, double) _phasor_threshold_mean_closed(
     float_t mean_max,
 ) noexcept nogil:
     """Return thresholded values only by closed interval of `mean`."""
-
     if isnan(mean) or isnan(real) or isnan(imag):
         return <float_t> NAN, <float_t> NAN, <float_t> NAN
 
@@ -1779,7 +1780,6 @@ cdef (double, double, double) _phasor_threshold_nan(
     float_t imag,
 ) noexcept nogil:
     """Return the input values if any of them is not NaN."""
-
     if isnan(mean) or isnan(real) or isnan(imag):
         return <float_t> NAN, <float_t> NAN, <float_t> NAN
 
