@@ -628,7 +628,7 @@ cdef (float_t, float_t) _phasor_transform(
 ) noexcept nogil:
     """Return rotated and scaled phasor coordinates."""
     cdef:
-        double g, s = scale * sin(angle)
+        double g, s
 
     if isnan(real) or isnan(imag) or isnan(angle) or isnan(scale):
         return <float_t> NAN, <float_t> NAN
