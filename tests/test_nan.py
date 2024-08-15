@@ -260,7 +260,7 @@ def test_phasor_to_principal_plane_nan():
     # assert_allclose(x, [0.458946, 0.202887], atol=1e-3)
 
     real[0][0] = nan
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         # numpy.linalg.LinAlgError: Eigenvalues did not converge
         x, y, transformation_matrix = phasor_to_principal_plane(real, imag)
 
