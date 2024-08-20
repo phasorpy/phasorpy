@@ -8,6 +8,10 @@ from matplotlib import pyplot
 from numpy import nan
 from numpy.testing import assert_allclose
 
+from phasorpy.components import (
+    graphical_component_analysis,
+    two_fractions_from_phasor,
+)
 from phasorpy.cursors import (
     mask_from_circular_cursor,
     mask_from_elliptic_cursor,
@@ -337,4 +341,31 @@ def test_polar_to_apparent_lifetime_nan():
         lifetime,
         [[1.086834, nan, 0.199609], [3.445806, nan, 19.794646]],
         atol=1e-3,
+    )
+
+
+def test_two_fractions_from_phasor_nan():
+    """Test two_fractions_from_phasor function with NaN values."""
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        fractions = two_fractions_from_phasor(
+            *VALUES_WITH_NAN, [0.5, 1.0], [0.5, 1.0]
+        )
+    assert_allclose(fractions, [1.0, nan, 1.0])
+
+
+def test_graphical_component_analysis_nan():
+    """Test graphical_component_analysis function with NaN values."""
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        counts = graphical_component_analysis(
+            *VALUES_WITH_NAN, [0.0, 0.0, 1.0], [0.0, 1.0, 0.0], fractions=10
+        )
+    assert_allclose(
+        counts,
+        (
+            [1, 1, 0, 0, 0, 0, 0, 0, 1, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
+        ),
     )
