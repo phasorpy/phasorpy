@@ -469,9 +469,9 @@ def pseudo_color(
         )
         if intensity.size > 1:
             if vmin is None:
-                vmin = intensity.min()
+                vmin = numpy.nanmin(intensity)
             if vmax is None:
-                vmax = intensity.max()
+                vmax = numpy.nanmax(intensity)
             if vmin != 0.0:
                 intensity -= vmin
             scale = vmax - vmin

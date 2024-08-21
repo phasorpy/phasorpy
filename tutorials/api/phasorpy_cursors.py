@@ -20,7 +20,7 @@ from phasorpy.cursors import (
 )
 from phasorpy.datasets import fetch
 from phasorpy.io import read_lsm
-from phasorpy.phasor import phasor_from_signal
+from phasorpy.phasor import phasor_from_signal, phasor_threshold
 from phasorpy.plot import PhasorPlot
 
 # %%
@@ -29,7 +29,8 @@ from phasorpy.plot import PhasorPlot
 signal = read_lsm(fetch('paramecium.lsm'))
 mean, real, imag = phasor_from_signal(signal, axis=0)
 
-threshold = mean > 1
+# remove coordinates with zero intensity
+mean_thresholded, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 
 # %%
 # Circular cursors
@@ -49,7 +50,7 @@ circular_mask = mask_from_circular_cursor(
 # Show the circular cursors in a phasor plot:
 
 plot = PhasorPlot(allquadrants=True, title='Circular cursors')
-plot.hist2d(real[threshold], imag[threshold], cmap='Greys')
+plot.hist2d(real, imag, cmap='Greys')
 for i in range(len(cursors_real)):
     plot.cursor(
         cursors_real[i],
@@ -94,7 +95,7 @@ elliptic_mask = mask_from_elliptic_cursor(
 # Show the elliptic cursors in a phasor plot:
 
 plot = PhasorPlot(allquadrants=True, title='Elliptic cursors')
-plot.hist2d(real[threshold], imag[threshold], cmap='Greys')
+plot.hist2d(real, imag, cmap='Greys')
 for i in range(len(cursors_real)):
     plot.cursor(
         cursors_real[i],
@@ -137,7 +138,7 @@ polar_mask = mask_from_polar_cursor(
 # Show the polar cursors in a phasor plot:
 
 plot = PhasorPlot(allquadrants=True, title='Polar cursors')
-plot.hist2d(real[threshold], imag[threshold], cmap='Greys')
+plot.hist2d(real, imag, cmap='Greys')
 for i in range(len(phase_min)):
     plot.polar_cursor(
         phase=phase_min[i],
@@ -150,15 +151,18 @@ for i in range(len(phase_min)):
 plot.show()
 
 # %%
-# The mean intensity image can be used as a base layer to overlay
-# the masks from the polar cursors:
+# The thresholded mean intensity image can be used as a base layer to
+# overlay the masks from the polar cursors. Values below the threshold are
+# transparent (white):
 
 pseudo_color_image = pseudo_color(
-    *polar_mask, intensity=mean, colors=CATEGORICAL[2:]
+    *polar_mask, intensity=mean_thresholded, colors=CATEGORICAL[2:]
 )
 
 fig, ax = plt.subplots()
-ax.set_title('Pseudo-color image from polar cursors and intensity')
+ax.set_title(
+    'Pseudo-color image from\npolar cursors and thresholded intensity'
+)
 ax.imshow(pseudo_color_image)
 plt.show()
 
