@@ -85,7 +85,7 @@ def mask_from_circular_cursor(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_phasorpy_cursors.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
 
     Examples
     --------
@@ -186,7 +186,7 @@ def mask_from_elliptic_cursor(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_phasorpy_cursors.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
 
     Examples
     --------
@@ -320,7 +320,7 @@ def mask_from_polar_cursor(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_phasorpy_cursors.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
 
     Example
     -------
@@ -423,7 +423,7 @@ def pseudo_color(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_phasorpy_cursors.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
 
     Example
     -------

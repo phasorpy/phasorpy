@@ -605,7 +605,7 @@ def lifetime_to_signal(
     --------
     phasorpy.phasor.phasor_from_lifetime
     phasorpy.phasor.phasor_to_signal
-    :ref:`sphx_glr_tutorials_phasorpy_lifetime_to_signal.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_lifetime_to_signal.py`
 
     Notes
     -----
@@ -2299,7 +2299,7 @@ def phasor_from_fret_donor(
     See Also
     --------
     phasorpy.phasor.phasor_from_fret_acceptor
-    :ref:`sphx_glr_tutorials_phasorpy_fret.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_fret.py`
 
     Examples
     --------
@@ -2414,7 +2414,7 @@ def phasor_from_fret_acceptor(
     See Also
     --------
     phasorpy.phasor.phasor_from_fret_donor
-    :ref:`sphx_glr_tutorials_phasorpy_fret.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_fret.py`
 
     Examples
     --------
@@ -2501,7 +2501,7 @@ def phasor_to_principal_plane(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_phasorpy_pca.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_pca.py`
 
     Notes
     -----

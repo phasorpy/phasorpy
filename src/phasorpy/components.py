@@ -82,7 +82,7 @@ def two_fractions_from_phasor(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_phasorpy_components.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_components.py`
 
     Notes
     -----
@@ -172,7 +172,7 @@ def graphical_component_analysis(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_phasorpy_components.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_components.py`
 
     Notes
     -----

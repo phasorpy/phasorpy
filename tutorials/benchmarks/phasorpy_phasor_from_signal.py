@@ -16,6 +16,8 @@ coordinates from time-resolved or spectral signals can operate in two modes:
 
 This tutorial compares the performance of the two modes.
 
+Import required modules and functions:
+
 """
 
 from timeit import timeit
@@ -49,7 +51,7 @@ signal = signal.astype(numpy.uint16)  # 108 MB
 signal[signal < 0.05] = 0.0  # 5% no signal
 
 # %%
-# Print execution times depending on function, axis, number of harmonics,
+# Print execution times depending on FFT function, axis, number of harmonics,
 # and number of threads:
 
 
@@ -152,5 +154,5 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
 # -----------
 #
 # Using the Cython implementation is a reasonable default when calculating
-# a few harmonics. Using FFT may be a better choice, for example,
-# when computing large number of harmonics with an optimized FFT function.
+# a few harmonics. Using FFT is a better choice when computing large number
+# of harmonics, especially with an optimized FFT function.
