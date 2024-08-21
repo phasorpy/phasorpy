@@ -329,6 +329,7 @@ def phasor_from_signal(
             real = numpy.moveaxis(real, axis, 0)
             imag = numpy.moveaxis(imag, axis, 0)
 
+        # complex division by mean signal
         with numpy.errstate(divide='ignore', invalid='ignore'):
             real /= dc
             imag /= dc
@@ -433,6 +434,11 @@ def phasor_to_signal(
     --------
     phasorpy.phasor.phasor_from_signal
 
+    Notes
+    -----
+    The reconstructed signal may be undefined if the input phasor coordinates
+    or signal mean contain `NaN` values.
+
     Examples
     --------
     Reconstruct exact signal from phasor coordinates at all harmonics:
@@ -501,6 +507,7 @@ def phasor_to_signal(
     if len(harmonic) != real.shape[0]:
         raise ValueError(f'{len(harmonic)=} != {real.shape[0]=}')
 
+    # complex multiplication by mean signal
     real *= mean
     imag *= mean
     numpy.negative(imag, out=imag)
@@ -2664,6 +2671,11 @@ def phasor_filter(
     -----
     For now, only the median filter method is implemented.
     Additional filtering methods may be added in the future.
+
+    The implementation of the median filter method is based on
+    :py:func:`scipy.ndimage.median_filter`,
+    which has undefined behavior if the input arrays contain `NaN` values.
+    See `issue #87 <https://github.com/phasorpy/phasorpy/issues/87>`_.
 
     Examples
     --------
