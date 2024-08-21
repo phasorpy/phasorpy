@@ -14,7 +14,7 @@ and Excel software.
 
 .. note::
 
-    This tutorial is work in progress. Not all of SimFCS's functionality is
+    This tutorial is work in progress. Not all of SimFCS' functionality is
     available in the PhasorPy library yet.
 
 """
@@ -223,10 +223,10 @@ real2, imag2 = phasor_filter(real2, imag2, method='median', repeat=2)
 # zero modulation depth). This can be eliminated by setting a threshold.
 
 _, real1, imag1 = phasor_threshold(
-    mean, real1, imag1, 20, real_min=0, imag_min=0
+    mean, real1, imag1, mean_min=20, real_min=0, imag_min=0, open_interval=True
 )
 _, real2, imag2 = phasor_threshold(
-    mean, real2, imag2, 20, real_min=0, imag_min=0
+    mean, real2, imag2, mean_min=20, real_min=0, imag_min=0, open_interval=True
 )
 # %%
 plot_phasor(
@@ -418,18 +418,18 @@ real1, imag1 = phasor_filter(real1, imag1, method='median', repeat=2)
 real2, imag2 = phasor_filter(real2, imag2, method='median', repeat=2)
 
 _, real1, imag1 = phasor_threshold(
-    mean, real1, imag1, 32, real_min=0, imag_min=0
+    mean, real1, imag1, mean_min=32, real_min=0, imag_min=0, open_interval=True
 )
 _, real2, imag2 = phasor_threshold(
-    mean, real2, imag2, 32, real_min=0, imag_min=0
+    mean, real2, imag2, mean_min=32, real_min=0, imag_min=0, open_interval=True
 )
 
 plot = PhasorPlot(
     frequency=frequency,
     title='Filtered CFPpax8651866 (blue) and 1011rac1002 (red)',
 )
-plot.hist2d(real1, imag1, cmap='Blues', cmin=4)  # label='CFPpax8651866'
-plot.hist2d(real2, imag2, cmap='Reds', cmin=4)  # label='1011rac1002'
+plot.hist2d(real2, imag2, cmap='Reds', cmin=20)  # label='1011rac1002'
+plot.hist2d(real1, imag1, cmap='Blues', cmin=20)  # label='CFPpax8651866'
 plot.show()
 
 # %%
@@ -469,7 +469,7 @@ imag = numpy.vstack((imag1, imag2))
 real, imag = phasor_filter(real, imag, method='median', repeat=2)
 
 _, real, imag = phasor_threshold(
-    mean, real, imag, 6202, real_min=0, imag_min=0
+    mean, real, imag, mean_min=6202, real_min=0, imag_min=0, open_interval=True
 )
 
 plot = PhasorPlot(

@@ -43,12 +43,8 @@ def test_is_inside_circle():
     """Test _is_inside_circle function."""
     circle = 0.8, 0.4, 0.05
     assert_array_equal(
-        _is_inside_circle(*POINTS, *circle, True).astype(bool),
+        _is_inside_circle(*POINTS, *circle).astype(bool),
         [False, False, True],
-    )
-    assert_array_equal(
-        _is_inside_circle(*POINTS, *circle, False).astype(bool),
-        [False, False, False],
     )
 
 
@@ -57,23 +53,23 @@ def test_is_inside_ellipse():
     # compare to circle
     circle = 0.8, 0.4, 0.05
     assert_array_equal(
-        _is_inside_ellipse(*POINTS, *circle, 0.05, 1e-3, True),
-        _is_inside_circle(*POINTS, *circle, True),
+        _is_inside_ellipse(*POINTS, *circle, 0.05, 1e-3),
+        _is_inside_circle(*POINTS, *circle),
     )
     assert_array_equal(
-        _is_inside_ellipse_(*POINTS, *circle, 0.05, 1e-3, 1e-3, True),
-        _is_inside_circle(*POINTS, *circle, True),
+        _is_inside_ellipse_(*POINTS, *circle, 0.05, 1e-3, 1e-3),
+        _is_inside_circle(*POINTS, *circle),
     )
     # ellipse
     ellipse = 0.8, 0.4, 0.05, 0.1
     angle = math.pi / 4
     assert_array_equal(
-        _is_inside_ellipse(*POINTS, *ellipse, angle, True).astype(bool),
+        _is_inside_ellipse(*POINTS, *ellipse, angle).astype(bool),
         [False, True, True],
     )
     assert_array_equal(
         _is_inside_ellipse_(
-            *POINTS, *ellipse, math.sin(angle), math.cos(angle), True
+            *POINTS, *ellipse, math.sin(angle), math.cos(angle)
         ).astype(bool),
         [False, True, True],
     )
@@ -82,7 +78,7 @@ def test_is_inside_ellipse():
 def test_is_inside_range():
     """Test _is_inside_range function."""
     assert_array_equal(
-        _is_inside_range(*POINTS, 0.3, 0.5, 0.35, 0.5, True).astype(bool),
+        _is_inside_range(*POINTS, 0.3, 0.5, 0.35, 0.5).astype(bool),
         [True, False, False],
     )
 
@@ -90,9 +86,7 @@ def test_is_inside_range():
 def test_is_inside_rectangle():
     """Test _is_inside_rectangle function."""
     assert_array_equal(
-        _is_inside_rectangle(*POINTS, 0.4, 0.38, 0.83, 0.4, 0.1, True).astype(
-            bool
-        ),
+        _is_inside_rectangle(*POINTS, 0.4, 0.38, 0.83, 0.4, 0.1).astype(bool),
         [True, False, True],
     )
 
@@ -101,7 +95,7 @@ def test_is_inside_polar_rectangle():
     """Test _is_inside_polar_rectangle function."""
     assert_array_equal(
         _is_inside_polar_rectangle(
-            *POINTS, math.pi / 3, math.pi / 5, 0.5, 0.8, True
+            *POINTS, math.pi / 3, math.pi / 5, 0.5, 0.8
         ).astype(bool),
         [True, False, False],
     )
@@ -111,23 +105,19 @@ def test_is_inside_stadium():
     """Test _is_inside_stadium function."""
     stadium = 0.8, 0.4, 0.042, 0.2, 0.025
     assert_allclose(
-        _is_inside_stadium([0.4, 0.84], [0.38, 0.4], *stadium, True).astype(
-            bool
-        ),
+        _is_inside_stadium([0.4, 0.84], [0.38, 0.4], *stadium).astype(bool),
         [False, False],
     )
     assert_allclose(
-        _is_inside_stadium([0.4, 0.82], [0.38, 0.4], *stadium, True).astype(
-            bool
-        ),
+        _is_inside_stadium([0.4, 0.82], [0.38, 0.4], *stadium).astype(bool),
         [False, True],
     )
     assert_allclose(
-        _is_inside_stadium(0.8, 0.4, *stadium, True).astype(bool),
+        _is_inside_stadium(0.8, 0.4, *stadium).astype(bool),
         [True],
     )
     assert_allclose(
-        _is_inside_stadium(0.9, 0.4, *stadium, True).astype(bool),
+        _is_inside_stadium(0.9, 0.4, *stadium).astype(bool),
         [False],
     )
     assert _is_near_segment is _is_near_segment
@@ -136,7 +126,7 @@ def test_is_inside_stadium():
 def test_is_near_line():
     """Test _is_near_line function."""
     assert_array_equal(
-        _is_near_line(*POINTS, 0.4, 0.38, 0.83, 0.4, 0.001, True).astype(bool),
+        _is_near_line(*POINTS, 0.4, 0.38, 0.83, 0.4, 0.001).astype(bool),
         [True, False, True],
     )
 
@@ -339,29 +329,29 @@ def test_geometric_ufunc_on_grid():
     re, im = _point_on_segment(real, imag, *line)
     plot_points(re, im, title='_point_on_segment', ax=ax[3, 1])
 
-    mask = _is_near_line(real, imag, *line, 0.1, True)
+    mask = _is_near_line(real, imag, *line, 0.1)
     plot_mask(real, imag, mask, title='_is_near_line', ax=ax[4, 0])
 
-    mask = _is_inside_stadium(real, imag, *line, 0.1, True)
+    mask = _is_inside_stadium(real, imag, *line, 0.1)
     plot_mask(real, imag, mask, title='_is_inside_stadium', ax=ax[4, 1])
 
-    mask = _is_inside_circle(real, imag, 0.5, 0.5, 0.1, True)
+    mask = _is_inside_circle(real, imag, 0.5, 0.5, 0.1)
     plot_mask(real, imag, mask, title='_is_inside_circle', ax=ax[5, 0])
 
-    mask = _is_inside_ellipse(real, imag, 0.5, 0.5, 0.05, 0.15, pi / 4, True)
+    mask = _is_inside_ellipse(real, imag, 0.5, 0.5, 0.05, 0.15, pi / 4)
     plot_mask(real, imag, mask, title='_is_inside_ellipse', ax=ax[5, 1])
 
     mask = _is_inside_polar_rectangle(
-        real, imag, pi / 5, pi / 3 + 4 * pi, 0.6071, 0.8071, True
+        real, imag, pi / 5, pi / 3 + 4 * pi, 0.6071, 0.8071
     )
     plot_mask(
         real, imag, mask, title='_is_inside_polar_rectangle', ax=ax[6, 0]
     )
 
-    mask = _is_inside_rectangle(real, imag, *line, 0.1, True)
+    mask = _is_inside_rectangle(real, imag, *line, 0.1)
     plot_mask(real, imag, mask, title='_is_inside_rectangle', ax=ax[6, 1])
 
-    mask = _is_inside_range(real, imag, 0.4, 0.6, 0.45, 0.55, True)
+    mask = _is_inside_range(real, imag, 0.4, 0.6, 0.45, 0.55)
     plot_mask(real, imag, mask, title='_is_inside_range', ax=ax[7, 0])
 
     plot_points([], [], title='', ax=ax[7, 1])
