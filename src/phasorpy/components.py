@@ -151,11 +151,14 @@ def graphical_component_analysis(
         Imaginary coordinates for two or three components.
     radius: float, optional, default: 0.05
         Radius of the cursor in phasor coordinates.
-    fractions: array_like or int, optional, default: 100
+    fractions: array_like or int, optional
         Number of equidistant fractions, or 1D array of fraction values.
         Fraction values must be in range [0.0, 1.0].
         If an integer, ``numpy.linspace(0.0, 1.0, fractions)`` fraction values
         are used.
+        If None (default), the number of fractions is determined from the
+        longest distance between any pair of components and the radius of
+        the cursor (see Notes below).
 
     Returns
     -------
@@ -183,16 +186,19 @@ def graphical_component_analysis(
 
     The graphical method was first introduced in [1]_.
 
-    If no `fractions` are provided, the number of fractions (N) used is
-    determined by the longest distance between any pair of components (D)
-    and by the radius of the cursor (R):
+    If no `fractions` are provided, the number of fractions (:math:`N`) used
+    is determined from the longest distance between any pair of components
+    (:math:`D`) and the radius of the cursor (:math:`R`):
 
     .. math::
-        N = \frac{2*D}{R} + 1
+
+        N = \frac{2 \cdot D}{R} + 1
 
     The fractions can be retrieved by:
 
-    ``fractions = numpy.linspace(0.0, 1.0, len(counts[0]))``
+    .. code-block:: python
+
+        fractions = numpy.linspace(0.0, 1.0, len(counts[0]))
 
     References
     ----------
@@ -257,7 +263,7 @@ def graphical_component_analysis(
                 )
                 longest_distance = max(longest_distance, length)
         fractions = numpy.linspace(
-            0.0, 1.0, int(longest_distance / (radius / 2) + 1)
+            0.0, 1.0, int(round(longest_distance / (radius / 2) + 1))
         )
     elif isinstance(fractions, numbers.Integral):
         fractions = numpy.linspace(0.0, 1.0, fractions)
