@@ -42,6 +42,7 @@ from ._phasorpy import (
     _fraction_on_segment,
     _is_inside_circle,
     _is_inside_stadium,
+    _segment_direction_and_length,
 )
 
 
@@ -132,7 +133,7 @@ def graphical_component_analysis(
     radius: float = 0.05,
     fractions: ArrayLike | None = None,
 ) -> tuple[NDArray[Any], ...]:
-    """Return fractions of two or three components from phasor coordinates.
+    r"""Return fractions of two or three components from phasor coordinates.
 
     The graphical method is based on moving circular cursors along the line
     between pairs of components, and quantifying the phasors for each
@@ -150,11 +151,14 @@ def graphical_component_analysis(
         Imaginary coordinates for two or three components.
     radius: float, optional, default: 0.05
         Radius of the cursor in phasor coordinates.
-    fractions: array_like or int, optional, default: 100
+    fractions: array_like or int, optional
         Number of equidistant fractions, or 1D array of fraction values.
         Fraction values must be in range [0.0, 1.0].
         If an integer, ``numpy.linspace(0.0, 1.0, fractions)`` fraction values
         are used.
+        If None (default), the number of fractions is determined from the
+        longest distance between any pair of components and the radius of
+        the cursor (see Notes below).
 
     Returns
     -------
@@ -181,6 +185,20 @@ def graphical_component_analysis(
     be analyzed and will be broadcasted to all channels/frequencies.
 
     The graphical method was first introduced in [1]_.
+
+    If no `fractions` are provided, the number of fractions (:math:`N`) used
+    is determined from the longest distance between any pair of components
+    (:math:`D`) and the radius of the cursor (:math:`R`):
+
+    .. math::
+
+        N = \frac{2 \cdot D}{R} + 1
+
+    The fractions can be retrieved by:
+
+    .. code-block:: python
+
+        fractions = numpy.linspace(0.0, 1.0, len(counts[0]))
 
     References
     ----------
@@ -232,7 +250,22 @@ def graphical_component_analysis(
     if num_components not in {2, 3}:
         raise ValueError('number of components must be 2 or 3')
 
-    if isinstance(fractions, numbers.Integral):
+    if fractions is None:
+        longest_distance = 0
+        for i in range(num_components):
+            a_real = components_real[i]
+            a_imag = components_imag[i]
+            for j in range(i + 1, num_components):
+                b_real = components_real[j]
+                b_imag = components_imag[j]
+                _, _, length = _segment_direction_and_length(
+                    a_real, a_imag, b_real, b_imag
+                )
+                longest_distance = max(longest_distance, length)
+        fractions = numpy.linspace(
+            0.0, 1.0, int(round(longest_distance / (radius / 2) + 1))
+        )
+    elif isinstance(fractions, numbers.Integral):
         fractions = numpy.linspace(0.0, 1.0, fractions)
     else:
         fractions = numpy.asarray(fractions)
