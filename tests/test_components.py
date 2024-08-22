@@ -77,6 +77,7 @@ def test_two_fractions_from_phasor_channels():
     radius, fractions,
     expected_counts""",
     [
+        # Two components, phasor as scalar
         (
             0.6,
             0.35,
@@ -85,7 +86,8 @@ def test_two_fractions_from_phasor_channels():
             0.05,
             6,
             ([0, 0, 1, 0, 0, 0],),
-        ),  # Two components, phasor as scalar
+        ),
+        # Two components, phasors as list. Increase cursor radius.
         (
             [0.6, 0.4],
             [0.35, 0.38],
@@ -94,7 +96,8 @@ def test_two_fractions_from_phasor_channels():
             0.15,
             [0, 0.2, 0.4, 0.6, 0.8, 1],
             ([0, 0, 1, 2, 1, 0],),
-        ),  # Two components, phasors as list. Increase cursor radius.
+        ),
+        # Two components, phasors as list. Increase number of steps.
         (
             [0.6, 0.4],
             [0.35, 0.38],
@@ -103,7 +106,8 @@ def test_two_fractions_from_phasor_channels():
             0.05,
             11,
             ([0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],),
-        ),  # Two components, phasors as list. Increase number of steps.
+        ),
+        # Three components, phasor as scalar
         (
             0.3,
             0.2,
@@ -112,7 +116,8 @@ def test_two_fractions_from_phasor_channels():
             0.05,
             [0, 0.2, 0.4, 0.6, 0.8, 1],
             ([0, 0, 0, 1, 0, 0], [0, 0, 0, 1, 0, 0], [0, 0, 1, 1, 0, 0]),
-        ),  # Three components, phasor as scalar
+        ),
+        # Three components, phasors as list
         (
             [0.3, 0.5],
             [0.2, 0.3],
@@ -121,7 +126,8 @@ def test_two_fractions_from_phasor_channels():
             0.05,
             6,
             ([0, 1, 1, 1, 0, 0], [0, 1, 0, 1, 0, 0], [0, 0, 2, 1, 0, 0]),
-        ),  # Three components, phasors as list
+        ),
+        # Phasor outside semicircle but inside cursor of component 1
         (
             [0.4, 0.82],
             [0.38, 0.4],
@@ -130,7 +136,8 @@ def test_two_fractions_from_phasor_channels():
             0.05,
             5,
             ([0, 0, 1, 0, 1], [0, 0, 0, 1, 2], [1, 1, 2, 2, 2]),
-        ),  # Phasor outside semicircle but inside cursor of component 1
+        ),
+        # Phasor outside semicircle and outside cursor of component 1
         (
             [0.4, 0.86],
             [0.38, 0.4],
@@ -139,7 +146,31 @@ def test_two_fractions_from_phasor_channels():
             0.05,
             [0, 0.25, 0.5, 0.75, 1],
             ([0, 0, 1, 0, 0], [0, 0, 0, 1, 1], [0, 0, 1, 1, 1]),
-        ),  # Phasor outside semicircle and outside cursor of component 1
+        ),
+        # Two components no fractions provided
+        (
+            0,
+            0,
+            [0, 0],
+            [0, 0.2],
+            0.05,
+            None,
+            ([0, 0, 0, 0, 0, 0, 1, 1, 1],),
+        ),
+        # Three components no fractions provided
+        (
+            0,
+            0,
+            [0, 0.1, 0],
+            [0, 0.1, 0.2],
+            0.05,
+            None,
+            (
+                [0, 0, 0, 0, 0, 0, 1, 1, 1],
+                [0, 0, 0, 0, 0, 0, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1],
+            ),
+        ),
     ],
 )
 def test_graphical_component_analysis(
@@ -170,41 +201,50 @@ def test_graphical_component_analysis(
     fractions
     """,
     [
-        ([0], [0, 0], [0, 1], [0, 1], 10),  # imag.shape != real.shape
-        ([0, 0], [0], [0, 1], [0, 1], 10),  # real.shape != imag.shape
+        # imag.shape != real.shape
+        ([0], [0, 0], [0, 1], [0, 1], 10),
+        # real.shape != imag.shape
+        ([0, 0], [0], [0, 1], [0, 1], 10),
+        # components_imag.shape != components_real.shape
         (
             0,
             0,
             [0, 1, 2],
             [0, 1],
             10,
-        ),  # components_imag.shape != components_real.shape
+        ),
+        # components_real.shape != components_imag.shape
         (
             0,
             0,
             [0, 1],
             [0, 1, 2],
             10,
-        ),  # components_real.shape != components_imag.shape
-        ([0], [0], [0], [0], 10),  # Number of components is 1
+        ),
+        # Number of components is 1
+        ([0], [0], [0], [0], 10),
+        # number of components is more than 3
         (
             0,
             0,
             [0, 1, 2, 3],
             [0, 1, 2, 3],
             10,
-        ),  # number of components is more than 3
-        # ([0], [0], [0, 0], [0, 0], 10),  # components have same coordinates
+        ),
+        # components are not one dimensional
         (
             0,
             0,
             [[0], [1]],
             [[0], [1]],
             10,
-        ),  # components are not one dimensional
-        ([0, 0], [0, 0], [0, 1], [0, 1], -10),  # negative fraction
-        ([0, 0], [0, 0], [0, 1], [0, 1], [0.5, -0.5]),  # negative fraction
-        ([0, 0], [0, 0], [0, 1], [0, 1], [[0.5], [-0.5]]),  # fraction not 1D
+        ),
+        # negative fraction
+        ([0, 0], [0, 0], [0, 1], [0, 1], -10),
+        # negative fraction
+        ([0, 0], [0, 0], [0, 1], [0, 1], [0.5, -0.5]),
+        # fraction not 1D
+        ([0, 0], [0, 0], [0, 1], [0, 1], [[0.5], [-0.5]]),
     ],
 )
 def test_errors_graphical_component_analysis(
