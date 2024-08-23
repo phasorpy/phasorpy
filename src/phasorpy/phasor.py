@@ -428,7 +428,7 @@ def phasor_to_signal(
     Returns
     -------
     signal : ndarray
-        Reconstructed signal with samples of one period along last axis.
+        Reconstructed signal with samples of one period along the last axis.
 
     See Also
     --------
@@ -436,7 +436,7 @@ def phasor_to_signal(
 
     Notes
     -----
-    The reconstructed signal may be undefined if the input phasor coordinates
+    The reconstructed signal may be undefined if the input phasor coordinates,
     or signal mean contain `NaN` values.
 
     Examples
@@ -1967,7 +1967,7 @@ def phasor_from_lifetime(
       Return arrays of shape `(frequency.size, fraction.shape[1])`.
 
     - `lifetime` and `fraction` are up to two-dimensional of same shape.
-      The last dimensions holding lifetime components and their fractions.
+      The last dimensions hold lifetime components and their fractions.
       Return arrays of shape `(frequency.size, lifetime.shape[0])`.
 
     Length-one dimensions are removed from returned arrays
@@ -2108,7 +2108,7 @@ def polar_to_apparent_lifetime(
     phase : array_like
         Angular component of polar coordinates.
     imag : array_like
-        Radial component of pholar coordinates.
+        Radial component of polar coordinates.
     frequency : array_like
         Laser pulse or modulation frequency in MHz.
     unit_conversion : float, optional
@@ -2768,7 +2768,7 @@ def phasor_threshold(
     modulation_max : array_like, optional
         Upper threshold for modulation.
     open_interval : bool, optional
-        If True, the interval is open and the threshold values are
+        If true, the interval is open, and the threshold values are
         not included in the interval.
         If False, the interval is closed, and the threshold values are
         included in the interval. The default is False.

@@ -91,7 +91,7 @@ def two_fractions_from_phasor(
 
     For now, calculation of fraction of components from different
     channels or frequencies is not supported. Only one pair of components can
-    be analyzed and will be broadcasted to all channels/frequencies.
+    be analyzed and will be broadcast to all channels/frequencies.
 
     Examples
     --------
@@ -136,7 +136,7 @@ def graphical_component_analysis(
     r"""Return fractions of two or three components from phasor coordinates.
 
     The graphical method is based on moving circular cursors along the line
-    between pairs of components, and quantifying the phasors for each
+    between pairs of components and quantifying the phasors for each
     fraction.
 
     Parameters
@@ -182,7 +182,7 @@ def graphical_component_analysis(
     -----
     For now, calculation of fraction of components from different
     channels or frequencies is not supported. Only one set of components can
-    be analyzed and will be broadcasted to all channels/frequencies.
+    be analyzed and will be broadcast to all channels/frequencies.
 
     The graphical method was first introduced in [1]_.
 

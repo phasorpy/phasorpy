@@ -42,7 +42,7 @@ image processing, array programming, and Python.
 # latest source code on GitHub. This requires a C compiler, such as
 # XCode, Visual Studio, or gcc, to be installed::
 #
-#     python -m pip install git+https://github.com/phasorpy/phasorpy.git
+#     python -m pip install -U git+https://github.com/phasorpy/phasorpy.git
 
 # %%
 # Import phasorpy
@@ -109,7 +109,7 @@ plot_signal_image(signal, axis=0)
 # of a signal at certain harmonics, normalized by the mean intensity
 # (the zeroth harmonic).
 # Phasor coordinates are named ``real`` and ``imag`` in the phasorpy library.
-# In the literature and other software, they are also known as
+# In literature and other software, they are also known as
 # (:math:`G`) and (:math:`S`).
 #
 # Phasor coordinates of the first harmonic are calculated from the signal,
@@ -135,7 +135,7 @@ from phasorpy.plot import plot_phasor_image
 plot_phasor_image(mean, real, imag, title='Sample')
 
 # %%
-# By default, only the phasor coordinates at the first harmonic is calculated.
+# By default, only the phasor coordinates at the first harmonic are calculated.
 # However, only when the phasor coordinates at all harmonics are considered
 # (including the mean intensity) is the signal completely described:
 
@@ -159,7 +159,7 @@ numpy.testing.assert_allclose(
 # phase shifted and modulated (scaled) by unknown amounts.
 # The phasor coordinates must therefore be calibrated with coordinates
 # obtained from a reference standard of known lifetime, acquired with
-# exactly the same instrument settings.
+# the same instrument settings.
 #
 # In this case, a homogeneous solution of Fluorescein with a lifetime of
 # 4.2 ns was imaged.
@@ -283,93 +283,90 @@ phasorplot.hist2d(uncalibrated_real, uncalibrated_imag)
 phasorplot.show()
 
 # %%
-# Convert to apparent single lifetimes
-# ------------------------------------
+# Cursor selection
+# ----------------
+
+# TODO
+
+# %%
+# Component analysis
+# ------------------
+
+# TODO
+
+# %%
+# Spectral phasors
+# ----------------
 #
-# The cartesian phasor coordinates can be converted to polar coordinates,
-# phase and modulation. Theoretical single exponential lifetimes, the
-# "apparent single lifetimes", can be calculated from either phase or
-# modulation at each pixel:
+# Phasor coordinates can be calculated from hyperspectral images (acquired
+# at many equidistant emission wavelengths) and processed in much the same
+# way as time-resolved signals. Calibration is not necessary.
+#
+# Open a hyperspectral dataset acquired with a laser scanning microscope:
 
-from phasorpy.phasor import phasor_to_apparent_lifetime
+from phasorpy.io import read_lsm
 
-phase_lifetime, modulation_lifetime = phasor_to_apparent_lifetime(
-    real, imag, frequency=frequency
-)
+signal = read_lsm(fetch('paramecium.lsm'))
 
-# %%
-# Plot the apparent single lifetimes as histograms or images using the
-# matplotlib library:
-
-fig = pyplot.figure()
-fig.suptitle('Apparent single lifetimes')
-ax0 = fig.add_subplot(1, 2, 1)
-ax0.set(title='from Phase')
-ax0.imshow(phase_lifetime, vmin=0.0, vmax=3.5)
-ax1 = fig.add_subplot(1, 2, 2)
-ax1.set(title='from Modulation')
-pos = ax1.imshow(modulation_lifetime, vmin=0.0, vmax=3.5)
-fig.colorbar(pos, ax=[ax0, ax1], shrink=0.4, location='bottom')
-pyplot.show()
+plot_signal_image(signal, axis=0, title='Hyperspectral image')
 
 # %%
+# Calculate phasor coordinates at the first harmonic and filter out
+# pixels with low intensities:
 
-fig, ax = pyplot.subplots()
-ax.set(
-    title='Apparent single lifetimes',
-    xlim=[0, 3.5],
-    xlabel='lifetime [ns]',
-    ylabel='number pixels',
-)
-ax.hist(phase_lifetime.flat, bins=64, range=(0, 3.5), label='from Phase')
-ax.hist(
-    modulation_lifetime.flat, bins=64, range=(0, 3.5), label='from Modulation'
-)
-ax.legend()
-pyplot.show()
+mean, real, imag = phasor_from_signal(signal, axis=0)
+_, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 
 # %%
-# Geometrically, the apparent single lifetimes are defined by the intersections
-# of the universal semicircle with a line (phase) and circle (modulation)
-# from/around the origin through the phasor coordinate,
-# here demonstrated for the average phasor coordinates:
+# Plot the phasor coordinates as a two-dimensional histogram and select two
+# clusters in the phasor plot by means of elliptical cursors:
 
-from phasorpy.phasor import phasor_center, phasor_from_apparent_lifetime
+from phasorpy.color import CATEGORICAL
 
-real_center, imag_center = phasor_center(real, imag)
-apparent_lifetimes = phasor_to_apparent_lifetime(
-    real_center, imag_center, frequency=frequency
-)
-apparent_lifetime_phasors = phasor_from_apparent_lifetime(
-    apparent_lifetimes, None, frequency=frequency
-)
+cursors_real = [-0.33, 0.54]
+cursors_imag = [-0.72, -0.74]
+radius = [0.1, 0.06]
+radius_minor = [0.3, 0.25]
 
-phasorplot = PhasorPlot(
-    frequency=frequency, title='Average apparent single lifetimes'
-)
-phasorplot.hist2d(real, imag)
-phasorplot.cursor(real_center, imag_center, color='tab:orange')
-phasorplot.plot(real_center, imag_center, color='tab:orange')
-phasorplot.plot(*apparent_lifetime_phasors, color='tab:orange')
-phasorplot.ax.annotate(
-    f'{apparent_lifetimes[0]:.2} ns',
-    (
-        apparent_lifetime_phasors[0][0] + 0.02,
-        apparent_lifetime_phasors[1][0] + 0.02,
-    ),
-)
-phasorplot.ax.annotate(
-    f'{apparent_lifetimes[1]:.2} ns',
-    (
-        apparent_lifetime_phasors[0][1],
-        apparent_lifetime_phasors[1][1] + 0.02,
-    ),
-)
+phasorplot = PhasorPlot(allquadrants=True, title='Spectral phasor plot')
+phasorplot.hist2d(real, imag, cmap='Greys')
+for i in range(len(cursors_real)):
+    phasorplot.cursor(
+        cursors_real[i],
+        cursors_imag[i],
+        radius=radius[i],
+        radius_minor=radius_minor[i],
+        color=CATEGORICAL[i],
+        linestyle='-',
+    )
 phasorplot.show()
 
 # %%
-# To be continued
-# ---------------
+# Use the elliptic cursors to mask regions of interest in the phasor space:
+
+from phasorpy.cursors import mask_from_elliptic_cursor
+
+elliptic_masks = mask_from_elliptic_cursor(
+    real,
+    imag,
+    cursors_real,
+    cursors_imag,
+    radius=radius,
+    radius_minor=radius_minor,
+)
+
+# %%
+# Plot a pseudo-color image, composited from the elliptic cursor masks and
+# the mean intensity image:
+
+from phasorpy.cursors import pseudo_color
+
+pseudo_color_image = pseudo_color(*elliptic_masks, intensity=mean)
+
+fig, ax = pyplot.subplots()
+ax.set_title('Pseudo-color image from circular cursors')
+ax.imshow(pseudo_color_image)
+pyplot.show()
 
 # %%
 # Appendix
@@ -380,5 +377,5 @@ phasorplot.show()
 print(phasorpy.versions())
 
 # %%
-# sphinx_gallery_thumbnail_number = -1
+# sphinx_gallery_thumbnail_number = -5
 # mypy: disable-error-code="arg-type"
