@@ -89,7 +89,7 @@ class PhasorPlot:
     See Also
     --------
     phasorpy.plot.plot_phasor
-    :ref:`sphx_glr_tutorials_phasorpy_phasorplot.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_phasorplot.py`
 
     """
 
@@ -1005,7 +1005,7 @@ class PhasorPlotFret(PhasorPlot):
     --------
     phasorpy.phasor.phasor_from_fret_donor
     phasorpy.phasor.phasor_from_fret_acceptor
-    :ref:`sphx_glr_tutorials_phasorpy_fret.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_fret.py`
 
     """
 
@@ -1630,7 +1630,7 @@ def plot_phasor(
     See Also
     --------
     phasorpy.plot.PhasorPlot
-    :ref:`sphx_glr_tutorials_phasorpy_phasorplot.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_phasorplot.py`
 
     """
     init_kwargs = parse_kwargs(
