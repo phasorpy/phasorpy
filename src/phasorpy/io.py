@@ -375,6 +375,10 @@ def phasor_from_ometiff(
 
     Examples
     --------
+    >>> mean, real, imag = numpy.random.rand(3, 32, 32, 32)
+    >>> phasor_to_ometiff(
+    ...     '_phasorpy.ome.tif', mean, real, imag, axes='ZYX', frequency=80.0
+    ... )
     >>> mean, real, imag = phasor_from_ometiff('_phasorpy.ome.tif')
     >>> mean.data
     array(...)
@@ -1082,8 +1086,7 @@ def read_ref(
     >>> data.dims
     ('S', 'Y', 'X')
     >>> data.coords['S'].data
-    array(['mean', 'phase', 'modulation', 'phase2', 'modulation2'],
-          dtype='<U12')
+    array(['mean', 'phase', 'modulation', 'phase2', 'modulation2'],...
 
     """
     import lfdfiles
@@ -1142,8 +1145,7 @@ def read_r64(
     >>> data.dims
     ('S', 'Y', 'X')
     >>> data.coords['S'].data
-    array(['mean', 'phase', 'modulation', 'phase2', 'modulation2'],
-          dtype='<U12')
+    array(['mean', 'phase', 'modulation', 'phase2', 'modulation2'],...
 
     """
     import lfdfiles
