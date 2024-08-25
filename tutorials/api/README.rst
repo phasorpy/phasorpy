@@ -1,4 +1,4 @@
 Programming interface
 ---------------------
 
-Tutorials focused on using specific modules, classes, and functions:
+Tutorials on specific modules, classes, and functions:

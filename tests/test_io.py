@@ -5,10 +5,13 @@ import tempfile
 
 import numpy
 import pytest
+import tifffile
 from numpy.testing import assert_almost_equal, assert_array_equal
 
 from phasorpy.datasets import fetch
 from phasorpy.io import (
+    phasor_from_ometiff,
+    phasor_to_ometiff,
     read_b64,
     read_bh,
     read_bhz,
@@ -16,13 +19,11 @@ from phasorpy.io import (
     read_flif,
     read_ifli,
     read_lsm,
-    read_ometiff_phasor,
     read_ptu,
     read_r64,
     read_ref,
     read_sdt,
     read_z64,
-    write_ometiff_phasor,
 )
 
 HERE = os.path.dirname(__file__)
@@ -153,7 +154,7 @@ def test_read_ifli():
     assert data.dtype == numpy.float32
     assert data.shape == (256, 256, 4, 3)
     assert data.dims == ('Y', 'X', 'F', 'S')
-    assert_array_equal(data.coords['S'].data, ['dc', 're', 'im'])
+    assert_array_equal(data.coords['S'].data, ['mean', 'real', 'imag'])
     assert_almost_equal(
         data.coords['F'],
         (80332416.0, 160664832.0, 240997248.0, 401662080.0),
@@ -286,7 +287,8 @@ def test_read_ref():
     assert data.shape == (5, 256, 256)
     assert data.dims == ('S', 'Y', 'X')
     assert_array_equal(
-        data.coords['S'].data, ['dc', 'ph1', 'md1', 'ph2', 'md2']
+        data.coords['S'].data,
+        ['mean', 'phase', 'modulation', 'phase2', 'modulation2'],
     )
 
 
@@ -300,7 +302,8 @@ def test_read_r64():
     assert data.shape == (5, 256, 256)
     assert data.dims == ('S', 'Y', 'X')
     assert_array_equal(
-        data.coords['S'].data, ['dc', 'ph1', 'md1', 'ph2', 'md2']
+        data.coords['S'].data,
+        ['mean', 'phase', 'modulation', 'phase2', 'modulation2'],
     )
 
 
@@ -331,27 +334,218 @@ def test_read_z64():
     assert not data.coords
 
 
-def test_ometiff_phasor():
-    """Test writing and reading phasor coordinates to OME-TIFF."""
-    data = numpy.random.random_sample((3, 31, 35, 31)).astype(numpy.float32)
-    dims = ('T', 'Y', 'X')
-    with TempFileName('ometiff_phasor.ome.tif') as filename:
-        write_ometiff_phasor(
+def test_phasor_ometiff_harmonic():
+    """Test storing multi-harmonic phasor coordinates as OME-TIFF."""
+    data = numpy.random.random_sample((3, 31, 35, 31))
+    data[:, 0, 0] = numpy.nan
+
+    with TempFileName('harmonic.ome.tif') as filename:
+        phasor_to_ometiff(
             filename,
             data[0],
-            data[1],
-            data[2],
-            bigtiff=False,
-            axes=''.join(dims),
-            compression='adobe_deflate',
+            data,
+            data[::-1],
+            axes='TYX',
         )
-        dc, re, im = read_ometiff_phasor(filename)
+
+        with tifffile.TiffFile(filename) as tif:
+            assert tif.is_ome
+            assert not tif.is_bigtiff
+            assert not tif.pages.first.is_tiled
+            assert tif.pages.first.dtype == numpy.float32
+            assert len(tif.series) == 3
+
+        mean, real, imag = phasor_from_ometiff(filename)
+
         # TODO: test that file can be opened by Bio-Formats/Fiji
 
-    assert_array_equal(dc, data[0])
-    assert_array_equal(re, data[1])
-    assert_array_equal(im, data[2])
-    assert dc.dims == dims
-    assert re.dims == dims
-    assert im.dims == dims
-    assert not dc.coords
+    assert_almost_equal(mean, data[0])
+    assert_almost_equal(real, data)
+    assert_almost_equal(imag, data[::-1])
+    assert mean.dims == ('T', 'Y', 'X')
+    assert real.dims == ('Q', 'T', 'Y', 'X')
+    assert imag.dims == ('Q', 'T', 'Y', 'X')
+    assert not mean.attrs
+    assert not mean.coords
+    assert_array_equal(real.coords['Q'], [1, 2, 3])
+    assert_array_equal(imag.coords['Q'], [1, 2, 3])
+    assert 'frequency' not in real.attrs
+    assert 'frequency' not in imag.attrs
+    assert real.attrs['harmonic'] == [1, 2, 3]
+    assert imag.attrs['harmonic'] == [1, 2, 3]
+
+
+def test_phasor_ometiff_tiled():
+    """Test storing phasor coordinates as tiled OME-TIFF."""
+    data = numpy.random.random_sample((1281, 1283))
+    data[0, 0] = numpy.nan
+
+    with TempFileName('tiled.ome.tif') as filename:
+        phasor_to_ometiff(
+            filename,
+            data,
+            data,
+            data,
+            compression='zlib',
+            frequency=80.0,
+            harmonic=2,
+            dtype=numpy.float64,
+            bigtiff=True,
+        )
+
+        with tifffile.TiffFile(filename) as tif:
+            assert tif.is_ome
+            assert tif.is_bigtiff
+            assert tif.pages.first.is_tiled
+            assert tif.pages.first.dtype == numpy.float64
+            assert len(tif.series) == 5
+
+        mean, real, imag = phasor_from_ometiff(filename)
+
+        # TODO: test that file can be opened by Bio-Formats/Fiji
+
+    assert_almost_equal(mean, data)
+    assert_almost_equal(real, data)
+    assert_almost_equal(imag, data)
+    assert mean.dims == ('Y', 'X')
+    assert real.dims == ('Y', 'X')
+    assert imag.dims == ('Y', 'X')
+    assert not mean.attrs
+    assert not mean.coords
+    assert not real.coords
+    assert not imag.coords
+    assert real.attrs['frequency'] == 80.0
+    assert imag.attrs['frequency'] == 80.0
+    assert real.attrs['harmonic'] == 2
+    assert imag.attrs['harmonic'] == 2
+
+
+def test_phasor_ometiff_scalar():
+    """Test scalar storing phasor coordinates as OME-TIFF."""
+    data = numpy.random.random_sample((3, 1))
+
+    with TempFileName('scalar.ome.tif') as filename:
+        phasor_to_ometiff(
+            filename,
+            data[0],
+            data,
+            data,
+            harmonic=[2, 3, 4],
+            # axes='X',
+        )
+
+        with tifffile.TiffFile(filename) as tif:
+            assert tif.is_ome
+
+        mean, real, imag = phasor_from_ometiff(filename)
+
+        # TODO: test that file can be opened by Bio-Formats/Fiji
+
+    assert_almost_equal(mean, data[0].reshape(mean.shape))
+    assert_almost_equal(real, data.reshape(real.shape))
+    assert_almost_equal(imag, data.reshape(imag.shape))
+    assert mean.dims == ('Y', 'X')
+    assert real.dims == ('Q', 'Y', 'X')
+    assert imag.dims == ('Q', 'Y', 'X')
+    assert not mean.attrs
+    assert not mean.coords
+    assert_array_equal(real.coords['Q'], [2, 3, 4])
+    assert_array_equal(imag.coords['Q'], [2, 3, 4])
+    assert 'frequency' not in real.attrs
+    assert 'frequency' not in imag.attrs
+    assert real.attrs['harmonic'] == [2, 3, 4]
+    assert imag.attrs['harmonic'] == [2, 3, 4]
+
+    # no harmonic dimension
+    with TempFileName('scalar.ome.tif') as filename:
+        phasor_to_ometiff(filename, data[0], data[0], data[0], harmonic=[1])
+        mean, real, imag = phasor_from_ometiff(filename)
+
+    assert_almost_equal(mean, data[0].reshape(mean.shape))
+    assert_almost_equal(real, data[0].reshape(real.shape))
+    assert_almost_equal(imag, data[0].reshape(imag.shape))
+
+
+def test_phasor_to_ometiff_exceptions():
+    """Test phasor_to_ometiff function exceptions."""
+    data = numpy.random.random_sample((3, 35, 31))
+
+    with TempFileName('exception.ome.tif') as filename:
+
+        # not a floating point type
+        with pytest.raises(ValueError):
+            phasor_to_ometiff(filename, *data, dtype=numpy.int16)
+
+        # real.shape != imag.shape
+        with pytest.raises(ValueError):
+            phasor_to_ometiff(filename, data, data, data[0])
+
+        # mean.shape != real.shape[-mean.ndim :]
+        with pytest.raises(ValueError):
+            phasor_to_ometiff(filename, data[:1], data, data)
+
+        # invalid harmonic
+        with pytest.raises(ValueError):
+            phasor_to_ometiff(filename, *data, harmonic=[[1]])
+
+        # invalid harmonic
+        with pytest.raises(ValueError):
+            phasor_to_ometiff(filename, data[0], data, data, harmonic=[1, 2])
+
+        # frequency must be scalar
+        with pytest.raises(ValueError):
+            phasor_to_ometiff(filename, *data, frequency=[80, 90])
+
+        # len(axes) != mean.ndim
+        with pytest.raises(ValueError):
+            phasor_to_ometiff(filename, *data, axes='ZYX')
+
+
+def test_phasor_from_ometiff_exceptions(caplog):
+    """Test phasor_from_ometiff function exceptions and warnings."""
+    data = numpy.random.random_sample((3, 35, 31)).astype(numpy.float32)
+    kwargs = {'photometric': 'minisblack'}
+
+    with TempFileName('invalid.ome.tif') as filename:
+
+        # series[0].name != 'Phasor mean'
+        with tifffile.TiffWriter(filename, ome=True) as tif:
+            tif.write(data)
+
+        with pytest.raises(ValueError):
+            phasor_from_ometiff(filename)
+
+        # harmonic does not match phasor shape
+        with tifffile.TiffWriter(filename, ome=True) as tif:
+            tif.write(data[0], metadata={'Name': 'Phasor mean'}, **kwargs)
+            tif.write(data, metadata={'Name': 'Phasor real'}, **kwargs)
+            tif.write(data, metadata={'Name': 'Phasor imag'}, **kwargs)
+            tif.write([[1, 2]], metadata={'Name': 'Phasor harmonic'})
+
+        mean, real, imag = phasor_from_ometiff(filename)
+        assert 'does not match phasor' in caplog.text
+        assert real.attrs['harmonic'] == [1, 2, 3]
+
+        # shapes don't match
+        with tifffile.TiffWriter(filename, ome=True) as tif:
+            tif.write(data[0], metadata={'Name': 'Phasor mean'}, **kwargs)
+            tif.write(data[:, :-1], metadata={'Name': 'Phasor real'}, **kwargs)
+            tif.write(data, metadata={'Name': 'Phasor imag'}, **kwargs)
+
+        mean, real, imag = phasor_from_ometiff(filename)
+        assert 'imag.shape' in caplog.text
+        assert 'mean.shape' in caplog.text
+        assert real.attrs['harmonic'] == [1, 2, 3]
+        assert mean.shape == (35, 31)
+        assert real.shape == (3, 34, 31)
+        assert imag.shape == (3, 35, 31)
+        assert real.attrs['harmonic'] == [1, 2, 3]
+
+        # harmonic not present
+        with tifffile.TiffWriter(filename, ome=True) as tif:
+            tif.write(data[0], metadata={'Name': 'Phasor mean'}, **kwargs)
+            tif.write(data[1], metadata={'Name': 'Phasor real'}, **kwargs)
+            tif.write(data[2], metadata={'Name': 'Phasor imag'}, **kwargs)
+
+        mean, real, imag = phasor_from_ometiff(filename)
+        assert real.attrs['harmonic'] == 1
