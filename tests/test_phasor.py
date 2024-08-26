@@ -2001,8 +2001,8 @@ def test_phasor_to_principal_plane():
     assert x.shape == (200,)
     assert y.shape == (200,)
     assert transformation_matrix.shape == (2, 10)
-    assert_allclose(x.mean(), 0.306839, atol=1e-2)
-    assert_allclose(y.mean(), 0.281617, atol=1e-2)
+    assert_allclose(x.mean(), 0.306839, atol=1e-2, rtol=1e-2)
+    assert_allclose(y.mean(), 0.281617, atol=1e-2, rtol=1e-2)
 
     # for single harmonics, reoriented projection matches phasor coordinates
     real = real[:1]

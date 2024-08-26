@@ -1,35 +1,37 @@
 """Read and write time-resolved and hyperspectral image file formats.
 
-The ``phasorpy.io`` module provides functions to
+The ``phasorpy.io`` module provides functions to:
+
+- store phasor coordinate images to OME-TIFF files for import in
+  Bio-Formats and Fiji:
+
+  - :py:func:`phasor_to_ometiff`
+  - :py:func:`phasor_from_ometiff`
 
 - read time-resolved and hyperspectral image data and metadata (as relevant
-  to phasor analysis) from many file formats used in bio-imaging.
-- write phasor coordinate images to OME-TIFF files for import in ImageJ
-  or Bio-Formats.
+  to phasor analysis) from many file formats used in bio-imaging:
 
-The following file formats are currently supported:
+  - :py:func:`read_lsm` - Zeiss LSM
+  - :py:func:`read_ifli` - ISS IFLI
+  - :py:func:`read_sdt` - Becker & Hickl SDT
+  - :py:func:`read_ptu` - PicoQuant PTU
+  - :py:func:`read_fbd` - FLIMbox FBD
+  - :py:func:`read_flif` - FlimFast FLIF
+  - :py:func:`read_ref` - SimFCS REF
+  - :py:func:`read_r64` - SimFCS R64
+  - :py:func:`read_b64` - SimFCS B64
+  - :py:func:`read_z64` - SimFCS Z64
+  - :py:func:`read_bhz` - SimFCS BHZ
+  - :py:func:`read_bh` - SimFCS B&H
 
-- Zeiss LSM: :py:func:`read_lsm`
-- ISS IFLI: :py:func:`read_ifli`
-- Becker & Hickl SDT: :py:func:`read_sdt`
-- PicoQuant PTU: :py:func:`read_ptu`
-- FLIMbox FBD: :py:func:`read_fbd`
-- FlimFast FLIF: :py:func:`read_flif`
-- SimFCS REF: :py:func:`read_ref`
-- SimFCS R64: :py:func:`read_r64`
-- SimFCS B64: :py:func:`read_b64`
-- SimFCS Z64: :py:func:`read_z64`
-- SimFCS BHZ: :py:func:`read_bhz`
-- SimFCS B&H: :py:func:`read_bh`
+  Support for other file formats is being considered:
 
-Support for other file formats is being considered:
-
-- OME-TIFF
-- Zeiss CZI
-- Leica LIF
-- Nikon ND2
-- Olympus OIB/OIF
-- Olympus OIR
+  - OME-TIFF
+  - Zeiss CZI
+  - Leica LIF
+  - Nikon ND2
+  - Olympus OIB/OIF
+  - Olympus OIR
 
 The functions are implemented as minimal wrappers around specialized
 third-party file reader libraries, currently
@@ -107,6 +109,8 @@ Axes character codes from the OME model and tifffile library are used as
 from __future__ import annotations
 
 __all__ = [
+    'phasor_from_ometiff',
+    'phasor_to_ometiff',
     'read_b64',
     'read_bh',
     'read_bhz',
@@ -120,16 +124,15 @@ __all__ = [
     # 'read_oif',
     # 'read_oir',
     # 'read_ometiff',
-    'read_ometiff_phasor',
     'read_ptu',
     'read_r64',
     'read_ref',
     'read_sdt',
     'read_z64',
-    'write_ometiff_phasor',
     '_squeeze_axes',
 ]
 
+import logging
 import os
 from typing import TYPE_CHECKING
 
@@ -147,67 +150,189 @@ if TYPE_CHECKING:
 import numpy
 from xarray import DataArray
 
+logger = logging.getLogger(__name__)
 
-def write_ometiff_phasor(
+
+def phasor_to_ometiff(
     filename: str | PathLike[Any],
-    dc: ArrayLike,
-    re: ArrayLike,
-    im: ArrayLike,
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
     /,
     *,
+    frequency: float | None = None,
+    harmonic: int | Sequence[int] | None = None,
     axes: str | None = None,
-    bigtiff: bool = False,
+    dtype: DTypeLike | None = None,
     **kwargs: Any,
 ) -> None:
-    """Write phasor images and metadata to OME-TIFF file.
+    """Write phasor coordinate images and metadata to OME-TIFF file.
+
+    By default, write phasor coordinates as single precision floating point
+    values to separate image series.
+    Write images larger than (1024, 1024) as (256, 256) tiles, datasets
+    larger than 2 GB as BigTIFF, and datasets larger than 8 KB zlib-compressed.
+
+    The OME-TIFF format is compatible with Bio-Formats and Fiji.
 
     Parameters
     ----------
     filename : str or Path
         Name of OME-TIFF file to write.
-    dc : array_like
-        Average intensity image.
-    re : array_like
+    mean : array_like
+        Average intensity image. Write to image series named 'Phasor mean'.
+    real : array_like
         Image of real component of phasor coordinates.
-    im : array_like
+        Multiple harmonics, if any, must be in the first dimension.
+        Write to image series named 'Phasor real'.
+    imag : array_like
         Image of imaginary component of phasor coordinates.
+        Multiple harmonics, if any, must be in the first dimension.
+        Write to image series named 'Phasor imag'.
+    frequency : float, optional
+        Fundamental frequency of time-resolved phasor coordinates.
+        Write to image series named 'Phasor frequency'.
+    harmonic : int or sequence of int, optional
+        Harmonics present in the first dimension of `real` and `imag`, if any.
+        Write to image series named 'Phasor harmonic'.
+        Only needed if harmonics are not starting at or increasing by one.
     axes : str, optional
-        Character codes for image array dimensions, for example 'TCYX'.
-        Refer to the OME model for allowed axes and their order.
-    bigtiff : bool, optional
-        Write BigTIFF file, which can exceed 4 GB.
-    **kwargs : dict, optional
-        Additional arguments passed to ``tifffile.TiffWriter.write``,
-        for example ``compression``.
+        Character codes for `mean` image dimensions.
+        By default, the last dimensions are assumed to be 'TZCYX'.
+        If harmonics are present in `real` and `imag`, the ``Q`` dimension
+        is prepended to axes for those arrays.
+        Refer to the OME-TIFF model for allowed axes and their order.
+    dtype : dtype-like, optional
+        Floating point data type used to store phasor coordinates.
+        The default is ``float32``, which has 6 digits of precision
+        and maximizes compatibility with other software.
+    **kwargs
+        Additional arguments passed to :py:class:`tifffile.TiffWriter` and
+        :py:meth:`tifffile.TiffWriter.write`.
+        For example, ``compression=None`` writes image data uncompressed.
+
+    See Also
+    --------
+    phasorpy.io.phasor_from_ometiff
+
+    Notes
+    -----
+    Scalar or one-dimensional phasor coordinate arrays are written as images.
+
+    The OME-TIFF format is specified in the
+    `OME Data Model and File Formats Documentation
+    <https://ome-model.readthedocs.io/>`_.
 
     Examples
     --------
-    >>> dc, re, im = numpy.random.rand(3, 32, 32, 32)
-    >>> write_ometiff_phasor(
-    ...     '_phasor.ome.tif', dc, re, im, axes='ZYX', compression='zlib'
+    >>> mean, real, imag = numpy.random.rand(3, 32, 32, 32)
+    >>> phasor_to_ometiff(
+    ...     '_phasorpy.ome.tif', mean, real, imag, axes='ZYX', frequency=80.0
     ... )
 
     """
     import tifffile
 
+    from .phasor import _parse_harmonic
     from .version import __version__
 
-    metadata = kwargs.pop('metadata', {})
-    metadata['Creator'] = f'phasorpy {__version__}'
-    if axes is not None:
-        metadata['axes'] = ''.join(tuple(axes))  # accepts dims tuple and str
+    if dtype is None:
+        dtype = numpy.float32
+    dtype = numpy.dtype(dtype)
+    if dtype.kind != 'f':
+        raise ValueError(f'{dtype=} not a floating point type')
+
+    mean = numpy.asarray(mean, dtype)
+    real = numpy.asarray(real, dtype)
+    imag = numpy.asarray(imag, dtype)
+    datasize = mean.nbytes + real.nbytes + imag.nbytes
+
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if mean.shape != real.shape[-mean.ndim :]:
+        raise ValueError(f'{mean.shape=} != {real.shape[-mean.ndim:]=}')
+    has_harmonic_dim = real.ndim == mean.ndim + 1
+    if mean.ndim == real.ndim or real.ndim == 0:
+        nharmonic = 1
+    else:
+        nharmonic = real.shape[0]
+
+    if mean.ndim < 2:
+        # not an image
+        mean = mean.reshape(1, -1)
+        if has_harmonic_dim:
+            real = real.reshape(real.shape[0], 1, -1)
+            imag = imag.reshape(imag.shape[0], 1, -1)
+        else:
+            real = real.reshape(1, -1)
+            imag = imag.reshape(1, -1)
+
+    if harmonic is not None:
+        harmonic_array = numpy.atleast_1d(harmonic)
+        if harmonic_array.ndim > 1 or harmonic_array.size != nharmonic:
+            raise ValueError('invalid harmonic')
+        samples = int(harmonic_array.max()) * 2 + 1
+        harmonic, _ = _parse_harmonic(harmonic, samples)
+
+    if frequency is not None:
+        frequency_array = numpy.atleast_2d(frequency).astype(numpy.float64)
+        if frequency_array.size > 1:
+            raise ValueError('frequency must be scalar')
+
+    if axes is None:
+        axes = 'TZCYX'[-mean.ndim :]
+    else:
+        axes = ''.join(tuple(axes))  # accept dims tuple and str
+    if len(axes) != mean.ndim:
+        raise ValueError(f'{axes=} does not match {mean.ndim=}')
+    axes_phasor = axes if mean.ndim == real.ndim else 'Q' + axes
+
     if 'photometric' not in kwargs:
         kwargs['photometric'] = 'minisblack'
+    if 'compression' not in kwargs and datasize > 8192:
+        kwargs['compression'] = 'zlib'
+    if 'tile' not in kwargs and 'rowsperstrip' not in kwargs:
+        if (
+            axes.endswith('YX')
+            and mean.shape[-1] > 1024
+            and mean.shape[-2] > 1024
+        ):
+            kwargs['tile'] = (256, 256)
 
-    with tifffile.TiffWriter(filename, ome=True, bigtiff=bigtiff) as tif:
-        for name, data in zip(['DC', 'RE', 'IM'], [dc, re, im]):
-            metadata['Name'] = 'Phasor ' + name
+    mode = kwargs.pop('mode', None)
+    bigtiff = kwargs.pop('bigtiff', None)
+    if bigtiff is None:
+        bigtiff = datasize > 2**31
+
+    metadata = kwargs.pop('metadata', {})
+    if 'Creator' not in metadata:
+        metadata['Creator'] = f'PhasorPy {__version__}'
+
+    with tifffile.TiffWriter(
+        filename, bigtiff=bigtiff, mode=mode, ome=True
+    ) as tif:
+        metadata['Name'] = 'Phasor mean'
+        metadata['axes'] = axes
+        tif.write(mean, metadata=metadata, **kwargs)
+
+        metadata['Name'] = 'Phasor real'
+        metadata['axes'] = axes_phasor
+        tif.write(real, metadata=metadata, **kwargs)
+
+        metadata['Name'] = 'Phasor imag'
+        tif.write(imag, metadata=metadata, **kwargs)
+
+        if frequency is not None:
+            tif.write(frequency_array, metadata={'Name': 'Phasor frequency'})
+
+        if harmonic is not None:
             tif.write(
-                numpy.asarray(data, numpy.float32), metadata=metadata, **kwargs
+                numpy.atleast_2d(harmonic).astype(numpy.uint32),
+                metadata={'Name': 'Phasor harmonic'},
             )
 
 
-def read_ometiff_phasor(
+def phasor_from_ometiff(
     filename: str | PathLike[Any],
     /,
 ) -> tuple[DataArray, DataArray, DataArray]:
@@ -220,53 +345,127 @@ def read_ometiff_phasor(
 
     Returns
     -------
-    dc : xarray.DataArray
+    mean : xarray.DataArray
         Average intensity image.
-    re : xarray.DataArray
+    real : xarray.DataArray
         Image of real component of phasor coordinates.
-    im : xarray.DataArray
+    imag : xarray.DataArray
         Image of imaginary component of phasor coordinates.
 
     Raises
     ------
+    tifffile.TiffFileError
+        File is not a TIFF file.
     ValueError
-        File is not an OME-TIFF file written by PhasorPy.
+        File is not an OME-TIFF containing phasor coordinates.
+
+    See Also
+    --------
+    phasorpy.io.phasor_to_ometiff
+
+    Notes
+    -----
+    Scalar or one-dimensional phasor coordinates stored in the file are
+    returned as two-dimensional images (tree-dimensional if multiple
+    harmonics are present).
+
+    The OME-TIFF format is specified in the
+    `OME Data Model and File Formats Documentation
+    <https://ome-model.readthedocs.io/>`_.
 
     Examples
     --------
-    >>> write_ometiff_phasor('_phasor.ome.tif', *numpy.random.rand(3, 32, 32))
-    >>> dc, re, im = read_ometiff_phasor('_phasor.ome.tif')
-    >>> dc.data
+    >>> mean, real, imag = numpy.random.rand(3, 32, 32, 32)
+    >>> phasor_to_ometiff(
+    ...     '_phasorpy.ome.tif', mean, real, imag, axes='ZYX', frequency=80.0
+    ... )
+    >>> mean, real, imag = phasor_from_ometiff('_phasorpy.ome.tif')
+    >>> mean.data
     array(...)
-    >>> dc.dtype
+    >>> mean.dtype
     dtype('float32')
-    >>> dc.shape
-    (32, 32)
-    >>> dc.dims
-    ('Y', 'X')
+    >>> mean.shape
+    (32, 32, 32)
+    >>> mean.dims
+    ('Z', 'Y', 'X')
+    >>> real.attrs['frequency']
+    80.0
+    >>> real.attrs['harmonic']
+    1
 
     """
     import tifffile
 
+    name = os.path.basename(filename)
+
     with tifffile.TiffFile(filename) as tif:
         if (
             not tif.is_ome
-            or len(tif.series) != 3
-            or tif.series[0].name != 'Phasor DC'
-            or tif.series[0].shape != tif.series[1].shape
-            or tif.series[0].shape != tif.series[2].shape
+            or len(tif.series) < 3
+            or tif.series[0].name != 'Phasor mean'
+            or tif.series[1].name != 'Phasor real'
+            or tif.series[2].name != 'Phasor imag'
         ):
             raise ValueError(
-                f'{os.path.basename(filename)!r} '
-                'is not an OME-TIFF containing phasor images'
+                f'{name!r} is not an OME-TIFF containing phasor images'
             )
+
         # TODO: read coords from OME-XML
-        name = os.path.basename(filename)
-        metadata = _metadata(tif.series[0].axes, tif.series[0].shape)
-        dc = DataArray(tif.series[0].asarray(), name='DC_' + name, **metadata)
-        re = DataArray(tif.series[1].asarray(), name='RE_' + name, **metadata)
-        im = DataArray(tif.series[2].asarray(), name='IM_' + name, **metadata)
-    return dc, re, im
+
+        has_harmonic_dim = tif.series[1].ndim > tif.series[0].ndim
+        nharmonics = tif.series[1].shape[0] if has_harmonic_dim else 1
+
+        attrs: dict[str, Any] = {}
+        coords: dict[str, Any] = {}
+        for i in (3, 4):
+            if len(tif.series) < i + 1:
+                break
+            series = tif.series[i]
+            data = series.asarray().squeeze()
+            if series.name == 'Phasor frequency':
+                attrs['frequency'] = float(data.item(0))
+            elif series.name == 'Phasor harmonic':
+                if not has_harmonic_dim and data.size == 1:
+                    attrs['harmonic'] = int(data.item(0))
+                elif has_harmonic_dim and data.size == nharmonics:
+                    attrs['harmonic'] = data.tolist()
+                    coords['Q'] = data
+                else:
+                    logger.warning(
+                        f'harmonic={data} does not match phasor '
+                        f'shape={tif.series[1].shape}'
+                    )
+
+        if has_harmonic_dim:
+            if 'Q' not in coords:
+                coords['Q'] = list(range(1, nharmonics + 1))
+            if 'harmonic' not in attrs:
+                attrs['harmonic'] = coords['Q']
+        elif 'harmonic' not in attrs:
+            attrs['harmonic'] = 1
+
+        series = tif.series[0]
+        metadata = _metadata(series.axes, series.shape, name='mean')
+        mean = DataArray(series.asarray(), **metadata)
+
+        series = tif.series[1]
+        metadata = _metadata(
+            series.axes, series.shape, attrs=attrs, name='real', **coords
+        )
+        real = DataArray(series.asarray(), **metadata)
+
+        series = tif.series[2]
+        metadata = _metadata(
+            series.axes, series.shape, attrs=attrs, name='imag', **coords
+        )
+        imag = DataArray(series.asarray(), **metadata)
+
+    if real.shape != imag.shape:
+        logger.warning(f'{real.shape=} != {imag.shape=}')
+    if real.shape[-mean.ndim :] != mean.shape:
+        logger.warning(f'{real.shape[-mean.ndim:]=} != {mean.shape=}')
+
+    return mean, real, imag
 
 
 def read_lsm(
@@ -275,7 +474,7 @@ def read_lsm(
 ) -> DataArray:
     """Return hyperspectral image and metadata from Zeiss LSM file.
 
-    LSM files contain multi-dimensional image and metadata from laser
+    LSM files contain multi-dimensional images and metadata from laser
     scanning microscopy measurements. The file format is based on TIFF.
 
     Parameters
@@ -287,7 +486,7 @@ def read_lsm(
     -------
     xarray.DataArray
         Hyperspectral image data.
-        Usually, a 3 to 5 dimensional array of type ``uint8`` or ``uint16``.
+        Usually, a 3-to-5-dimensional array of type ``uint8`` or ``uint16``.
 
     Raises
     ------
@@ -372,6 +571,7 @@ def read_lsm(
 def read_ifli(
     filename: str | PathLike[Any],
     /,
+    *,
     channel: int = 0,
     **kwargs: Any,
 ) -> DataArray:
@@ -387,8 +587,8 @@ def read_ifli(
         Name of ISS IFLI file to read.
     channel : int, optional
         Index of channel to return. The first channel is returned by default.
-    **kwargs : dict, optional
-        Additional arguments passed to ``lfdfiles.VistaIfli.asarray``,
+    **kwargs
+        Additional arguments passed to :py:meth:`lfdfiles.VistaIfli.asarray`,
         for example ``memmap=True``.
 
     Returns
@@ -397,7 +597,8 @@ def read_ifli(
         Average intensity and phasor coordinates.
         An array of up to 8 dimensions with :ref:`axes codes <axes>`
         ``'RCTZYXFS'`` and type ``float32``.
-        The last dimension contains `dc`, `re`, and `im` phasor coordinates.
+        The last dimension contains `mean`, `real`, and `imag` phasor
+        coordinates.
 
         - ``coords['F']``: modulation frequencies.
         - ``coords['C']``: emission wavelengths, if any.
@@ -425,7 +626,7 @@ def read_ifli(
     >>> data.coords['F'].data
     array([8.033...])
     >>> data.coords['S'].data
-    array(['dc', 're', 'im'], dtype='<U2')
+    array(['mean', 'real', 'imag'], dtype='<U4')
     >>> data.attrs
     {'ref_tau': (2.5, 0.0), 'ref_tau_frac': (1.0, 0.0), 'ref_phasor': array...}
 
@@ -441,7 +642,7 @@ def read_ifli(
         data = data.reshape(shape)
         header = ifli.header
         coords: dict[str, Any] = {}
-        coords['S'] = ['dc', 're', 'im']
+        coords['S'] = ['mean', 'real', 'imag']
         coords['F'] = numpy.array(header['ModFrequency'])
         # TODO: how to distinguish time- from frequency-domain?
         # TODO: how to extract spatial coordinates?
@@ -480,7 +681,7 @@ def read_sdt(
     ----------
     filename : str or Path
         Name of SDT file to read.
-    index : int
+    index : int, optional, default: 0
         Index of dataset to read in case the file contains multiple datasets.
 
     Returns
@@ -751,14 +952,14 @@ def read_fbd(
     ----------
     filename : str or Path
         Name of FLIMbox FBD file to read.
-    frame : int
+    frame : int, optional
         If None (default), return all frames.
         If < 0, integrate time axis, else return specified frame.
-    channel : int
+    channel : int, optional
         If None (default), return all channels, else return specified channel.
-    keepdims :
+    keepdims : bool, optional
         If true (default), reduced axes are left as size-one dimension.
-    laser_factor : float
+    laser_factor : float, optional
         Factor to correct dwell_time/laser_frequency.
 
     Returns
@@ -885,7 +1086,7 @@ def read_ref(
     >>> data.dims
     ('S', 'Y', 'X')
     >>> data.coords['S'].data
-    array(['dc', 'ph1', 'md1', 'ph2', 'md2'], dtype='<U3')
+    array(['mean', 'phase', 'modulation', 'phase2', 'modulation2'],...
 
     """
     import lfdfiles
@@ -893,7 +1094,9 @@ def read_ref(
     with lfdfiles.SimfcsRef(filename) as ref:
         data = ref.asarray()[:5]
         metadata = _metadata(
-            ref.axes, data.shape, S=['dc', 'ph1', 'md1', 'ph2', 'md2']
+            ref.axes,
+            data.shape,
+            S=['mean', 'phase', 'modulation', 'phase2', 'modulation2'],
         )
     return DataArray(data, **metadata)
 
@@ -942,7 +1145,7 @@ def read_r64(
     >>> data.dims
     ('S', 'Y', 'X')
     >>> data.coords['S'].data
-    array(['dc', 'ph1', 'md1', 'ph2', 'md2'], dtype='<U3')
+    array(['mean', 'phase', 'modulation', 'phase2', 'modulation2'],...
 
     """
     import lfdfiles
@@ -953,7 +1156,7 @@ def read_r64(
             r64.axes,
             data.shape,
             filename,
-            S=['dc', 'ph1', 'md1', 'ph2', 'md2'],
+            S=['mean', 'phase', 'modulation', 'phase2', 'modulation2'],
         )
     return DataArray(data, **metadata)
 
@@ -1159,6 +1362,7 @@ def _metadata(
     shape: tuple[int, ...],
     /,
     name: str | PathLike | None = None,
+    attrs: dict[str, Any] | None = None,
     **coords: Any,
 ) -> dict[str, Any]:
     """Return xarray-style dims, coords, and attrs in a dict.
@@ -1174,7 +1378,9 @@ def _metadata(
             f'dims do not match shape {len(dims)} != {len(shape)}'
         )
     coords = {dim: coords[dim] for dim in dims if dim in coords}
-    metadata = {'dims': dims, 'coords': coords, 'attrs': {}}
+    if attrs is None:
+        attrs = {}
+    metadata = {'dims': dims, 'coords': coords, 'attrs': attrs}
     if name:
         metadata['name'] = os.path.basename(name)
     return metadata
@@ -1188,7 +1394,7 @@ def _squeeze_axes(
 ) -> tuple[tuple[int, ...], str, tuple[bool, ...]]:
     """Return shape and axes with length-1 dimensions removed.
 
-    Remove unused dimensions unless their axes are listed in ``skip``.
+    Remove unused dimensions unless their axes are listed in `skip`.
 
     Adapted from the tifffile library.
 
@@ -1197,8 +1403,8 @@ def _squeeze_axes(
     shape : tuple of ints
         Sequence of dimension sizes.
     axes : str
-        Character codes for dimensions in ``shape``.
-    skip : str (optional)
+        Character codes for dimensions in `shape`.
+    skip : str, optional
         Character codes for dimensions whose length-1 dimensions are
         not removed. The default is 'XY'.
 
@@ -1220,7 +1426,7 @@ def _squeeze_axes(
 
     """
     if len(shape) != len(axes):
-        raise ValueError('dimensions of axes and shape do not match')
+        raise ValueError(f'{len(shape)=} != {len(axes)=}')
     if not axes:
         return tuple(shape), axes, ()
     squeezed: list[bool] = []

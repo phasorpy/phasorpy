@@ -18,11 +18,11 @@ dependencies = [
     "pooch",
     "tqdm",
     "xarray",
-    "tifffile",
     "scipy",
     # "scikit-image",
     # "scikit-learn",
     # "pandas",
+    "tifffile>=2024.8.24",
 ]
 requires-python = ">=3.10"
 classifiers = [
@@ -68,6 +68,22 @@ test = [
     "coverage",
 ]
 io = ["lfdfiles", "sdtfile", "ptufile"]
+all = [
+    "numpy",
+    "matplotlib",
+    "click",
+    "pooch",
+    "tqdm",
+    "xarray",
+    "scipy",
+    # "scikit-image",
+    # "scikit-learn",
+    # "pandas",
+    "tifffile>=2024.8.24",
+    "lfdfiles",
+    "sdtfile",
+    "ptufile",
+]
 
 [tool.setuptools]
 package-dir = { "" = "src" }

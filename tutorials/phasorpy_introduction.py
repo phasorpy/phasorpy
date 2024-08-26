@@ -43,6 +43,10 @@ image processing, array programming, and Python.
 # XCode, Visual Studio, or gcc, to be installed::
 #
 #     python -m pip install -U git+https://github.com/phasorpy/phasorpy.git
+#
+# Update optional dependencies as needed::
+#
+#     python -m pip install -U lfdfiles sdtfile ptufile
 
 # %%
 # Import phasorpy
@@ -122,7 +126,7 @@ mean, real, imag = phasor_from_signal(signal, axis=0)
 
 # %%
 # The phasor coordinates are undefined if the mean intensity is zero.
-# In that case, the arrays contain special NaN (Not a Number) values,
+# In that case, the arrays contain special ``NaN`` (Not a Number) values,
 # which are ignored in further analysis:
 
 print(real[:4, :4])
@@ -251,6 +255,36 @@ plot_phasor_image(
 )
 
 # %%
+# Store phasor coordinates
+# ------------------------
+#
+# Phasor coordinates and select metadata can be exported to
+# `OME-TIFF <https://ome-model.readthedocs.io/en/stable/ome-tiff/>`_
+# formatted files, which are compatible with Bio-Formats and Fiji.
+#
+# Write the calibrated and filtered phasor coordinates, and frequency to an
+# OME-TIFF file:
+
+from phasorpy.io import phasor_from_ometiff, phasor_to_ometiff
+
+phasor_to_ometiff(
+    'phasors.ome.tif', mean, real, imag, frequency=frequency, harmonic=1
+)
+
+# %%
+# Read the phasor coordinates and metadata back from the OME-TIFF file:
+
+mean_, real_, imag_ = phasor_from_ometiff('phasors.ome.tif')
+
+numpy.allclose(real_, real)
+assert real_.dtype == numpy.float32
+assert real_.attrs['frequency'] == frequency
+assert real_.attrs['harmonic'] == 1
+
+# %%
+# The functions transparently work with multi-harmonic phasor coordinates.
+
+# %%
 # Plot phasor coordinates
 # -----------------------
 #
@@ -283,8 +317,8 @@ phasorplot.hist2d(uncalibrated_real, uncalibrated_imag)
 phasorplot.show()
 
 # %%
-# Cursor selection
-# ----------------
+# Select phasor coordinates
+# -------------------------
 
 # TODO
 
@@ -302,19 +336,20 @@ phasorplot.show()
 # at many equidistant emission wavelengths) and processed in much the same
 # way as time-resolved signals. Calibration is not necessary.
 #
-# Open a hyperspectral dataset acquired with a laser scanning microscope:
+# Open a hyperspectral dataset acquired with a laser scanning microscope
+# at 30 emission wavelengths:
 
 from phasorpy.io import read_lsm
 
-signal = read_lsm(fetch('paramecium.lsm'))
+hyperspectral_signal = read_lsm(fetch('paramecium.lsm'))
 
-plot_signal_image(signal, axis=0, title='Hyperspectral image')
+plot_signal_image(hyperspectral_signal, axis=0, title='Hyperspectral image')
 
 # %%
 # Calculate phasor coordinates at the first harmonic and filter out
 # pixels with low intensities:
 
-mean, real, imag = phasor_from_signal(signal, axis=0)
+mean, real, imag = phasor_from_signal(hyperspectral_signal, axis=0)
 _, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 
 # %%
