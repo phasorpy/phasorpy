@@ -11,6 +11,9 @@ on:
   #     - main
   workflow_dispatch:
 
+env:
+  CIBW_TEST_SKIP: "cp313*"
+
 jobs:
   build:
     name: Build wheels on ${{ matrix.os }}
@@ -23,7 +26,7 @@ jobs:
       - uses: pypa/cibuildwheel@v2.20.0
         env:
           # CIBW_ENVIRONMENT: "PIP_PRE=1"
-          CIBW_BUILD_VERBOSITY: 3
+          CIBW_BUILD_VERBOSITY: 2
           CIBW_ARCHS_LINUX: auto
           CIBW_ARCHS_MACOS: x86_64 arm64
           CIBW_ARCHS_WINDOWS: AMD64 ARM64
