@@ -263,8 +263,8 @@ ZENODO_13625087 = pooch.create(
     path=pooch.os_cache('phasorpy'),
     base_url=(
         'https://github.com/phasorpy/phasorpy-data/raw/main/zenodo_13625087'
-        if DATA_ON_GITHUB
-        else 'doi:10.1088/2050-6120/ac9ae9'
+        # if DATA_ON_GITHUB
+        # else 'doi:10.1088/2050-6120/ac9ae9'
     ),
     env=ENV,
     registry={
