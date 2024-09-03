@@ -12,6 +12,8 @@ Datasets from the following repositories are available:
 - `FLUTE <https://zenodo.org/record/8046636>`_
 - `napari-flim-phasor-plotter
   <https://github.com/zoccoler/napari-flim-phasor-plotter/tree/0.0.6/src/napari_flim_phasor_plotter/data>`_
+- `Phasor-based multi-harmonic unmixing for in-vivo hyperspectral imaging
+  <https://zenodo.org/records/13625087>`_
 
 The implementation is based on the `Pooch <https://www.fatiando.org/pooch>`_
 library.
@@ -257,12 +259,40 @@ NAPARI_FLIM_PHASOR_PLOTTER = pooch.create(
     },
 )
 
+ZENODO_13625087 = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/zenodo_13625087'
+        if DATA_ON_GITHUB
+        else 'doi:10.1088/2050-6120/ac9ae9'
+    ),
+    env=ENV,
+    registry={
+        '33_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm': (
+            'sha256:'
+            '68fcefcad4e750e9ec7068820e455258c986f6a9b724e66744a28bbbb689f986'
+        ),
+        '34_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm': (
+            'sha256:'
+            '5c0b7d76c274fd64891fca2507013b7c8c9979d8131ce282fac55fd24fbb38bd'
+        ),
+        '35_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm': (
+            'sha256:'
+            'df57c178c185f6e271a66e2664dcc09d6f5abf923ee7d9c33add41bafc15214c'
+        ),
+        '38_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm': (
+            'sha256:'
+            '092ac050edf55e26dcda8cba10122408c6f1b81d19accf07214385d6eebfcf3e'
+        ),
+    },
+)
 
 REPOSITORIES: dict[str, pooch.Pooch] = {
     'tests': TESTS,
     'lfd-workshop': LFD_WORKSHOP,
     'flute': FLUTE,
     'napari-flim-phasor-plotter': NAPARI_FLIM_PHASOR_PLOTTER,
+    'zenodo-13625087': ZENODO_13625087,
 }
 """Pooch repositories."""
 
