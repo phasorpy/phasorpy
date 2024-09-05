@@ -12,17 +12,19 @@ description = "Analysis of fluorescence lifetime and hyperspectral images using 
 readme = { file = "README.md", content-type = "text/markdown" }
 dynamic = ["version"]
 dependencies = [
-    "numpy",
-    "matplotlib",
+    # sync with requirements_min.txt
+    # https://scientific-python.org/specs/spec-0000/
+    "numpy>=1.24.0",
+    "matplotlib>=3.7.0",
+    "scipy>=1.11.0",
     "click",
     "pooch",
     "tqdm",
-    "xarray",
-    "scipy",
-    # "scikit-image",
-    # "scikit-learn",
-    # "pandas",
-    "tifffile>=2024.8.24",
+    # "scikit-image>=0.20.0",
+    # "scikit-learn>=1.2.2",
+    # "pandas>=2.0.0",
+    "xarray>=2023.4.0",
+    "tifffile>=2024.8.30",
 ]
 requires-python = ">=3.10"
 classifiers = [
@@ -67,22 +69,10 @@ test = [
     "pytest-doctestplus",
     "coverage",
 ]
-io = ["lfdfiles", "sdtfile", "ptufile"]
 all = [
-    "numpy",
-    "matplotlib",
-    "click",
-    "pooch",
-    "tqdm",
-    "xarray",
-    "scipy",
-    # "scikit-image",
-    # "scikit-learn",
-    # "pandas",
-    "tifffile>=2024.8.24",
-    "lfdfiles",
-    "sdtfile",
-    "ptufile",
+    "lfdfiles>=2024.5.24",
+    "sdtfile>=2024.5.24",
+    "ptufile>=2024.7.13",
 ]
 
 [tool.setuptools]

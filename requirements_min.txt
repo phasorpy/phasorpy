@@ -1,0 +1,13 @@
+# Minimum version requirements for the PhasorPy library
+#
+numpy==1.24.4; python_version == "3.10"
+matplotlib==3.7.5; python_version == "3.10"
+pandas==2.0.3; python_version == "3.10"
+scipy==1.11.4; python_version == "3.10"
+scikit-image==0.20.0; python_version == "3.10"
+scikit-learn==1.2.2; python_version == "3.10"
+xarray==2023.4.0; python_version == "3.10"
+tifffile==2024.8.30; python_version == "3.10"
+lfdfiles==2024.5.24; python_version == "3.10"
+sdtfile==2024.5.24; python_version == "3.10"
+ptufile==2024.7.13; python_version == "3.10"
