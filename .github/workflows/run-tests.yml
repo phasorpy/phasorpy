@@ -13,6 +13,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  MPLBACKEND: agg
+
 jobs:
   test:
     name: Test library and docs
@@ -34,7 +37,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install --editable .
         python -m pip install -r requirements_dev.txt
-        python -m pip install -r requirements_numpy.txt
+        python -m pip install -r requirements_min.txt
     - name: Print dependency versions
       run: |
         phasorpy versions
@@ -66,7 +69,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install --editable .
         python -m pip install -r requirements_dev.txt
-        python -m pip install -r requirements_numpy.txt
+        python -m pip install -r requirements_min.txt
     - name: Test with pytest
       run: |
         python -X dev -m pytest
@@ -76,7 +79,7 @@ jobs:
         make html
 
   build_wheels:
-    name: Test cibuildwheel and numpy 2
+    name: Test cibuildwheel
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -113,7 +116,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install --editable .
         python -m pip install -r requirements_dev.txt
-        python -m pip install -r requirements_numpy.txt
+        python -m pip install -r requirements_min.txt
     - name: Test with black
       run: |
         python -m black --check src/phasorpy tutorials docs

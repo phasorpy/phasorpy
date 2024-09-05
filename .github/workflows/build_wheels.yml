@@ -13,6 +13,7 @@ on:
 
 env:
   CIBW_TEST_SKIP: "cp313*"
+  MPLBACKEND: agg
 
 jobs:
   build:

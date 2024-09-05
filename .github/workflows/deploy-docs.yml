@@ -11,6 +11,9 @@ on:
       - main
   workflow_dispatch:
 
+env:
+  MPLBACKEND: agg
+
 jobs:
   build:
 
@@ -18,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11"]
+        python-version: ["3.12"]
 
     steps:
     - uses: actions/checkout@v4
@@ -30,7 +33,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install -r requirements_dev.txt
-        python -m pip install -r requirements_numpy.txt
         python -m pip install --no-build-isolation --no-deps --verbose --editable .
     - name: Build docs
       run: |

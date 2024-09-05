@@ -9,6 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=.
 set BUILDDIR=_build
+set MPLBACKEND=agg
 
 rd /S /Q %BUILDDIR%
 rd /S /Q tutorials
