@@ -13,5 +13,9 @@ PhasorPy is a community-maintained project.
 in the form of bug reports, bug fixes, feature implementations, documentation,
 datasets, and enhancement proposals are welcome.
 
-The development of the PhasorPy library is supported by the
-[Chan Zuckerberg Initiative](https://chanzuckerberg.com/eoss/proposals/phasorpy-a-python-library-for-phasor-analysis-of-flim-and-spectral-imaging).
+This software project is supported in part by the
+[Essential Open Source Software for Science (EOSS)](https://chanzuckerberg.com/eoss/)
+program at
+[Chan Zuckerberg Initiative](https://chanzuckerberg.com/).
+
+[![CZI's Essential Open Source Software for Science](https://chanzuckerberg.github.io/open-science/badges/CZI-EOSS.svg)](https://czi.co/EOSS)

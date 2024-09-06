@@ -7,13 +7,14 @@ at the University of the Republic and Institut Pasteur de Montevideo and the
 `Laboratory for Fluorescence Dynamics <https://www.lfd.uci.edu>`_
 at the University of California, Irvine.
 
-The development of the PhasorPy library is supported by the
-`Chan Zuckerberg Initiative
-<https://chanzuckerberg.com/eoss/proposals/phasorpy-a-python-library-for-phasor-analysis-of-flim-and-spectral-imaging/>`_.
-
 PhasorPy was inspired by the
 `Globals for Images · SimFCS <https://www.lfd.uci.edu/globals/>`_ software by
 Enrico Gratton.
+
+This software project is supported in part by the
+`Essential Open Source Software for Science (EOSS)
+<https://chanzuckerberg.com/eoss/>`_ program at
+`Chan Zuckerberg Initiative <https://chanzuckerberg.com/>`_.
 
 .. _contributors:
 
