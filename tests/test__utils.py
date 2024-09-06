@@ -1,13 +1,14 @@
 """Test the phasorpy._utils module."""
 
-import math
-
+import numpy
 import pytest
 from numpy.testing import assert_allclose
 
 from phasorpy._utils import (
+    chunk_iter,
     dilate_coordinates,
     kwargs_notnone,
+    parse_harmonic,
     parse_kwargs,
     phasor_from_polar_scalar,
     phasor_to_polar_scalar,
@@ -125,3 +126,107 @@ def test_dilate_coordinates():
 
     with pytest.raises(ValueError):
         dilate_coordinates([0, 1, 2, 3], [0, 1, -1], 0.05)
+
+
+def test_parse_harmonic():
+    """Test parse_harmonic function."""
+    assert parse_harmonic(None, 3) == ([1], False)
+    assert parse_harmonic(1, 3) == ([1], False)
+    assert parse_harmonic(numpy.int32(1), 3) == ([1], False)
+    assert parse_harmonic([1], 3) == ([1], True)
+    assert parse_harmonic([numpy.int32(1)], 3) == ([1], True)
+    assert parse_harmonic([1, 2], 5) == ([1, 2], True)
+    assert parse_harmonic([2, 1], 5) == ([2, 1], True)
+    assert parse_harmonic(numpy.array([1, 2]), 5) == ([1, 2], True)
+    assert parse_harmonic('all', 5) == ([1, 2], True)
+
+    with pytest.raises(ValueError):
+        parse_harmonic(1, 2)
+    with pytest.raises(IndexError):
+        parse_harmonic(0, 3)
+    with pytest.raises(IndexError):
+        parse_harmonic(2, 3)
+    with pytest.raises(IndexError):
+        parse_harmonic([1, 2], 3)
+    with pytest.raises(TypeError):
+        parse_harmonic([[1]], 3)
+    with pytest.raises(ValueError):
+        parse_harmonic([], 3)
+    with pytest.raises(ValueError):
+        parse_harmonic([1, 1], 3)
+    with pytest.raises(ValueError):
+        parse_harmonic('alles', 3)
+    with pytest.raises(TypeError):
+        parse_harmonic(1.0, 3)
+
+
+def test_chunk_iter():
+    """test chunk_iter function."""
+
+    assert list(chunk_iter((), ())) == [((), '', False)]
+    assert list(chunk_iter((), (), '')) == [((), '', False)]
+    assert list(chunk_iter((2,), ())) == [
+        ((0,), '_0', False),
+        ((1,), '_1', False),
+    ]
+    assert list(chunk_iter((2,), (), 'X')) == [
+        ((0,), '_X0', False),
+        ((1,), '_X1', False),
+    ]
+    assert list(chunk_iter((2,), (2,), 'X')) == [
+        ((slice(0, 2, 1),), '_X0', False)
+    ]
+    assert list(chunk_iter((2,), (2,), 'X', squeeze=True)) == [
+        ((slice(0, 2, 1),), '', False)
+    ]
+    assert list(chunk_iter((2,), (1,), 'X')) == [
+        ((slice(0, 1, 1),), '_X0', False),
+        ((slice(1, 2, 1),), '_X1', False),
+    ]
+    assert list(chunk_iter((2,), (2,), pattern='_X{}')) == [
+        ((slice(0, 2, 1),), '_X0', False)
+    ]
+    assert list(chunk_iter((2, 2), (2,), 'YX')) == [
+        ((0, slice(0, 2, 1)), '_Y0_X0', False),
+        ((1, slice(0, 2, 1)), '_Y1_X0', False),
+    ]
+    assert list(chunk_iter((2, 2), (1, 2), 'YX')) == [
+        ((slice(0, 1, 1), slice(0, 2, 1)), '_Y0_X0', False),
+        ((slice(1, 2, 1), slice(0, 2, 1)), '_Y1_X0', False),
+    ]
+    assert list(chunk_iter((2, 2), (3,), 'YX', squeeze=True)) == [
+        ((0, slice(0, 3, 1)), '_Y0', True),
+        ((1, slice(0, 3, 1)), '_Y1', True),
+    ]
+    assert list(chunk_iter((1, 2, 3, 4), (2, 2), 'TZYX'))[-2] == (
+        (0, 1, slice(2, 4, 1), slice(0, 2, 1)),
+        '_T0_Z1_Y1_X0',
+        True,
+    )
+    assert list(chunk_iter((1, 2, 3, 4), (2, 2), 'TZYX', use_index=True))[
+        -2
+    ] == (
+        (0, 1, slice(2, 4, 1), slice(0, 2, 1)),
+        '_T0_Z1_Y2_X0',
+        True,
+    )
+    assert list(chunk_iter((3, 255), (2, 128), 'YX', use_index=True))[0] == (
+        (slice(0, 2, 1), slice(0, 128, 1)),
+        '_Y0_X000',
+        False,
+    )
+
+    with pytest.raises(ValueError):
+        list(chunk_iter((2,), (), 'YX'))
+
+    with pytest.raises(ValueError):
+        assert list(chunk_iter((-1,), (2,)))
+
+    with pytest.raises(ValueError):
+        assert list(chunk_iter((2,), (0,)))
+
+    with pytest.raises(ValueError):
+        assert list(chunk_iter((2,), (1,), pattern='{}{}'))
+
+    with pytest.raises(ValueError):
+        list(chunk_iter((2,), (1, 2)))

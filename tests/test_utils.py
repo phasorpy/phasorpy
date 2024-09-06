@@ -2,8 +2,6 @@
 
 import os
 
-import pytest
-
 from phasorpy.utils import number_threads
 
 

@@ -22,3 +22,4 @@ PhasorPy library version |version|.
     datasets
     utils
     cli
+    _private/index

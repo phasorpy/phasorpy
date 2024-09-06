@@ -8,21 +8,24 @@ functions.
 from __future__ import annotations
 
 __all__: list[str] = [
-    'parse_kwargs',
-    'update_kwargs',
+    'chunk_iter',
+    'dilate_coordinates',
     'kwargs_notnone',
+    'parse_harmonic',
+    'parse_kwargs',
+    'phasor_from_polar_scalar',
+    'phasor_to_polar_scalar',
     'scale_matrix',
     'sort_coordinates',
-    'dilate_coordinates',
-    'phasor_to_polar_scalar',
-    'phasor_from_polar_scalar',
+    'update_kwargs',
 ]
 
 import math
+import numbers
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, Sequence, ArrayLike, NDArray
+    from ._typing import Any, Sequence, ArrayLike, Literal, NDArray, Iterator
 
 import numpy
 
@@ -245,3 +248,195 @@ def phasor_from_polar_scalar(
     real = modulation * math.cos(phase)
     imag = modulation * math.sin(phase)
     return real, imag
+
+
+def parse_harmonic(
+    harmonic: int | Sequence[int] | Literal['all'] | None, samples: int, /
+) -> tuple[list[int], bool]:
+    """Return parsed harmonic parameter.
+
+    Parameters
+    ----------
+    harmonic : int, list of int, 'all', or None
+        Harmonic parameter to parse.
+    samples : int
+        Number of samples in signal.
+        Used to verify harmonic values and set maximum harmonic value.
+
+    Returns
+    -------
+    harmonic : list of int
+        Parsed list of harmonics.
+    has_harmonic_axis : bool
+        If true, `harmonic` input parameter is an integer, else a list.
+
+    Raises
+    ------
+    IndexError
+        Any element is out of range [1..samples // 2].
+    ValueError
+        Elements are not unique.
+        Harmonic is empty.
+        String input is not 'all'.
+    TypeError
+        Any element is not an integer.
+
+    """
+    if samples < 3:
+        raise ValueError(f'{samples=} < 3')
+
+    if harmonic is None:
+        return [1], False
+
+    harmonic_max = samples // 2
+    if isinstance(harmonic, numbers.Integral):
+        if harmonic < 1 or harmonic > harmonic_max:
+            raise IndexError(f'{harmonic=} out of range [1..{harmonic_max}]')
+        return [int(harmonic)], False
+
+    if isinstance(harmonic, str):
+        if harmonic == 'all':
+            return list(range(1, harmonic_max + 1)), True
+        raise ValueError(f'{harmonic=!r} is not a valid harmonic')
+
+    h = numpy.atleast_1d(numpy.asarray(harmonic))
+    if h.size == 0:
+        raise ValueError(f'{harmonic=} is empty')
+    if h.dtype.kind not in 'iu' or h.ndim != 1:
+        raise TypeError(f'{harmonic=} element not an integer')
+    if numpy.any(h < 1) or numpy.any(h > harmonic_max):
+        raise IndexError(
+            f'{harmonic=} element out of range [1..{harmonic_max}]'
+        )
+    if numpy.unique(h).size != h.size:
+        raise ValueError(f'{harmonic=} elements must be unique')
+    return h.tolist(), True
+
+
+def chunk_iter(
+    shape: tuple[int, ...],
+    chunk_shape: tuple[int, ...],
+    /,
+    axes: str | Sequence[str] | None = None,
+    *,
+    pattern: str | None = None,
+    squeeze: bool = False,
+    use_index: bool = False,
+) -> Iterator[tuple[tuple[int | slice, ...], str, bool]]:
+    """Yield indices and labels of chunks from ndarray's shape.
+
+    Parameters
+    ----------
+    shape : tuple of int
+        Shape of C-order ndarray to chunk.
+    chunk_shape : tuple of int
+        Shape of chunks in the most significant dimensions.
+    axes : str or sequence of str, optional
+        Labels for each axis in shape if `pattern` is None.
+    pattern : str, optional
+        String to format chunk indices.
+        If None, use ``_[{axes[index]}{chunk_index[index]}]`` for each axis.
+    squeeze : bool
+        If true, do not include length-1 chunked dimensions in label
+        unless dimensions are part of `chunk_shape`.
+        Applies only if `pattern` is None.
+    use_index : bool
+        If true, use indices of chunks in `shape` instead of chunk indices to
+        format pattern.
+
+    Yields
+    ------
+    index : tuple of int or slice
+        Indices of chunk in ndarray.
+    label : str
+        Pattern formatted with chunk indices.
+    cropped : bool
+        True if chunk exceeds any border of ndarray.
+        Indexing ndarray with `index` will yield a slice smaller than
+        `chunk_shape`.
+
+    Examples
+    --------
+
+    >>> list(chunk_iter((2, 2), (2,), pattern='Y{}'))
+    [((0, slice(0, 2, 1)), 'Y0', False), ((1, slice(0, 2, 1)), 'Y1', False)]
+
+    Chunk a four-dimensional image stack into 2x2 sized image tiles:
+
+    >>> stack = numpy.zeros((2, 3, 4, 5))
+    >>> for index, label, cropped in chunk_iter(stack.shape, (2, 2)):
+    ...     chunk = stack[index]
+    ...
+
+    """
+    ndim = len(shape)
+
+    sep = '_'
+    if axes is None:
+        axes = sep * ndim
+        sep = ''
+    elif ndim != len(axes):
+        raise ValueError(f'{len(shape)=} != {len(axes)=}')
+
+    if pattern is not None:
+        try:
+            pattern.format(*shape)
+        except Exception as exc:
+            raise ValueError('pattern cannot be formatted') from exc
+
+    # number of high dimensions not included in chaunk_shape
+    hdim = ndim - len(chunk_shape)
+    if hdim < 0:
+        raise ValueError(f'{len(shape)=} < {len(chunk_shape)=}')
+    if hdim > 0:
+        # prepend length-1 dimensions
+        chunk_shape = ((1,) * hdim) + chunk_shape
+
+    chunked_shape = []
+    pattern_list = []
+    for i, (size, chunk_size, ax) in enumerate(zip(shape, chunk_shape, axes)):
+        if size <= 0:
+            raise ValueError('shape must contain positive sizes')
+        if chunk_size <= 0:
+            raise ValueError('chunk_shape must contain positive sizes')
+        div, mod = divmod(size, chunk_size)
+        chunked_shape.append(div + 1 if mod else div)
+
+        if not squeeze or chunked_shape[-1] > 1:
+            if use_index:
+                digits = int(math.log10(size)) + 1
+            else:
+                digits = int(math.log10(chunked_shape[-1])) + 1
+            pattern_list.append(f'{sep}{ax}{{{i}:0{digits}d}}')
+
+    if pattern is None:
+        pattern = ''.join(pattern_list)
+
+    chunk_index: tuple[int, ...]
+    for chunk_index in numpy.ndindex(tuple(chunked_shape)):
+        index: tuple[int | slice, ...] = tuple(
+            (
+                chunk_index[i]
+                if i < hdim
+                else slice(
+                    chunk_index[i] * chunk_shape[i],
+                    (chunk_index[i] + 1) * chunk_shape[i],
+                    1,
+                )
+            )
+            for i in range(ndim)
+        )
+        if use_index:
+            format_index = tuple(
+                chunk_index[i] * chunk_shape[i] for i in range(ndim)
+            )
+        else:
+            format_index = chunk_index
+        yield (
+            index,
+            pattern.format(*format_index),
+            any(
+                (chunk_index[i] + 1) * chunk_shape[i] > shape[i]
+                for i in range(ndim)
+            ),
+        )

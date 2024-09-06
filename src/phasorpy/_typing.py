@@ -31,8 +31,8 @@ from collections.abc import (
 from os import PathLike
 from types import EllipsisType
 from typing import (
+    IO,
     Any,
-    BinaryIO,
     Literal,
     Optional,
     TextIO,

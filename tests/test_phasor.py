@@ -166,7 +166,7 @@ def test_phasor_from_signal(use_fft):
         phasor_from_signal(signal[:2], use_fft=use_fft)
     with pytest.raises(TypeError):
         phasor_from_signal(signal, harmonic=1.0, use_fft=use_fft)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         phasor_from_signal(signal, harmonic=[], use_fft=use_fft)
     with pytest.raises(TypeError):
         phasor_from_signal(signal, harmonic=[1.0], use_fft=use_fft)

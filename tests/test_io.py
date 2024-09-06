@@ -2,16 +2,23 @@
 
 import os
 import tempfile
+from glob import glob
 
 import numpy
 import pytest
 import tifffile
-from numpy.testing import assert_almost_equal, assert_array_equal
+from numpy.testing import (
+    assert_allclose,
+    assert_almost_equal,
+    assert_array_equal,
+)
 
 from phasorpy.datasets import fetch
 from phasorpy.io import (
     phasor_from_ometiff,
+    phasor_from_simfcs_referenced,
     phasor_to_ometiff,
+    phasor_to_simfcs_referenced,
     read_b64,
     read_bh,
     read_bhz,
@@ -20,8 +27,6 @@ from phasorpy.io import (
     read_ifli,
     read_lsm,
     read_ptu,
-    read_r64,
-    read_ref,
     read_sdt,
     read_z64,
 )
@@ -44,8 +49,9 @@ class TempFileName:
 
     name: str
     remove: bool
+    pattern: bool
 
-    def __init__(self, name=None, remove=False):
+    def __init__(self, name=None, remove=False, pattern=False):
         self.remove = remove or TEMP_DIR == tempfile.gettempdir()
         if not name:
             fh = tempfile.NamedTemporaryFile(prefix='test_')
@@ -53,12 +59,20 @@ class TempFileName:
             fh.close()
         else:
             self.name = os.path.join(TEMP_DIR, f'test_{name}')
+        self.pattern = pattern
 
     def __enter__(self) -> str:
         return self.name
 
     def __exit__(self, exc_type, exc_value, traceback):
         if self.remove:
+            if self.pattern:
+                name, ext = os.path.splitext(self.name)
+                for fname in glob(name + '*' + ext):
+                    try:
+                        os.remove(fname)
+                    except Exception:
+                        pass
             try:
                 os.remove(self.name)
             except Exception:
@@ -278,36 +292,6 @@ def test_read_bhz():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_read_ref():
-    """Test read SimFCS REF file."""
-    filename = fetch('simfcs.ref')
-    data = read_ref(filename)
-    assert data.values.sum() == 20583368.0
-    assert data.dtype == numpy.float32
-    assert data.shape == (5, 256, 256)
-    assert data.dims == ('S', 'Y', 'X')
-    assert_array_equal(
-        data.coords['S'].data,
-        ['mean', 'phase', 'modulation', 'phase2', 'modulation2'],
-    )
-
-
-@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_read_r64():
-    """Test read SimFCS R64 file."""
-    filename = fetch('simfcs.r64')
-    data = read_r64(filename)
-    assert data.values.sum() == 5032296.5
-    assert data.dtype == numpy.float32
-    assert data.shape == (5, 256, 256)
-    assert data.dims == ('S', 'Y', 'X')
-    assert_array_equal(
-        data.coords['S'].data,
-        ['mean', 'phase', 'modulation', 'phase2', 'modulation2'],
-    )
-
-
-@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_read_b64():
     """Test read SimFCS B64 file."""
     filename = fetch('simfcs.b64')
@@ -334,18 +318,20 @@ def test_read_z64():
     assert not data.coords
 
 
-def test_phasor_ometiff_harmonic():
+def test_phasor_ometiff_multiharmonic():
     """Test storing multi-harmonic phasor coordinates as OME-TIFF."""
+    description = 'PhasorPy\n  <&test> test'
     data = numpy.random.random_sample((3, 31, 35, 31))
     data[:, 0, 0] = numpy.nan
 
-    with TempFileName('harmonic.ome.tif') as filename:
+    with TempFileName('multiharmonic.ome.tif') as filename:
         phasor_to_ometiff(
             filename,
             data[0],
             data,
             data[::-1],
             axes='TYX',
+            description=description,
         )
 
         with tifffile.TiffFile(filename) as tif:
@@ -365,7 +351,7 @@ def test_phasor_ometiff_harmonic():
     assert mean.dims == ('T', 'Y', 'X')
     assert real.dims == ('Q', 'T', 'Y', 'X')
     assert imag.dims == ('Q', 'T', 'Y', 'X')
-    assert not mean.attrs
+    assert mean.attrs['description'] == description
     assert not mean.coords
     assert_array_equal(real.coords['Q'], [1, 2, 3])
     assert_array_equal(imag.coords['Q'], [1, 2, 3])
@@ -549,3 +535,157 @@ def test_phasor_from_ometiff_exceptions(caplog):
 
         mean, real, imag = phasor_from_ometiff(filename)
         assert real.attrs['harmonic'] == 1
+
+
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
+def test_phasor_from_simfcs_referenced_ref():
+    """Test phasor_from_simfcs_referenced with SimFCS REF file."""
+    filename = fetch('simfcs.ref')
+    mean, real, imag = phasor_from_simfcs_referenced(filename)
+    assert mean.dtype == numpy.float32
+    assert mean.shape == (256, 256)
+    assert real.shape == (256, 256)
+    assert imag.shape == (256, 256)
+    assert_allclose(numpy.nanmean(mean), 213.09485, atol=1e-3)
+    assert_allclose(numpy.nanmean(real), 0.40588844, atol=1e-3)
+    assert_allclose(numpy.nanmean(imag), 0.34678984, atol=1e-3)
+
+    for harmonic in ('all', [1, 2]):
+        mean, real, imag = phasor_from_simfcs_referenced(
+            filename, harmonic=harmonic
+        )
+        assert mean.shape == (256, 256)
+        assert real.shape == (2, 256, 256)
+        assert imag.shape == (2, 256, 256)
+        assert_allclose(numpy.nanmean(mean), 213.09485)
+        assert_allclose(
+            numpy.nanmean(real, axis=(1, 2)),
+            [0.40588844, 0.21527097],
+            atol=1e-3,
+        )
+        assert_allclose(
+            numpy.nanmean(imag, axis=(1, 2)),
+            [0.34678984, 0.26586965],
+            atol=1e-3,
+        )
+
+
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
+def test_phasor_from_simfcs_referenced_r64():
+    """Test phasor_from_simfcs_referenced with SimFCS R64 file."""
+    filename = fetch('simfcs.r64')
+    mean, real, imag = phasor_from_simfcs_referenced(filename)
+    assert mean.dtype == numpy.float32
+    assert mean.shape == (256, 256)
+    assert real.shape == (256, 256)
+    assert imag.shape == (256, 256)
+    assert_allclose(numpy.nanmean(mean), 0.562504, atol=1e-3)
+    assert_allclose(numpy.nanmean(real), 0.48188266, atol=1e-3)
+    assert_allclose(numpy.nanmean(imag), 0.32413888, atol=1e-3)
+
+    mean, real, imag = phasor_from_simfcs_referenced(filename, harmonic=[1, 2])
+    assert mean.shape == (256, 256)
+    assert real.shape == (2, 256, 256)
+    assert imag.shape == (2, 256, 256)
+    assert_allclose(numpy.nanmean(mean), 0.562504, atol=1e-3)
+    assert_allclose(
+        numpy.nanmean(real, axis=(1, 2)), [0.48188266, 0.13714617], atol=1e-3
+    )
+    assert_allclose(
+        numpy.nanmean(imag, axis=(1, 2)), [0.32413888, 0.38899058], atol=1e-3
+    )
+
+
+def test_phasor_to_simfcs_referenced():
+    """Test phasor_to_simfcs_referenced with square image."""
+    data = numpy.random.random_sample((3, 32, 32))
+    data[..., 0, 0] = numpy.nan
+
+    with TempFileName('simple.r64') as filename:
+        phasor_to_simfcs_referenced(filename, *data)
+
+        mean, real, imag = phasor_from_simfcs_referenced(filename)
+        assert mean.shape == (32, 32)
+        assert real.shape == (32, 32)
+        assert imag.shape == (32, 32)
+        assert_allclose(mean, data[0], atol=1e-3)
+        assert_allclose(real, data[1], atol=1e-3)
+        assert_allclose(imag, data[2], atol=1e-3)
+
+
+def test_phasor_to_simfcs_referenced_scalar():
+    """Test phasor_to_simfcs_referenced with scalar."""
+    data = numpy.random.random_sample((3, 1))
+
+    with TempFileName('simple.r64') as filename:
+        phasor_to_simfcs_referenced(filename, *data)
+
+        mean, real, imag = phasor_from_simfcs_referenced(filename)
+        assert mean.shape == (4, 4)
+        assert real.shape == (4, 4)
+        assert imag.shape == (4, 4)
+        assert_allclose(mean[0, 0], data[0], atol=1e-3)
+        assert_allclose(real[0, 0], data[1], atol=1e-3)
+        assert_allclose(imag[0, 0], data[2], atol=1e-3)
+        with pytest.warns(RuntimeWarning):
+            assert numpy.isnan(numpy.nanmean(real[1:, 1:]))
+            assert numpy.isnan(numpy.nanmean(imag[1:, 1:]))
+
+
+def test_phasor_to_simfcs_referenced_exceptions():
+    """Test phasor_to_simfcs_referenced exceptions."""
+    data = numpy.random.random_sample((32, 32))
+
+    with TempFileName('simple.r64') as filename:
+        phasor_to_simfcs_referenced(filename, data, data, data)
+        with pytest.raises(ValueError):
+            phasor_to_simfcs_referenced(filename + '.bin', data, data, data)
+        with pytest.raises(ValueError):
+            phasor_to_simfcs_referenced(filename, data, data, data[1:])
+        with pytest.raises(ValueError):
+            phasor_to_simfcs_referenced(filename, data[1:], data, data)
+        with pytest.raises(ValueError):
+            phasor_to_simfcs_referenced(filename, data, data, data, size=3)
+
+
+def test_phasor_to_simfcs_referenced_multiharmonic():
+    """Test phasor_to_simfcs_referenced with multi-harmonic phasor."""
+    data = numpy.random.random_sample((3, 4, 35, 31))
+    data[..., 0, 0] = numpy.nan
+
+    with TempFileName('multiharmonic.r64', pattern=True) as filename:
+        phasor_to_simfcs_referenced(
+            filename,
+            data[0],
+            data,
+            data[::-1],
+            size=32,
+            axes='tyx',
+        )
+
+        name, ext = os.path.splitext(filename)
+        files = glob(name + '*' + ext)
+        assert len(files) == 16
+
+        mean, real, imag = phasor_from_simfcs_referenced(
+            name + '_h2_t3_y32_x00' + ext, harmonic='all'
+        )
+        assert mean.shape == (32, 32)
+        assert real.shape == (2, 32, 32)
+        assert imag.shape == (2, 32, 32)
+        with pytest.warns(RuntimeWarning):
+            assert numpy.isnan(numpy.nanmean(real[1]))
+            assert numpy.isnan(numpy.nanmean(imag[1]))
+            assert numpy.isnan(numpy.nanmean(mean[..., -1]))
+            assert numpy.isnan(numpy.nanmean(mean[..., 3, :]))
+        assert_allclose(mean[:3, :31], data[0, 3, 32:35, :31], atol=1e-3)
+        assert_allclose(real[0, :3, :31], data[2, 3, 32:35, :31], atol=1e-3)
+        assert_allclose(imag[0, :3, :31], data[0, 3, 32:35, :31], atol=1e-3)
+
+        for fname in files:
+            mean, real, imag = phasor_from_simfcs_referenced(
+                fname, harmonic='all'
+            )
+            assert mean.shape == (32, 32)
+            assert real.shape == (2, 32, 32)
+            assert imag.shape == (2, 32, 32)

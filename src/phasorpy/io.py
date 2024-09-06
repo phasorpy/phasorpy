@@ -2,11 +2,16 @@
 
 The ``phasorpy.io`` module provides functions to:
 
-- store phasor coordinate images to OME-TIFF files for import in
-  Bio-Formats and Fiji:
+- read and write phasor coordinate images in OME-TIFF format, which can be
+  imported in Bio-Formats and Fiji:
 
   - :py:func:`phasor_to_ometiff`
   - :py:func:`phasor_from_ometiff`
+
+- read and write phasor coordinate images in SimFCS referenced R64 format:
+
+  - :py:func:`phasor_to_simfcs_referenced`
+  - :py:func:`phasor_from_simfcs_referenced`
 
 - read time-resolved and hyperspectral image data and metadata (as relevant
   to phasor analysis) from many file formats used in bio-imaging:
@@ -17,8 +22,6 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`read_ptu` - PicoQuant PTU
   - :py:func:`read_fbd` - FLIMbox FBD
   - :py:func:`read_flif` - FlimFast FLIF
-  - :py:func:`read_ref` - SimFCS REF
-  - :py:func:`read_r64` - SimFCS R64
   - :py:func:`read_b64` - SimFCS B64
   - :py:func:`read_z64` - SimFCS Z64
   - :py:func:`read_bhz` - SimFCS BHZ
@@ -97,7 +100,7 @@ Axes character codes from the OME model and tifffile library are used as
 - ``'H'`` : lifetime histogram (OME)
 - ``'E'`` : lambda (OME. Excitation wavelength)
 - ``'F'`` : frequency (ISS)
-- ``'Q'`` : other (OME)
+- ``'Q'`` : other (OME. Harmonics in PhasorPy TIFF)
 - ``'L'`` : exposure (FluoView)
 - ``'V'`` : event (FluoView)
 - ``'M'`` : mosaic (LSM 6)
@@ -110,7 +113,9 @@ from __future__ import annotations
 
 __all__ = [
     'phasor_from_ometiff',
+    'phasor_from_simfcs_referenced',
     'phasor_to_ometiff',
+    'phasor_to_simfcs_referenced',
     'read_b64',
     'read_bh',
     'read_bhz',
@@ -125,8 +130,6 @@ __all__ = [
     # 'read_oir',
     # 'read_ometiff',
     'read_ptu',
-    'read_r64',
-    'read_ref',
     'read_sdt',
     'read_z64',
     '_squeeze_axes',
@@ -134,21 +137,28 @@ __all__ = [
 
 import logging
 import os
+import re
+import struct
+import zlib
 from typing import TYPE_CHECKING
+
+from ._utils import chunk_iter, parse_harmonic
+from .phasor import phasor_from_polar, phasor_to_polar
 
 if TYPE_CHECKING:
     from ._typing import (
         Any,
         ArrayLike,
-        PathLike,
-        Sequence,
+        DataArray,
         DTypeLike,
         EllipsisType,
         Literal,
+        NDArray,
+        PathLike,
+        Sequence,
     )
 
 import numpy
-from xarray import DataArray
 
 logger = logging.getLogger(__name__)
 
@@ -164,16 +174,22 @@ def phasor_to_ometiff(
     harmonic: int | Sequence[int] | None = None,
     axes: str | None = None,
     dtype: DTypeLike | None = None,
+    description: str | None = None,
     **kwargs: Any,
 ) -> None:
     """Write phasor coordinate images and metadata to OME-TIFF file.
+
+    The OME-TIFF format is compatible with Bio-Formats and Fiji.
 
     By default, write phasor coordinates as single precision floating point
     values to separate image series.
     Write images larger than (1024, 1024) as (256, 256) tiles, datasets
     larger than 2 GB as BigTIFF, and datasets larger than 8 KB zlib-compressed.
 
-    The OME-TIFF format is compatible with Bio-Formats and Fiji.
+    This file format is experimental and might be incompatible with future
+    versions of this library. It is intended for temporarily exchanging
+    phasor coordinates with other software, not as a long-term storage
+    solution.
 
     Parameters
     ----------
@@ -206,6 +222,8 @@ def phasor_to_ometiff(
         Floating point data type used to store phasor coordinates.
         The default is ``float32``, which has 6 digits of precision
         and maximizes compatibility with other software.
+    description : str, optional
+        Plain-text description of dataset. Write as OME dataset description.
     **kwargs
         Additional arguments passed to :py:class:`tifffile.TiffWriter` and
         :py:meth:`tifffile.TiffWriter.write`.
@@ -223,6 +241,11 @@ def phasor_to_ometiff(
     `OME Data Model and File Formats Documentation
     <https://ome-model.readthedocs.io/>`_.
 
+    The `6D, 7D and 8D storage
+    <https://ome-model.readthedocs.io/en/latest/developers/6d-7d-and-8d-storage.html>`_
+    extension is used to store multi-harmonic phasor coordinates.
+    The modulo type for the first, harmonic dimension is "other".
+
     Examples
     --------
     >>> mean, real, imag = numpy.random.rand(3, 32, 32, 32)
@@ -233,7 +256,6 @@ def phasor_to_ometiff(
     """
     import tifffile
 
-    from .phasor import _parse_harmonic
     from .version import __version__
 
     if dtype is None:
@@ -272,7 +294,7 @@ def phasor_to_ometiff(
         if harmonic_array.ndim > 1 or harmonic_array.size != nharmonic:
             raise ValueError('invalid harmonic')
         samples = int(harmonic_array.max()) * 2 + 1
-        harmonic, _ = _parse_harmonic(harmonic, samples)
+        harmonic, _ = parse_harmonic(harmonic, samples)
 
     if frequency is not None:
         frequency_array = numpy.atleast_2d(frequency).astype(numpy.float64)
@@ -308,12 +330,23 @@ def phasor_to_ometiff(
     if 'Creator' not in metadata:
         metadata['Creator'] = f'PhasorPy {__version__}'
 
+    dataset = metadata.pop('Dataset', {})
+    if 'Name' not in dataset:
+        dataset['Name'] = 'Phasor'
+    if description:
+        dataset['Description'] = description
+    metadata['Dataset'] = dataset
+
+    if has_harmonic_dim:
+        metadata['TypeDescription'] = {'Q': 'Phasor harmonics'}
+
     with tifffile.TiffWriter(
         filename, bigtiff=bigtiff, mode=mode, ome=True
     ) as tif:
         metadata['Name'] = 'Phasor mean'
         metadata['axes'] = axes
         tif.write(mean, metadata=metadata, **kwargs)
+        del metadata['Dataset']
 
         metadata['Name'] = 'Phasor real'
         metadata['axes'] = axes_phasor
@@ -347,8 +380,11 @@ def phasor_from_ometiff(
     -------
     mean : xarray.DataArray
         Average intensity image.
+        ``mean.attrs['description']`` contains the dataset description, if any.
     real : xarray.DataArray
         Image of real component of phasor coordinates.
+        ``real.attrs['frequency']`` contains the fundamental frequency, if any.
+        ``real.attrs['harmonic']`` contains the harmonics present in the array.
     imag : xarray.DataArray
         Image of imaginary component of phasor coordinates.
 
@@ -395,6 +431,7 @@ def phasor_from_ometiff(
 
     """
     import tifffile
+    from xarray import DataArray
 
     name = os.path.basename(filename)
 
@@ -411,6 +448,23 @@ def phasor_from_ometiff(
             )
 
         # TODO: read coords from OME-XML
+        ome_xml = tif.ome_metadata
+        assert ome_xml is not None
+
+        # TODO: parse OME-XML
+        description = None
+        match = re.search(
+            r'><Description>(.*)</Description><',
+            ome_xml,
+            re.MULTILINE | re.DOTALL,
+        )
+        if match is not None:
+            description = (
+                match.group(1)
+                .replace('&amp;', '&')
+                .replace('&gt;', '>')
+                .replace('&lt;', '<')
+            )
 
         has_harmonic_dim = tif.series[1].ndim > tif.series[0].ndim
         nharmonics = tif.series[1].shape[0] if has_harmonic_dim else 1
@@ -444,26 +498,240 @@ def phasor_from_ometiff(
         elif 'harmonic' not in attrs:
             attrs['harmonic'] = 1
 
-        series = tif.series[0]
-        metadata = _metadata(series.axes, series.shape, name='mean')
-        mean = DataArray(series.asarray(), **metadata)
-
         series = tif.series[1]
         metadata = _metadata(
-            series.axes, series.shape, attrs=attrs, name='real', **coords
+            series.axes, series.shape, 'real', attrs, **coords
         )
         real = DataArray(series.asarray(), **metadata)
 
         series = tif.series[2]
         metadata = _metadata(
-            series.axes, series.shape, attrs=attrs, name='imag', **coords
+            series.axes, series.shape, 'imag', attrs, **coords
         )
         imag = DataArray(series.asarray(), **metadata)
+
+        attrs = {'description': description} if description else {}
+        series = tif.series[0]
+        metadata = _metadata(series.axes, series.shape, 'mean', attrs)
+        mean = DataArray(series.asarray(), **metadata)
 
     if real.shape != imag.shape:
         logger.warning(f'{real.shape=} != {imag.shape=}')
     if real.shape[-mean.ndim :] != mean.shape:
         logger.warning(f'{real.shape[-mean.ndim:]=} != {mean.shape=}')
+
+    return mean, real, imag
+
+
+def phasor_to_simfcs_referenced(
+    filename: str | PathLike[Any],
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    *,
+    size: int | None = None,
+    axes: str | None = None,
+) -> None:
+    """Write phasor coordinate images to SimFCS referenced R64 file(s).
+
+    SimFCS referenced R64 files store square-shaped (commonly 256x256)
+    images of the average intensity, and the calibrated phasor coordinates
+    (encoded as phase and modulation) of two harmonics as ZIP-compressed,
+    single precision floating point arrays.
+    The file format does not support any metadata.
+
+    Images with more than two dimensions or larger than square size are
+    chunked to square-sized images and saved to separate files with
+    a name pattern, for example, "filename_T099_Y256_X000.r64".
+    Images or chunks with less than two dimensions or smaller than square size
+    are padded with NaN values.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of SimFCS referenced R64 file to write.
+        The file extension must be ``.r64``.
+    mean : array_like
+        Average intensity image.
+    real : array_like
+        Image of real component of calibrated phasor coordinates.
+        Multiple harmonics, if any, must be in the first dimension.
+        Harmonics must be starting at and increasing by one.
+    imag : array_like
+        Image of imaginary component of calibrated phasor coordinates.
+        Multiple harmonics, if any, must be in the first dimension.
+        Harmonics must be starting at and increasing by one.
+    size : int, optional
+        Size of X and Y dimensions of square-sized images stored in file.
+        By default, ``size = min(256, max(4, sizey, sizex))``.
+    axes : str, optional
+        Character codes for `mean` dimensions used to format file names.
+
+    See Also
+    --------
+    phasorpy.io.phasor_from_simfcs_referenced
+
+    Examples
+    --------
+    >>> mean, real, imag = numpy.random.rand(3, 32, 32)
+    >>> phasor_to_simfcs_referenced('_phasorpy.r64', mean, real, imag)
+
+    """
+    filename, ext = os.path.splitext(filename)
+    if ext.lower() != '.r64':
+        raise ValueError(f'file extension {ext} != .r64')
+
+    # TODO: delay conversions to numpy arrays to inner loop
+    mean = numpy.asarray(mean, numpy.float32)
+    phi, mod = phasor_to_polar(real, imag, dtype=numpy.float32)
+    del real
+    del imag
+    phi = numpy.rad2deg(phi)
+
+    if phi.shape != mod.shape:
+        raise ValueError(f'{phi.shape=} != {mod.shape=}')
+    if mean.shape != phi.shape[-mean.ndim :]:
+        raise ValueError(f'{mean.shape=} != {phi.shape[-mean.ndim:]=}')
+    if phi.ndim == mean.ndim:
+        phi = phi.reshape(1, *phi.shape)
+        mod = mod.reshape(1, *mod.shape)
+    nharmonic = phi.shape[0]
+
+    if mean.ndim < 2:
+        # not an image
+        mean = mean.reshape(1, -1)
+        phi = phi.reshape(nharmonic, 1, -1)
+        mod = mod.reshape(nharmonic, 1, -1)
+
+    # TODO: investigate actual size and harmonics limits of SimFCS
+    sizey, sizex = mean.shape[-2:]
+    if size is None:
+        size = min(256, max(4, sizey, sizex))
+    elif not 4 <= size <= 65535:
+        raise ValueError(f'{size=} out of range [4..65535]')
+
+    harmonics_per_file = 2  # TODO: make this a parameter?
+    chunk_shape = tuple(
+        [max(harmonics_per_file, 2)] + ([1] * (phi.ndim - 3)) + [size, size]
+    )
+    multi_file = any(i / j > 1 for i, j in zip(phi.shape, chunk_shape))
+
+    if axes is not None and len(axes) == phi.ndim - 1:
+        axes = 'h' + axes
+
+    chunk = numpy.empty((size, size), dtype=numpy.float32)
+
+    def rawdata_append(rawdata, a=None):
+        if a is None:
+            chunk[:] = numpy.nan
+            rawdata.append(chunk.tobytes())
+        else:
+            sizey, sizex = a.shape[-2:]
+            if sizey == size and sizex == size:
+                rawdata.append(a.tobytes())
+            elif sizey <= size and sizex <= size:
+                chunk[:sizey, :sizex] = a[..., :sizey, :sizex]
+                chunk[sizey:, sizex:] = numpy.nan
+                rawdata.append(chunk.tobytes())
+            else:
+                raise RuntimeError  # should not be reached
+
+    for index, label, _ in chunk_iter(
+        phi.shape, chunk_shape, axes, squeeze=False, use_index=True
+    ):
+        rawdata = [struct.pack('I', size)]
+        rawdata_append(rawdata, mean[index[1:]])
+        phi_ = phi[index]
+        mod_ = mod[index]
+        for i in range(phi_.shape[0]):
+            rawdata_append(rawdata, phi_[i])
+            rawdata_append(rawdata, mod_[i])
+        if phi_.shape[0] == 1:
+            rawdata_append(rawdata)
+            rawdata_append(rawdata)
+
+        if not multi_file:
+            label = ''
+        with open(filename + label + ext, 'wb') as fh:
+            fh.write(zlib.compress(b''.join(rawdata)))
+
+
+def phasor_from_simfcs_referenced(
+    filename: str | PathLike[Any],
+    /,
+    *,
+    harmonic: int | Sequence[int] | Literal['all'] | None = None,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """Return phasor coordinate images from SimFCS referenced (REF, R64) file.
+
+    SimFCS referenced REF and R64 files contain phasor coordinate images
+    (encoded as phase and modulation) for two harmonics.
+    Phasor coordinates from lifetime-resolved signals are calibrated.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of REF or R64 file to read.
+    harmonic : int or sequence of int, optional
+        Harmonics to include in returned phasor coordinates.
+        By default, only the first harmonic is returned.
+
+    Returns
+    -------
+    mean : ndarray
+        Average intensity image.
+    real : ndarray
+        Image of real component of phasor coordinates.
+        Multiple harmonics, if any, are in the first axis.
+    imag : ndarray
+        Image of imaginary component of phasor coordinates.
+        Multiple harmonics, if any, are in the first axis.
+
+    Raises
+    ------
+    tifffile.LfdfileError
+        File is not a SimFCS REF or R64 file.
+
+    See Also
+    --------
+    phasorpy.io.phasor_to_simfcs_referenced
+
+    Examples
+    --------
+    >>> phasor_to_simfcs_referenced(
+    ...     '_phasorpy.r64', *numpy.random.rand(3, 32, 32)
+    ... )
+    >>> mean, real, imag = phasor_from_simfcs_referenced('_phasorpy.r64')
+    >>> mean
+    array([[...]], dtype=float32)
+
+    """
+    import lfdfiles
+
+    ext = os.path.splitext(filename)[-1].lower()
+    if ext == '.r64':
+        with lfdfiles.SimfcsR64(filename) as r64:
+            data = r64.asarray()
+    elif ext == '.ref':
+        with lfdfiles.SimfcsRef(filename) as ref:
+            data = ref.asarray()
+    else:
+        raise ValueError(f'file extension must be .ref or .r64, not {ext!r}')
+
+    harmonic, keep_harmonic_dim = parse_harmonic(harmonic, data.shape[0])
+
+    mean = data[0].copy()
+    real = numpy.empty((len(harmonic),) + mean.shape, numpy.float32)
+    imag = numpy.empty_like(real)
+    for i, h in enumerate(harmonic):
+        h = (h - 1) * 2 + 1
+        re, im = phasor_from_polar(numpy.deg2rad(data[h]), data[h + 1])
+        real[i] = re
+        imag[i] = im
+    if not keep_harmonic_dim:
+        real = real.reshape(mean.shape)
+        imag = imag.reshape(mean.shape)
 
     return mean, real, imag
 
@@ -565,6 +833,9 @@ def read_lsm(
                     dtype=numpy.float64,
                 )
         metadata = _metadata(series.axes, data.shape, filename, **coords)
+
+    from xarray import DataArray
+
     return DataArray(data, **metadata)
 
 
@@ -663,6 +934,9 @@ def read_ifli(
             1.0 - header['RefLifetimeFrac'][channel],
         )
         attrs['ref_phasor'] = numpy.array(header['RefDCPhasor'][channel])
+
+    from xarray import DataArray
+
     return DataArray(data, **metadata)
 
 
@@ -738,6 +1012,9 @@ def read_sdt(
     # TODO: get spatial coordinates from scanner settings?
     metadata = _metadata('QYXH'[-data.ndim :], data.shape, filename, H=times)
     metadata['attrs']['frequency'] = 1e-6 / float(times[-1] + times[1])
+
+    from xarray import DataArray
+
     return DataArray(data, **metadata)
 
 
@@ -828,6 +1105,7 @@ def read_ptu(
 
     """
     import ptufile
+    from xarray import DataArray
 
     with ptufile.PtuFile(filename, trimdims=trimdims) as ptu:
         if not ptu.is_t3 or not ptu.is_image:
@@ -923,6 +1201,8 @@ def read_flif(
         attrs['ref_mod'] = float(flif.header.measured_mod)
         attrs['ref_tauphase'] = float(flif.header.ref_tauphase)
         attrs['ref_taumod'] = float(flif.header.ref_taumod)
+
+    from xarray import DataArray
 
     return DataArray(data, **metadata)
 
@@ -1039,125 +1319,8 @@ def read_fbd(
         attrs = metadata['attrs']
         attrs['frequency'] = fbd.laser_frequency * 1e-6
 
-    return DataArray(data, **metadata)
+    from xarray import DataArray
 
-
-def read_ref(
-    filename: str | PathLike[Any],
-    /,
-) -> DataArray:
-    """Return referenced lifetime data and metadata from SimFCS REF file.
-
-    REF files contain referenced fluorescence lifetime image data:
-    an average intensity image and lifetime polar coordinates for two
-    harmonics. REF files contain no metadata.
-
-    Parameters
-    ----------
-    filename : str or Path
-        Name of SimFCS REF file to read.
-
-    Returns
-    -------
-    xarray.DataArray
-        Referenced fluorescence lifetime polar coordinates.
-        An array of five 256x256 images of type ``float32``:
-
-        0. average intensity
-        1. phase of 1st harmonic in degrees
-        2. modulation of 1st harmonic normalized
-        3. phase of 2nd harmonic in degrees
-        4. modulation of 2nd harmonic normalized
-
-    Raises
-    ------
-    lfdfile.LfdFileError
-        File is not a SimFCS REF file.
-
-    Examples
-    --------
-    >>> data = read_ref(fetch('simfcs.ref'))
-    >>> data.values
-    array(...)
-    >>> data.dtype
-    dtype('float32')
-    >>> data.shape
-    (5, 256, 256)
-    >>> data.dims
-    ('S', 'Y', 'X')
-    >>> data.coords['S'].data
-    array(['mean', 'phase', 'modulation', 'phase2', 'modulation2'],...
-
-    """
-    import lfdfiles
-
-    with lfdfiles.SimfcsRef(filename) as ref:
-        data = ref.asarray()[:5]
-        metadata = _metadata(
-            ref.axes,
-            data.shape,
-            S=['mean', 'phase', 'modulation', 'phase2', 'modulation2'],
-        )
-    return DataArray(data, **metadata)
-
-
-def read_r64(
-    filename: str | PathLike[Any],
-    /,
-) -> DataArray:
-    """Return referenced lifetime data and metadata from SimFCS R64 file.
-
-    R64 files contain referenced fluorescence lifetime image data:
-    an average intensity image and lifetime polar coordinates for two
-    harmonics. R64 files contain no metadata.
-
-    Parameters
-    ----------
-    filename : str or Path
-        Name of SimFCS R64 file to read.
-
-    Returns
-    -------
-    xarray.DataArray
-        Referenced fluorescence lifetime polar coordinates.
-        An array of five 256x256 images of type ``float32``:
-
-        0. average intensity
-        1. phase of 1st harmonic in degrees
-        2. modulation of 1st harmonic normalized
-        3. phase of 2nd harmonic in degrees
-        4. modulation of 2nd harmonic normalized
-
-    Raises
-    ------
-    lfdfile.LfdFileError
-        File is not a SimFCS R64 file.
-
-    Examples
-    --------
-    >>> data = read_r64(fetch('simfcs.r64'))
-    >>> data.values
-    array(...)
-    >>> data.dtype
-    dtype('float32')
-    >>> data.shape
-    (5, 256, 256)
-    >>> data.dims
-    ('S', 'Y', 'X')
-    >>> data.coords['S'].data
-    array(['mean', 'phase', 'modulation', 'phase2', 'modulation2'],...
-
-    """
-    import lfdfiles
-
-    with lfdfiles.SimfcsR64(filename) as r64:
-        data = r64.asarray()[:5]
-        metadata = _metadata(
-            r64.axes,
-            data.shape,
-            filename,
-            S=['mean', 'phase', 'modulation', 'phase2', 'modulation2'],
-        )
     return DataArray(data, **metadata)
 
 
@@ -1212,6 +1375,9 @@ def read_b64(
                 'does not contain an image stack'
             )
         metadata = _metadata(b64.axes, data.shape, filename)
+
+    from xarray import DataArray
+
     return DataArray(data, **metadata)
 
 
@@ -1258,6 +1424,9 @@ def read_z64(
     with lfdfiles.SimfcsZ64(filename) as z64:
         data = z64.asarray()
         metadata = _metadata(z64.axes, data.shape, filename)
+
+    from xarray import DataArray
+
     return DataArray(data, **metadata)
 
 
@@ -1306,6 +1475,9 @@ def read_bh(
         assert bnh.axes is not None
         data = bnh.asarray()
         metadata = _metadata(bnh.axes.replace('Q', 'H'), data.shape, filename)
+
+    from xarray import DataArray
+
     return DataArray(data, **metadata)
 
 
@@ -1354,6 +1526,9 @@ def read_bhz(
         assert bhz.axes is not None
         data = bhz.asarray()
         metadata = _metadata(bhz.axes.replace('Q', 'H'), data.shape, filename)
+
+    from xarray import DataArray
+
     return DataArray(data, **metadata)
 
 

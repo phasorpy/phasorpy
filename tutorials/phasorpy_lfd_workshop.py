@@ -26,14 +26,13 @@ import numpy
 from matplotlib import pyplot
 
 from phasorpy.datasets import fetch
-from phasorpy.io import read_ref
+from phasorpy.io import phasor_from_simfcs_referenced
 from phasorpy.phasor import (
     lifetime_fraction_from_amplitude,
     lifetime_to_signal,
     phasor_filter,
     phasor_from_fret_donor,
     phasor_from_lifetime,
-    phasor_from_polar,
     phasor_threshold,
     phasor_to_apparent_lifetime,
     phasor_to_polar,
@@ -170,18 +169,15 @@ plot_phasor(real, imag, fmt='o-', frequency=frequency)
 # display the images, and plot the phasor coordinates of first and second
 # harmonics:
 
-filename = fetch('capillaries1001.ref')
-data = read_ref(filename)
 frequency = 80.0  # MHz
-
-mean = data[0].values
-real1, imag1 = phasor_from_polar(numpy.deg2rad(data[1]), data[2])  # harmonic 1
-real2, imag2 = phasor_from_polar(numpy.deg2rad(data[3]), data[4])  # harmonic 2
+mean, real, imag = phasor_from_simfcs_referenced(
+    fetch('capillaries1001.ref'), harmonic=[1, 2]
+)
+real1, real2 = real
+imag1, imag2 = imag
 
 # %%
-plot_phasor_image(
-    mean, [real1, real2], [imag1, imag2], title='capillaries1001.ref'
-)
+plot_phasor_image(mean, real, imag, title='capillaries1001.ref')
 # %%
 plot_phasor(
     real1,
@@ -383,10 +379,7 @@ plot.show()
 # Open the file ``CFPpax8651866.ref``, which contains referenced FLIM data
 # for a cell transfected with a CFP paxillin construct.
 
-data = read_ref(fetch('CFPpax8651866.ref'))
-
-mean1 = data[0].values
-real1, imag1 = phasor_from_polar(numpy.deg2rad(data[1]), data[2])
+mean1, real1, imag1 = phasor_from_simfcs_referenced(fetch('CFPpax8651866.ref'))
 
 plot_phasor_image(mean1, real1, imag1, title='CFPpax8651866.ref')
 
@@ -394,10 +387,7 @@ plot_phasor_image(mean1, real1, imag1, title='CFPpax8651866.ref')
 # Open the file ``1011rac1002.ref``, which contains referenced FLIM data
 # for a cell transfected with a CFP-YFP fusion protein:
 
-data = read_ref(fetch('1011rac1002.ref'))
-
-mean2 = data[0].values
-real2, imag2 = phasor_from_polar(numpy.deg2rad(data[1]), data[2])
+mean2, real2, imag2 = phasor_from_simfcs_referenced(fetch('1011rac1002.ref'))
 
 plot_phasor_image(mean2, real2, imag2, title='1011rac1002.ref')
 
@@ -442,19 +432,17 @@ plot.show()
 # is visible.
 
 frequency = 80.0  # MHz
-data = read_ref(fetch('CFP and CFP-YFp.ref'))
-
-mean1 = data[0].values
-real1, imag1 = phasor_from_polar(numpy.deg2rad(data[1]), data[2])
+mean1, real1, imag1 = phasor_from_simfcs_referenced(
+    fetch('CFP and CFP-YFp.ref')
+)
 
 plot_phasor_image(mean1, real1, imag1, title='CFP and CFP-YFp.ref')
 
 # %%
 
-data = read_ref(fetch('CFP-YFP many cells with background.ref'))
-
-mean2 = data[0].values
-real2, imag2 = phasor_from_polar(numpy.deg2rad(data[1]), data[2])
+mean2, real2, imag2 = phasor_from_simfcs_referenced(
+    fetch('CFP-YFP many cells with background.ref')
+)
 
 plot_phasor_image(
     mean2, real2, imag2, title='CFP-YFP many cells with background.ref'
