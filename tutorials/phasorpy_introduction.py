@@ -60,12 +60,12 @@ import phasorpy
 print(phasorpy.__version__)
 
 # %%
-# Besides the phasorpy library, the `numpy <https://numpy.org/>`_ and
+# Besides the PhasorPy library, the `numpy <https://numpy.org/>`_ and
 # `matplotlib <https://matplotlib.org/>`_ libraries are used for
 # array computing and plotting throughout this tutorial:
 
 import numpy
-import tifffile
+import tifffile  # TODO: from phasorpy.io import read_ometiff
 from matplotlib import pyplot
 
 from phasorpy.datasets import fetch
@@ -74,23 +74,24 @@ from phasorpy.datasets import fetch
 # Read signal from file
 # ---------------------
 #
+# The :py:mod:`phasorpy.io` module provides functions to read time-resolved
+# and hyperspectral image stacks and metadata from many file formats used
+# in microscopy, for example PicoQuant PTU, OME-TIFF, Zeiss LSM, and files
+# written by SimFCS software.
+# However, any other means that yields image stacks in numpy-array compatible
+# form can be used instead.
+# Image stacks, which may have any number of dimensions, are referred to as
+# ``signal`` in the PhasorPy library.
+#
 # The :py:mod:`phasorpy.datasets` module provides access to various sample
-# files, for example, a TIFF file containing a time-correlated
-# single photon counting (TCSPC) histogram obtained at 80 MHz.
-#
-# The :py:mod:`phasorpy.io` module provides many functions to read
-# time-resolved and hyperspectral image and metadata from file formats used
-# in microscopy. However, here the
-# `tifffile <https://pypi.org/project/tifffile/>`_ library is used directly
-# to read image stacks from files.
-#
-# The image data is referred to as the ``signal`` in the phasorpy library.
-
-# TODO: use phasorpy.io function to read histogram and metadata from PTU file
+# files. For example, an Imspector TIFF file from the
+# `FLUTE <https://zenodo.org/records/8046636>`_  project containing a
+# time-correlated single photon counting (TCSPC) histogram
+# of a zebrafish embryo at day 3, acquired at 80 MHz:
 
 
 signal = tifffile.imread(fetch('Embryo.tif'))
-frequency = 80.0
+frequency = 80.11  # MHz; from the XML metadata in the file
 
 print(signal.shape, signal.dtype)
 
@@ -110,11 +111,11 @@ plot_signal_image(signal, axis=0)
 #
 # Phasor coordinates are the real and imaginary components of the complex
 # numbers returned by a real forward Digital Fourier Transform (DFT)
-# of a signal at certain harmonics, normalized by the mean intensity
-# (the zeroth harmonic).
-# Phasor coordinates are named ``real`` and ``imag`` in the phasorpy library.
+# of a signal at certain harmonics (multiples of the fundamental frequency),
+# normalized by the mean intensity (the zeroth harmonic).
+# Phasor coordinates are named ``real`` and ``imag`` in the PhasorPy library.
 # In literature and other software, they are also known as
-# (:math:`G`) and (:math:`S`).
+# :math:`G` and :math:`S` or :math:`a` and :math:`b` (as in :math:`a + bi`).
 #
 # Phasor coordinates of the first harmonic are calculated from the signal,
 # a TCSPC histogram in this case.
@@ -160,7 +161,7 @@ numpy.testing.assert_allclose(
 #
 # The signals from time-resolved measurements are convoluted with an
 # instrument response function, causing the phasor-coordinates to be
-# phase shifted and modulated (scaled) by unknown amounts.
+# phase-shifted and modulated (scaled) by unknown amounts.
 # The phasor coordinates must therefore be calibrated with coordinates
 # obtained from a reference standard of known lifetime, acquired with
 # the same instrument settings.
@@ -208,7 +209,7 @@ plot_phasor_image(mean, real, imag, title='Calibrated')
 
 # %%
 # The phasor coordinates are now located in the first quadrant, except for
-# those with low signal to noise level.
+# some with low signal to noise level.
 #
 # If necessary, the calibration can be undone/reversed using the
 # same reference:
@@ -249,6 +250,7 @@ from phasorpy.phasor import phasor_threshold
 mean, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 
 # %%
+# Show the calibrated, filtered phasor coordinates:
 
 plot_phasor_image(
     mean, real, imag, title='Calibrated, filtered phasor coordinates'
@@ -268,7 +270,16 @@ plot_phasor_image(
 from phasorpy.io import phasor_from_ometiff, phasor_to_ometiff
 
 phasor_to_ometiff(
-    'phasors.ome.tif', mean, real, imag, frequency=frequency, harmonic=1
+    'phasors.ome.tif',
+    mean,
+    real,
+    imag,
+    frequency=frequency,
+    harmonic=1,
+    description=(
+        'Phasor coordinates of a zebrafish embryo at day 3, '
+        'calibrated, median-filtered, and thresholded.'
+    ),
 )
 
 # %%
@@ -280,9 +291,10 @@ numpy.allclose(real_, real)
 assert real_.dtype == numpy.float32
 assert real_.attrs['frequency'] == frequency
 assert real_.attrs['harmonic'] == 1
+assert mean_.attrs['description'].startswith('Phasor coordinates of')
 
 # %%
-# The functions transparently work with multi-harmonic phasor coordinates.
+# The functions also transparently work with multi-harmonic phasor coordinates.
 
 # %%
 # Plot phasor coordinates

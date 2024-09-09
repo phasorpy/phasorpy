@@ -23,7 +23,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, ArrayLike, NDArray, Literal, BinaryIO
+    from ._typing import Any, ArrayLike, NDArray, Literal, IO
 
     from matplotlib.axes import Axes
     from matplotlib.image import AxesImage
@@ -187,7 +187,7 @@ class PhasorPlot:
 
     def save(
         self,
-        file: str | os.PathLike[Any] | BinaryIO | None,
+        file: str | os.PathLike[Any] | IO[bytes] | None,
         /,
         **kwargs: Any,
     ) -> None:

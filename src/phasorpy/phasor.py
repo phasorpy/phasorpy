@@ -147,6 +147,7 @@ from ._phasorpy import (
     _polar_from_single_lifetime,
     _polar_to_apparent_lifetime,
 )
+from ._utils import parse_harmonic
 from .utils import number_threads
 
 
@@ -284,7 +285,7 @@ def phasor_from_signal(
     if dtype.kind != 'f':
         raise TypeError(f'{dtype=} not supported')
 
-    harmonic, keepdims = _parse_harmonic(harmonic, samples)
+    harmonic, keepdims = parse_harmonic(harmonic, samples)
     num_harmonics = len(harmonic)
 
     if sample_phase is not None:
@@ -472,7 +473,7 @@ def phasor_to_signal(
         samples_ = samples
 
     harmonic_ = harmonic
-    harmonic, has_harmonic_axis = _parse_harmonic(harmonic, samples_)
+    harmonic, has_harmonic_axis = parse_harmonic(harmonic, samples_)
 
     if real.ndim == 1 and len(harmonic) > 1 and real.shape[0] == len(harmonic):
         # single axis contains harmonic
@@ -640,7 +641,7 @@ def lifetime_to_signal(
     if harmonic is None:
         harmonic = 'all'
     all_hamonics = harmonic == 'all'
-    harmonic, _ = _parse_harmonic(harmonic, samples)
+    harmonic, _ = parse_harmonic(harmonic, samples)
 
     if samples < 16:
         raise ValueError(f'{samples=} < 16')
@@ -2968,9 +2969,9 @@ def _mean(
 
     Parameters
     ----------
-    real : numpy.ndarray
+    real : ndarray
         Real components of phasor coordinates.
-    imag : numpy.ndarray
+    imag : ndarray
         Imaginary components of phasor coordinates.
     **kwargs
         Optional arguments passed to :py:func:`numpy.nanmean`.
@@ -2998,9 +2999,9 @@ def _median(
 
     Parameters
     ----------
-    real : numpy.ndarray
+    real : ndarray
         Real components of the phasor coordinates.
-    imag : numpy.ndarray
+    imag : ndarray
         Imaginary components of the phasor coordinates.
     **kwargs
         Optional arguments passed to :py:func:`numpy.nanmedian`.
@@ -3034,9 +3035,9 @@ def _median_filter(
 
     Parameters
     ----------
-    real : numpy.ndarray
+    real : ndarray
         Real components of the phasor coordinates.
-    imag : numpy.ndarray
+    imag : ndarray
         Imaginary components of the phasor coordinates.
     repeat : int, optional
         Number of times to apply filter. The default is 1.
@@ -3108,47 +3109,3 @@ def _parse_skip_axis(
     skip_axis = tuple(sorted(int(i % ndim) for i in skip_axis))
     other_axis = tuple(i for i in range(ndim) if i not in skip_axis)
     return skip_axis, other_axis
-
-
-def _parse_harmonic(
-    harmonic: int | Sequence[int] | Literal['all'] | None, samples: int
-) -> tuple[list[int], bool]:
-    """Return parsed harmonic parameter.
-
-    Raises
-    ------
-    IndexError
-        Any element is out of range [1..harmonic_max].
-    TypeError
-        Any element is not an integer.
-    ValueError
-        Elements are not unique.
-
-    """
-    if samples < 3:
-        raise ValueError(f'{samples=} < 3')
-
-    if harmonic is None:
-        return [1], False
-
-    harmonic_max = samples // 2
-    if isinstance(harmonic, numbers.Integral):
-        if harmonic < 1 or harmonic > harmonic_max:
-            raise IndexError(f'{harmonic=} out of range [1..{harmonic_max}]')
-        return [int(harmonic)], False
-
-    if isinstance(harmonic, str):
-        if harmonic == 'all':
-            return list(range(1, harmonic_max + 1)), True
-        raise ValueError(f'{harmonic=!r} is not a valid harmonic')
-
-    h = numpy.atleast_1d(numpy.asarray(harmonic))
-    if h.dtype.kind not in 'iu' or h.ndim != 1:
-        raise TypeError(f'{harmonic=} element not an integer')
-    if numpy.any(h < 1) or numpy.any(h > harmonic_max):
-        raise IndexError(
-            f'{harmonic=} element out of range [1..{harmonic_max}]'
-        )
-    if numpy.unique(h).size != h.size:
-        raise ValueError(f'{harmonic=} elements must be unique')
-    return h.tolist(), True
