@@ -1,7 +1,4 @@
-"""Private utility functions.
-
-The ``phasorpy._utils`` module provides private auxiliary and convenience
-functions.
+"""Private auxiliary and convenience functions.
 
 """
 

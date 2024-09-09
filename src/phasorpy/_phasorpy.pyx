@@ -4,9 +4,8 @@
 # cython: wraparound = False
 # cython: cdivision = True
 # cython: nonecheck = False
-# cython: embedsignature = True
 
-"""Cython implementation of low-level functions for the PhasorPy package."""
+"""Cython implementation of low-level functions for the PhasorPy library."""
 
 # TODO: replace short with unsigned char when Cython supports it
 # https://github.com/cython/cython/pull/6196#issuecomment-2209509572
@@ -71,32 +70,37 @@ def _phasor_from_signal(
 ):
     """Return phasor coordinates from signal along middle axis.
 
-    This implementation requires contiguous input arrays.
-
-    TODO: use Numpy iterator API?
-    https://numpy.org/devdocs/reference/c-api/iterator.html
-
     Parameters
     ----------
-    phasor:
-        Writable buffer of three-dimensions where calculated phasor
+    phasor : 3D memoryview of float32 or float64
+        Writable buffer of three dimensions where calculated phasor
         coordinates are stored:
-            0. mean, real, and imaginary components
-            1. lower dimensions flat
-            2. upper dimensions flat
-    signal:
-        Buffer of three-dimensions containing signal:
-            0. lower dimensions flat
-            1. dimension over which to compute FFT, number samples
-            2. upper dimensions flat
-    sincos:
-        Buffer of two dimensions containing sin and cos terms to be multiplied
-        with signal:
-            0. number harmonics
-            1. number samples
-            2. cos and sin
-    num_threads:
+
+        0. mean, real, and imaginary components
+        1. lower dimensions flat
+        2. upper dimensions flat
+
+    signal : 3D memoryview of float32 or float64
+        Buffer of three dimensions containing signal:
+
+        0. lower dimensions flat
+        1. dimension over which to compute FFT, number samples
+        2. upper dimensions flat
+
+    sincos : 3D memoryview of float64
+        Buffer of three dimensions containing sine and cosine terms to be
+        multiplied with signal:
+
+        0. number harmonics
+        1. number samples
+        2. cos and sin
+
+    num_threads : int
         Number of OpenMP threads to use for parallelization.
+
+    Notes
+    -----
+    This implementation requires contiguous input arrays.
 
     """
     cdef:
@@ -106,6 +110,9 @@ def _phasor_from_signal(
         ssize_t harmonics = sincos.shape[0]
         ssize_t i, j, k, h
         double dc, re, im, sample
+
+    # TODO: use Numpy iterator API?
+    # https://numpy.org/devdocs/reference/c-api/iterator.html
 
     if (
         samples < 3
@@ -218,26 +225,32 @@ def _phasor_from_lifetime(
 
     Parameters
     ----------
-    phasor:
-        Writable buffer of three-dimensions where calculated phasor
+    phasor : 3D memoryview of float32 or float64
+        Writable buffer of three dimensions where calculated phasor
         coordinates are stored:
-            0. real and imaginary components
-            1. frequencies
-            2. lifetimes or fractions
-    frequency:
+
+        0. real and imaginary components
+        1. frequencies
+        2. lifetimes or fractions
+
+    frequency : 2D memoryview of float64
         One-dimensional sequence of laser-pulse or modulation frequencies.
-    lifetime:
+    lifetime : 2D memoryview of float64
         Buffer of two dimensions:
-            0. lifetimes
-            1. components of lifetimes
-    fraction:
+
+        0. lifetimes
+        1. components of lifetimes
+
+    fraction : 2D memoryview of float64
         Buffer of two dimensions:
-            0. fractions
-            1. fractions of lifetime components
-    unit_conversion:
+
+        0. fractions
+        1. fractions of lifetime components
+
+    unit_conversion : float
         Product of `frequency` and `lifetime` units' prefix factors.
         1e-3 for MHz and ns. 1.0 for Hz and s.
-    preexponential:
+    preexponential : bool
         If true, fractions are pre-exponential amplitudes, else fractional
         intensities.
 
@@ -379,7 +392,18 @@ def _gaussian_signal(
     const double mean,
     const double stdev,
 ):
-    """Return normal distribution, wrapped around at borders."""
+    """Return normal distribution, wrapped around at borders.
+
+    Parameters
+    ----------
+    signal : memoryview of float32 or float64
+        Writable buffer where calculated signal samples are stored.
+    mean : float
+        Mean of normal distribution.
+    stdev : float
+        Standard deviation of normal distribution.
+
+    """
     cdef:
         ssize_t samples = signal.shape[0]
         ssize_t folds = 1  # TODO: calculate from stddev and samples
