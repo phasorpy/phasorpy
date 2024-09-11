@@ -23,9 +23,9 @@ Import required modules and functions:
 from timeit import timeit
 
 import numpy
-from numpy.fft import rfft as numpy_fft
+from numpy.fft import rfft as numpy_fft  # noqa
 
-from phasorpy.phasor import phasor_from_signal
+from phasorpy.phasor import phasor_from_signal  # noqa
 from phasorpy.utils import number_threads
 
 try:

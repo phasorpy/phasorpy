@@ -88,7 +88,7 @@ version = { attr = "phasorpy.version.__version__" }
 phasorpy = ["py.typed"]
 
 [tool.ruff.lint]
-select = ["NPY201"]
+select = []
 
 [tool.pylint.format]
 max-line-length = 79
