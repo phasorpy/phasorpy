@@ -2,7 +2,6 @@
 
 import io
 import math
-import warnings
 
 import numpy
 import pytest

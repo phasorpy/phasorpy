@@ -3,9 +3,9 @@ name: Build wheels
 on:
   push:
     tags:
-      - '*'
+      - "*"
     branches:
-     - main
+      - main
   # pull_request:
   #   branches:
   #     - main
