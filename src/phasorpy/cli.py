@@ -12,7 +12,7 @@ import os
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Iterable, Pooch
+    from ._typing import Iterable
 
 import click
 
@@ -48,7 +48,7 @@ def versions(verbose: bool) -> None:
     type=click.BOOL,
     help='Hide progressbar.',
 )
-def fetch(files: Iterable[str | Pooch], hideprogress: bool) -> None:
+def fetch(files: Iterable[str], hideprogress: bool) -> None:
     """Fetch command group."""
     from . import datasets
 
