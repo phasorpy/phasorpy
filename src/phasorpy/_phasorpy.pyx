@@ -1617,7 +1617,7 @@ cdef float_t _blend_darken(
     """Return blended layers using `darken` mode."""
     if isnan(b) or isnan(a):
         return a
-    return <float_t> min(a, b)
+    return a if a <= b else b
 
 
 @cython.ufunc
@@ -1628,7 +1628,7 @@ cdef float_t _blend_lighten(
     """Return blended layers using `lighten` mode."""
     if isnan(b) or isnan(a):
         return a
-    return <float_t> max(a, b)
+    return <float_t> a if a >= b else b
 
 ###############################################################################
 # Threshold ufuncs
