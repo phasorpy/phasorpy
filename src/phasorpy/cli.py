@@ -9,6 +9,10 @@ Invoke the command line application with::
 from __future__ import annotations
 
 import os
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ._typing import Iterable, Pooch
 
 import click
 
@@ -30,7 +34,7 @@ def main() -> int:
     type=click.BOOL,
     help='Show module paths.',
 )
-def versions(verbose):
+def versions(verbose: bool) -> None:
     """Versions command group."""
     click.echo(version.versions(verbose=verbose))
 
@@ -44,7 +48,7 @@ def versions(verbose):
     type=click.BOOL,
     help='Hide progressbar.',
 )
-def fetch(files, hideprogress):
+def fetch(files: Iterable[str | Pooch], hideprogress: bool) -> None:
     """Fetch command group."""
     from . import datasets
 
@@ -62,7 +66,7 @@ def fetch(files, hideprogress):
     type=click.BOOL,
     help='Do not show interactive plot.',
 )
-def fret(hide):
+def fret(hide: bool) -> None:
     """FRET command group."""
     from .plot import PhasorPlotFret
 

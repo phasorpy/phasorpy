@@ -622,7 +622,9 @@ def phasor_to_simfcs_referenced(
 
     chunk = numpy.empty((size, size), dtype=numpy.float32)
 
-    def rawdata_append(rawdata, a=None):
+    def rawdata_append(
+        rawdata: list[bytes], a: NDArray[Any] | None = None
+    ) -> None:
         if a is None:
             chunk[:] = numpy.nan
             rawdata.append(chunk.tobytes())
@@ -1536,7 +1538,7 @@ def _metadata(
     dims: Sequence[str] | None,
     shape: tuple[int, ...],
     /,
-    name: str | PathLike | None = None,
+    name: str | PathLike[Any] | None = None,
     attrs: dict[str, Any] | None = None,
     **coords: Any,
 ) -> dict[str, Any]:
