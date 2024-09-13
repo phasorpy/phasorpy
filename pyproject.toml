@@ -133,6 +133,7 @@ ignore-words-list = "ba,compiletime,hist,nd,unparseable,HSI"
 packages = ["phasorpy"]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
 plugins = ["numpy.typing.mypy_plugin"]
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 strict = true
 warn_unreachable = true
 

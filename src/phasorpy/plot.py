@@ -120,7 +120,9 @@ class PhasorPlot:
     ) -> None:
         # initialize empty phasor plot
         self._ax = pyplot.subplots()[1] if ax is None else ax
-        self._ax.format_coord = self._on_format_coord  # type: ignore
+        self._ax.format_coord = (  # type: ignore[method-assign]
+            self._on_format_coord
+        )
 
         self._semicircle_ticks = None
 
@@ -934,7 +936,7 @@ class PhasorPlot:
         self._reset_limits()
         return lines
 
-    def _on_format_coord(self, x: float, y: float, /) -> str:
+    def _on_format_coord(self, x: float, y: float) -> str:
         """Callback function to update coordinates displayed in toolbar."""
         phi, mod = phasor_to_polar_scalar(x, y)
         ret = [
@@ -1541,8 +1543,9 @@ class SemicircleTicks(AbstractPathEffect):
         gc0.copy_properties(gc)
 
         # TODO: this uses private methods of the base class
-        gc0 = self._update_gc(gc0, self._gc)  # type: ignore
-        trans = affine + self._offset_transform(renderer)  # type: ignore
+        gc0 = self._update_gc(gc0, self._gc)  # type: ignore[attr-defined]
+        trans = affine
+        trans += self._offset_transform(renderer)  # type: ignore[attr-defined]
 
         font = FontProperties()
         # approximate half size of 'x'

@@ -97,7 +97,7 @@ repos:
 #     args: []
 
 ci:
-  autofix_commit_msg: |
-    [pre-commit.ci] auto fixes from pre-commit.com hooks
+  autofix_commit_msg: "[pre-commit.ci] auto fixes from pre-commit.com hooks"
+  autoupdate_commit_msg: "[pre-commit.ci] pre-commit autoupdate"
   autofix_prs: false
   autoupdate_schedule: weekly
