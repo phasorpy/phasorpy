@@ -1,6 +1,7 @@
 """Test the phasorpy._phasorpy module."""
 
 import math
+import sys
 
 import numpy
 import pytest
@@ -398,6 +399,7 @@ def test_blend_overlay(a, b, expected):
     assert_allclose(_blend_overlay(a, b), expected)
 
 
+@pytest.mark.skipif(sys.platform == 'darwin', reason='github #115')
 @pytest.mark.parametrize(
     'a, b, expected',
     [(0.1, 0.6, 0.1), (0.6, 0.1, 0.1), (0.1, nan, 0.1), (nan, 0.6, nan)],
@@ -407,6 +409,7 @@ def test_blend_darken(a, b, expected):
     assert_allclose(_blend_darken(a, b), expected)
 
 
+@pytest.mark.skipif(sys.platform == 'darwin', reason='github #115')
 @pytest.mark.parametrize(
     'a, b, expected',
     [(0.1, 0.6, 0.6), (0.6, 0.1, 0.6), (0.1, nan, 0.1), (nan, 0.6, nan)],

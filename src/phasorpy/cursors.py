@@ -127,7 +127,7 @@ def mask_from_circular_cursor(
     mask = _is_inside_circle(real, imag, center_real, center_imag, radius)
     if moveaxis:
         mask = numpy.moveaxis(mask, -1, 0)
-    return mask.astype(numpy.bool_)
+    return mask.astype(numpy.bool_)  # type: ignore[no-any-return]
 
 
 def mask_from_elliptic_cursor(
@@ -270,7 +270,7 @@ def mask_from_elliptic_cursor(
     )
     if moveaxis:
         mask = numpy.moveaxis(mask, -1, 0)
-    return mask.astype(numpy.bool_)
+    return mask.astype(numpy.bool_)  # type: ignore[no-any-return]
 
 
 def mask_from_polar_cursor(
@@ -380,7 +380,7 @@ def mask_from_polar_cursor(
     )
     if moveaxis:
         mask = numpy.moveaxis(mask, -1, 0)
-    return mask.astype(numpy.bool_)
+    return mask.astype(numpy.bool_)  # type: ignore[no-any-return]
 
 
 def pseudo_color(

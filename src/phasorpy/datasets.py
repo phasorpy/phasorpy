@@ -404,28 +404,28 @@ def fetch(
     return tuple(filenames)
 
 
-class _Unzip(pooch.processors.ExtractorProcessor):
+class _Unzip(pooch.processors.ExtractorProcessor):  # type: ignore[misc]
     """Pooch processor that unpacks ZIP archive and returns single file."""
 
-    def __call__(self, fname, action, pooch_):
+    def __call__(self, fname: str, action: str, pooch_: pooch.Pooch) -> str:
         pooch.processors.ExtractorProcessor.__call__(
             self, fname, action, pooch_
         )
         return os.path.splitext(fname)[0]
 
     @property
-    def suffix(self):
+    def suffix(self) -> str:
         """String appended to unpacked archive folder name."""
         return '.unzip'
 
-    def _all_members(self, fname):
+    def _all_members(self, fname: str) -> list[str]:
         """Return all members from archive."""
         from zipfile import ZipFile
 
         with ZipFile(fname, 'r') as zip_file:
             return zip_file.namelist()
 
-    def _extract_file(self, fname, extract_dir):
+    def _extract_file(self, fname: str, extract_dir: str) -> None:
         """Extract all files from ZIP archive."""
         from zipfile import ZipFile
 
