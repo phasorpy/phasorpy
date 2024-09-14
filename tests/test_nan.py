@@ -158,7 +158,8 @@ def test_phasor_filter_nan():
         warnings.simplefilter('error')
         phasor = phasor_filter(*VALUES_WITH_NAN)
     # TODO: this is undefined. https://github.com/phasorpy/phasorpy/issues/87
-    assert_allclose(phasor, [0.5, nan, 0.1], [0.5, 0.5, 0.1], atol=1e-3)
+    assert_allclose(phasor[0], [0.5, nan, 0.1], atol=1e-3)
+    assert_allclose(phasor[1], [0.5, 0.5, 0.1], atol=1e-3)
 
 
 def test_phasor_from_apparent_lifetime_nan():
@@ -369,3 +370,7 @@ def test_graphical_component_analysis_nan():
             [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
         ),
     )
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

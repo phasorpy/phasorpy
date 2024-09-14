@@ -222,3 +222,5 @@ plot_phasor(real[0, :32], imag[0, :32], marker='.', frequency=80.0)
 
 # %%
 # sphinx_gallery_thumbnail_number = 10
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

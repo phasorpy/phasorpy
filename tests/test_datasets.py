@@ -78,3 +78,7 @@ def test_fetch_all():
     filenames = fetch()
     for filename in filenames:
         assert os.path.exists(filename)
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

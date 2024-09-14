@@ -472,3 +472,7 @@ def test_pseudo_color_errors():
     # colors last dimension not 3
     with pytest.raises(ValueError):
         pseudo_color(0, colors=[[0.0, 0]])
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

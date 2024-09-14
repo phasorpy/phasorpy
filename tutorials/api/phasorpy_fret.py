@@ -230,4 +230,5 @@ plot_polar_frequency(
 
 # %%
 # sphinx_gallery_thumbnail_number = 5
+# mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
