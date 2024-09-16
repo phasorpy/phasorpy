@@ -958,6 +958,7 @@ def phasor_calibrate(
     frequency: ArrayLike,
     lifetime: ArrayLike,
     *,
+    harmonics: int | Sequence[int] = 1,
     fraction: ArrayLike | None = None,
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
@@ -992,6 +993,8 @@ def phasor_calibrate(
         A scalar or one-dimensional sequence.
     lifetime : array_like
         Lifetime components in ns. Must be scalar or one dimensional.
+    harmonics : int or sequence of int, optional
+        Harmonics used for calibration.
     fraction : array_like, optional
         Fractional intensities or pre-exponential amplitudes of the lifetime
         components. Fractions are normalized to sum to 1.
