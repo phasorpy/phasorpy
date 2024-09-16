@@ -248,7 +248,9 @@ def phasor_from_polar_scalar(
 
 
 def parse_harmonic(
-    harmonic: int | Sequence[int] | Literal['all'] | None, samples: int, /
+    harmonic: int | Sequence[int] | Literal['all'] | str | None,
+    samples: int,
+    /,
 ) -> tuple[list[int], bool]:
     """Return parsed harmonic parameter.
 

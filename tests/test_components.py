@@ -255,3 +255,7 @@ def test_errors_graphical_component_analysis(
         graphical_component_analysis(
             real, imag, components_real, components_imag, fractions=fractions
         )
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

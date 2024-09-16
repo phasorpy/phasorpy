@@ -472,7 +472,9 @@ def test_phasor_to_ometiff_exceptions():
 
         # invalid harmonic
         with pytest.raises(ValueError):
-            phasor_to_ometiff(filename, *data, harmonic=[[1]])
+            phasor_to_ometiff(
+                filename, *data, harmonic=[[1]]  # type: ignore[list-item]
+            )
 
         # invalid harmonic
         with pytest.raises(ValueError):
@@ -689,3 +691,7 @@ def test_phasor_to_simfcs_referenced_multiharmonic():
             assert mean.shape == (32, 32)
             assert real.shape == (2, 32, 32)
             assert imag.shape == (2, 32, 32)
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

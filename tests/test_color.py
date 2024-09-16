@@ -33,3 +33,7 @@ def test_float2int():
         float2int(500.0, numpy.float32)  # not an integer dtype
     with pytest.raises(ValueError):
         float2int(500, numpy.uint8)  # not a floating-point array
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

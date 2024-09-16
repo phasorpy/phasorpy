@@ -663,7 +663,7 @@ def phasor_from_simfcs_referenced(
     filename: str | PathLike[Any],
     /,
     *,
-    harmonic: int | Sequence[int] | Literal['all'] | None = None,
+    harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return phasor coordinate images from SimFCS referenced (REF, R64) file.
 
@@ -1025,7 +1025,7 @@ def read_ptu(
     /,
     selection: Sequence[int | slice | EllipsisType | None] | None = None,
     *,
-    trimdims: Sequence[Literal['T', 'C', 'H']] | None = None,
+    trimdims: Sequence[Literal['T', 'C', 'H']] | str | None = None,
     dtype: DTypeLike | None = None,
     frame: int | None = None,
     channel: int | None = None,

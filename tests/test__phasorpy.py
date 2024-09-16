@@ -417,3 +417,7 @@ def test_blend_darken(a, b, expected):
 def test_blend_lighten(a, b, expected):
     """Test _blend_lighten function."""
     assert_allclose(_blend_lighten(a, b), expected)
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

@@ -169,7 +169,9 @@ def test_phasor_from_signal(use_fft):
     with pytest.raises(ValueError):
         phasor_from_signal(signal, harmonic=[], use_fft=use_fft)
     with pytest.raises(TypeError):
-        phasor_from_signal(signal, harmonic=[1.0], use_fft=use_fft)
+        phasor_from_signal(
+            signal, harmonic=[1.0], use_fft=use_fft  # type: ignore[list-item]
+        )
     with pytest.raises(IndexError):
         phasor_from_signal(signal, harmonic=0, use_fft=use_fft)
     with pytest.raises(ValueError):
@@ -2400,3 +2402,7 @@ def test_phasor_threshold():
             [[nan, nan], [imag[1][0], nan]],
         ),
     )
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type, unreachable"

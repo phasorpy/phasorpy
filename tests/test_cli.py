@@ -35,3 +35,7 @@ def test_fret():
     runner = CliRunner()
     result = runner.invoke(main, ['fret', '--hide'])
     assert result.exit_code == 0
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

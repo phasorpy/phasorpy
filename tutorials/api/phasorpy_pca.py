@@ -146,3 +146,5 @@ plot.show()
 # visualization by cursors is applicable.
 #
 # sphinx_gallery_thumbnail_number = -2
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"
