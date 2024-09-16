@@ -248,7 +248,9 @@ def phasor_from_polar_scalar(
 
 
 def parse_harmonic(
-    harmonic: int | Sequence[int] | Literal['all'] | None, samples: int, /
+    harmonic: int | Sequence[int] | Literal['all'] | str | None,
+    samples: int,
+    /,
 ) -> tuple[list[int], bool]:
     """Return parsed harmonic parameter.
 
@@ -286,7 +288,7 @@ def parse_harmonic(
         return [1], False
 
     harmonic_max = samples // 2
-    if isinstance(harmonic, numbers.Integral):
+    if isinstance(harmonic, (int, numbers.Integral)):
         if harmonic < 1 or harmonic > harmonic_max:
             raise IndexError(f'{harmonic=} out of range [1..{harmonic_max}]')
         return [int(harmonic)], False

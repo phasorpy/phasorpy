@@ -156,7 +156,7 @@ def phasor_from_signal(
     /,
     *,
     axis: int = -1,
-    harmonic: int | Sequence[int] | Literal['all'] | None = None,
+    harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
     sample_phase: ArrayLike | None = None,
     use_fft: bool | None = None,
     rfft: Callable[..., NDArray[Any]] | None = None,
@@ -310,12 +310,12 @@ def phasor_from_signal(
         if rfft is None:
             rfft = numpy.fft.rfft
 
-        fft: NDArray = rfft(signal, axis=axis, norm='forward')
+        fft: NDArray[Any] = rfft(signal, axis=axis, norm='forward')
 
         mean = fft.take(0, axis=axis).real
         if not mean.ndim == 0:
             mean = numpy.ascontiguousarray(mean, dtype)
-        fft = fft.take(harmonic, axis=axis)  # type: ignore
+        fft = fft.take(harmonic, axis=axis)
         real = numpy.ascontiguousarray(fft.real, dtype)
         imag = numpy.ascontiguousarray(fft.imag, dtype)
         del fft
@@ -388,7 +388,7 @@ def phasor_to_signal(
     /,
     *,
     samples: int = 64,
-    harmonic: int | Sequence[int] | Literal['all'] | None = None,
+    harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
     axis: int = -1,
     irfft: Callable[..., NDArray[Any]] | None = None,
 ) -> NDArray[numpy.float64]:
@@ -466,7 +466,7 @@ def phasor_to_signal(
     real = numpy.array(real, ndmin=0, copy=True)
     imag = numpy.array(imag, ndmin=1, copy=True)
 
-    if isinstance(harmonic, numbers.Integral) and harmonic == 0:
+    if isinstance(harmonic, (int, numbers.Integral)) and harmonic == 0:
         # harmonics are expected in the first axes of real and imag
         samples_ = 2 * imag.shape[0]
     else:
@@ -513,7 +513,7 @@ def phasor_to_signal(
     imag *= mean
     numpy.negative(imag, out=imag)
 
-    fft: NDArray = numpy.zeros(
+    fft: NDArray[Any] = numpy.zeros(
         (samples // 2 + 1, *real.shape[1:]), dtype=numpy.complex128
     )
     fft.real[[0]] = mean
@@ -523,7 +523,7 @@ def phasor_to_signal(
     if irfft is None:
         irfft = numpy.fft.irfft
 
-    signal: NDArray = irfft(fft, samples, axis=0, norm='forward')
+    signal: NDArray[Any] = irfft(fft, samples, axis=0, norm='forward')
 
     if not keepdims:
         signal = signal[:, 0]
@@ -540,7 +540,7 @@ def lifetime_to_signal(
     mean: ArrayLike | None = None,
     background: ArrayLike | None = None,
     samples: int = 64,
-    harmonic: int | Sequence[int] | Literal['all'] | None = None,
+    harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
     zero_phase: float | None = None,
     zero_stdev: float | None = None,
     preexponential: bool = False,
@@ -883,7 +883,9 @@ def phasor_multiply(
     #     factor_real, factor_imag
     # )
     # return c.real, c.imag
-    return _phasor_multiply(real, imag, factor_real, factor_imag, **kwargs)
+    return _phasor_multiply(  # type: ignore[no-any-return]
+        real, imag, factor_real, factor_imag, **kwargs
+    )
 
 
 def phasor_divide(
@@ -946,7 +948,9 @@ def phasor_divide(
     #     divisor_real, divisor_imag
     # )
     # return c.real, c.imag
-    return _phasor_divide(real, imag, divisor_real, divisor_imag, **kwargs)
+    return _phasor_divide(  # type: ignore[no-any-return]
+        real, imag, divisor_real, divisor_imag, **kwargs
+    )
 
 
 def phasor_calibrate(
@@ -1215,13 +1219,15 @@ def phasor_transform(
 
     """
     if numpy.ndim(phase) == 0 and numpy.ndim(modulation) == 0:
-        return _phasor_transform_const(
+        return _phasor_transform_const(  # type: ignore[no-any-return]
             real,
             imag,
             modulation * numpy.cos(phase),
             modulation * numpy.sin(phase),
         )
-    return _phasor_transform(real, imag, phase, modulation, **kwargs)
+    return _phasor_transform(  # type: ignore[no-any-return]
+        real, imag, phase, modulation, **kwargs
+    )
 
 
 def polar_from_reference_phasor(
@@ -1280,7 +1286,7 @@ def polar_from_reference_phasor(
     (0.0, 2.0)
 
     """
-    return _polar_from_reference_phasor(
+    return _polar_from_reference_phasor(  # type: ignore[no-any-return]
         measured_real, measured_imag, known_real, known_imag, **kwargs
     )
 
@@ -1330,7 +1336,7 @@ def polar_from_reference(
     (0.2, 3.25)
 
     """
-    return _polar_from_reference(
+    return _polar_from_reference(  # type: ignore[no-any-return]
         measured_phase,
         measured_modulation,
         known_phase,
@@ -1388,7 +1394,9 @@ def phasor_to_polar(
     (array([0, 0.7854, 1.571]), array([1, 0.7071, 1]))
 
     """
-    return _phasor_to_polar(real, imag, **kwargs)
+    return _phasor_to_polar(  # type: ignore[no-any-return]
+        real, imag, **kwargs
+    )
 
 
 def phasor_from_polar(
@@ -1442,7 +1450,9 @@ def phasor_from_polar(
     (array([1, 0.5, 0.0]), array([0, 0.5, 1]))
 
     """
-    return _phasor_from_polar(phase, modulation, **kwargs)
+    return _phasor_from_polar(  # type: ignore[no-any-return]
+        phase, modulation, **kwargs
+    )
 
 
 def phasor_to_apparent_lifetime(
@@ -1524,7 +1534,9 @@ def phasor_to_apparent_lifetime(
     """
     omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
-    return _phasor_to_apparent_lifetime(real, imag, omega, **kwargs)
+    return _phasor_to_apparent_lifetime(  # type: ignore[no-any-return]
+        real, imag, omega, **kwargs
+    )
 
 
 def phasor_from_apparent_lifetime(
@@ -1607,8 +1619,10 @@ def phasor_from_apparent_lifetime(
     omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
     if modulation_lifetime is None:
-        return _phasor_from_single_lifetime(phase_lifetime, omega, **kwargs)
-    return _phasor_from_apparent_lifetime(
+        return _phasor_from_single_lifetime(  # type: ignore[no-any-return]
+            phase_lifetime, omega, **kwargs
+        )
+    return _phasor_from_apparent_lifetime(  # type: ignore[no-any-return]
         phase_lifetime, modulation_lifetime, omega, **kwargs
     )
 
@@ -1876,7 +1890,9 @@ def phasor_at_harmonic(
     if numpy.any(other_harmonic < 1):
         raise ValueError('invalid other_harmonic')
 
-    return _phasor_at_harmonic(real, harmonic, other_harmonic, **kwargs)
+    return _phasor_at_harmonic(  # type: ignore[no-any-return]
+        real, harmonic, other_harmonic, **kwargs
+    )
 
 
 def phasor_from_lifetime(
@@ -2163,7 +2179,9 @@ def polar_to_apparent_lifetime(
     """
     omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
-    return _polar_to_apparent_lifetime(phase, modulation, omega, **kwargs)
+    return _polar_to_apparent_lifetime(  # type: ignore[no-any-return]
+        phase, modulation, omega, **kwargs
+    )
 
 
 def polar_from_apparent_lifetime(
@@ -2234,8 +2252,10 @@ def polar_from_apparent_lifetime(
     omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
     if modulation_lifetime is None:
-        return _polar_from_single_lifetime(phase_lifetime, omega, **kwargs)
-    return _polar_from_apparent_lifetime(
+        return _polar_from_single_lifetime(  # type: ignore[no-any-return]
+            phase_lifetime, omega, **kwargs
+        )
+    return _polar_from_apparent_lifetime(  # type: ignore[no-any-return]
         phase_lifetime, modulation_lifetime, omega, **kwargs
     )
 
@@ -2324,7 +2344,7 @@ def phasor_from_fret_donor(
     """
     omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
-    return _phasor_from_fret_donor(
+    return _phasor_from_fret_donor(  # type: ignore[no-any-return]
         omega,
         donor_lifetime,
         fret_efficiency,
@@ -2442,7 +2462,7 @@ def phasor_from_fret_acceptor(
     """
     omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
     omega *= math.pi * 2.0 * unit_conversion
-    return _phasor_from_fret_acceptor(
+    return _phasor_from_fret_acceptor(  # type: ignore[no-any-return]
         omega,
         donor_lifetime,
         acceptor_lifetime,
@@ -2859,7 +2879,9 @@ def phasor_threshold(
         threshold_mean_only = False
 
     if threshold_mean_only is None:
-        return _phasor_threshold_nan(mean, real, imag, **kwargs)
+        return _phasor_threshold_nan(  # type: ignore[no-any-return]
+            mean, real, imag, **kwargs
+        )
 
     if threshold_mean_only:
         mean_func = (
@@ -2867,12 +2889,14 @@ def phasor_threshold(
             if open_interval
             else _phasor_threshold_mean_closed
         )
-        return mean_func(mean, real, imag, mean_min, mean_max, **kwargs)
+        return mean_func(  # type: ignore[no-any-return]
+            mean, real, imag, mean_min, mean_max, **kwargs
+        )
 
     func = (
         _phasor_threshold_open if open_interval else _phasor_threshold_closed
     )
-    return func(
+    return func(  # type: ignore[no-any-return]
         mean,
         real,
         imag,

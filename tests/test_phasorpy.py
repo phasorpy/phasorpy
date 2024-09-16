@@ -12,3 +12,7 @@ def test_versions():
 
     ver = versions(sep=', ', dash=' ', verbose=True)
     assert f', phasorpy {__version__}  (' in ver
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

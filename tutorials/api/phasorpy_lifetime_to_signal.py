@@ -191,4 +191,5 @@ pyplot.show()
 # and noise.
 #
 # sphinx_gallery_thumbnail_number = -1
+# mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"

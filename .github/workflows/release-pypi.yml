@@ -3,7 +3,7 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - '*'
+      - "*"
     branches:
       - main
   pull_request:
@@ -12,7 +12,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   build_artifacts:
     name: Build sdist and wheel
     runs-on: ubuntu-latest

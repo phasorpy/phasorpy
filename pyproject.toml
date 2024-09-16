@@ -72,7 +72,7 @@ test = [
 all = [
     "lfdfiles>=2024.5.24",
     "sdtfile>=2024.5.24",
-    "ptufile>=2024.7.13",
+    "ptufile>=2024.9.14",
 ]
 
 [tool.setuptools]
@@ -88,7 +88,7 @@ version = { attr = "phasorpy.version.__version__" }
 phasorpy = ["py.typed"]
 
 [tool.ruff.lint]
-select = ["NPY201"]
+select = []
 
 [tool.pylint.format]
 max-line-length = 79
@@ -130,11 +130,16 @@ skip = "*.html,*.css,*.js,*.r64,*.map,./.git,./data,./docs/_build,./docs/tutoria
 ignore-words-list = "ba,compiletime,hist,nd,unparseable,HSI"
 
 [tool.mypy]
-# follow_imports = "silent"
-ignore_missing_imports = true
 packages = ["phasorpy"]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
 plugins = ["numpy.typing.mypy_plugin"]
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+strict = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["phasorpy._phasorpy", "pooch.*", "scipy.*", "mkl_fft.*"]
+ignore_missing_imports = true
 
 [tool.coverage.run]
 plugins = ["Cython.Coverage"]
@@ -148,6 +153,7 @@ directory = "_htmlcov"
 [tool.pytest.ini_options]
 minversion = "7"
 log_cli_level = "INFO"
+filterwarnings = ["error"]
 xfail_strict = true
 addopts = "-rfEXs --strict-config --strict-markers --doctest-modules --doctest-glob=*.py --doctest-glob=*.rst"
 doctest_optionflags = [

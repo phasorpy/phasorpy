@@ -23,9 +23,9 @@ Import required modules and functions:
 from timeit import timeit
 
 import numpy
-from numpy.fft import rfft as numpy_fft
+from numpy.fft import rfft as numpy_fft  # noqa
 
-from phasorpy.phasor import phasor_from_signal
+from phasorpy.phasor import phasor_from_signal  # noqa
 from phasorpy.utils import number_threads
 
 try:
@@ -156,3 +156,6 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
 # Using the Cython implementation is a reasonable default when calculating
 # a few harmonics. Using FFT is a better choice when computing large number
 # of harmonics, especially with an optimized FFT function.
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

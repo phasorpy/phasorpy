@@ -2,7 +2,6 @@
 
 import io
 import math
-import warnings
 
 import numpy
 import pytest
@@ -414,9 +413,9 @@ def test_plot_polar_frequency():
 def test_plot_signal_image():
     """Test plot_signal_image function."""
     shape = (7, 31, 33, 11)
-    data = numpy.arange(math.prod(shape)).reshape(shape)
-    data %= math.prod(shape[-2:])
-    data = data / math.prod(shape[-2:])
+    data_ = numpy.arange(math.prod(shape)).reshape(shape)
+    data_ %= math.prod(shape[-2:])
+    data = data_ / math.prod(shape[-2:])
 
     plot_signal_image(data, title='default', show=INTERACTIVE)
     pyplot.close()
@@ -446,9 +445,9 @@ def test_plot_signal_image():
 def test_plot_phasor_image():
     """Test plot_phasor_image function."""
     shape = (7, 11, 31, 33)
-    data = numpy.arange(math.prod(shape)).reshape(shape)
-    data %= math.prod(shape[-2:])
-    data = data / math.prod(shape[-2:])
+    data_ = numpy.arange(math.prod(shape)).reshape(shape)
+    data_ %= math.prod(shape[-2:])
+    data = data_ / math.prod(shape[-2:])
 
     # 2D data
     d = data[0, 0]
@@ -522,3 +521,7 @@ def test_plot_phasor_image():
         # percentile out of range
         plot_phasor_image(d, d, d, percentile=50, show=False)
     pyplot.close()
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

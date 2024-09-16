@@ -46,7 +46,10 @@ isort
 mypy
 codespell
 cython_lint
-# pre-commit
+pyupgrade
+autoflake
+pre-commit
+pre-commit-hooks
 #
 # optional requirements
 scikit-image

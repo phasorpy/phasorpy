@@ -134,7 +134,10 @@ def test_parse_harmonic():
     assert parse_harmonic(1, 3) == ([1], False)
     assert parse_harmonic(numpy.int32(1), 3) == ([1], False)
     assert parse_harmonic([1], 3) == ([1], True)
-    assert parse_harmonic([numpy.int32(1)], 3) == ([1], True)
+    assert parse_harmonic([numpy.int32(1)], 3) == (  # type: ignore[list-item]
+        [1],
+        True,
+    )
     assert parse_harmonic([1, 2], 5) == ([1, 2], True)
     assert parse_harmonic([2, 1], 5) == ([2, 1], True)
     assert parse_harmonic(numpy.array([1, 2]), 5) == ([1, 2], True)
@@ -149,7 +152,7 @@ def test_parse_harmonic():
     with pytest.raises(IndexError):
         parse_harmonic([1, 2], 3)
     with pytest.raises(TypeError):
-        parse_harmonic([[1]], 3)
+        parse_harmonic([[1]], 3)  # type: ignore[list-item]
     with pytest.raises(ValueError):
         parse_harmonic([], 3)
     with pytest.raises(ValueError):
@@ -230,3 +233,7 @@ def test_chunk_iter():
 
     with pytest.raises(ValueError):
         list(chunk_iter((2,), (1, 2)))
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

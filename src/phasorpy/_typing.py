@@ -13,8 +13,38 @@ This module should only be imported when type-checking, for example::
 
 # flake8: noqa: F401
 # pylint: disable=unused-import
+# autoflake: skip_file
 
 from __future__ import annotations
+
+__all__ = [
+    'Any',
+    'ArrayLike',
+    'Callable',
+    'Collection',
+    'Container',
+    'DTypeLike',
+    'DataArray',
+    'EllipsisType',
+    'IO',
+    'ItemsView',
+    'Iterable',
+    'Iterator',
+    'KeysView',
+    'Literal',
+    'Mapping',
+    'NDArray',
+    'Optional',
+    'PathLike',
+    'Pooch',
+    'Sequence',
+    'TextIO',
+    'Union',
+    'ValuesView',
+    'cast',
+    'final',
+    'overload',
+]
 
 from collections.abc import (
     Callable,
@@ -43,4 +73,5 @@ from typing import (
 )
 
 from numpy.typing import ArrayLike, DTypeLike, NDArray
+from pooch import Pooch
 from xarray import DataArray

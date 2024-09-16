@@ -116,11 +116,13 @@ class PhasorPlot:
         *,
         frequency: float | None = None,
         grid: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         # initialize empty phasor plot
         self._ax = pyplot.subplots()[1] if ax is None else ax
-        self._ax.format_coord = self._on_format_coord  # type: ignore
+        self._ax.format_coord = (  # type: ignore[method-assign]
+            self._on_format_coord
+        )
 
         self._semicircle_ticks = None
 
@@ -177,7 +179,7 @@ class PhasorPlot:
         fig = self._ax.get_figure()
         assert fig is not None
         length = fig.bbox_inches.height * self._ax.get_position().height * 72.0
-        vrange = numpy.diff(self._ax.get_ylim()).item()
+        vrange: float = numpy.diff(self._ax.get_ylim()).item()
         return length / vrange
 
     def show(self) -> None:
@@ -209,7 +211,7 @@ class PhasorPlot:
         real: ArrayLike,
         imag: ArrayLike,
         /,
-        fmt='o',
+        fmt: str = 'o',
         *,
         label: str | Sequence[str] | None = None,
         **kwargs: Any,
@@ -788,7 +790,7 @@ class PhasorPlot:
                 )
         return None
 
-    def polar_grid(self, **kwargs) -> None:
+    def polar_grid(self, **kwargs: Any) -> None:
         """Draw polar coordinate system.
 
         Parameters
@@ -838,7 +840,7 @@ class PhasorPlot:
         labels: Sequence[str] | None = None,
         show_circle: bool = True,
         use_lines: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[Line2D]:
         """Draw universal semicircle.
 
@@ -934,7 +936,7 @@ class PhasorPlot:
         self._reset_limits()
         return lines
 
-    def _on_format_coord(self, x: float, y: float, /) -> str:
+    def _on_format_coord(self, x: float, y: float) -> str:
         """Callback function to update coordinates displayed in toolbar."""
         phi, mod = phasor_to_polar_scalar(x, y)
         ret = [
@@ -1055,7 +1057,7 @@ class PhasorPlotFret(PhasorPlot):
         background_imag: float = 0.0,
         ax: Axes | None = None,
         interactive: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         update_kwargs(
             kwargs,
@@ -1502,7 +1504,7 @@ class SemicircleTicks(AbstractPathEffect):
         self,
         size: float | None = None,
         labels: Sequence[str] | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         super().__init__((0.0, 0.0))
 
@@ -1528,14 +1530,22 @@ class SemicircleTicks(AbstractPathEffect):
         else:
             self._labels = tuple(value)
 
-    def draw_path(self, renderer, gc, tpath, affine, rgbFace=None) -> None:
+    def draw_path(
+        self,
+        renderer: Any,
+        gc: Any,
+        tpath: Any,
+        affine: Any,
+        rgbFace: Any = None,
+    ) -> None:
         """Draw path with updated gc."""
         gc0 = renderer.new_gc()
         gc0.copy_properties(gc)
 
         # TODO: this uses private methods of the base class
-        gc0 = self._update_gc(gc0, self._gc)  # type: ignore
-        trans = affine + self._offset_transform(renderer)  # type: ignore
+        gc0 = self._update_gc(gc0, self._gc)  # type: ignore[attr-defined]
+        trans = affine
+        trans += self._offset_transform(renderer)  # type: ignore[attr-defined]
 
         font = FontProperties()
         # approximate half size of 'x'
@@ -1934,7 +1944,7 @@ def plot_polar_frequency(
     ax: Axes | None = None,
     title: str | None = None,
     show: bool = True,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """Plot phase and modulation verus frequency.
 
@@ -1978,7 +1988,7 @@ def plot_polar_frequency(
     ax.set_yticks([0.0, 30.0, 60.0, 90.0])
     for phi in phase.T:
         ax.plot(frequency, numpy.rad2deg(phi), color='tab:blue', **kwargs)
-    ax = ax.twinx()  # type: ignore
+    ax = ax.twinx()
 
     ax.set_ylabel('Modulation (%)', color='tab:red')
     ax.set_yticks([0.0, 25.0, 50.0, 75.0, 100.0])
@@ -2000,7 +2010,7 @@ def _imshow(
     shrink: float | None = None,
     axis: bool = True,
     title: str | None = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> AxesImage:
     """Plot image array.
 

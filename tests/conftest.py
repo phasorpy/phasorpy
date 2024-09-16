@@ -19,3 +19,6 @@ def pytest_report_header(config, start_path):
 
 
 collect_ignore = ['data']
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls

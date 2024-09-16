@@ -188,14 +188,10 @@ Code standards
 ..............
 
 All the PhasorPy source code, including tutorials and docstring examples,
-must conform to the
-`PEP8 <https://peps.python.org/pep-0008/>`_
-standard and be formatted with
-`black <https://black.readthedocs.io/en/stable/>`_
-(single quotes and lines up to 79 characters are allowed)::
+must conform to certain styles, which can be and applied with
+`pre-commit <https://pre-commit.com/>`_::
 
-    $ python -m black .
-    $ python -m blackdoc src/phasorpy
+    $ python -m pre_commit run --all-files
 
 User-facing classes and functions must use
 `type hints <https://peps.python.org/pep-0484/>`_
@@ -205,14 +201,6 @@ static type checker::
 
     $ python -m mypy
 
-Import statements must be sorted and sectioned using
-`isort <https://pycqa.github.io/isort/>`_::
-
-    $ python -m isort src/phasorpy tutorials tests
-
-Check for common misspellings in text files::
-
-    $ python -m codespell_lib
 
 The PhasorPy project follows the Scientific Python
 `SPEC 0 — Minimum Supported Dependencies

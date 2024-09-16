@@ -27,27 +27,27 @@ jobs:
         python-version: ["3.10", "3.12"]
         # 3.11 tested with cibuildwheel
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Editable install
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install --editable .
-        python -m pip install -r requirements_dev.txt
-        python -m pip install -r requirements_min.txt
-    - name: Print dependency versions
-      run: |
-        phasorpy versions
-    - name: Test with pytest
-      run: |
-        python -X dev -m pytest
-    - name: Build docs
-      run: |
-        cd docs
-        make html
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Editable install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --editable .
+          python -m pip install -r requirements_dev.txt
+          python -m pip install -r requirements_min.txt
+      - name: Print dependency versions
+        run: |
+          phasorpy versions
+      - name: Test with pytest
+        run: |
+          python -X dev -m pytest
+      - name: Build docs
+        run: |
+          cd docs
+          make html
 
   test_win_mac:
     name: Test Windows and macOS
@@ -59,24 +59,24 @@ jobs:
         python-version: ["3.10"]
         # 3.12 tested with cibuildwheel
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Editable install
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install --editable .
-        python -m pip install -r requirements_dev.txt
-        python -m pip install -r requirements_min.txt
-    - name: Test with pytest
-      run: |
-        python -X dev -m pytest
-    - name: Build docs
-      run: |
-        cd docs
-        make html
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Editable install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --editable .
+          python -m pip install -r requirements_dev.txt
+          python -m pip install -r requirements_min.txt
+      - name: Test with pytest
+        run: |
+          python -X dev -m pytest
+      - name: Build docs
+        run: |
+          cd docs
+          make html
 
   build_wheels:
     name: Test cibuildwheel
@@ -104,31 +104,31 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.12"]
+        python-version: ["3.12"]
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Editable install
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install --editable .
-        python -m pip install -r requirements_dev.txt
-        python -m pip install -r requirements_min.txt
-    - name: Test with black
-      run: |
-        python -m black --check src/phasorpy tutorials docs
-    - name: Test with blackdoc
-      run: |
-        python -m blackdoc --check src/phasorpy
-    - name: Test with mypy
-      run: |
-        python -m mypy
-    - name: Test with isort
-      run: |
-        python -m isort --check src/phasorpy tutorials
-    - name: Check spelling
-      run: |
-        python -m codespell_lib
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Editable install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --editable .
+          python -m pip install -r requirements_dev.txt
+          python -m pip install -r requirements_min.txt
+      - name: Test with black
+        run: |
+          python -m black --check src/phasorpy tutorials docs
+      - name: Test with blackdoc
+        run: |
+          python -m blackdoc --check src/phasorpy
+      - name: Test with mypy
+        run: |
+          python -m mypy
+      - name: Test with isort
+        run: |
+          python -m isort --check src/phasorpy tutorials
+      - name: Check spelling
+        run: |
+          python -m codespell_lib

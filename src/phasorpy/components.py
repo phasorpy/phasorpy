@@ -113,7 +113,7 @@ def two_fractions_from_phasor(
     ):
         raise ValueError('components must have different coordinates')
 
-    return _fraction_on_segment(
+    return _fraction_on_segment(  # type: ignore[no-any-return]
         real,
         imag,
         components_real[0],
@@ -265,7 +265,7 @@ def graphical_component_analysis(
         fractions = numpy.linspace(
             0.0, 1.0, int(round(longest_distance / (radius / 2) + 1))
         )
-    elif isinstance(fractions, numbers.Integral):
+    elif isinstance(fractions, (int, numbers.Integral)):
         fractions = numpy.linspace(0.0, 1.0, fractions)
     else:
         fractions = numpy.asarray(fractions)

@@ -23,3 +23,7 @@ def test_number_threads():
         assert number_threads(0) == 4
         assert number_threads(6) == 6
         del os.environ['PHASORPY_NUM_THREADS']
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"

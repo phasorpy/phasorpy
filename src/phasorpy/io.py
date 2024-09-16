@@ -622,7 +622,9 @@ def phasor_to_simfcs_referenced(
 
     chunk = numpy.empty((size, size), dtype=numpy.float32)
 
-    def rawdata_append(rawdata, a=None):
+    def rawdata_append(
+        rawdata: list[bytes], a: NDArray[Any] | None = None
+    ) -> None:
         if a is None:
             chunk[:] = numpy.nan
             rawdata.append(chunk.tobytes())
@@ -661,7 +663,7 @@ def phasor_from_simfcs_referenced(
     filename: str | PathLike[Any],
     /,
     *,
-    harmonic: int | Sequence[int] | Literal['all'] | None = None,
+    harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return phasor coordinate images from SimFCS referenced (REF, R64) file.
 
@@ -1023,7 +1025,7 @@ def read_ptu(
     /,
     selection: Sequence[int | slice | EllipsisType | None] | None = None,
     *,
-    trimdims: Sequence[Literal['T', 'C', 'H']] | None = None,
+    trimdims: Sequence[Literal['T', 'C', 'H']] | str | None = None,
     dtype: DTypeLike | None = None,
     frame: int | None = None,
     channel: int | None = None,
@@ -1536,7 +1538,7 @@ def _metadata(
     dims: Sequence[str] | None,
     shape: tuple[int, ...],
     /,
-    name: str | PathLike | None = None,
+    name: str | PathLike[Any] | None = None,
     attrs: dict[str, Any] | None = None,
     **coords: Any,
 ) -> dict[str, Any]:

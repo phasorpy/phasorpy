@@ -54,9 +54,9 @@ def number_threads(
                 max_threads, max(1, int(os.environ['PHASORPY_NUM_THREADS']))
             )
         cpu_count: int | None
-        try:
-            cpu_count = len(os.sched_getaffinity(0))  # type: ignore
-        except AttributeError:
+        if hasattr(os, 'sched_getaffinity'):
+            cpu_count = len(os.sched_getaffinity(0))
+        else:
             # sched_getaffinity not available on Windows
             cpu_count = os.cpu_count()
         if cpu_count is None:
