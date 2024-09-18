@@ -153,7 +153,7 @@ directory = "_htmlcov"
 [tool.pytest.ini_options]
 minversion = "7"
 log_cli_level = "INFO"
-filterwarnings = ["error"]
+# filterwarnings = ["error"]  # breaks debugging tests in VSCode (Sept. 2024)
 xfail_strict = true
 addopts = "-rfEXs --strict-config --strict-markers --doctest-modules --doctest-glob=*.py --doctest-glob=*.rst"
 doctest_optionflags = [
