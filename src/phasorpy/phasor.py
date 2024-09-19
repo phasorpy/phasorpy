@@ -959,10 +959,10 @@ def phasor_calibrate(
     reference_real: ArrayLike,
     reference_imag: ArrayLike,
     /,
-    frequency: ArrayLike,
+    frequency: float,
     lifetime: ArrayLike,
     *,
-    harmonics: int | Sequence[int] = 1,
+    harmonic: int | Sequence[int] = 1,
     fraction: ArrayLike | None = None,
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
@@ -992,12 +992,11 @@ def phasor_calibrate(
         lifetime.
         Must be measured with the same instrument setting as the phasor
         coordinates to be calibrated.
-    frequency : array_like
-        Laser pulse or modulation frequency in MHz.
-        A scalar or one-dimensional sequence.
+    frequency : float
+        Fundamental laser pulse or modulation frequency in MHz.
     lifetime : array_like
         Lifetime components in ns. Must be scalar or one dimensional.
-    harmonics : int or sequence of int, optional
+    harmonic : int or sequence of int, optional
         Harmonics used for calibration.
     fraction : array_like, optional
         Fractional intensities or pre-exponential amplitudes of the lifetime
@@ -1116,6 +1115,14 @@ def phasor_calibrate(
             f'reference_real.shape={ref_re.shape} '
             f'!= reference_imag.shape{ref_im.shape}'
         )
+    harmonic = numpy.asarray(harmonic)
+    frequency = frequency * harmonic
+    if frequency.shape != (re.shape[skip_axis],):
+        raise ValueError(
+            f'{frequency.shape=} != '
+            f're.shape[{skip_axis}]={(re.shape[skip_axis],)}'
+        )
+    
     measured_re, measured_im = phasor_center(
         reference_real, reference_imag, skip_axis=skip_axis, method=method
     )

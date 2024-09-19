@@ -1,0 +1,356 @@
+"""
+Introduction to multi-harmonic analysis with PhasorPy
+=====================================================
+
+An introduction to manipulating mutliple harmonics from fluroescence lifetime
+and hyperspectral images with the PhasorPy library.
+
+"""
+
+# %%
+# Besides the PhasorPy library, the `numpy <https://numpy.org/>`_ and
+# `matplotlib <https://matplotlib.org/>`_ libraries are used for
+# array computing and plotting throughout this tutorial:
+
+import numpy
+import tifffile  # TODO: from phasorpy.io import read_ometiff
+from matplotlib import pyplot
+
+from phasorpy.datasets import fetch
+
+# %%
+# Read signal from file
+# ---------------------
+#
+# The :py:mod:`phasorpy.io` module provides functions to read time-resolved
+# and hyperspectral image stacks and metadata from many file formats used
+# in microscopy, for example PicoQuant PTU, OME-TIFF, Zeiss LSM, and files
+# written by SimFCS software.
+# However, any other means that yields image stacks in numpy-array compatible
+# form can be used instead.
+# Image stacks, which may have any number of dimensions, are referred to as
+# ``signal`` in the PhasorPy library.
+#
+# The :py:mod:`phasorpy.datasets` module provides access to various sample
+# files. For example, an Imspector TIFF file from the
+# `FLUTE <https://zenodo.org/records/8046636>`_  project containing a
+# time-correlated single photon counting (TCSPC) histogram
+# of a zebrafish embryo at day 3, acquired at 80 MHz:
+
+
+signal = tifffile.imread(fetch('Embryo.tif'))
+frequency = 80.11  # MHz; from the XML metadata in the file
+
+print(signal.shape, signal.dtype)
+
+# %%
+# Plot the spatial and histogram averages:
+
+from phasorpy.plot import plot_signal_image
+
+plot_signal_image(signal, axis=0)
+
+# %%
+# Calculate phasor coordinates
+# ----------------------------
+#
+# The :py:mod:`phasorpy.phasor` module provides functions to calculate,
+# calibrate, filter, and convert phasor coordinates.
+#
+# Phasor coordinates are the real and imaginary components of the complex
+# numbers returned by a real forward Digital Fourier Transform (DFT)
+# of a signal at certain harmonics (multiples of the fundamental frequency),
+# normalized by the mean intensity (the zeroth harmonic).
+# Phasor coordinates are named ``real`` and ``imag`` in the PhasorPy library.
+# In literature and other software, they are also known as
+# :math:`G` and :math:`S` or :math:`a` and :math:`b` (as in :math:`a + bi`).
+#
+# Phasor coordinates of multiple harmonics can be calculated from the signal,
+# a TCSPC histogram in this case. First and second harmonics are calculated
+# in this example. For all harmonics, use ``harmonic='all'``.
+# The histogram samples are in the first dimension (`axis=0`):
+
+from phasorpy.phasor import phasor_from_signal
+
+mean, real, imag = phasor_from_signal(signal, harmonic=[1,2], axis=0)
+
+# %%
+# Plot the calculated phasor coordinates for the first and second harmonics:
+
+from phasorpy.plot import plot_phasor_image
+
+plot_phasor_image(mean, real[0], imag[0], title='First harmonic')
+plot_phasor_image(mean, real[1], imag[1], title='Second harmonic')
+
+# %%
+# Calibrate phasor coordinates
+# ----------------------------
+#
+# The signals from time-resolved measurements are convoluted with an
+# instrument response function, causing the phasor-coordinates to be
+# phase-shifted and modulated (scaled) by unknown amounts.
+# The phasor coordinates must therefore be calibrated with coordinates
+# obtained from a reference standard of known lifetime, acquired with
+# the same instrument settings.
+#
+# In this case, a homogeneous solution of Fluorescein with a lifetime of
+# 4.2 ns was imaged.
+#
+# Read the signal of the reference measurement from a file:
+
+reference_signal = tifffile.imread(fetch('Fluorescein_Embryo.tif'))
+
+# %%
+# Calculate phasor coordinates from the measured reference signal:
+
+reference_mean, reference_real, reference_imag = phasor_from_signal(
+    reference_signal, axis=0
+)
+
+# %%
+# Show the calculated reference phasor coordinates:
+
+plot_phasor_image(
+    reference_mean, reference_real, reference_imag, title='Reference'
+)
+
+# %%
+# Calibrate the raw phasor coordinates with the reference coordinates of known
+# lifetime (Fluorescein, 4.2 ns):
+
+from phasorpy.phasor import phasor_calibrate
+
+real, imag = phasor_calibrate(
+    real,
+    imag,
+    reference_real,
+    reference_imag,
+    frequency=frequency,
+    lifetime=4.2,
+)
+
+# %%
+# Show the calibrated phasor coordinates:
+
+plot_phasor_image(mean, real, imag, title='Calibrated')
+
+# %%
+# The phasor coordinates are now located in the first quadrant, except for
+# some with low signal to noise level.
+#
+# If necessary, the calibration can be undone/reversed using the
+# same reference:
+
+uncalibrated_real, uncalibrated_imag = phasor_calibrate(
+    real,
+    imag,
+    reference_real,
+    reference_imag,
+    frequency=frequency,
+    lifetime=4.2,
+    reverse=True,
+)
+
+numpy.testing.assert_allclose(
+    (mean, uncalibrated_real, uncalibrated_imag),
+    phasor_from_signal(signal, axis=0),
+    atol=1e-3,
+)
+
+# %%
+# Filter phasor coordinates
+# -------------------------
+#
+# Applying median filter to the calibrated phasor coordinates,
+# often multiple times, improves contrast and reduces noise:
+
+from phasorpy.phasor import phasor_filter
+
+real, imag = phasor_filter(real, imag, method='median', size=3, repeat=2)
+
+# %%
+# Pixels with low intensities are commonly excluded from analysis and
+# visualization of phasor coordinates:
+
+from phasorpy.phasor import phasor_threshold
+
+mean, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
+
+# %%
+# Show the calibrated, filtered phasor coordinates:
+
+plot_phasor_image(
+    mean, real, imag, title='Calibrated, filtered phasor coordinates'
+)
+
+# %%
+# Store phasor coordinates
+# ------------------------
+#
+# Phasor coordinates and select metadata can be exported to
+# `OME-TIFF <https://ome-model.readthedocs.io/en/stable/ome-tiff/>`_
+# formatted files, which are compatible with Bio-Formats and Fiji.
+#
+# Write the calibrated and filtered phasor coordinates, and frequency to an
+# OME-TIFF file:
+
+from phasorpy.io import phasor_from_ometiff, phasor_to_ometiff
+
+phasor_to_ometiff(
+    'phasors.ome.tif',
+    mean,
+    real,
+    imag,
+    frequency=frequency,
+    harmonic=1,
+    description=(
+        'Phasor coordinates of a zebrafish embryo at day 3, '
+        'calibrated, median-filtered, and thresholded.'
+    ),
+)
+
+# %%
+# Read the phasor coordinates and metadata back from the OME-TIFF file:
+
+mean_, real_, imag_ = phasor_from_ometiff('phasors.ome.tif')
+
+numpy.allclose(real_, real)
+assert real_.dtype == numpy.float32
+assert real_.attrs['frequency'] == frequency
+assert real_.attrs['harmonic'] == 1
+assert mean_.attrs['description'].startswith('Phasor coordinates of')
+
+# %%
+# The functions also transparently work with multi-harmonic phasor coordinates.
+
+# %%
+# Plot phasor coordinates
+# -----------------------
+#
+# The :py:mod:`phasorpy.plot` module provides functions and classes for
+# plotting phasor and polar coordinates.
+#
+# Large number of phasor coordinates, such as obtained from imaging,
+# are commonly visualized as 2D histograms:
+
+from phasorpy.plot import PhasorPlot
+
+phasorplot = PhasorPlot(
+    frequency=frequency, title='Calibrated, filtered phasor coordinates'
+)
+phasorplot.hist2d(real, imag)
+phasorplot.show()
+
+# %%
+# The calibrated phasor coordinates of all pixels lie inside the universal
+# semicircle (on which theoretically the phasor coordinates of all single
+# exponential lifetimes are located).
+# That means, all pixels contain mixtures of signals from multiple lifetime
+# components.
+
+# %%
+# For comparison, the uncalibrated, unfiltered phasor coordinates:
+
+phasorplot = PhasorPlot(allquadrants=True, title='Raw phasor coordinates')
+phasorplot.hist2d(uncalibrated_real, uncalibrated_imag)
+phasorplot.show()
+
+# %%
+# Select phasor coordinates
+# -------------------------
+
+# TODO
+
+# %%
+# Component analysis
+# ------------------
+
+# TODO
+
+# %%
+# Spectral phasors
+# ----------------
+#
+# Phasor coordinates can be calculated from hyperspectral images (acquired
+# at many equidistant emission wavelengths) and processed in much the same
+# way as time-resolved signals. Calibration is not necessary.
+#
+# Open a hyperspectral dataset acquired with a laser scanning microscope
+# at 30 emission wavelengths:
+
+from phasorpy.io import read_lsm
+
+hyperspectral_signal = read_lsm(fetch('paramecium.lsm'))
+
+plot_signal_image(hyperspectral_signal, axis=0, title='Hyperspectral image')
+
+# %%
+# Calculate phasor coordinates at the first harmonic and filter out
+# pixels with low intensities:
+
+mean, real, imag = phasor_from_signal(hyperspectral_signal, axis=0)
+_, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
+
+# %%
+# Plot the phasor coordinates as a two-dimensional histogram and select two
+# clusters in the phasor plot by means of elliptical cursors:
+
+from phasorpy.color import CATEGORICAL
+
+cursors_real = [-0.33, 0.54]
+cursors_imag = [-0.72, -0.74]
+radius = [0.1, 0.06]
+radius_minor = [0.3, 0.25]
+
+phasorplot = PhasorPlot(allquadrants=True, title='Spectral phasor plot')
+phasorplot.hist2d(real, imag, cmap='Greys')
+for i in range(len(cursors_real)):
+    phasorplot.cursor(
+        cursors_real[i],
+        cursors_imag[i],
+        radius=radius[i],
+        radius_minor=radius_minor[i],
+        color=CATEGORICAL[i],
+        linestyle='-',
+    )
+phasorplot.show()
+
+# %%
+# Use the elliptic cursors to mask regions of interest in the phasor space:
+
+from phasorpy.cursors import mask_from_elliptic_cursor
+
+elliptic_masks = mask_from_elliptic_cursor(
+    real,
+    imag,
+    cursors_real,
+    cursors_imag,
+    radius=radius,
+    radius_minor=radius_minor,
+)
+
+# %%
+# Plot a pseudo-color image, composited from the elliptic cursor masks and
+# the mean intensity image:
+
+from phasorpy.cursors import pseudo_color
+
+pseudo_color_image = pseudo_color(*elliptic_masks, intensity=mean)
+
+fig, ax = pyplot.subplots()
+ax.set_title('Pseudo-color image from circular cursors')
+ax.imshow(pseudo_color_image)
+pyplot.show()
+
+# %%
+# Appendix
+# --------
+#
+# Print information about Python interpreter and installed packages:
+
+print(phasorpy.versions())
+
+# %%
+# sphinx_gallery_thumbnail_number = -5
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type"
