@@ -1,6 +1,6 @@
 """
-Introduction to multi-harmonic analysis with PhasorPy
-=====================================================
+Multi-harmonic analysis with PhasorPy
+=====================================
 
 An introduction to manipulating multiple harmonics from fluorescence lifetime
 and hyperspectral images with the PhasorPy library.
@@ -511,6 +511,6 @@ pyplot.show()
 print(phasorpy.versions())
 
 # %%
-# sphinx_gallery_thumbnail_number = -5
+# sphinx_gallery_thumbnail_number = 12
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"

@@ -459,6 +459,6 @@ pyplot.show()
 print(phasorpy.versions())
 
 # %%
-# sphinx_gallery_thumbnail_number = -5
+# sphinx_gallery_thumbnail_number = -7
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
