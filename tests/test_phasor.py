@@ -1497,7 +1497,8 @@ def test_phasor_from_lifetime_modify():
                 [0.3, 0.2, 0.1],
             ),
             {
-                'frequency': [80, 160, 240],
+                'frequency': 80,
+                'harmonic': [1, 2, 3],
                 'lifetime': 4,
                 'skip_axis': 0,
             },
