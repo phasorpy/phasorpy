@@ -1121,8 +1121,8 @@ def phasor_calibrate(
     skip_axis, axis = _parse_skip_axis(skip_axis, re.ndim)
     harmonic = numpy.asarray(harmonic)
     if harmonic.size > 1:
-        if skip_axis is None:
-            skip_axis = 0
+        if skip_axis == ():
+            skip_axis = (0,)
         if harmonic.shape != tuple(re.shape[ax] for ax in skip_axis):
             raise ValueError(
                 f'{harmonic.shape=} != '
