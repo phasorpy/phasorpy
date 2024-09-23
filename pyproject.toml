@@ -40,12 +40,14 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 authors = [{ name = "PhasorPy Contributors" }]
 license = { text = "MIT" }
 
 [project.urls]
 Homepage = "https://www.phasorpy.org"
+Documentation = "https://www.phasorpy.org/docs/stable/"
 Code = "https://github.com/phasorpy/phasorpy"
 "Issue tracker" = "https://github.com/phasorpy/phasorpy/issues"
 
