@@ -963,12 +963,12 @@ def phasor_calibrate(
     lifetime: ArrayLike,
     *,
     harmonic: ArrayLike = 1,
+    skip_axis: int | Sequence[int] | None = None,
     fraction: ArrayLike | None = None,
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
     reverse: bool = False,
     method: Literal['mean', 'median'] = 'mean',
-    skip_axis: int | Sequence[int] | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """
     Return calibrated/referenced phasor coordinates.
@@ -998,6 +998,11 @@ def phasor_calibrate(
         Lifetime components in ns. Must be scalar or one dimensional.
     harmonic : array_like, optional
         Harmonics used for calibration.
+    skip_axis : int or sequence of int, optional
+        Axes to be excluded during center calculation. If None, all
+        axes are considered. Axes with harmonics should be excluded.
+        If multiple harmonics are used, axes should be specified, else
+        the first axis is skipped by default.
     fraction : array_like, optional
         Fractional intensities or pre-exponential amplitudes of the lifetime
         components. Fractions are normalized to sum to 1.
@@ -1017,9 +1022,6 @@ def phasor_calibrate(
 
         - ``'mean'``: Arithmetic mean of phasor coordinates.
         - ``'median'``: Spatial median of phasor coordinates.
-    skip_axis : int or sequence of int, optional
-        Axes to be excluded during center calculation. If None, all
-        axes are considered.
 
     Returns
     -------
@@ -1120,9 +1122,7 @@ def phasor_calibrate(
     harmonic = numpy.asarray(harmonic)
     if harmonic.size > 1:
         if skip_axis is None:
-            raise ValueError(
-                '`skip_axis` must be specified for multiple harmonics'
-            )
+            skip_axis = 0
         if harmonic.shape != tuple(re.shape[ax] for ax in skip_axis):
             raise ValueError(
                 f'{harmonic.shape=} != '
