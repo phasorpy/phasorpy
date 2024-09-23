@@ -47,7 +47,7 @@ jobs:
       - name: Build docs
         run: |
           cd docs
-          make html
+          make dirhtml
 
   test_win_mac:
     name: Test Windows and macOS
@@ -76,7 +76,7 @@ jobs:
       - name: Build docs
         run: |
           cd docs
-          make html
+          make dirhtml
 
   build_wheels:
     name: Test cibuildwheel

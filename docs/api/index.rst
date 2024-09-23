@@ -21,5 +21,6 @@ PhasorPy library version |version|.
     color
     datasets
     utils
+    _utils
+    _phasorpy
     cli
-    _private/index
