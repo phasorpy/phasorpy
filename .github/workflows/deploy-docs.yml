@@ -50,5 +50,5 @@ jobs:
           external_repository: phasorpy/phasorpy.github.io
           publish_dir: docs/_build/html
           publish_branch: main
-          destination_dir: ${{github.ref_name}}
+          destination_dir: docs/${{github.ref_name}}
           # cname: phasorpy.org

@@ -285,13 +285,13 @@ phasor_to_ometiff(
 # %%
 # Read the phasor coordinates and metadata back from the OME-TIFF file:
 
-mean_, real_, imag_ = phasor_from_ometiff('phasors.ome.tif')
+mean_, real_, imag_, attrs = phasor_from_ometiff('phasors.ome.tif')
 
 numpy.allclose(real_, real)
 assert real_.dtype == numpy.float32
-assert real_.attrs['frequency'] == frequency
-assert real_.attrs['harmonic'] == 1
-assert mean_.attrs['description'].startswith('Phasor coordinates of')
+assert attrs['frequency'] == frequency
+assert attrs['harmonic'] == 1
+assert attrs['description'].startswith('Phasor coordinates of')
 
 # %%
 # All functions, except `phasor_threshold`, also work transparently with

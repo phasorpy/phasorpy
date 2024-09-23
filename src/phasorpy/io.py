@@ -211,12 +211,12 @@ def phasor_to_ometiff(
     harmonic : int or sequence of int, optional
         Harmonics present in the first dimension of `real` and `imag`, if any.
         Write to image series named 'Phasor harmonic'.
-        Only needed if harmonics are not starting at or increasing by one.
+        Only needed if harmonics are not starting at and increasing by one.
     axes : str, optional
         Character codes for `mean` image dimensions.
         By default, the last dimensions are assumed to be 'TZCYX'.
-        If harmonics are present in `real` and `imag`, the ``Q`` dimension
-        is prepended to axes for those arrays.
+        If harmonics are present in `real` and `imag`, an "other" (``Q``)
+        dimension is prepended to axes for those arrays.
         Refer to the OME-TIFF model for allowed axes and their order.
     dtype : dtype-like, optional
         Floating point data type used to store phasor coordinates.
@@ -368,25 +368,47 @@ def phasor_to_ometiff(
 def phasor_from_ometiff(
     filename: str | PathLike[Any],
     /,
-) -> tuple[DataArray, DataArray, DataArray]:
+    *,
+    harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
     """Return phasor images and metadata from OME-TIFF written by PhasorPy.
 
     Parameters
     ----------
     filename : str or Path
         Name of OME-TIFF file to read.
+    harmonic : int, sequence of int, or 'all', optional
+        Harmonic(s) to return from file.
+        If None (default), return the first harmonic stored in the file.
+        If `'all'`, return all harmonics as stored in file.
+        If a list, the first axes of the returned `real` and `imag` arrays
+        contain specified harmonic(s).
+        If an integer, the returned `real` and `imag` arrays are single
+        harmonic and have the same shape as `mean`.
 
     Returns
     -------
-    mean : xarray.DataArray
+    mean : ndarray
         Average intensity image.
-        ``mean.attrs['description']`` contains the dataset description, if any.
-    real : xarray.DataArray
+    real : ndarray
         Image of real component of phasor coordinates.
-        ``real.attrs['frequency']`` contains the fundamental frequency, if any.
-        ``real.attrs['harmonic']`` contains the harmonics present in the array.
-    imag : xarray.DataArray
+    imag : ndarray
         Image of imaginary component of phasor coordinates.
+    attrs : dict
+        Select metadata:
+
+        - ``'axes'`` (str):
+          Character codes for `mean` image dimensions.
+        - ``'harmonic'`` (int or list of int):
+          Harmonic(s) present in `real` and `imag`.
+          If a scalar, `real` and `imag` are single harmonic and contain no
+          harmonic axes.
+          If a list, `real` and `imag` contain one or more harmonics in the
+          first axis.
+        - ``'frequency'`` (float, optional):
+          Fundamental frequency of time-resolved phasor coordinates.
+        - ``'description'`` (str, optional):
+          OME dataset plain-text description.
 
     Raises
     ------
@@ -394,6 +416,8 @@ def phasor_from_ometiff(
         File is not a TIFF file.
     ValueError
         File is not an OME-TIFF containing phasor coordinates.
+    IndexError
+        Requested harmonic is not found in file.
 
     See Also
     --------
@@ -402,12 +426,8 @@ def phasor_from_ometiff(
     Notes
     -----
     Scalar or one-dimensional phasor coordinates stored in the file are
-    returned as two-dimensional images (tree-dimensional if multiple
+    returned as two-dimensional images (three-dimensional if multiple
     harmonics are present).
-
-    The OME-TIFF format is specified in the
-    `OME Data Model and File Formats Documentation
-    <https://ome-model.readthedocs.io/>`_.
 
     Examples
     --------
@@ -415,23 +435,22 @@ def phasor_from_ometiff(
     >>> phasor_to_ometiff(
     ...     '_phasorpy.ome.tif', mean, real, imag, axes='ZYX', frequency=80.0
     ... )
-    >>> mean, real, imag = phasor_from_ometiff('_phasorpy.ome.tif')
-    >>> mean.data
+    >>> mean, real, imag, attrs = phasor_from_ometiff('_phasorpy.ome.tif')
+    >>> mean
     array(...)
     >>> mean.dtype
     dtype('float32')
     >>> mean.shape
     (32, 32, 32)
-    >>> mean.dims
-    ('Z', 'Y', 'X')
-    >>> real.attrs['frequency']
+    >>> attrs['axes']
+    'ZYX'
+    >>> attrs['frequency']
     80.0
-    >>> real.attrs['harmonic']
+    >>> attrs['harmonic']
     1
 
     """
     import tifffile
-    from xarray import DataArray
 
     name = os.path.basename(filename)
 
@@ -447,19 +466,20 @@ def phasor_from_ometiff(
                 f'{name!r} is not an OME-TIFF containing phasor images'
             )
 
+        attrs: dict[str, Any] = {'axes': tif.series[0].axes}
+
         # TODO: read coords from OME-XML
         ome_xml = tif.ome_metadata
         assert ome_xml is not None
 
         # TODO: parse OME-XML
-        description = None
         match = re.search(
             r'><Description>(.*)</Description><',
             ome_xml,
             re.MULTILINE | re.DOTALL,
         )
         if match is not None:
-            description = (
+            attrs['description'] = (
                 match.group(1)
                 .replace('&amp;', '&')
                 .replace('&gt;', '>')
@@ -468,9 +488,7 @@ def phasor_from_ometiff(
 
         has_harmonic_dim = tif.series[1].ndim > tif.series[0].ndim
         nharmonics = tif.series[1].shape[0] if has_harmonic_dim else 1
-
-        attrs: dict[str, Any] = {}
-        coords: dict[str, Any] = {}
+        maxharmonic = nharmonics
         for i in (3, 4):
             if len(tif.series) < i + 1:
                 break
@@ -481,46 +499,76 @@ def phasor_from_ometiff(
             elif series.name == 'Phasor harmonic':
                 if not has_harmonic_dim and data.size == 1:
                     attrs['harmonic'] = int(data.item(0))
+                    maxharmonic = attrs['harmonic']
                 elif has_harmonic_dim and data.size == nharmonics:
                     attrs['harmonic'] = data.tolist()
-                    coords['Q'] = data
+                    maxharmonic = max(attrs['harmonic'])
                 else:
                     logger.warning(
                         f'harmonic={data} does not match phasor '
                         f'shape={tif.series[1].shape}'
                     )
 
-        if has_harmonic_dim:
-            if 'Q' not in coords:
-                coords['Q'] = list(range(1, nharmonics + 1))
-            if 'harmonic' not in attrs:
-                attrs['harmonic'] = coords['Q']
-        elif 'harmonic' not in attrs:
-            attrs['harmonic'] = 1
+        if 'harmonic' not in attrs:
+            if has_harmonic_dim:
+                attrs['harmonic'] = list(range(1, nharmonics + 1))
+            else:
+                attrs['harmonic'] = 1
+        harmonic_stored = attrs['harmonic']
 
-        series = tif.series[1]
-        metadata = _metadata(
-            series.axes, series.shape, 'real', attrs, **coords
-        )
-        real = DataArray(series.asarray(), **metadata)
+        mean = tif.series[0].asarray()
+        if harmonic is None:
+            # first harmonic in file
+            if isinstance(harmonic_stored, list):
+                attrs['harmonic'] = harmonic_stored[0]
+            else:
+                attrs['harmonic'] = harmonic_stored
+            real = tif.series[1].asarray()
+            if has_harmonic_dim:
+                real = real[0].copy()
+            imag = tif.series[2].asarray()
+            if has_harmonic_dim:
+                imag = imag[0].copy()
+        elif isinstance(harmonic, str) and harmonic == 'all':
+            # all harmonics as stored in file
+            real = tif.series[1].asarray()
+            imag = tif.series[2].asarray()
+        else:
+            # specified harmonics
+            harmonic, keepdims = parse_harmonic(harmonic, 2 * maxharmonic + 1)
+            try:
+                if isinstance(harmonic_stored, list):
+                    index = [harmonic_stored.index(h) for h in harmonic]
+                else:
+                    index = [[harmonic_stored].index(h) for h in harmonic]
+            except ValueError as exc:
+                raise IndexError('harmonic not found') from exc
 
-        series = tif.series[2]
-        metadata = _metadata(
-            series.axes, series.shape, 'imag', attrs, **coords
-        )
-        imag = DataArray(series.asarray(), **metadata)
-
-        attrs = {'description': description} if description else {}
-        series = tif.series[0]
-        metadata = _metadata(series.axes, series.shape, 'mean', attrs)
-        mean = DataArray(series.asarray(), **metadata)
+            if has_harmonic_dim:
+                if keepdims:
+                    attrs['harmonic'] = [harmonic_stored[i] for i in index]
+                    real = tif.series[1].asarray()[index].copy()
+                    imag = tif.series[2].asarray()[index].copy()
+                else:
+                    attrs['harmonic'] = harmonic_stored[index[0]]
+                    real = tif.series[1].asarray()[index[0]].copy()
+                    imag = tif.series[2].asarray()[index[0]].copy()
+            elif keepdims:
+                real = tif.series[1].asarray()
+                real = real.reshape(1, *real.shape)
+                imag = tif.series[2].asarray()
+                imag = imag.reshape(1, *imag.shape)
+                attrs['harmonic'] = [harmonic_stored]
+            else:
+                real = tif.series[1].asarray()
+                imag = tif.series[2].asarray()
 
     if real.shape != imag.shape:
         logger.warning(f'{real.shape=} != {imag.shape=}')
     if real.shape[-mean.ndim :] != mean.shape:
         logger.warning(f'{real.shape[-mean.ndim:]=} != {mean.shape=}')
 
-    return mean, real, imag
+    return mean, real, imag, attrs
 
 
 def phasor_to_simfcs_referenced(
@@ -676,7 +724,7 @@ def phasor_from_simfcs_referenced(
     filename : str or Path
         Name of REF or R64 file to read.
     harmonic : int or sequence of int, optional
-        Harmonics to include in returned phasor coordinates.
+        Harmonic(s) to include in returned phasor coordinates.
         By default, only the first harmonic is returned.
 
     Returns
@@ -692,7 +740,7 @@ def phasor_from_simfcs_referenced(
 
     Raises
     ------
-    tifffile.LfdfileError
+    lfdfiles.LfdfileError
         File is not a SimFCS REF or R64 file.
 
     See Also
@@ -882,7 +930,7 @@ def read_ifli(
 
     Raises
     ------
-    lfdfile.LfdFileError
+    lfdfiles.LfdFileError
         File is not an ISS IFLI file.
 
     Examples
@@ -1159,7 +1207,7 @@ def read_flif(
 
     Raises
     ------
-    lfdfile.LfdFileError
+    lfdfiles.LfdFileError
         File is not a FlimFast FLIF file.
 
     Examples
@@ -1255,7 +1303,7 @@ def read_fbd(
 
     Raises
     ------
-    lfdfile.LfdFileError
+    lfdfiles.LfdFileError
         File is not a FLIMbox FBD file.
 
     Examples
@@ -1347,7 +1395,7 @@ def read_b64(
 
     Raises
     ------
-    lfdfile.LfdFileError
+    lfdfiles.LfdFileError
         File is not a SimFCS B64 file.
     ValueError
         File does not contain an image stack.
@@ -1405,7 +1453,7 @@ def read_z64(
 
     Raises
     ------
-    lfdfile.LfdFileError
+    lfdfiles.LfdFileError
         File is not a SimFCS Z64 file.
 
     Examples
@@ -1455,7 +1503,7 @@ def read_bh(
 
     Raises
     ------
-    lfdfile.LfdFileError
+    lfdfiles.LfdFileError
         File is not a SimFCS B&H file.
 
     Examples
@@ -1506,7 +1554,7 @@ def read_bhz(
 
     Raises
     ------
-    lfdfile.LfdFileError
+    lfdfiles.LfdFileError
         File is not a SimFCS BHZ file.
 
     Examples
