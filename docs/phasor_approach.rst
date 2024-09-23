@@ -190,6 +190,11 @@ approach to analyze fluorescence time-resolved or spectral images:
   for interactive phasor analysis of FLIM data developed by Chiara Stringari
   and others. The software is distributed under the GPL license.
 
+- `FLIMPA <https://github.com/SofiaKapsiani/FLIMPA>`_
+  is an open-source GUI software designed for the phasor plot analysis of
+  raw TCSPC-FLIM data. The software is written in Python and distributed
+  under the BSD-3-Clause license.
+
 - `FLIM_tools <https://github.com/jayunruh/FLIM_tools>`_
   is an open-source Python library for linear unmixing and phasor tools for
   FLIM analysis developed by Jay Unruh. The library is distributed under

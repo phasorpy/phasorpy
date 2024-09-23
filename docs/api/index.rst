@@ -10,7 +10,7 @@ PhasorPy library version |version|.
     Large, backwards-incompatible changes may occur between revisions.
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     phasorpy
     phasor
