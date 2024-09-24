@@ -1323,11 +1323,12 @@ def test_phasor_from_lifetime_modify():
     'args, kwargs, expected',
     [
         # scalar data
+        # single lifetime
         (
             (2, 2, 2, 2),
             {'frequency': 80, 'lifetime': 1.9894368},
             (numpy.array(0.5), numpy.array(0.5)),
-        ),  # single lifetime
+        ),
         (
             (0.5, 0.7, 0.4, 0.3),
             {'frequency': 80, 'lifetime': 4},
@@ -1338,6 +1339,7 @@ def test_phasor_from_lifetime_modify():
             {'frequency': 80, 'lifetime': 4},
             (numpy.array(0.11789139), numpy.array(0.75703471)),
         ),
+        # two lifetimes with fractions
         (
             (2, 2, 2, 2),
             {
@@ -1346,7 +1348,7 @@ def test_phasor_from_lifetime_modify():
                 'fraction': [0.25, 0.75],
             },
             (numpy.array(0.65), numpy.array(0.4)),
-        ),  # two lifetimes with fractions
+        ),
         (
             (0.5, 0.7, 0.4, 0.3),
             {
@@ -1366,6 +1368,7 @@ def test_phasor_from_lifetime_modify():
             (numpy.array(0.85800005), numpy.array(0.99399999)),
         ),
         # list data
+        # single lifetime
         (
             (
                 SYNTH_DATA_LIST,
@@ -1378,7 +1381,8 @@ def test_phasor_from_lifetime_modify():
                 numpy.array([0.08499034, 0.16998068, 0.33996135]),
                 numpy.array([0.17088322, 0.34176643, 0.68353286]),
             ),
-        ),  # single lifetime
+        ),
+        # multiple lifetime
         (
             (
                 SYNTH_DATA_LIST,
@@ -1395,7 +1399,8 @@ def test_phasor_from_lifetime_modify():
                 numpy.array([0.27857144, 0.55714288, 1.11428576]),
                 numpy.array([0.17142856, 0.34285713, 0.68571426]),
             ),
-        ),  # multiple lifetime
+        ),
+        # multiple lifetime with median method
         (
             (
                 SYNTH_DATA_LIST,
@@ -1413,8 +1418,9 @@ def test_phasor_from_lifetime_modify():
                 numpy.array([0.32500001, 0.65000002, 1.30000005]),
                 numpy.array([0.19999999, 0.39999998, 0.79999997]),
             ),
-        ),  # multiple lifetime with median method
+        ),
         # array data
+        # single lifetime
         (
             (
                 SYNTH_DATA_ARRAY,
@@ -1431,7 +1437,8 @@ def test_phasor_from_lifetime_modify():
                     [[1.50463208, 0.03009264], [0.03009264, 0.03009264]]
                 ),
             ),
-        ),  # single lifetime
+        ),
+        # multiple lifetime
         (
             (
                 SYNTH_DATA_ARRAY,
@@ -1452,7 +1459,8 @@ def test_phasor_from_lifetime_modify():
                     [[1.5094339, 0.03018868], [0.03018868, 0.03018868]]
                 ),
             ),
-        ),  # multiple lifetime
+        ),
+        # multiple lifetime with median method
         (
             (
                 SYNTH_DATA_ARRAY,
@@ -1474,7 +1482,52 @@ def test_phasor_from_lifetime_modify():
                     [[19.9999992, 0.39999998], [0.39999998, 0.39999998]]
                 ),
             ),
-        ),  # multiple lifetime with median method
+        ),
+        # multiple frequencies with skip_axis
+        (
+            (
+                numpy.stack(
+                    (
+                        SYNTH_DATA_ARRAY,
+                        SYNTH_DATA_ARRAY / 2,
+                        SYNTH_DATA_ARRAY / 3,
+                    ),
+                    axis=0,
+                ),
+                numpy.stack(
+                    (
+                        SYNTH_DATA_ARRAY,
+                        SYNTH_DATA_ARRAY / 2,
+                        SYNTH_DATA_ARRAY / 3,
+                    ),
+                    axis=0,
+                ),
+                [0.5, 0.25, 0.1],
+                [0.3, 0.2, 0.1],
+            ),
+            {
+                'frequency': [80, 160, 240],
+                'lifetime': 4,
+                'skip_axis': 0,
+            },
+            (
+                numpy.array(
+                    [
+                        [[11.60340173, 0.23206803], [0.23206803, 0.23206803]],
+                        [[3.53612871, 0.07072257], [0.07072257, 0.07072257]],
+                        [[4.45831758, 0.08916635], [0.08916635, 0.08916635]],
+                    ]
+                ),
+                numpy.array(
+                    [
+                        [[52.74178815, 1.05483576], [1.05483576, 1.05483576]],
+                        [[26.41473921, 0.52829478], [0.52829478, 0.52829478]],
+                        [[26.89193809, 0.53783876], [0.53783876, 0.53783876]],
+                    ]
+                ),
+            ),
+        ),
+        # multiple harmonics with skip_axis
         (
             (
                 numpy.stack(
@@ -1518,7 +1571,8 @@ def test_phasor_from_lifetime_modify():
                     ]
                 ),
             ),
-        ),  # multiple harmonics with skip_axis
+        ),
+        # multiple harmonics without skip_axis
         (
             (
                 numpy.stack(
@@ -1561,7 +1615,7 @@ def test_phasor_from_lifetime_modify():
                     ]
                 ),
             ),
-        ),  # multiple harmonics without skip_axis
+        ),
     ],
 )
 def test_phasor_calibrate(args, kwargs, expected):
@@ -1584,9 +1638,8 @@ def test_phasor_calibrate_exceptions():
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
             SYNTH_DATA_ARRAY,
-            frequency=80,
+            frequency=[80, 160, 240],
             lifetime=4,
-            harmonic=[1, 2, 3],
         )
 
 

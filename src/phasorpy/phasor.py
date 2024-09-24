@@ -962,7 +962,7 @@ def phasor_calibrate(
     frequency: ArrayLike,
     lifetime: ArrayLike,
     *,
-    harmonic: ArrayLike = 1,
+    harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
     skip_axis: int | Sequence[int] | None = None,
     fraction: ArrayLike | None = None,
     preexponential: bool = False,
@@ -996,13 +996,11 @@ def phasor_calibrate(
         Fundamental laser pulse or modulation frequency in MHz.
     lifetime : array_like
         Lifetime components in ns. Must be scalar or one dimensional.
-    harmonic : array_like, optional
-        Harmonics used for calibration.
+    harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
+        Harmonics included in first axis of `real` and `imag`...
     skip_axis : int or sequence of int, optional
         Axes to be excluded during center calculation. If None, all
-        axes are considered. Axes with harmonics should be excluded.
-        If multiple harmonics are used, axes should be specified, else
-        the first axis is skipped by default.
+        axes are considered.
     fraction : array_like, optional
         Fractional intensities or pre-exponential amplitudes of the lifetime
         components. Fractions are normalized to sum to 1.
@@ -1035,6 +1033,7 @@ def phasor_calibrate(
     ValueError
         The array shapes of `real` and `imag`, or `reference_real` and
         `reference_imag` do not match.
+        Frequency shape does not match the shape of `real` along `skip_axis`.
 
     See Also
     --------
@@ -1119,16 +1118,23 @@ def phasor_calibrate(
         )
 
     skip_axis, axis = _parse_skip_axis(skip_axis, re.ndim)
-    harmonic = numpy.asarray(harmonic)
+    if re.ndim > 0:
+        harmonic, has_harmonic_axis = parse_harmonic(harmonic, re.shape[0] * 2)
+    else:
+        has_harmonic_axis = False
+        harmonic = 1 if harmonic is None else harmonic
+
     frequency = numpy.asarray(frequency)
     frequency = frequency * harmonic
-    if numpy.size(harmonic) > 1:
+
+    if has_harmonic_axis:
         if skip_axis == ():
             skip_axis = (0,)
+            _, axis = _parse_skip_axis(skip_axis, re.ndim)
         if numpy.shape(frequency) != tuple(re.shape[ax] for ax in skip_axis):
             raise ValueError(
-                'Frequency and harmonic shape is not compatible'
-                'with real and imag shape'
+                f'{frequency.shape=} != real.shape along {skip_axis=}'
+                f'= {tuple(re.shape[ax] for ax in skip_axis)}'
             )
 
     measured_re, measured_im = phasor_center(
