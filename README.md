@@ -3,13 +3,15 @@
 PhasorPy is an open-source Python library for the analysis of fluorescence
 lifetime and hyperspectral images using the phasor approach.
 
-- License: [MIT](https://www.phasorpy.org/docs/stable/license.html)
-- Documentation: [phasorpy.org](https://www.phasorpy.org)
-- Source code: [github.com/phasorpy/phasorpy](https://github.com/phasorpy/phasorpy)
-- Bug reports and questions: [github.com/phasorpy/phasorpy/issues](https://github.com/phasorpy/phasorpy/issues)
+- [Homepage](https://www.phasorpy.org)
+- [Documentation](https://www.phasorpy.org/docs/stable/)
+- [Source code](https://github.com/phasorpy/phasorpy)
+- [Issues and questions](https://github.com/phasorpy/phasorpy/issues)
+- [Python packages](https://pypi.org/project/phasorpy/)
+- [Data files](https://zenodo.org/communities/phasorpy/)
 
 PhasorPy is a community-maintained project.
-[Contributions](https://www.phasorpy.org/docs/stable/contributing.html)
+[Contributions](https://www.phasorpy.org/docs/stable/contributing/)
 in the form of bug reports, bug fixes, feature implementations, documentation,
 datasets, and enhancement proposals are welcome.
 

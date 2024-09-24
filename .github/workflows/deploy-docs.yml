@@ -36,19 +36,19 @@ jobs:
       - name: Build docs
         run: |
           cd docs
-          make html
+          make dirhtml
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: docs
-          path: docs/_build/html
+          path: docs/_build/dirhtml
       - name: Deploy docs
         if: github.event_name == 'push'
         uses: peaceiris/actions-gh-pages@v4
         with:
           personal_token: ${{ secrets.PHASORPY_DOC_DEPLOY_KEY }}
           external_repository: phasorpy/phasorpy.github.io
-          publish_dir: docs/_build/html
+          publish_dir: docs/_build/dirhtml
           publish_branch: main
           destination_dir: docs/${{github.ref_name}}
           # cname: phasorpy.org
