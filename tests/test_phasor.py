@@ -1519,6 +1519,49 @@ def test_phasor_from_lifetime_modify():
                 ),
             ),
         ),  # multiple harmonics with skip_axis
+        (
+            (
+                numpy.stack(
+                    (
+                        SYNTH_DATA_ARRAY,
+                        SYNTH_DATA_ARRAY / 2,
+                        SYNTH_DATA_ARRAY / 3,
+                    ),
+                    axis=0,
+                ),
+                numpy.stack(
+                    (
+                        SYNTH_DATA_ARRAY,
+                        SYNTH_DATA_ARRAY / 2,
+                        SYNTH_DATA_ARRAY / 3,
+                    ),
+                    axis=0,
+                ),
+                [0.5, 0.25, 0.1],
+                [0.3, 0.2, 0.1],
+            ),
+            {
+                'frequency': 80,
+                'harmonic': [1, 2, 3],
+                'lifetime': 4,
+            },
+            (
+                numpy.array(
+                    [
+                        [[11.60340173, 0.23206803], [0.23206803, 0.23206803]],
+                        [[3.53612871, 0.07072257], [0.07072257, 0.07072257]],
+                        [[4.45831758, 0.08916635], [0.08916635, 0.08916635]],
+                    ]
+                ),
+                numpy.array(
+                    [
+                        [[52.74178815, 1.05483576], [1.05483576, 1.05483576]],
+                        [[26.41473921, 0.52829478], [0.52829478, 0.52829478]],
+                        [[26.89193809, 0.53783876], [0.53783876, 0.53783876]],
+                    ]
+                ),
+            ),
+        ),  # multiple harmonics without skip_axis
     ],
 )
 def test_phasor_calibrate(args, kwargs, expected):
@@ -1535,6 +1578,16 @@ def test_phasor_calibrate_exceptions():
         phasor_calibrate(0, 0, [0], [0, 0], frequency=1, lifetime=1)
     with pytest.raises(ValueError):
         phasor_calibrate([0], [0, 0], 0, 0, frequency=1, lifetime=1)
+    with pytest.raises(ValueError):
+        phasor_calibrate(
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            SYNTH_DATA_ARRAY,
+            frequency=80,
+            lifetime=4,
+            harmonic=[1, 2, 3],
+        )
 
 
 def test_phasor_to_apparent_lifetime():

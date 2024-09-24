@@ -1120,15 +1120,16 @@ def phasor_calibrate(
 
     skip_axis, axis = _parse_skip_axis(skip_axis, re.ndim)
     harmonic = numpy.asarray(harmonic)
-    if harmonic.size > 1:
+    frequency = numpy.asarray(frequency)
+    frequency = frequency * harmonic
+    if numpy.size(harmonic) > 1:
         if skip_axis == ():
             skip_axis = (0,)
-        if harmonic.shape != tuple(re.shape[ax] for ax in skip_axis):
+        if numpy.shape(frequency) != tuple(re.shape[ax] for ax in skip_axis):
             raise ValueError(
-                f'{harmonic.shape=} != '
-                f'{tuple(re.shape[ax] for ax in skip_axis)=}'
+                'Frequency and harmonic shape is not compatible'
+                'with real and imag shape'
             )
-    frequency = frequency * harmonic
 
     measured_re, measured_im = phasor_center(
         reference_real, reference_imag, skip_axis=skip_axis, method=method

@@ -246,7 +246,9 @@ phasor_to_ometiff(
 # %%
 # Read the phasor coordinates and metadata back from the OME-TIFF file:
 
-mean_, real_, imag_, attrs = phasor_from_ometiff('phasors.ome.tif')
+mean_, real_, imag_, attrs = phasor_from_ometiff(
+    'phasors.ome.tif', harmonic='all'
+)
 
 numpy.allclose(real_, real)
 assert real_.dtype == numpy.float32
