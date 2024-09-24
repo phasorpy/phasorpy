@@ -1,27 +1,14 @@
 """
-Multi-harmonic analysis with PhasorPy
-=====================================
+Multi-harmonic phasor coordinates analysis with PhasorPy
+========================================================
 
-An introduction to manipulating multiple harmonics from fluorescence lifetime
-and hyperspectral images with the PhasorPy library.
+An introduction to manipulating multiple harmonics phasor coordinates from
+fluorescence lifetime and hyperspectral images with the PhasorPy library.
 
 """
 
 # %%
-# Import phasorpy
-# ---------------
-#
-# Start the Python interpreter, import the ``phasorpy`` package,
-# and print its version:
-
-import phasorpy
-
-print(phasorpy.__version__)
-
-# %%
-# Besides the PhasorPy library, the `numpy <https://numpy.org/>`_ and
-# `matplotlib <https://matplotlib.org/>`_ libraries are used for
-# array computing and plotting throughout this tutorial:
+# Import required modules and functions:
 
 import numpy
 import tifffile  # TODO: from phasorpy.io import read_ometiff
@@ -33,20 +20,12 @@ from phasorpy.datasets import fetch
 # Read signal from file
 # ---------------------
 #
-# The :py:mod:`phasorpy.io` module provides functions to read time-resolved
-# and hyperspectral image stacks and metadata from many file formats used
-# in microscopy, for example PicoQuant PTU, OME-TIFF, Zeiss LSM, and files
-# written by SimFCS software.
-# However, any other means that yields image stacks in numpy-array compatible
-# form can be used instead.
-# Image stacks, which may have any number of dimensions, are referred to as
-# ``signal`` in the PhasorPy library.
-#
-# The :py:mod:`phasorpy.datasets` module provides access to various sample
-# files. For example, an Imspector TIFF file from the
+# Throughout this tutorial, we will use an Imspector TIFF file from the
 # `FLUTE <https://zenodo.org/records/8046636>`_  project containing a
 # time-correlated single photon counting (TCSPC) histogram
-# of a zebrafish embryo at day 3, acquired at 80 MHz:
+# of a zebrafish embryo at day 3, acquired at 80 MHz.
+#
+# Read the signal from the file:
 
 
 signal = tifffile.imread(fetch('Embryo.tif'))
@@ -64,9 +43,6 @@ plot_signal_image(signal, axis=0)
 # %%
 # Calculate phasor coordinates
 # ----------------------------
-#
-# The :py:mod:`phasorpy.phasor` module provides functions to calculate,
-# calibrate, filter, and convert phasor coordinates.
 #
 # Phasor coordinates are the real and imaginary components of the complex
 # numbers returned by a real forward Digital Fourier Transform (DFT)
@@ -202,22 +178,6 @@ mean, real1, imag1 = phasor_threshold(mean, real1, imag1, mean_min=1)
 mean, real2, imag2 = phasor_threshold(mean, real2, imag2, mean_min=1)
 
 # %%
-# Show the calibrated, filtered phasor coordinates:
-
-plot_phasor_image(
-    mean,
-    real1,
-    imag1,
-    title='Calibrated, filtered phasor coordinates at first harmonic ',
-)
-# %%
-plot_phasor_image(
-    mean,
-    real2,
-    imag2,
-    title='Calibrated, filtered phasor coordinates at second harmonic',
-)
-# %%
 # Store phasor coordinates
 # ------------------------
 #
@@ -262,11 +222,9 @@ assert attrs['description'].startswith(
 # Plot phasor coordinates
 # -----------------------
 #
-# The :py:mod:`phasorpy.plot` module provides functions and classes for
-# plotting phasor and polar coordinates.
-#
-# Large number of phasor coordinates, such as obtained from imaging,
-# are commonly visualized as 2D histograms:
+# 2D histograms of the calibrated and filtered phasor coordinates at the first
+# and second harmonics can be visualized with the :py:class:`PhasorPlot` class
+# from the :py:mod:`phasorpy.plot` module.
 
 from phasorpy.plot import PhasorPlot
 
@@ -283,13 +241,6 @@ phasorplot2 = PhasorPlot(
 )
 phasorplot2.hist2d(real2, imag2)
 phasorplot2.show()
-
-# %%
-# The calibrated phasor coordinates of all pixels lie inside the universal
-# semicircle (on which theoretically the phasor coordinates of all single
-# exponential lifetimes are located).
-# That means, all pixels contain mixtures of signals from multiple lifetime
-# components.
 
 # %%
 # For comparison, the uncalibrated, unfiltered phasor coordinates:
@@ -309,11 +260,9 @@ phasorplot2.show()
 # %%
 # Select phasor coordinates
 # -------------------------
-
-# The :py:mod:`phasorpy.cursors` module provides functions for selecting phasor
-# coordinates to define and mask regions of interest within the phasor space.
-
-# Mask regions of interest in the phasor space using circular cursors:
+#
+# Mask regions of interest in the phasor space using circular cursors
+# for the first and second harmonics separately:
 
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursors import mask_from_circular_cursor
@@ -503,14 +452,6 @@ fig, ax = pyplot.subplots()
 ax.set_title('Pseudo-color image from elliptic cursors at second harmonic')
 ax.imshow(pseudo_color_image2)
 pyplot.show()
-
-# %%
-# Appendix
-# --------
-#
-# Print information about Python interpreter and installed packages:
-
-print(phasorpy.versions())
 
 # %%
 # sphinx_gallery_thumbnail_number = 12

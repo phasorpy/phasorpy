@@ -1632,14 +1632,16 @@ def test_phasor_calibrate_exceptions():
         phasor_calibrate(0, 0, [0], [0, 0], frequency=1, lifetime=1)
     with pytest.raises(ValueError):
         phasor_calibrate([0], [0, 0], 0, 0, frequency=1, lifetime=1)
+    stack_array = numpy.stack([SYNTH_DATA_ARRAY] * 3, axis=0)
     with pytest.raises(ValueError):
         phasor_calibrate(
-            SYNTH_DATA_ARRAY,
-            SYNTH_DATA_ARRAY,
-            SYNTH_DATA_ARRAY,
-            SYNTH_DATA_ARRAY,
-            frequency=[80, 160, 240],
+            stack_array,
+            stack_array,
+            stack_array,
+            stack_array,
+            frequency=[80, 160, 240, 320],
             lifetime=4,
+            skip_axis=0,
         )
 
 

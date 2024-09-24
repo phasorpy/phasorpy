@@ -332,10 +332,10 @@ phasorplot.show()
 # %%
 # Select phasor coordinates
 # -------------------------
-
+#
 # The :py:mod:`phasorpy.cursors` module provides functions for selecting phasor
 # coordinates to define and mask regions of interest within the phasor space.
-
+#
 # Mask regions of interest in the phasor space using circular cursors:
 
 from phasorpy.color import CATEGORICAL

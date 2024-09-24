@@ -1131,9 +1131,10 @@ def phasor_calibrate(
         if skip_axis == ():
             skip_axis = (0,)
             _, axis = _parse_skip_axis(skip_axis, re.ndim)
+    if skip_axis != ():
         if numpy.shape(frequency) != tuple(re.shape[ax] for ax in skip_axis):
             raise ValueError(
-                f'{frequency.shape=} != real.shape along {skip_axis=}'
+                f'{frequency.shape=} != real.shape along `skip_axis` '
                 f'= {tuple(re.shape[ax] for ax in skip_axis)}'
             )
 
