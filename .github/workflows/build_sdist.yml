@@ -52,7 +52,7 @@ jobs:
       - run: |
           ls
           ls dist
-          python -m pip install -U twine
+          python -m pip install -U twine setuptools
           python -m twine check dist/*
           python -m pip install --upgrade --no-cache-dir --no-deps --pre --no-index --find-links=dist phasorpy
           python -c"from phasorpy import __version__;print(__version__)"
