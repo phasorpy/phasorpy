@@ -14,6 +14,14 @@ documentation and maintenance changes.
 ---------------
 
 This is the first alpha release of the PhasorPy library.
+It contains over 70 documented and tested functions and class methods to
+calculate, calibrate, filter, transform, store, analyze, and visualize
+phasor coordinates, as well as to read fluorescence lifetime and hyperspectral
+signals from PTU, SDT, LSM, and other file formats.
+Ten tutorials demonstrate the use of the programming interface.
+An interactive app calculates and plots phasor coordinates of FRET donor and
+acceptor channels as a function of many model parameters.
+This release supports Python 3.10 to 3.13.
 
 What's Changed
 ..............
