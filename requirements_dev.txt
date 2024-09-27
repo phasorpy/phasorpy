@@ -52,7 +52,7 @@ pre-commit
 pre-commit-hooks
 #
 # optional requirements
-scikit-image
+# scikit-image
 # scikit-learn
 # pandas
 # zarr
