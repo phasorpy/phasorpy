@@ -5,15 +5,15 @@ This document describes changes to the PhasorPy library that are specific to
 a release. It includes descriptions of bug fixes, feature enhancements,
 documentation and maintenance changes.
 
-0.1 (2024.9.30)
----------------
-
-This is the first alpha release of the PhasorPy library.
-
 .. note::
     The PhasorPy library is in its early stages of development.
     It is not nearly feature complete.
     Large, backwards-incompatible changes may occur between revisions.
+
+0.1 (2024.9.30)
+---------------
+
+This is the first alpha release of the PhasorPy library.
 
 What's Changed
 ..............
