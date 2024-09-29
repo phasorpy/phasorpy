@@ -55,6 +55,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # html_theme = 'sphinx_rtd_theme'
 html_theme = 'pydata_sphinx_theme'
 html_static_path = ['_static']
+html_js_files = ['custom-icons.js']
 html_show_sourcelink = False
 
 html_logo = '_static/logo.png'
@@ -84,11 +85,12 @@ html_theme_options = {
             'url': 'https://github.com/phasorpy/phasorpy',
             'icon': 'fa-brands fa-github',
         },
-        # {
-        #     'name': 'PyPI',
-        #     'url': 'https://pypi.org/project/phasorpy/',
-        #     'icon': 'fa-custom fa-pypi',
-        # },
+        {
+            'name': 'PyPI',
+            'url': 'https://pypi.org/project/phasorpy/',
+            'icon': 'fa-custom fa-pypi',
+            'type': 'fontawesome',
+        },
     ],
 }
 

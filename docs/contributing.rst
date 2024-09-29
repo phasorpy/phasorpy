@@ -1,5 +1,5 @@
-Contributing
-============
+Contributing guide
+==================
 
 As a community-maintained project, PhasorPy welcomes contributions in the form
 of bug reports, bug fixes, feature implementations, documentation, datasets,

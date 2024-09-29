@@ -128,6 +128,7 @@ What's Changed
 * Update project URLs by @cgohlke in https://github.com/phasorpy/phasorpy/pull/127
 * Update pull request template by @cgohlke in https://github.com/phasorpy/phasorpy/pull/128
 * Change release-pypi to build_sdist workflow by @cgohlke in https://github.com/phasorpy/phasorpy/pull/129
+* Enable testing wheels on Python 3.13 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/131
 * Release v0.1 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/130
 
 New Contributors
