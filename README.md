@@ -6,9 +6,9 @@ lifetime and hyperspectral images using the phasor approach.
 - [Homepage](https://www.phasorpy.org)
 - [Documentation](https://www.phasorpy.org/docs/stable/)
 - [Source code](https://github.com/phasorpy/phasorpy)
-- [Issues and questions](https://github.com/phasorpy/phasorpy/issues)
-- [Python packages](https://pypi.org/project/phasorpy/)
+- [Download releases](https://pypi.org/project/phasorpy/#files)
 - [Data files](https://zenodo.org/communities/phasorpy/)
+- [Issues and questions](https://github.com/phasorpy/phasorpy/issues)
 
 PhasorPy is a community-maintained project.
 [Contributions](https://www.phasorpy.org/docs/stable/contributing/)

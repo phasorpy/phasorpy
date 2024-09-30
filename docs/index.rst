@@ -15,9 +15,6 @@ lifetime and hyperspectral images using the :doc:`phasor_approach`.
 Quickstart
 ==========
 
-The PhasorPy library and documentation are released under the permissive
-:doc:`license`.
-
 The :doc:`tutorials/index` demonstrate the use the library, from simple
 examples to advanced applications.
 
@@ -27,32 +24,36 @@ classes of the library.
 The :doc:`release` list recent bug fixes, feature enhancements, documentation
 and maintenance changes.
 
-The :doc:`contributing` guidelines explain how to get support, report bugs,
+The :doc:`contributing` explains how to get support, report bugs,
 submit bug fixes, or improve documentation.
 
 The :doc:`code_of_conduct` should be honored by everyone participating in
 the PhasorPy community.
 
+The :doc:`acknowledgments` list individuals and organizations that
+contributed to the development of PhasorPy.
+
+The PhasorPy library and documentation are released under the permissive
+:doc:`license`.
+
 The library's source code and documentation are maintained in the
 `PhasorPy repository on GitHub <https://github.com/phasorpy/phasorpy>`_.
+
+Releases can be downloaded and installed from the
+`PhasorPy project on PyPI <https://pypi.org/project/phasorpy/>`_.
 
 Sample data files used in tutorials and testing are available from the
 `PhasorPy community on Zenodo <https://zenodo.org/communities/phasorpy>`_.
 
-Please report issues with the code or documentation on the
+Report issues with the code or documentation on the
 `issue tracker on GitHub <https://github.com/phasorpy/phasorpy/issues>`_.
 
 Questions about the usage of the PhasorPy library are answered on the
 `issue tracker on GitHub <https://github.com/phasorpy/phasorpy/issues>`_.
 
-The :doc:`acknowledgments` list individuals and organizations that
-contributed to the development of PhasorPy.
-
-Please cite the PhasorPy library as:
-
-.. todo::
-
-    Create DOI at zenodo.org.
+Please cite
+`doi: 10.5281/zenodo.13862587 <https://doi.org/10.5281/zenodo.13862587>`_
+if PhasorPy contributes to a project that leads to a publication.
 
 Contents
 ========
@@ -63,10 +64,10 @@ Contents
     phasor_approach
     tutorials/index
     api/index
-    contributing
     release
-    acknowledgments
+    contributing
     code_of_conduct
+    acknowledgments
     license
 
 Indices and tables

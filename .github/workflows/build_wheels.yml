@@ -12,7 +12,6 @@ on:
   workflow_dispatch:
 
 env:
-  CIBW_TEST_SKIP: "cp313*"
   MPLBACKEND: agg
 
 jobs:

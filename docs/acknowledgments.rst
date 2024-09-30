@@ -30,3 +30,6 @@ bug fixes, or expertise:
 - :user:`Leonel Malacrida <lmalacrida>`
 - :user:`Bruno Pannunzio <bruno-pannunzio>`
 - :user:`Bruno Schüty <schutyb>`
+
+See also `GitHub contributors
+<https://github.com/phasorpy/phasorpy/graphs/contributors>`_.

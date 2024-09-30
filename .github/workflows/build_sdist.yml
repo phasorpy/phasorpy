@@ -1,4 +1,4 @@
-name: Publish to PyPI
+name: Build sdist
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
 
 jobs:
   build_artifacts:
-    name: Build sdist and wheel
+    name: Build sdist
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -28,23 +28,23 @@ jobs:
           python-version: "3.12"
       - name: Install PyBuild
         run: |
-          python -m pip install build
-      - name: Build wheel and sdist
+          python -m pip install -U build
+      - name: Build sdist
         run: |
-          python -m build .
+          python -m build --sdist .
       - uses: actions/upload-artifact@v4
         with:
-          name: releases
+          name: sdist
           path: dist
 
   test_artifacts:
-    name: Test sdist and wheel
+    name: Test sdist
     needs: [build_artifacts]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: releases
+          name: sdist
           path: dist
       - uses: actions/setup-python@v5
         with:
@@ -52,24 +52,26 @@ jobs:
       - run: |
           ls
           ls dist
-          python -m pip install -U twine
+          python -m pip install -U twine setuptools build wheel numpy Cython
           python -m twine check dist/*
-          python -m pip install --upgrade --no-cache-dir --no-deps --pre --no-index --find-links=dist phasorpy
+          python -m pip install --upgrade --no-build-isolation --no-cache-dir --no-deps --pre --no-index --find-links=dist phasorpy
           python -c"from phasorpy import __version__;print(__version__)"
 
-  upload_artifacts:
-    name: Upload release to PyPI
-    needs: [build_artifacts]
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/phasorpy
-    permissions:
-      id-token: write
-    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: releases
-          path: dist
-      - uses: pypa/gh-action-pypi-publish@release/v1
+# Upload sdist and wheels manually for now
+#
+#  upload_artifacts:
+#    name: Upload release to PyPI
+#    needs: [test_artifacts]
+#    runs-on: ubuntu-latest
+#    environment:
+#      name: pypi
+#      url: https://pypi.org/p/phasorpy
+#    permissions:
+#      id-token: write
+#    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
+#    steps:
+#      - uses: actions/download-artifact@v4
+#        with:
+#          name: releases
+#          path: dist
+#      - uses: pypa/gh-action-pypi-publish@release/v1

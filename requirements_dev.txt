@@ -23,6 +23,7 @@ Cython>=3.0.11
 # documentation requirements
 sphinx
 sphinx-issues
+sphinx-design
 sphinx_gallery
 sphinx-copybutton
 sphinx_click
@@ -52,7 +53,7 @@ pre-commit
 pre-commit-hooks
 #
 # optional requirements
-scikit-image
+# scikit-image
 # scikit-learn
 # pandas
 # zarr

@@ -48,8 +48,10 @@ license = { text = "MIT" }
 [project.urls]
 Homepage = "https://www.phasorpy.org"
 Documentation = "https://www.phasorpy.org/docs/stable/"
-Code = "https://github.com/phasorpy/phasorpy"
+Download = "https://pypi.org/project/phasorpy/#files"
+"Source code" = "https://github.com/phasorpy/phasorpy"
 "Issue tracker" = "https://github.com/phasorpy/phasorpy/issues"
+"Release notes" = "https://www.phasorpy.org/docs/stable/release"
 
 [project.scripts]
 phasorpy = "phasorpy.cli:main"
