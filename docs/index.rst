@@ -51,12 +51,6 @@ Report issues with the code or documentation on the
 Questions about the usage of the PhasorPy library are answered on the
 `issue tracker on GitHub <https://github.com/phasorpy/phasorpy/issues>`_.
 
-Please cite the PhasorPy library as:
-
-.. todo::
-
-    Create DOI at zenodo.org.
-
 Contents
 ========
 
