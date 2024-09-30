@@ -34,10 +34,6 @@ image processing, array programming, and Python.
 #
 #     python -m pip install -U "phasorpy[all]"
 #
-# .. note::
-#    The PhasorPy library is in its early stages of development
-#    and has not yet been released to PyPI.
-#
 # The development version of PhasorPy can be installed instead from the
 # latest source code on GitHub. This requires a C compiler, such as
 # XCode, Visual Studio, or gcc, to be installed::
