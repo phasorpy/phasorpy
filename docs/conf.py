@@ -25,6 +25,7 @@ import phasorpy
 
 version = phasorpy.__version__
 release = phasorpy.__version__
+version_match = version.replace('.dev', '').replace('.rc', '')
 
 # general configuration
 
@@ -72,6 +73,7 @@ napoleon_use_param = True
 
 html_theme_options = {
     'logo': {
+        # 'text': f'PhasorPy {version}',
         'text': 'PhasorPy',
         'alt_text': 'PhasorPy',
         # 'image_dark': '_static/logo-dark.svg',
@@ -79,17 +81,38 @@ html_theme_options = {
     'header_links_before_dropdown': 4,
     'show_nav_level': 2,
     'navigation_with_keys': False,
+    # 'collapse_navigation': True,
+    'navbar_align': 'content',  # [left, content, right]
+    'navbar_persistent': [],
+    # 'navbar_center': [],  # , 'version-switcher', 'navbar-nav'
+    'navbar_end': [
+        'search-button',
+        'version-switcher',
+        'theme-switcher',
+        'navbar-icon-links',
+    ],
+    'switcher': {
+        'version_match': version_match,
+        'json_url': 'https://www.phasorpy.org/docs/dev/_static/switcher.json',
+    },
+    # 'check_switcher': False,
+    'show_version_warning_banner': True,
     'icon_links': [
         {
-            'name': 'GitHub',
-            'url': 'https://github.com/phasorpy/phasorpy',
-            'icon': 'fa-brands fa-github',
+            'name': 'Home',
+            'url': 'https://www.phasorpy.org',
+            'icon': 'fa fa-home',
         },
         {
             'name': 'PyPI',
             'url': 'https://pypi.org/project/phasorpy/',
             'icon': 'fa-custom fa-pypi',
             'type': 'fontawesome',
+        },
+        {
+            'name': 'GitHub',
+            'url': 'https://github.com/phasorpy/phasorpy',
+            'icon': 'fa-brands fa-github',
         },
     ],
 }
