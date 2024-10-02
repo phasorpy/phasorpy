@@ -23,11 +23,11 @@ jobs:
         os: [ubuntu-22.04, macos-12, windows-2019]
     steps:
       - uses: actions/checkout@v4
-      - name: Set up QEMU
-        if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: all
+      # - name: Set up QEMU
+      #   if: runner.os == 'Linux'
+      #   uses: docker/setup-qemu-action@v3
+      #   with:
+      #     platforms: all
       - uses: pypa/cibuildwheel@v2.21.1
         env:
           # Building and testing manylinux2014_aarch64 too is slow.
