@@ -25,7 +25,7 @@ jobs:
       matrix:
         os: ["ubuntu-20.04"]
         python-version: ["3.10", "3.12"]
-        # 3.11 tested with cibuildwheel
+        # 3.11, 3.13 tested with cibuildwheel
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -91,12 +91,37 @@ jobs:
         env:
           # CIBW_ENVIRONMENT: "PIP_PRE=1"
           CIBW_BUILD_VERBOSITY: 3
-          CIBW_BUILD: "cp311-manylinux_x86_64 cp312-win_amd64 cp312-macosx_x86_64"
+          CIBW_BUILD: "cp313-manylinux_x86_64 cp312-win_amd64 cp312-macosx_x86_64"
           CIBW_SKIP:
       - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
           name: wheels-${{ matrix.os }}
+
+  build_wheels_arm64:
+    name: Test cibuildwheel on arm64
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+      - uses: pypa/cibuildwheel@v2.21.1
+        env:
+          CIBW_ARCHS_LINUX: aarch64
+          CIBW_BUILD_VERBOSITY: 3
+          CIBW_BUILD: "cp311*"
+          CIBW_SKIP: "*musllinux*"
+      - uses: actions/upload-artifact@v4
+        with:
+          path: ./wheelhouse/*.whl
+          name: wheels-aarch64
 
   static_analysis:
     name: Static code analysis
