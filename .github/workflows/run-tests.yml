@@ -99,7 +99,7 @@ jobs:
           name: wheels-${{ matrix.os }}
 
   build_wheels_arm64:
-    name: Test cibuildwheel on arm64
+    name: Test Linux on AArch64
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -115,7 +115,7 @@ jobs:
       - uses: pypa/cibuildwheel@v2.21.1
         env:
           CIBW_ARCHS_LINUX: aarch64
-          CIBW_BUILD_VERBOSITY: 3
+          CIBW_BUILD_VERBOSITY: 2
           CIBW_BUILD: "cp311*"
           CIBW_SKIP: "*musllinux*"
       - uses: actions/upload-artifact@v4
