@@ -98,30 +98,33 @@ jobs:
           path: ./wheelhouse/*.whl
           name: wheels-${{ matrix.os }}
 
-  build_wheels_arm64:
-    name: Test Linux on AArch64
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ["ubuntu-latest"]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up QEMU
-        if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: all
-      - uses: pypa/cibuildwheel@v2.21.1
-        env:
-          CIBW_ARCHS_LINUX: aarch64
-          CIBW_BUILD_VERBOSITY: 2
-          CIBW_BUILD: "cp311*"
-          CIBW_SKIP: "*musllinux*"
-      - uses: actions/upload-artifact@v4
-        with:
-          path: ./wheelhouse/*.whl
-          name: wheels-aarch64
+  # Building and testing manylinux2014_aarch64 too is slow.
+  # See https://github.com/phasorpy/phasorpy/pull/135
+  #
+  #  build_wheels_arm64:
+  #    name: Test Linux on AArch64
+  #    runs-on: ${{ matrix.os }}
+  #    strategy:
+  #      fail-fast: false
+  #      matrix:
+  #        os: ["ubuntu-latest"]
+  #    steps:
+  #      - uses: actions/checkout@v4
+  #      - name: Set up QEMU
+  #        if: runner.os == 'Linux'
+  #        uses: docker/setup-qemu-action@v3
+  #        with:
+  #          platforms: all
+  #      - uses: pypa/cibuildwheel@v2.21.1
+  #        env:
+  #          CIBW_ARCHS_LINUX: aarch64
+  #          CIBW_BUILD_VERBOSITY: 2
+  #          CIBW_BUILD: "cp311*"
+  #          CIBW_SKIP: "*musllinux*"
+  #      - uses: actions/upload-artifact@v4
+  #        with:
+  #          path: ./wheelhouse/*.whl
+  #          name: wheels-aarch64
 
   static_analysis:
     name: Static code analysis
