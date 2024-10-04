@@ -536,8 +536,8 @@ def test_phasor_to_ometiff_exceptions():
         with pytest.raises(ValueError):
             phasor_to_ometiff(filename, data[:1], data, data)
 
-        # invalid harmonic
-        with pytest.raises(ValueError):
+        # invalid harmonic, not an integer
+        with pytest.raises(TypeError):
             phasor_to_ometiff(
                 filename, *data, harmonic=[[1]]  # type: ignore[list-item]
             )

@@ -130,37 +130,42 @@ def test_dilate_coordinates():
 
 def test_parse_harmonic():
     """Test parse_harmonic function."""
-    assert parse_harmonic(None, 3) == ([1], False)
-    assert parse_harmonic(1, 3) == ([1], False)
-    assert parse_harmonic(numpy.int32(1), 3) == ([1], False)
-    assert parse_harmonic([1], 3) == ([1], True)
-    assert parse_harmonic([numpy.int32(1)], 3) == (  # type: ignore[list-item]
+    assert parse_harmonic(None) == ([1], False)
+    assert parse_harmonic(None, 1) == ([1], False)
+    assert parse_harmonic(1) == ([1], False)
+    assert parse_harmonic(1, 1) == ([1], False)
+    assert parse_harmonic(numpy.int32(1), 1) == ([1], False)
+    assert parse_harmonic([1], 1) == ([1], True)
+    assert parse_harmonic([numpy.int32(1)], 1) == (  # type: ignore[list-item]
         [1],
         True,
     )
-    assert parse_harmonic([1, 2], 5) == ([1, 2], True)
-    assert parse_harmonic([2, 1], 5) == ([2, 1], True)
-    assert parse_harmonic(numpy.array([1, 2]), 5) == ([1, 2], True)
-    assert parse_harmonic('all', 5) == ([1, 2], True)
+    assert parse_harmonic([1, 2], 2) == ([1, 2], True)
+    assert parse_harmonic([2, 1], 2) == ([2, 1], True)
+    assert parse_harmonic(numpy.array([1, 2]), 2) == ([1, 2], True)
+    assert parse_harmonic('all', 1) == ([1], True)
+    assert parse_harmonic('all', 2) == ([1, 2], True)
 
     with pytest.raises(ValueError):
-        parse_harmonic(1, 2)
+        parse_harmonic(1, 0)
     with pytest.raises(IndexError):
-        parse_harmonic(0, 3)
+        parse_harmonic(0, 1)
     with pytest.raises(IndexError):
-        parse_harmonic(2, 3)
+        parse_harmonic(2, 1)
     with pytest.raises(IndexError):
-        parse_harmonic([1, 2], 3)
+        parse_harmonic([1, 2], 1)
     with pytest.raises(TypeError):
-        parse_harmonic([[1]], 3)  # type: ignore[list-item]
+        parse_harmonic([[1]], 1)  # type: ignore[list-item]
     with pytest.raises(ValueError):
-        parse_harmonic([], 3)
+        parse_harmonic([], 1)
     with pytest.raises(ValueError):
-        parse_harmonic([1, 1], 3)
+        parse_harmonic([1, 1], 1)
     with pytest.raises(ValueError):
-        parse_harmonic('alles', 3)
+        parse_harmonic('alles', 1)
     with pytest.raises(TypeError):
-        parse_harmonic(1.0, 3)
+        parse_harmonic(1.0, 1)
+    with pytest.raises(TypeError):
+        parse_harmonic('all')
 
 
 def test_chunk_iter():
