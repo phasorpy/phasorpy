@@ -18,7 +18,7 @@ import numpy
 import tifffile  # TODO: from phasorpy.io import read_ometiff
 
 from phasorpy.datasets import fetch
- 
+
 # %%
 # Read signal from file
 # ---------------------
