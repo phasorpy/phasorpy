@@ -1809,3 +1809,49 @@ cdef (double, double, double) _phasor_threshold_nan(
         return <float_t> NAN, <float_t> NAN, <float_t> NAN
 
     return mean, real, imag
+
+
+###############################################################################
+# Unary ufuncs
+
+@cython.ufunc
+cdef float_t _anscombe(
+    float_t x,
+) noexcept nogil:
+    """Return anscombe variance stabilizing transformation."""
+    if isnan(x):
+        return <float_t> NAN
+
+    return <float_t> (2.0 * sqrt(<double> x + 0.375))
+
+
+@cython.ufunc
+cdef float_t _anscombe_inverse(
+    float_t x,
+) noexcept nogil:
+    """Return inverse anscombe transformation."""
+    if isnan(x):
+        return <float_t> NAN
+
+    return <float_t> (x * x / 4.0 - 0.375)  # 3/8
+
+
+@cython.ufunc
+cdef float_t _anscombe_inverse_approx(
+    float_t x,
+) noexcept nogil:
+    """Return inverse anscombe transformation.
+
+    Using approximation of exact unbiased inverse.
+
+    """
+    if isnan(x):
+        return <float_t> NAN
+
+    return <float_t> (
+        0.25 * x * x  # 1/4
+        + 0.30618621784789724 / x  # 1/4 * sqrt(3/2)
+        - 1.375 / (x * x)  # 11/8
+        + 0.7654655446197431 / (x * x * x)  # 5/8 * sqrt(3/2)
+        - 0.125  # 1/8
+    )
