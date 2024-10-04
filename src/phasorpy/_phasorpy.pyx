@@ -115,7 +115,7 @@ def _phasor_from_signal(
     # https://numpy.org/devdocs/reference/c-api/iterator.html
 
     if (
-        samples < 3
+        samples < 2
         or harmonics > samples // 2
         or phasor.shape[0] != harmonics * 2 + 1
         or phasor.shape[1] != signal.shape[0]
