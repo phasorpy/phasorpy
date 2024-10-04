@@ -995,7 +995,10 @@ def phasor_calibrate(
     lifetime : array_like
         Lifetime components in ns. Must be scalar or one dimensional.
     harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
-        Harmonics included in first axis of `real` and `imag`...
+        Harmonics included in first axis of `real` and `imag` for calibration.
+        If `'all'`, the harmonics in the first axis of phasor coordinates are
+        all considered for calibration.
+        The default is the first harmonic (fundamental frequency).
     skip_axis : int or sequence of int, optional
         Axes to be excluded during center calculation. If None, all
         axes are considered.
@@ -1115,26 +1118,22 @@ def phasor_calibrate(
             f'!= reference_imag.shape{ref_im.shape}'
         )
 
-    skip_axis, axis = _parse_skip_axis(skip_axis, re.ndim)
-    if re.ndim > 0:
-        harmonic, has_harmonic_axis = parse_harmonic(harmonic, re.shape[0] * 2)
+    if harmonic == 'all' and re.ndim > 0:
+        harmonic, has_harmonic_axis = parse_harmonic(harmonic, re.shape[0])
     else:
-        has_harmonic_axis = False
-        harmonic = 1 if harmonic is None else harmonic
+        harmonic, has_harmonic_axis = parse_harmonic(harmonic)
+    if has_harmonic_axis and len(harmonic) != re.shape[0]:
+        raise ValueError(
+            f'{len(harmonic)=} != {re.shape[0]=} harmonics mismatch'
+        )
 
     frequency = numpy.asarray(frequency)
     frequency = frequency * harmonic
 
+    skip_axis, axis = _parse_skip_axis(skip_axis, re.ndim)
     if has_harmonic_axis:
-        if skip_axis == ():
-            skip_axis = (0,)
-            _, axis = _parse_skip_axis(skip_axis, re.ndim)
-    if skip_axis != ():
-        if numpy.shape(frequency) != tuple(re.shape[ax] for ax in skip_axis):
-            raise ValueError(
-                f'{frequency.shape=} != real.shape along `skip_axis` '
-                f'= {tuple(re.shape[ax] for ax in skip_axis)}'
-            )
+        skip_axis = (0,) + skip_axis if 0 not in skip_axis else skip_axis
+        skip_axis, axis = _parse_skip_axis(skip_axis, re.ndim)
 
     measured_re, measured_im = phasor_center(
         reference_real, reference_imag, skip_axis=skip_axis, method=method
