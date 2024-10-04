@@ -249,52 +249,65 @@ def phasor_from_polar_scalar(
 
 def parse_harmonic(
     harmonic: int | Sequence[int] | Literal['all'] | str | None,
-    samples: int,
+    harmonic_max: int | None = None,
     /,
 ) -> tuple[list[int], bool]:
     """Return parsed harmonic parameter.
+
+    This function performs common, but not necessarily all, verifications
+    of user-provided `harmonic` parameter.
 
     Parameters
     ----------
     harmonic : int, list of int, 'all', or None
         Harmonic parameter to parse.
-    samples : int
-        Number of samples in signal.
-        Used to verify harmonic values and set maximum harmonic value.
+    harmonic_max : int, optional
+        Maximum value allowed in `hamonic`. Must be one or greater.
+        To verify against known number of signal samples,
+        pass ``samples // 2``.
+        If `harmonic='all'`, a range of harmonics from one to `harmonic_max`
+        (included) is returned.
 
     Returns
     -------
     harmonic : list of int
         Parsed list of harmonics.
     has_harmonic_axis : bool
-        If true, `harmonic` input parameter is an integer, else a list.
+        False if `harmonic` input parameter is a scalar integer.
 
     Raises
     ------
     IndexError
-        Any element is out of range [1..samples // 2].
+        Any element is out of range `[1..harmonic_max]`.
     ValueError
         Elements are not unique.
         Harmonic is empty.
         String input is not 'all'.
+        `harmonic_max` is smaller than 1.
     TypeError
         Any element is not an integer.
+        `harmonic` is `'all'` and `harmonic_max` is None.
 
     """
-    if samples < 3:
-        raise ValueError(f'{samples=} < 3')
+    if harmonic_max is not None and harmonic_max < 1:
+        raise ValueError(f'{harmonic_max=} < 1')
 
     if harmonic is None:
         return [1], False
 
-    harmonic_max = samples // 2
     if isinstance(harmonic, (int, numbers.Integral)):
-        if harmonic < 1 or harmonic > harmonic_max:
+        if harmonic < 1 or (
+            harmonic_max is not None and harmonic > harmonic_max
+        ):
             raise IndexError(f'{harmonic=} out of range [1..{harmonic_max}]')
         return [int(harmonic)], False
 
     if isinstance(harmonic, str):
         if harmonic == 'all':
+            if harmonic_max is None:
+                raise TypeError(
+                    f'maximum harmonic must be specified for {harmonic=!r}'
+                )
             return list(range(1, harmonic_max + 1)), True
         raise ValueError(f'{harmonic=!r} is not a valid harmonic')
 
@@ -303,10 +316,10 @@ def parse_harmonic(
         raise ValueError(f'{harmonic=} is empty')
     if h.dtype.kind not in 'iu' or h.ndim != 1:
         raise TypeError(f'{harmonic=} element not an integer')
-    if numpy.any(h < 1) or numpy.any(h > harmonic_max):
-        raise IndexError(
-            f'{harmonic=} element out of range [1..{harmonic_max}]'
-        )
+    if numpy.any(h < 1):
+        raise IndexError(f'{harmonic=} element < 1')
+    if harmonic_max is not None and numpy.any(h > harmonic_max):
+        raise IndexError(f'{harmonic=} element > {harmonic_max}]')
     if numpy.unique(h).size != h.size:
         raise ValueError(f'{harmonic=} elements must be unique')
     return h.tolist(), True
