@@ -290,11 +290,9 @@ def phasor_to_ometiff(
             imag = imag.reshape(1, -1)
 
     if harmonic is not None:
-        harmonic_array = numpy.atleast_1d(harmonic)
-        if harmonic_array.ndim > 1 or harmonic_array.size != nharmonic:
+        harmonic, _ = parse_harmonic(harmonic)
+        if len(harmonic) != nharmonic:
             raise ValueError('invalid harmonic')
-        samples = int(harmonic_array.max()) * 2 + 1
-        harmonic, _ = parse_harmonic(harmonic, samples)
 
     if frequency is not None:
         frequency_array = numpy.atleast_2d(frequency).astype(numpy.float64)
@@ -488,7 +486,7 @@ def phasor_from_ometiff(
 
         has_harmonic_dim = tif.series[1].ndim > tif.series[0].ndim
         nharmonics = tif.series[1].shape[0] if has_harmonic_dim else 1
-        maxharmonic = nharmonics
+        harmonic_max = nharmonics
         for i in (3, 4):
             if len(tif.series) < i + 1:
                 break
@@ -499,10 +497,10 @@ def phasor_from_ometiff(
             elif series.name == 'Phasor harmonic':
                 if not has_harmonic_dim and data.size == 1:
                     attrs['harmonic'] = int(data.item(0))
-                    maxharmonic = attrs['harmonic']
+                    harmonic_max = attrs['harmonic']
                 elif has_harmonic_dim and data.size == nharmonics:
                     attrs['harmonic'] = data.tolist()
-                    maxharmonic = max(attrs['harmonic'])
+                    harmonic_max = max(attrs['harmonic'])
                 else:
                     logger.warning(
                         f'harmonic={data} does not match phasor '
@@ -535,7 +533,7 @@ def phasor_from_ometiff(
             imag = tif.series[2].asarray()
         else:
             # specified harmonics
-            harmonic, keepdims = parse_harmonic(harmonic, 2 * maxharmonic + 1)
+            harmonic, keepdims = parse_harmonic(harmonic, harmonic_max)
             try:
                 if isinstance(harmonic_stored, list):
                     index = [harmonic_stored.index(h) for h in harmonic]
@@ -769,7 +767,7 @@ def phasor_from_simfcs_referenced(
     else:
         raise ValueError(f'file extension must be .ref or .r64, not {ext!r}')
 
-    harmonic, keep_harmonic_dim = parse_harmonic(harmonic, data.shape[0])
+    harmonic, keep_harmonic_dim = parse_harmonic(harmonic, data.shape[0] // 2)
 
     mean = data[0].copy()
     real = numpy.empty((len(harmonic),) + mean.shape, numpy.float32)

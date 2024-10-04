@@ -104,7 +104,6 @@ __all__ = [
 ]
 
 import math
-import numbers
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -180,6 +179,8 @@ def phasor_from_signal(
         Else, harmonics must be at least one and no larger than half the
         number of `signal` samples along `axis`.
         The default is the first harmonic (fundamental frequency).
+        A minimum of `harmonic * 2 + 1` samples are required along `axis`
+        to calculate correct phasor coordinates at `harmonic`.
     sample_phase : array_like, optional
         Phase values (in radians) of `signal` samples along `axis`.
         If None (default), samples are assumed to be uniformly spaced along
@@ -285,7 +286,7 @@ def phasor_from_signal(
     if dtype.kind != 'f':
         raise TypeError(f'{dtype=} not supported')
 
-    harmonic, keepdims = parse_harmonic(harmonic, samples)
+    harmonic, keepdims = parse_harmonic(harmonic, samples // 2)
     num_harmonics = len(harmonic)
 
     if sample_phase is not None:
@@ -303,7 +304,7 @@ def phasor_from_signal(
         use_fft = sample_phase is None and (
             rfft is not None
             or num_harmonics > 7
-            or num_harmonics == samples // 2
+            or num_harmonics >= samples // 2
         )
 
     if use_fft:
@@ -413,7 +414,7 @@ def phasor_to_signal(
         coordinates (most commonly, lower harmonics are present if the number
         of dimensions of `mean` is one less than `real`).
         If `'all'`, the harmonics in the first axis of phasor coordinates are
-        the lower harmonics.
+        the lower harmonics necessary to synthesize `samples`.
         Else, harmonics must be at least one and no larger than half of
         `samples`.
         The phasor coordinates of missing harmonics are zeroed
@@ -462,18 +463,15 @@ def phasor_to_signal(
     array([2.2, 2.486, 0.8566, -0.4365, 0.3938])
 
     """
+    if samples < 3:
+        raise ValueError(f'{samples=} < 3')
+
     mean = numpy.array(mean, ndmin=0, copy=True)
     real = numpy.array(real, ndmin=0, copy=True)
     imag = numpy.array(imag, ndmin=1, copy=True)
 
-    if isinstance(harmonic, (int, numbers.Integral)) and harmonic == 0:
-        # harmonics are expected in the first axes of real and imag
-        samples_ = 2 * imag.shape[0]
-    else:
-        samples_ = samples
-
     harmonic_ = harmonic
-    harmonic, has_harmonic_axis = parse_harmonic(harmonic, samples_)
+    harmonic, has_harmonic_axis = parse_harmonic(harmonic, samples // 2)
 
     if real.ndim == 1 and len(harmonic) > 1 and real.shape[0] == len(harmonic):
         # single axis contains harmonic
@@ -641,7 +639,7 @@ def lifetime_to_signal(
     if harmonic is None:
         harmonic = 'all'
     all_hamonics = harmonic == 'all'
-    harmonic, _ = parse_harmonic(harmonic, samples)
+    harmonic, _ = parse_harmonic(harmonic, samples // 2)
 
     if samples < 16:
         raise ValueError(f'{samples=} < 16')

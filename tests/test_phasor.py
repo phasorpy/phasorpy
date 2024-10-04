@@ -67,11 +67,12 @@ numpy.random.seed(42)
 @pytest.mark.parametrize('use_fft', (True, False))
 def test_phasor_from_signal(use_fft):
     """Test phasor_from_signal function."""
-    sample_phase = numpy.linspace(0, 2 * math.pi, 7, endpoint=False)
+    samples = 7
+    sample_phase = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
     signal = 1.1 * (numpy.cos(sample_phase - 0.46364761) * 2 * 0.44721359 + 1)
     signal_copy = signal.copy()
 
-    # test scalar type
+    # scalar type
     mean, real, imag = phasor_from_signal(signal, use_fft=use_fft)
     assert mean.ndim == 0
     assert real.ndim == 0
@@ -202,6 +203,22 @@ def test_phasor_from_signal(use_fft):
             phasor_from_signal(
                 signal, sample_phase=sample_phase, use_fft=use_fft
             )
+
+
+@pytest.mark.parametrize('use_fft', (True, False))
+@pytest.mark.parametrize('samples', [2, 3])
+def test_phasor_from_signal_min_samples(samples, use_fft):
+    """Test phasor_from_signal function with two and three samples."""
+    sample_phase = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
+    signal = 1.1 * (numpy.cos(sample_phase - 0.46364761) * 2 * 0.44721359 + 1)
+
+    # a minimum of three samples is required to calculate correct 1st harmonic
+    if samples < 3:
+        with pytest.raises(ValueError):
+            phasor = phasor_from_signal(signal, use_fft=use_fft)
+    else:
+        phasor = phasor_from_signal(signal, use_fft=use_fft)
+        assert_allclose(phasor, (1.1, 0.4, 0.2), atol=1e-3)
 
 
 @pytest.mark.parametrize('use_fft', (True, False))

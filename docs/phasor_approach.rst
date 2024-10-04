@@ -188,7 +188,7 @@ approach to analyze fluorescence time-resolved or spectral images:
 - `FLUTE <https://github.com/LaboratoryOpticsBiosciences/FLUTE>`_,
   the Fluorescence Lifetime Ultimate Explorer, is an open-source Python GUI
   for interactive phasor analysis of FLIM data developed by Chiara Stringari
-  and others. The software is distributed under the GPL license.
+  and others. The software is distributed under the BSD-3-Clause license.
 
 - `FLIMPA <https://github.com/SofiaKapsiani/FLIMPA>`_
   is an open-source GUI software designed for the phasor plot analysis of

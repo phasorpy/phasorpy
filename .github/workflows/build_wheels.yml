@@ -23,13 +23,20 @@ jobs:
         os: [ubuntu-22.04, macos-12, windows-2019]
     steps:
       - uses: actions/checkout@v4
-      - uses: pypa/cibuildwheel@v2.20.0
+      # - name: Set up QEMU
+      #   if: runner.os == 'Linux'
+      #   uses: docker/setup-qemu-action@v3
+      #   with:
+      #     platforms: all
+      - uses: pypa/cibuildwheel@v2.21.1
         env:
-          # CIBW_ENVIRONMENT: "PIP_PRE=1"
-          CIBW_BUILD_VERBOSITY: 2
+          # Building and testing manylinux2014_aarch64 too is slow.
+          # See https://github.com/phasorpy/phasorpy/pull/135
+          # CIBW_ARCHS_LINUX: x86_64 aarch64
           CIBW_ARCHS_LINUX: auto
           CIBW_ARCHS_MACOS: x86_64 arm64
           CIBW_ARCHS_WINDOWS: AMD64 ARM64
+          CIBW_BUILD_VERBOSITY: 2
       - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
