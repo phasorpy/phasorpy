@@ -1034,7 +1034,7 @@ def phasor_calibrate(
     ValueError
         The array shapes of `real` and `imag`, or `reference_real` and
         `reference_imag` do not match.
-        Frequency shape does not match the shape of `real` along `skip_axis`.
+        Number of harmonics does not match the first axis of `real` and `imag`.
 
     See Also
     --------
@@ -1123,9 +1123,7 @@ def phasor_calibrate(
     else:
         harmonic, has_harmonic_axis = parse_harmonic(harmonic)
     if has_harmonic_axis and len(harmonic) != re.shape[0]:
-        raise ValueError(
-            f'{len(harmonic)=} != {re.shape[0]=} harmonics mismatch'
-        )
+        raise ValueError(f'{len(harmonic)=} != real.shape[0]={re.shape[0]}')
 
     frequency = numpy.asarray(frequency)
     frequency = frequency * harmonic

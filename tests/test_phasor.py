@@ -1633,6 +1633,50 @@ def test_phasor_from_lifetime_modify():
                 ),
             ),
         ),
+        # harmonics = 'all' parameter
+        (
+            (
+                numpy.stack(
+                    (
+                        SYNTH_DATA_ARRAY,
+                        SYNTH_DATA_ARRAY / 2,
+                        SYNTH_DATA_ARRAY / 3,
+                    ),
+                    axis=0,
+                ),
+                numpy.stack(
+                    (
+                        SYNTH_DATA_ARRAY,
+                        SYNTH_DATA_ARRAY / 2,
+                        SYNTH_DATA_ARRAY / 3,
+                    ),
+                    axis=0,
+                ),
+                [0.5, 0.25, 0.1],
+                [0.3, 0.2, 0.1],
+            ),
+            {
+                'frequency': 80,
+                'harmonic': 'all',
+                'lifetime': 4,
+            },
+            (
+                numpy.array(
+                    [
+                        [[11.60340173, 0.23206803], [0.23206803, 0.23206803]],
+                        [[3.53612871, 0.07072257], [0.07072257, 0.07072257]],
+                        [[4.45831758, 0.08916635], [0.08916635, 0.08916635]],
+                    ]
+                ),
+                numpy.array(
+                    [
+                        [[52.74178815, 1.05483576], [1.05483576, 1.05483576]],
+                        [[26.41473921, 0.52829478], [0.52829478, 0.52829478]],
+                        [[26.89193809, 0.53783876], [0.53783876, 0.53783876]],
+                    ]
+                ),
+            ),
+        ),
     ],
 )
 def test_phasor_calibrate(args, kwargs, expected):
@@ -1659,6 +1703,16 @@ def test_phasor_calibrate_exceptions():
             frequency=[80, 160, 240, 320],
             lifetime=4,
             skip_axis=0,
+        )
+    with pytest.raises(ValueError):
+        phasor_calibrate(
+            stack_array,
+            stack_array,
+            stack_array,
+            stack_array,
+            frequency=80,
+            harmonic=[1, 2, 3, 4],
+            lifetime=4,
         )
 
 
