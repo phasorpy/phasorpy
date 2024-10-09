@@ -18,16 +18,21 @@ import numpy
 import tifffile  # TODO: from phasorpy.io import read_ometiff
 
 from phasorpy.datasets import fetch
+from phasorpy.io import phasor_from_ometiff, phasor_to_ometiff
+from phasorpy.phasor import (
+    phasor_calibrate,
+    phasor_filter,
+    phasor_from_signal,
+    phasor_threshold,
+)
+from phasorpy.plot import PhasorPlot
 
 # %%
 # Read signal from file
 # ---------------------
 #
-# Read the signal from
-# time-correlated single photon counting (TCSPC) histogram
-# of a zebrafish embryo at day 3, acquired at 80.11 MHz.
-#
-# Read the signal from the file:
+# Read a time-correlated single photon counting (TCSPC) histogram,
+# acquired at 80.11 MHz, from a file:
 
 
 signal = tifffile.imread(fetch('Embryo.tif'))
@@ -37,23 +42,30 @@ frequency = 80.11  # MHz; from the XML metadata in the file
 # Calculate phasor coordinates
 # ----------------------------
 #
-# Phasor coordinates at multiple harmonics can be calculated from the signal,
-# a TCSPC histogram in this case. First and second harmonics are calculated
-# in this example. For all harmonics, use ``harmonic='all'``.
-# The histogram samples are in the first dimension (`axis=0`):
-
-from phasorpy.phasor import phasor_from_signal
+# Phasor coordinates at multiple harmonics can be calculated at once
+# from the signal. The histogram samples are in the first dimension of the
+# signal (`axis=0`).
+# The first and second harmonics are calculated in this example:
 
 mean, real, imag = phasor_from_signal(signal, harmonic=[1, 2], axis=0)
+
+# %%
+# The two harmonics are in the first dimension of the phasor coordinates,
+# `real` and `imag`:
+
+print(mean.shape, real.shape, imag.shape)
+
+# %%
+# To calculate all harmonics, use ``harmonic='all'``:
+
+_ = phasor_from_signal(signal, harmonic='all', axis=0)
 
 # %%
 # Calibrate phasor coordinates
 # ----------------------------
 #
 # A homogeneous solution of Fluorescein with a fluorescence lifetime of 4.2 ns
-# was imaged to serve as a reference for calibration.
-#
-# Read the signal of the reference measurement from a file:
+# was imaged as a reference for calibration:
 
 reference_signal = tifffile.imread(fetch('Fluorescein_Embryo.tif'))
 
@@ -68,9 +80,7 @@ reference_mean, reference_real, reference_imag = phasor_from_signal(
 # %%
 # Calibration can be performed at all harmonics simultaneously. Calibrate the
 # raw phasor coordinates with the reference coordinates of known lifetime
-# (Fluorescein, 4.2 ns), at the first and second harmonics:
-
-from phasorpy.phasor import phasor_calibrate
+# (4.2 ns), at the first and second harmonics:
 
 real, imag = phasor_calibrate(
     real,
@@ -110,11 +120,9 @@ numpy.testing.assert_allclose(
 # -------------------------
 #
 # Applying median filter to the calibrated phasor coordinates,
-# often multiple times, improves contrast and reduces noise. This can
-# also be done at multiple harmonics simultaneously by excluding the
-# harmonic axis from the filtering:
-
-from phasorpy.phasor import phasor_filter
+# often multiple times, improves contrast and reduces noise.
+# This is done at multiple harmonics simultaneously by excluding the
+# harmonic axis from the filter:å
 
 real, imag = phasor_filter(
     real, imag, method='median', size=3, repeat=2, axes=(1, 2)
@@ -122,10 +130,8 @@ real, imag = phasor_filter(
 
 # %%
 # Pixels with low intensities are commonly excluded from analysis and
-# visualization of phasor coordinates. For now, harmonics should be treated
+# visualization of phasor coordinates. For now, harmonics must be treated
 # separately when thresholding:
-
-from phasorpy.phasor import phasor_threshold
 
 real1, real2 = real
 imag1, imag2 = imag
@@ -137,9 +143,7 @@ mean, real2, imag2 = phasor_threshold(mean, real2, imag2, mean_min=1)
 # ------------------------
 #
 # Write the calibrated and filtered phasor coordinates at multiple harmonics,
-# and frequency to an OME-TIFF file:
-
-from phasorpy.io import phasor_from_ometiff, phasor_to_ometiff
+# and the fundamental frequency to an OME-TIFF file:
 
 phasor_to_ometiff(
     'phasors.ome.tif',
@@ -176,11 +180,9 @@ assert attrs['description'].startswith(
 # Visualize the 2D histogram of the calibrated and filtered phasor coordinates
 # at the second harmonic:
 
-from phasorpy.plot import PhasorPlot
-
 phasorplot = PhasorPlot(
     frequency=frequency,
-    title='Calibrated, filtered phasor coordinates at second harmonic.',
+    title='Calibrated, filtered phasor coordinates at second harmonic',
 )
 phasorplot.hist2d(real2, imag2)
 phasorplot.show()

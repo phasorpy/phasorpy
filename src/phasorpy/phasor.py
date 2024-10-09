@@ -993,15 +993,20 @@ def phasor_calibrate(
     frequency : array_like
         Fundamental laser pulse or modulation frequency in MHz.
     lifetime : array_like
-        Lifetime components in ns. Must be scalar or one dimensional.
-    harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
-        Harmonics included in first axis of `real` and `imag` for calibration.
-        If `'all'`, the harmonics in the first axis of phasor coordinates are
-        all considered for calibration.
+        Lifetime components in ns. Must be scalar or one-dimensional.
+    harmonic : int, sequence of int, or 'all', default: 1
+        Harmonics included in `real` and `imag`.
+        If an integer, the harmonics at which `real` and `imag` were acquired
+        or calculated.
+        If a sequence, the harmonics included in the first axis of `real` and
+        `imag`.
+        If `'all'`, the first axis of `real` and `imag` contains lower
+        harmonics.
         The default is the first harmonic (fundamental frequency).
     skip_axis : int or sequence of int, optional
         Axes to be excluded during center calculation. If None, all
-        axes are considered.
+        axes are considered, except for the first axis if multiple harmonics
+        are specified.
     fraction : array_like, optional
         Fractional intensities or pre-exponential amplitudes of the lifetime
         components. Fractions are normalized to sum to 1.

@@ -290,8 +290,8 @@ assert attrs['harmonic'] == 1
 assert attrs['description'].startswith('Phasor coordinates of')
 
 # %%
-# All functions, except `phasor_threshold`, also work transparently with
-# multi-harmonic phasor coordinates.
+# These functions also work transparently with multi-harmonic phasor
+# coordinates.
 
 # %%
 # Plot phasor coordinates
@@ -339,10 +339,13 @@ from phasorpy.cursors import mask_from_circular_cursor
 
 cursors_real = [0.69, 0.59]
 cursors_imag = [0.32, 0.33]
-radius = 0.05
+radius = [0.05, 0.05]
 cursors_masks = mask_from_circular_cursor(
     real, imag, cursors_real, cursors_imag, radius=radius
 )
+
+# %%
+# Plot the cursors in distinct colors:
 
 phasorplot = PhasorPlot(frequency=frequency, title='Cursors')
 phasorplot.hist2d(real, imag)
@@ -350,15 +353,15 @@ for i in range(len(cursors_real)):
     phasorplot.circle(
         cursors_real[i],
         cursors_imag[i],
-        radius=radius,
+        radius=radius[i],
         color=CATEGORICAL[i],
         linestyle='-',
     )
 phasorplot.show()
 
 # %%
-# The cursor masks can be blended with the mean intensity image to produce
-# a pseudo-colored image:
+# Blend the cursor masks with the mean intensity image to produce a
+# pseudo-colored image:
 
 from phasorpy.cursors import pseudo_color
 
