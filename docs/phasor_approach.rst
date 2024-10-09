@@ -215,7 +215,7 @@ approach to analyze fluorescence time-resolved or spectral images:
   The notebook is distributed under CC BY-NC 4.0.
 
 -
-  .. _phasorplot_for_dummies:
+  .. _phasorplots_for_dummies:
 
   `PhasorPlots for dummies <https://github.com/Jalink-lab/phasor-plots>`_
   is a Jupyter notebook to teach the analysis of FLIM/FRET by phasor plots.
