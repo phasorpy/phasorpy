@@ -214,6 +214,13 @@ approach to analyze fluorescence time-resolved or spectral images:
   segmentation, pH correlation, nanoscale effects, and precise quantification.
   The notebook is distributed under CC BY-NC 4.0.
 
+-
+  .. _phasorplot_for_dummies:
+
+  `PhasorPlots for dummies <https://github.com/Jalink-lab/phasor-plots>`_
+  is a Jupyter notebook to teach the analysis of FLIM/FRET by phasor plots.
+  The notebook is implemented in R and licensed under the GPL v3.
+
 - `FLIMLib <https://flimlib.github.io>`_ is an exponential curve fitting
   library used for Fluorescent Lifetime Imaging (FLIM). It includes a function
   to calculate phasor coordinates from time-resolved signals.
