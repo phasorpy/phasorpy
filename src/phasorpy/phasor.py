@@ -960,12 +960,13 @@ def phasor_calibrate(
     frequency: ArrayLike,
     lifetime: ArrayLike,
     *,
+    harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
+    skip_axis: int | Sequence[int] | None = None,
     fraction: ArrayLike | None = None,
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
     reverse: bool = False,
     method: Literal['mean', 'median'] = 'mean',
-    skip_axis: int | Sequence[int] | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """
     Return calibrated/referenced phasor coordinates.
@@ -990,10 +991,22 @@ def phasor_calibrate(
         Must be measured with the same instrument setting as the phasor
         coordinates to be calibrated.
     frequency : array_like
-        Laser pulse or modulation frequency in MHz.
-        A scalar or one-dimensional sequence.
+        Fundamental laser pulse or modulation frequency in MHz.
     lifetime : array_like
-        Lifetime components in ns. Must be scalar or one dimensional.
+        Lifetime components in ns. Must be scalar or one-dimensional.
+    harmonic : int, sequence of int, or 'all', default: 1
+        Harmonics included in `real` and `imag`.
+        If an integer, the harmonics at which `real` and `imag` were acquired
+        or calculated.
+        If a sequence, the harmonics included in the first axis of `real` and
+        `imag`.
+        If `'all'`, the first axis of `real` and `imag` contains lower
+        harmonics.
+        The default is the first harmonic (fundamental frequency).
+    skip_axis : int or sequence of int, optional
+        Axes to be excluded during center calculation. If None, all
+        axes are considered, except for the first axis if multiple harmonics
+        are specified.
     fraction : array_like, optional
         Fractional intensities or pre-exponential amplitudes of the lifetime
         components. Fractions are normalized to sum to 1.
@@ -1013,9 +1026,6 @@ def phasor_calibrate(
 
         - ``'mean'``: Arithmetic mean of phasor coordinates.
         - ``'median'``: Spatial median of phasor coordinates.
-    skip_axis : int or sequence of int, optional
-        Axes to be excluded during center calculation. If None, all
-        axes are considered.
 
     Returns
     -------
@@ -1029,6 +1039,7 @@ def phasor_calibrate(
     ValueError
         The array shapes of `real` and `imag`, or `reference_real` and
         `reference_imag` do not match.
+        Number of harmonics does not match the first axis of `real` and `imag`.
 
     See Also
     --------
@@ -1111,6 +1122,22 @@ def phasor_calibrate(
             f'reference_real.shape={ref_re.shape} '
             f'!= reference_imag.shape{ref_im.shape}'
         )
+
+    if harmonic == 'all' and re.ndim > 0:
+        harmonic, has_harmonic_axis = parse_harmonic(harmonic, re.shape[0])
+    else:
+        harmonic, has_harmonic_axis = parse_harmonic(harmonic)
+    if has_harmonic_axis and len(harmonic) != re.shape[0]:
+        raise ValueError(f'{len(harmonic)=} != real.shape[0]={re.shape[0]}')
+
+    frequency = numpy.asarray(frequency)
+    frequency = frequency * harmonic
+
+    skip_axis, axis = _parse_skip_axis(skip_axis, re.ndim)
+    if has_harmonic_axis:
+        skip_axis = (0,) + skip_axis if 0 not in skip_axis else skip_axis
+        skip_axis, axis = _parse_skip_axis(skip_axis, re.ndim)
+
     measured_re, measured_im = phasor_center(
         reference_real, reference_imag, skip_axis=skip_axis, method=method
     )
@@ -1128,7 +1155,6 @@ def phasor_calibrate(
         if reverse:
             numpy.negative(phi_zero, out=phi_zero)
             numpy.reciprocal(mod_zero, out=mod_zero)
-        _, axis = _parse_skip_axis(skip_axis, re.ndim)
         if axis is not None:
             phi_zero = numpy.expand_dims(
                 phi_zero,
@@ -2717,7 +2743,7 @@ def phasor_filter(
     methods = {'median': _median_filter}
     if method not in methods:
         raise ValueError(
-            f"Method not supported, supported methods are: "
+            f'Method not supported, supported methods are: '
             f"{', '.join(methods)}"
         )
     real = numpy.asarray(real)
@@ -2971,7 +2997,7 @@ def phasor_center(
     }
     if method not in methods:
         raise ValueError(
-            f"Method not supported, supported methods are: "
+            f'Method not supported, supported methods are: '
             f"{', '.join(methods)}"
         )
     real = numpy.asarray(real)
@@ -3127,7 +3153,7 @@ def _parse_skip_axis(
     if not isinstance(skip_axis, Sequence):
         skip_axis = (skip_axis,)
     if any(i >= ndim or i < -ndim for i in skip_axis):
-        raise IndexError(f"skip_axis={skip_axis} out of range for {ndim=}")
+        raise IndexError(f'skip_axis={skip_axis} out of range for {ndim=}')
     skip_axis = tuple(sorted(int(i % ndim) for i in skip_axis))
     other_axis = tuple(i for i in range(ndim) if i not in skip_axis)
     return skip_axis, other_axis
