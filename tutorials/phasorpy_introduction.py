@@ -290,7 +290,8 @@ assert attrs['harmonic'] == 1
 assert attrs['description'].startswith('Phasor coordinates of')
 
 # %%
-# The functions also transparently work with multi-harmonic phasor coordinates.
+# These functions also work transparently with multi-harmonic phasor
+# coordinates.
 
 # %%
 # Plot phasor coordinates
@@ -327,8 +328,49 @@ phasorplot.show()
 # %%
 # Select phasor coordinates
 # -------------------------
+#
+# The :py:mod:`phasorpy.cursors` module provides functions for selecting phasor
+# coordinates to define and mask regions of interest within the phasor space.
+#
+# Mask regions of interest in the phasor space using circular cursors:
 
-# TODO
+from phasorpy.color import CATEGORICAL
+from phasorpy.cursors import mask_from_circular_cursor
+
+cursors_real = [0.69, 0.59]
+cursors_imag = [0.32, 0.33]
+radius = [0.05, 0.05]
+cursors_masks = mask_from_circular_cursor(
+    real, imag, cursors_real, cursors_imag, radius=radius
+)
+
+# %%
+# Plot the cursors in distinct colors:
+
+phasorplot = PhasorPlot(frequency=frequency, title='Cursors')
+phasorplot.hist2d(real, imag)
+for i in range(len(cursors_real)):
+    phasorplot.circle(
+        cursors_real[i],
+        cursors_imag[i],
+        radius=radius[i],
+        color=CATEGORICAL[i],
+        linestyle='-',
+    )
+phasorplot.show()
+
+# %%
+# Blend the cursor masks with the mean intensity image to produce a
+# pseudo-colored image:
+
+from phasorpy.cursors import pseudo_color
+
+pseudo_color_image = pseudo_color(*cursors_masks, intensity=mean)
+
+fig, ax = pyplot.subplots()
+ax.set_title('Pseudo-color image from circular cursors')
+ax.imshow(pseudo_color_image)
+pyplot.show()
 
 # %%
 # Component analysis
@@ -363,8 +405,6 @@ _, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 # %%
 # Plot the phasor coordinates as a two-dimensional histogram and select two
 # clusters in the phasor plot by means of elliptical cursors:
-
-from phasorpy.color import CATEGORICAL
 
 cursors_real = [-0.33, 0.54]
 cursors_imag = [-0.72, -0.74]
@@ -402,12 +442,10 @@ elliptic_masks = mask_from_elliptic_cursor(
 # Plot a pseudo-color image, composited from the elliptic cursor masks and
 # the mean intensity image:
 
-from phasorpy.cursors import pseudo_color
-
 pseudo_color_image = pseudo_color(*elliptic_masks, intensity=mean)
 
 fig, ax = pyplot.subplots()
-ax.set_title('Pseudo-color image from circular cursors')
+ax.set_title('Pseudo-color image from elliptic cursors')
 ax.imshow(pseudo_color_image)
 pyplot.show()
 
@@ -420,6 +458,6 @@ pyplot.show()
 print(phasorpy.versions())
 
 # %%
-# sphinx_gallery_thumbnail_number = -5
+# sphinx_gallery_thumbnail_number = -7
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
