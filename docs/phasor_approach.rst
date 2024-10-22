@@ -195,6 +195,11 @@ approach to analyze fluorescence time-resolved or spectral images:
   raw TCSPC-FLIM data. The software is written in Python and distributed
   under the BSD-3-Clause license.
 
+- `AlliGator <https://alligator-distribution.readthedocs.io>`_
+  is a free, closed-source software for fluorescence lifetime image data
+  analysis using the phasor approach and standard nonlinear fitting.
+  The software is written in LabVIEW for Windows by Xavier Michalet.
+
 - `FLIM_tools <https://github.com/jayunruh/FLIM_tools>`_
   is an open-source Python library for linear unmixing and phasor tools for
   FLIM analysis developed by Jay Unruh. The library is distributed under
