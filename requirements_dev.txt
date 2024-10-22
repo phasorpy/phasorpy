@@ -29,7 +29,7 @@ sphinx-copybutton
 sphinx_click
 sphinx-inline-tabs
 numpydoc
-pydata-sphinx-theme
+pydata-sphinx-theme>=0.16.0
 #
 # test requirements
 pytest
