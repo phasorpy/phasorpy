@@ -63,7 +63,7 @@ docs = [
     "sphinx_gallery",
     "sphinx-copybutton",
     "sphinx_click",
-    "pydata-sphinx-theme",
+    "pydata-sphinx-theme>=0.16.0",
     "numpydoc",
 ]
 test = [
