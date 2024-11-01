@@ -14,6 +14,10 @@ Datasets from the following repositories are available:
   <https://github.com/zoccoler/napari-flim-phasor-plotter/tree/0.0.6/src/napari_flim_phasor_plotter/data>`_
 - `Phasor-based multi-harmonic unmixing for in-vivo hyperspectral imaging
   <https://zenodo.org/records/13625087>`_
+- `Convallaria slice acquired with time-resolved 2-photon microscope
+  <https://zenodo.org/records/14026720>`_
+- `Example sdt raw FLIM images of NAD(P)H autofluorescence in Drosophila melanogaster tissues
+  <https://zenodo.org/records/7542467>`_
 
 The implementation is based on the `Pooch <https://www.fatiando.org/pooch>`_
 library.
@@ -287,12 +291,62 @@ ZENODO_13625087 = pooch.create(
     },
 )
 
+CONVALLARIA_FBD = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url='doi:10.5281/zenodo.14026719',
+    env=ENV,
+    registry={
+        'Convallaria_$EI0S.fbd': (
+            'sha256:'
+            '3751891b02e3095fedd53a09688d8a22ff2a0083544dd5c0726b9267d11df1bc'
+        ),
+        'Calibration_Rhodamine110_$EI0S.fbd': (
+            'sha256:'
+            'd745cbcdd4a10dbaed83ee9f1b150f0c7ddd313031e18233293582cdf10e4691'
+        ),
+    },
+)
+
+NADH_FLIM_SDT = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url='https://zenodo.org/records/7542467/files',
+    env=ENV,
+    registry={
+        'enterocytes_FLIM_sdt.sdt': (
+            'sha256:'
+            'fa90f63e080ffce48f4103adcadaa7c37a8d7af7ccf5e18a1e580fea80a0c5e1'
+        ),
+        'fat_body_cells_FLIM_sdt.sdt': (
+            'sha256:'
+            '231bc80aa6f375440073f39d934eee7ffd18fe7ef7c433cce2737e3d0cd8a462'
+        ),
+        'salivary_gland_cells_FLIM_sdt.sdt': (
+            'sha256:'
+            '7e7552a44b3179cfbb563c1422e2a13b482e8a3ef5856ab4afba508791672c8f'
+        ),
+        'sperm_seminal_receptacle_FLIM_sdt.sdt': (
+            'sha256:'
+            '2ba169495e533235cffcad953e76c7969286aad9181b946f5167390b8ff1a44a'
+        ),
+        'sperm_seminal_receptacle_NADH_FLIM_2ch.sdt': (
+            'sha256:'
+            'ef702c25656f5f536125df67595b3b3a6aca4bf209507b435454a21faf0fa93e'
+        ),
+        'sperm_seminal_vesicle_FLIM_sdt.sdt': (
+            'sha256:'
+            'fc54e31ade69973247c39328d852a04b1106e7c4014698c02b7afbb3bcba8a5c'
+        ),
+    },
+)
+
 REPOSITORIES: dict[str, pooch.Pooch] = {
     'tests': TESTS,
     'lfd-workshop': LFD_WORKSHOP,
     'flute': FLUTE,
     'napari-flim-phasor-plotter': NAPARI_FLIM_PHASOR_PLOTTER,
     'zenodo-13625087': ZENODO_13625087,
+    'convallaria-fbd': CONVALLARIA_FBD,
+    'nadh-flim-sdt': NADH_FLIM_SDT,
 }
 """Pooch repositories."""
 
