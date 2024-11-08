@@ -14,6 +14,8 @@ Datasets from the following repositories are available:
   <https://github.com/zoccoler/napari-flim-phasor-plotter/tree/0.0.6/src/napari_flim_phasor_plotter/data>`_
 - `Phasor-based multi-harmonic unmixing for in-vivo hyperspectral imaging
   <https://zenodo.org/records/13625087>`_
+- `Convallaria slice acquired with time-resolved 2-photon microscope
+  <https://zenodo.org/records/14026720>`_
 
 The implementation is based on the `Pooch <https://www.fatiando.org/pooch>`_
 library.
@@ -287,12 +289,30 @@ ZENODO_13625087 = pooch.create(
     },
 )
 
+CONVALLARIA_FBD = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url='doi:10.5281/zenodo.14026719',
+    env=ENV,
+    registry={
+        'Convallaria_$EI0S.fbd': (
+            'sha256:'
+            '3751891b02e3095fedd53a09688d8a22ff2a0083544dd5c0726b9267d11df1bc'
+        ),
+        'Calibration_Rhodamine110_$EI0S.fbd': (
+            'sha256:'
+            'd745cbcdd4a10dbaed83ee9f1b150f0c7ddd313031e18233293582cdf10e4691'
+        ),
+    },
+)
+
+
 REPOSITORIES: dict[str, pooch.Pooch] = {
     'tests': TESTS,
     'lfd-workshop': LFD_WORKSHOP,
     'flute': FLUTE,
     'napari-flim-phasor-plotter': NAPARI_FLIM_PHASOR_PLOTTER,
     'zenodo-13625087': ZENODO_13625087,
+    'convallaria-fbd': CONVALLARIA_FBD,
 }
 """Pooch repositories."""
 
