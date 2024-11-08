@@ -16,8 +16,6 @@ Datasets from the following repositories are available:
   <https://zenodo.org/records/13625087>`_
 - `Convallaria slice acquired with time-resolved 2-photon microscope
   <https://zenodo.org/records/14026720>`_
-- `Example sdt raw FLIM images of NAD(P)H autofluorescence in Drosophila melanogaster tissues
-  <https://zenodo.org/records/7542467>`_
 
 The implementation is based on the `Pooch <https://www.fatiando.org/pooch>`_
 library.
@@ -307,37 +305,6 @@ CONVALLARIA_FBD = pooch.create(
     },
 )
 
-NADH_FLIM_SDT = pooch.create(
-    path=pooch.os_cache('phasorpy'),
-    base_url='https://zenodo.org/records/7542467/files',
-    env=ENV,
-    registry={
-        'enterocytes_FLIM_sdt.sdt': (
-            'sha256:'
-            'fa90f63e080ffce48f4103adcadaa7c37a8d7af7ccf5e18a1e580fea80a0c5e1'
-        ),
-        'fat_body_cells_FLIM_sdt.sdt': (
-            'sha256:'
-            '231bc80aa6f375440073f39d934eee7ffd18fe7ef7c433cce2737e3d0cd8a462'
-        ),
-        'salivary_gland_cells_FLIM_sdt.sdt': (
-            'sha256:'
-            '7e7552a44b3179cfbb563c1422e2a13b482e8a3ef5856ab4afba508791672c8f'
-        ),
-        'sperm_seminal_receptacle_FLIM_sdt.sdt': (
-            'sha256:'
-            '2ba169495e533235cffcad953e76c7969286aad9181b946f5167390b8ff1a44a'
-        ),
-        'sperm_seminal_receptacle_NADH_FLIM_2ch.sdt': (
-            'sha256:'
-            'ef702c25656f5f536125df67595b3b3a6aca4bf209507b435454a21faf0fa93e'
-        ),
-        'sperm_seminal_vesicle_FLIM_sdt.sdt': (
-            'sha256:'
-            'fc54e31ade69973247c39328d852a04b1106e7c4014698c02b7afbb3bcba8a5c'
-        ),
-    },
-)
 
 REPOSITORIES: dict[str, pooch.Pooch] = {
     'tests': TESTS,
@@ -346,7 +313,6 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'napari-flim-phasor-plotter': NAPARI_FLIM_PHASOR_PLOTTER,
     'zenodo-13625087': ZENODO_13625087,
     'convallaria-fbd': CONVALLARIA_FBD,
-    'nadh-flim-sdt': NADH_FLIM_SDT,
 }
 """Pooch repositories."""
 
