@@ -1940,7 +1940,5 @@ def _median_filter_2d(float_t[:, :] image, float_t[:, :] filtered_image,
                             valid_count += 1
                 if valid_count > 0:
                     filtered_image[i, j] = _median(kernel, valid_count)
-            else:
-                print(image[i, j])
 
     free(kernel)
