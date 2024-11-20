@@ -61,6 +61,8 @@ ctypedef fused signal_t:
     float
     double
 
+from libc.stdlib cimport free, malloc
+
 
 def _phasor_from_signal(
     float_t[:, :, ::1] phasor,
@@ -1855,3 +1857,92 @@ cdef float_t _anscombe_inverse_approx(
         + 0.7654655446197431 / (x * x * x)  # 5/8 * sqrt(3/2)
         - 0.125  # 1/8
     )
+
+
+###############################################################################
+# Filtering functions
+
+cdef float_t _quickselect(float_t *arr, int left, int right, int k) nogil:
+    """Quickselect algorithm to find the k-th smallest element."""
+    cdef int i, j, pivotIndex, pivotNewIndex
+    cdef float_t pivotValue, temp
+
+    while left <= right:
+        pivotIndex = left + (right - left) // 2
+        pivotValue = arr[pivotIndex]
+        temp = arr[pivotIndex]
+        arr[pivotIndex] = arr[right]
+        arr[right] = temp
+        pivotNewIndex = left
+        for i in range(left, right):
+            if arr[i] < pivotValue:
+                temp = arr[i]
+                arr[i] = arr[pivotNewIndex]
+                arr[pivotNewIndex] = temp
+                pivotNewIndex += 1
+        temp = arr[right]
+        arr[right] = arr[pivotNewIndex]
+        arr[pivotNewIndex] = temp
+
+        if pivotNewIndex == k:
+            return arr[k]
+        elif pivotNewIndex < k:
+            left = pivotNewIndex + 1
+        else:
+            right = pivotNewIndex - 1
+
+    return arr[k]
+
+
+cdef float_t _median(float_t *values, int n) nogil:
+    """Calculate the median of an array of values."""
+    if n % 2 == 0:
+        return (
+            (_quickselect(values, 0, n - 1, n // 2 - 1) +
+             _quickselect(values, 0, n - 1, n // 2)) / 2
+        )
+    else:
+        return _quickselect(values, 0, n - 1, n // 2)
+
+
+def _median_filter_2d(float_t[:, :] image, float_t[:, :] filtered_image,
+                      const ssize_t kernel_size):
+    """Apply a 2D median filter ignoring NaN."""
+    cdef:
+        int rows = image.shape[0]
+        int cols = image.shape[1]
+        int k = kernel_size // 2
+        int i, j, di, dj, iter
+        int ki, kj
+        int valid_count
+        float_t *kernel = <float_t *>malloc(
+            kernel_size * kernel_size * sizeof(float_t)
+        )
+
+    for i in range(rows):
+        for j in range(cols):
+            if isnan(image[i, j]):
+                filtered_image[i, j] = <float_t>NAN
+                continue
+            valid_count = 0
+            for di in range(kernel_size):
+                for dj in range(kernel_size):
+                    ki = i - k + di
+                    kj = j - k + dj
+                    if ki < 0:
+                        ki = 0
+                    elif ki >= rows:
+                        ki = rows - 1
+                    if kj < 0:
+                        kj = 0
+                    elif kj >= cols:
+                        kj = cols - 1
+                    if not isnan(image[ki, kj]):
+                        kernel[valid_count] = image[ki, kj]
+                        valid_count += 1
+            if valid_count > 0:
+                filtered_image[i, j] = _median(kernel, valid_count)
+            else:
+                filtered_image[i, j] = <float_t>NAN
+
+    free(kernel)
