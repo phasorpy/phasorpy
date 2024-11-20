@@ -1921,28 +1921,26 @@ def _median_filter_2d(float_t[:, :] image, float_t[:, :] filtered_image,
 
     for i in range(rows):
         for j in range(cols):
-            if isnan(image[i, j]):
-                filtered_image[i, j] = <float_t>NAN
-                continue
-            valid_count = 0
-            for di in range(kernel_size):
-                for dj in range(kernel_size):
-                    ki = i - k + di
-                    kj = j - k + dj
-                    if ki < 0:
-                        ki = 0
-                    elif ki >= rows:
-                        ki = rows - 1
-                    if kj < 0:
-                        kj = 0
-                    elif kj >= cols:
-                        kj = cols - 1
-                    if not isnan(image[ki, kj]):
-                        kernel[valid_count] = image[ki, kj]
-                        valid_count += 1
-            if valid_count > 0:
-                filtered_image[i, j] = _median(kernel, valid_count)
+            if not isnan(image[i, j]):
+                valid_count = 0
+                for di in range(kernel_size):
+                    for dj in range(kernel_size):
+                        ki = i - k + di
+                        kj = j - k + dj
+                        if ki < 0:
+                            ki = 0
+                        elif ki >= rows:
+                            ki = rows - 1
+                        if kj < 0:
+                            kj = 0
+                        elif kj >= cols:
+                            kj = cols - 1
+                        if not isnan(image[ki, kj]):
+                            kernel[valid_count] = image[ki, kj]
+                            valid_count += 1
+                if valid_count > 0:
+                    filtered_image[i, j] = _median(kernel, valid_count)
             else:
-                filtered_image[i, j] = <float_t>NAN
+                print(image[i, j])
 
     free(kernel)

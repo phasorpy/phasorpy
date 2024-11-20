@@ -3124,11 +3124,11 @@ def _2d_median_filter(
         Filtered imaginary component of phasor coordinates.
 
     """
-    real = numpy.asarray(real, dtype=float)
-    imag = numpy.asarray(imag, dtype=float)
+    real = numpy.asarray(real, dtype=float).copy()
+    imag = numpy.asarray(imag, dtype=float).copy()
 
     if axes is None:
-        axes = list(range(real.ndim))
+        axes = range(real.ndim)
     if len(axes) != 2:
         raise ValueError(
             "Exactly 2 axes for filtering are required by this method."
@@ -3205,6 +3205,7 @@ def _multidim_median_filter(
         axes = list(range(real.ndim))
 
     kernel_shape = (size,) * numpy.ndim(real)
+    nan_mask = numpy.isnan(real) | numpy.isnan(imag)
 
     for _ in range(repeat):
         kernel_shape = tuple(
@@ -3226,8 +3227,10 @@ def _multidim_median_filter(
         imag = numpy.nanmedian(
             windows_imag, axis=tuple(range(-len(kernel_shape), 0))
         )
+        real = numpy.where(nan_mask, numpy.nan, numpy.asarray(real))
+        imag = numpy.where(nan_mask, numpy.nan, numpy.asarray(imag))
 
-    return numpy.asarray(real), numpy.asarray(imag)
+    return real, imag
 
 
 def _scipy_median_filter(
