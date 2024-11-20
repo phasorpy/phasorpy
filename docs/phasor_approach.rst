@@ -292,6 +292,10 @@ approach to analyze fluorescence time-resolved or spectral images:
   image analysis and visualization, including phasor plots, in conjunction
   with the FLIMera wide-field camera.
 
+- `LIFA <https://lambertinstruments.com/lifa-software>`_
+  is a commercial software by Lambert Instruments to record and analyze
+  fluorescence lifetime images, integrating all Lambert hardware.
+
 - `FlimFast <https://www.cgohlke.com/flimfast/>`_
   was a research-grade Windows desktop software for frequency-domain,
   full-field, fluorescence lifetime imaging at video rate, developed by
