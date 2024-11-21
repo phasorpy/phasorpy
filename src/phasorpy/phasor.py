@@ -2673,10 +2673,10 @@ def phasor_filter(
     imag: ArrayLike,
     /,
     *,
-    method: Literal['median_2d', 'median_nd', 'median_scipy'] = 'median_2d',
+    method: Literal['median', 'median_scipy'] = 'median',
     repeat: int = 1,
     size: int = 3,
-    skip_axis: int | None = None,
+    skip_axis: int | Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return filtered phasor coordinates.
@@ -2695,11 +2695,15 @@ def phasor_filter(
         Method used for filtering:
 
         - ``'median'``: Spatial median of phasor coordinates.
-        - ``'scipy_median'``: Spatial median of phasor coordinates
+        - ``'median_scipy'``: Spatial median of phasor coordinates
             based on :py:func:`scipy.ndimage.median_filter`.
 
     repeat : int, optional
         Number of times to apply filter. The default is 1.
+    size : int, optional
+        Size of the filter kernel. The default is 3.
+    skip_axis : int or sequence of int, optional
+        Axis or axes to skip filtering. By default all axes are filtered.
     **kwargs
         Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
 
@@ -2721,14 +2725,13 @@ def phasor_filter(
     -----
     Additional filtering methods may be added in the future.
 
-    The `2d_median` and `multidim_median` methods ignore `NaN` values. If the
-    kernel contains an even number of elements, the median is the average of
-    the two middle elements.
+    The `median` method ignores `NaN` values. If the kernel contains an even
+    number of elements, the median is the average of the two middle elements.
 
-    The `multi_median` method is aproximately 3 times slower than the
-    `2d_median` and `scipy_median` method.
+    For filtering in more than two dimensions, the `median` method is 3 to 6
+    times slower than the `median_scipy` method.
 
-    The implementation of the `scipy_median` filter method is based on
+    The implementation of the `median_scipy` method is based on
     :py:func:`scipy.ndimage.median_filter`,
     which has undefined behavior if the input arrays contain `NaN` values.
     See `issue #87 <https://github.com/phasorpy/phasorpy/issues/87>`_.
@@ -2752,8 +2755,7 @@ def phasor_filter(
 
     """
     methods: dict[str, Callable[..., Any]] = {
-        'median_2d': _median_filter_2d,
-        'median_nd': _median_filter_nd,
+        'median': _median_filter_2d,
         'median_scipy': _median_filter_scipy,
     }
     if method not in methods:
@@ -3108,7 +3110,8 @@ def _median_filter_2d(
     imag : ndarray
         Imaginary components of the phasor coordinates.
     axes : int or sequence of int
-        Axes along which to apply the filter.
+        Axes along which to apply the filter. By default, filtering is
+        applied to all axes.
     repeat : int, optional
         Number of times to apply filter. The default is 1.
     size : int or tuple of int, optional
@@ -3140,9 +3143,8 @@ def _median_filter_2d(
     if axes is None:
         axes = range(real.ndim)
     if len(axes) != 2:
-        raise ValueError(
-            "Exactly 2 axes for filtering are required by this method."
-            f"Got {len(axes)} axes: {axes}"
+        return _median_filter_nd(
+            real, imag, repeat=repeat, size=size, axes=axes
         )
     if any(ax >= real.ndim or ax < -real.ndim for ax in axes):
         raise ValueError(
@@ -3188,7 +3190,8 @@ def _median_filter_nd(
     imag : numpy.ndarray
         Imaginary components of the phasor coordinates.
     axes : int or sequence of int
-        Axes along which to apply the filter.
+        Axes along which to apply the filter. By default, filtering is
+        applied to all axes.
     repeat : int, optional
         Number of times to apply filter. The default is 1.
     size : int or tuple of int, optional
@@ -3266,7 +3269,8 @@ def _median_filter_scipy(
     imag : ndarray
         Imaginary components of the phasor coordinates.
     axes : int or sequence of int
-        Axes along which to apply the filter.
+        Axes along which to apply the filter. By default, filtering is
+        applied to all axes.
     repeat : int, optional
         Number of times to apply filter. The default is 1.
     size : int or tuple of int, optional

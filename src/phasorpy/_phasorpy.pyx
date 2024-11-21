@@ -1866,7 +1866,7 @@ cdef float_t _quickselect(
     float_t *arr,
     ssize_t left,
     ssize_t right,
-    ssize_t k
+    const ssize_t k
 ) noexcept nogil:
     """Quickselect algorithm to find the k-th smallest element."""
     cdef:
