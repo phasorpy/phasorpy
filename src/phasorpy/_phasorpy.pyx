@@ -1862,52 +1862,64 @@ cdef float_t _anscombe_inverse_approx(
 ###############################################################################
 # Filtering functions
 
-cdef float_t _quickselect(float_t *arr, int left, int right, int k) nogil:
+cdef float_t _quickselect(
+    float_t *arr,
+    ssize_t left,
+    ssize_t right,
+    ssize_t k
+) noexcept nogil:
     """Quickselect algorithm to find the k-th smallest element."""
-    cdef int i, j, pivotIndex, pivotNewIndex
-    cdef float_t pivotValue, temp
+    cdef:
+        ssize_t i, pivot_index, pivot_new_index
+        float_t pivot_value, temp
 
     while left <= right:
-        pivotIndex = left + (right - left) // 2
-        pivotValue = arr[pivotIndex]
-        temp = arr[pivotIndex]
-        arr[pivotIndex] = arr[right]
+        pivot_index = left + (right - left) // 2
+        pivot_value = arr[pivot_index]
+        temp = arr[pivot_index]
+        arr[pivot_index] = arr[right]
         arr[right] = temp
-        pivotNewIndex = left
+        pivot_new_index = left
         for i in range(left, right):
-            if arr[i] < pivotValue:
+            if arr[i] < pivot_value:
                 temp = arr[i]
-                arr[i] = arr[pivotNewIndex]
-                arr[pivotNewIndex] = temp
-                pivotNewIndex += 1
+                arr[i] = arr[pivot_new_index]
+                arr[pivot_new_index] = temp
+                pivot_new_index += 1
         temp = arr[right]
-        arr[right] = arr[pivotNewIndex]
-        arr[pivotNewIndex] = temp
+        arr[right] = arr[pivot_new_index]
+        arr[pivot_new_index] = temp
 
-        if pivotNewIndex == k:
+        if pivot_new_index == k:
             return arr[k]
-        elif pivotNewIndex < k:
-            left = pivotNewIndex + 1
+        if pivot_new_index < k:
+            left = pivot_new_index + 1
         else:
-            right = pivotNewIndex - 1
+            right = pivot_new_index - 1
 
     return arr[k]
 
 
-cdef float_t _median(float_t *values, int n) nogil:
+cdef float_t _median(const float_t *values, const ssize_t n) noexcept nogil:
     """Calculate the median of an array of values."""
     if n % 2 == 0:
         return (
             (_quickselect(values, 0, n - 1, n // 2 - 1) +
              _quickselect(values, 0, n - 1, n // 2)) / 2
         )
-    else:
-        return _quickselect(values, 0, n - 1, n // 2)
+    
+    return _quickselect(values, 0, n - 1, n // 2)
 
 
-def _median_filter_2d(float_t[:, :] image, float_t[:, :] filtered_image,
-                      const ssize_t kernel_size):
+def _apply_2d_median_filter(
+    const float_t[:, :] image, 
+    float_t[:, :] filtered_image,
+    const ssize_t kernel_size
+):
     """Apply a 2D median filter ignoring NaN."""
+    if kernel_size <= 0:
+        raise ValueError("kernel_size must be greater than 0")
+
     cdef:
         int rows = image.shape[0]
         int cols = image.shape[1]
@@ -1915,30 +1927,36 @@ def _median_filter_2d(float_t[:, :] image, float_t[:, :] filtered_image,
         int i, j, di, dj, iter
         int ki, kj
         int valid_count
+        float_t element
         float_t *kernel = <float_t *>malloc(
             kernel_size * kernel_size * sizeof(float_t)
         )
 
-    for i in range(rows):
-        for j in range(cols):
-            if not isnan(image[i, j]):
-                valid_count = 0
-                for di in range(kernel_size):
-                    for dj in range(kernel_size):
+    if kernel == NULL:
+        raise MemoryError("Unable to allocate memory for kernel")
+    
+    with nogil:
+        for i in range(rows):
+            for j in range(cols):
+                if not isnan(image[i, j]):
+                    valid_count = 0
+                    for di in range(kernel_size):
                         ki = i - k + di
-                        kj = j - k + dj
                         if ki < 0:
                             ki = 0
                         elif ki >= rows:
                             ki = rows - 1
-                        if kj < 0:
-                            kj = 0
-                        elif kj >= cols:
-                            kj = cols - 1
-                        if not isnan(image[ki, kj]):
-                            kernel[valid_count] = image[ki, kj]
-                            valid_count += 1
-                if valid_count > 0:
-                    filtered_image[i, j] = _median(kernel, valid_count)
+                        for dj in range(kernel_size):
+                            kj = j - k + dj
+                            if kj < 0:
+                                kj = 0
+                            elif kj >= cols:
+                                kj = cols - 1
+                            element = image[ki, kj]
+                            if not isnan(element):
+                                kernel[valid_count] = element
+                                valid_count += 1
+                    if valid_count > 0:
+                        filtered_image[i, j] = _median(kernel, valid_count)
 
     free(kernel)
