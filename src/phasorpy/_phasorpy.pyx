@@ -428,6 +428,7 @@ def _gaussian_signal(
 ###############################################################################
 # FRET model
 
+
 @cython.ufunc
 cdef (double, double) _phasor_from_fret_donor(
     double omega,
@@ -952,6 +953,7 @@ cdef (float_t, float_t) _phasor_divide(
 
 ###############################################################################
 # Geometry ufuncs
+
 
 @cython.ufunc
 cdef short _is_inside_range(
@@ -1559,6 +1561,7 @@ cdef (double, double, double, double) _intersection_circle_line(
         y + (-dd * dx - fabs(dy) * rdd) / dr,
     )
 
+
 ###############################################################################
 # Blend ufuncs
 
@@ -1629,6 +1632,7 @@ cdef float_t _blend_lighten(
     if isnan(b) or isnan(a):
         return a
     return <float_t> max(a, b)
+
 
 ###############################################################################
 # Threshold ufuncs
@@ -1814,6 +1818,7 @@ cdef (double, double, double) _phasor_threshold_nan(
 ###############################################################################
 # Unary ufuncs
 
+
 @cython.ufunc
 cdef float_t _anscombe(
     float_t x,
@@ -1855,3 +1860,172 @@ cdef float_t _anscombe_inverse_approx(
         + 0.7654655446197431 / (x * x * x)  # 5/8 * sqrt(3/2)
         - 0.125  # 1/8
     )
+
+
+###############################################################################
+# Denoising in spectral space
+
+
+def _phasor_from_signal_vector(
+    float_t[:, ::1] phasor,
+    const signal_t[:, ::1] signal,
+    const double[:, :, ::1] sincos,
+    const int num_threads
+):
+    """Calculate phasor coordinate vectors from signal along last axis.
+
+    Parameters
+    ----------
+    phasor : 2D memoryview of float32 or float64
+        Writable buffer of two dimensions where calculated phasor
+        vectors are stored:
+
+        0. other dimensions flat
+        1. real and imaginary components
+
+    signal : 2D memoryview of float32 or float64
+        Buffer of two dimensions containing signal:
+
+        0. other dimensions flat
+        1. dimension over which to compute FFT, number samples
+
+    sincos : 3D memoryview of float64
+        Buffer of three dimensions containing sine and cosine terms to be
+        multiplied with signal:
+
+        0. number harmonics
+        1. number samples
+        2. cos and sin
+
+    num_threads : int
+        Number of OpenMP threads to use for parallelization.
+
+    Notes
+    -----
+    This implementation requires contiguous input arrays.
+
+    """
+    cdef:
+        ssize_t size = signal.shape[0]
+        ssize_t samples = signal.shape[1]
+        ssize_t harmonics = sincos.shape[0]
+        ssize_t i, j, k, h
+        double dc, re, im, sample
+
+    if (
+        samples < 2
+        or harmonics > samples // 2
+        or phasor.shape[0] != size
+        or phasor.shape[1] != harmonics * 2
+    ):
+        raise ValueError('invalid shape of phasor or signal')
+    if sincos.shape[1] != samples or sincos.shape[2] != 2:
+        raise ValueError('invalid shape of sincos')
+
+    with nogil, parallel(num_threads=num_threads):
+        for i in prange(signal.shape[0]):
+            j = 0
+            for h in range(harmonics):
+                dc = 0.0
+                re = 0.0
+                im = 0.0
+                for k in range(samples):
+                    sample = <double> signal[i, k]
+                    dc = dc + sample
+                    re = re + sample * sincos[h, k, 0]
+                    im = im + sample * sincos[h, k, 1]
+                if dc != 0.0:
+                    re = re / dc
+                    im = im / dc
+                else:
+                    re = NAN if re == 0.0 else re * INFINITY
+                    im = NAN if im == 0.0 else im * INFINITY
+                phasor[i, j] = <float_t> re
+                j = j + 1
+                phasor[i, j] = <float_t> im
+                j = j + 1
+
+
+def _signal_denoise_vector(
+    float_t[:, ::1] denoised,
+    float_t[::1] integrated,
+    const signal_t[:, ::1] signal,
+    const float_t[:, ::1] spectral_vector,
+    const double sigma,
+    const double vmin,
+    const int num_threads
+):
+    """Calculate denoised signal from spectral_vector."""
+    cdef:
+        ssize_t size = signal.shape[0]
+        ssize_t samples = signal.shape[1]
+        ssize_t dims = spectral_vector.shape[1]
+        ssize_t i, j, m
+        float_t n
+        double weight, sum, t
+        double sigma2 = -1.0 / (2.0 * sigma * sigma)
+        double threshold = 9.0 * sigma * sigma
+
+    if denoised.shape[0] != size or denoised.shape[1] != samples:
+        raise ValueError('signal and denoised shape mismatch')
+    if integrated.shape[0] != size:
+        raise ValueError('integrated.shape[0] != signal.shape[0]')
+    if spectral_vector.shape[0] != size:
+        raise ValueError('spectral_vector.shape[0] != signal.shape[0]')
+
+    with nogil, parallel(num_threads=num_threads):
+
+        # integrate channel intensities for each pixel
+        for i in prange(size):
+            sum = 0.0
+            for m in range(samples):
+                sum = sum + <double> signal[i, m]
+            if sum <= vmin:
+                sum = NAN
+            integrated[i] = <float_t> sum
+
+        for i in prange(size):
+
+            n = integrated[i]
+            if not n > 0:
+                # n is NaN or zero; cannot denoise; return original signal
+                continue
+
+            for m in range(samples):
+                denoised[i, m] /= n  # weight = 1.0
+
+            for j in range(size):
+                if i == j:
+                    # weight = 1.0 already accounted for
+                    continue
+
+                n = integrated[j]
+                if not n > 0:
+                    # n is NaN or zero
+                    continue
+
+                # calculate weight from Euclidean distance
+                sum = 0.0
+                for m in range(dims):
+                    t = spectral_vector[i, m] - spectral_vector[j, m]
+                    sum = sum + t * t
+                    if sum > threshold:
+                        sum = -1.0
+                        break
+                if sum >= 0.0:
+                    weight = exp(sum * sigma2) / n
+                else:
+                    # sum is NaN or greater than threshold
+                    continue
+
+                # apply weight
+                for m in range(samples):
+                    denoised[i, m] += <float_t> (weight * signal[j, m])
+
+            # re-normalize to original intensity
+            sum = 0.0
+            for m in range(samples):
+                sum = sum + denoised[i, m]
+            n = <float_t> (<double> integrated[i] / sum)
+            for m in range(samples):
+                denoised[i, m] *= n
