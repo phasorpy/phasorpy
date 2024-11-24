@@ -115,11 +115,12 @@ def spectral_vector_denoise(
     array([[[...]]])
 
     """
-    if num_threads is None:
-        num_threads = 1
+    num_threads = number_threads(num_threads)
 
     signal = numpy.asarray(signal)
-    if axis != -1:
+    if axis == -1 or axis == signal.ndim - 1:
+        axis = -1
+    else:
         signal = numpy.moveaxis(signal, axis, -1)
     shape = signal.shape
     samples = shape[-1]
