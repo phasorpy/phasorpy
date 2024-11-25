@@ -82,7 +82,7 @@ def spectral_vector_denoise(
         within an spectral vector Euclidean distance of `3 * sigma` and
         intensity above `vmin`.
     vmin : float, optional
-        Signal intensity along `axis` below which not to consider for denoise.
+        Signal intensity along `axis` below which not to include in denoising.
     dtype : dtype_like, optional
         Data type of output arrays. Either float32 or float64.
         The default is float64 unless the `signal` is float32.
@@ -96,6 +96,7 @@ def spectral_vector_denoise(
     -------
     ndarray
         Denoised signal of `dtype`.
+        Spectra with integrated intensity below `vmin` are unchanged.
 
     References
     ----------
@@ -130,8 +131,8 @@ def spectral_vector_denoise(
     harmonic, _ = parse_harmonic(harmonic, samples // 2)
     num_harmonics = len(harmonic)
 
-    if vmin is None or vmin <= 0.0:
-        vmin = 1e-16
+    if vmin is None or vmin < 0.0:
+        vmin = 0.0
 
     sincos = numpy.empty((num_harmonics, samples, 2))
     for i, h in enumerate(harmonic):

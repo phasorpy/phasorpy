@@ -4,6 +4,7 @@ import os
 
 import numpy
 import pytest
+from numpy.testing import assert_allclose, assert_equal
 
 from phasorpy.datasets import fetch
 from phasorpy.io import read_lsm
@@ -45,13 +46,13 @@ def test_anscombe_transformation(dtype):
     if dtype == 'float32':
         x[0] = numpy.nan
     z = anscombe_transformation(x)
-    numpy.testing.assert_allclose(numpy.std(z[1:]), 1.0, atol=0.01)
+    assert_allclose(numpy.std(z[1:]), 1.0, atol=0.01)
 
     x2 = anscombe_transformation_inverse(z)
-    numpy.testing.assert_allclose(x2[1:], x[1:], atol=0.01)
+    assert_allclose(x2[1:], x[1:], atol=0.01)
 
     x3 = anscombe_transformation_inverse(z, approx=True)
-    numpy.testing.assert_allclose(x3[1:], x[1:], atol=1.0)
+    assert_allclose(x3[1:], x[1:], atol=1.0)
 
     if dtype == 'float32':
         assert numpy.isnan(z[0])
@@ -73,7 +74,7 @@ def test_spectral_vector_denoise(dtype, spectral_vector):
     if spectral_vector is not None:
         spectral_vector = numpy.moveaxis(numpy.stack((real, imag)), 0, -1)
 
-    signal1 = spectral_vector_denoise(
+    denoised = spectral_vector_denoise(
         signal,
         spectral_vector,
         axis=0,
@@ -84,10 +85,39 @@ def test_spectral_vector_denoise(dtype, spectral_vector):
         num_threads=1,
     )
 
-    mean1, real1, imag1 = phasor_from_signal(signal1, axis=0)
-    numpy.testing.assert_allclose(mean, mean1, atol=1e-3)
-    numpy.testing.assert_allclose(signal, signal1, atol=22)
-    assert signal1.dtype == dtype
+    mean1, real1, imag1 = phasor_from_signal(denoised, axis=0)
+    assert_allclose(mean, mean1, atol=1e-3)
+    assert_allclose(signal, denoised, atol=22)
+    assert denoised.dtype == dtype
+
+
+def test_spectral_vector_nan():
+    """Test spectral_vector_denoise function NaN handling."""
+    signal = read_lsm(fetch('paramecium.lsm')).data[:, ::16, ::16]
+    signal = signal.astype(numpy.float64)
+    signal[0, 0, 0] = numpy.nan
+
+    mean, real, imag = phasor_from_signal(signal, axis=0)
+    spectral_vector = numpy.moveaxis(numpy.stack((real, imag)), 0, -1)
+    spectral_vector[0, 1] = numpy.nan
+    assert numpy.all(numpy.isnan(spectral_vector[0, 0]))
+
+    denoised = spectral_vector_denoise(
+        signal, spectral_vector, vmin=20, axis=0
+    )
+
+    assert_allclose(signal, denoised, atol=22)
+    # spectral_vector is NaN
+    assert_allclose(denoised[:, 0, 1], signal[:, 0, 1], atol=1e-3)
+    # signal < vmin
+    assert_allclose(denoised[:, -1, 0], signal[:, -1, 0], atol=1e-3)
+    # no signal
+    assert_allclose(denoised[:, -1, -1], signal[:, -1, -1], atol=1e-3)
+    # signal is NaN
+    assert numpy.isnan(denoised[0, 0, 0])
+
+    mean1, real1, imag1 = phasor_from_signal(denoised, axis=0)
+    assert_allclose(mean, mean1, atol=1e-3)
 
 
 def test_spectral_vector_denoise_exceptions():

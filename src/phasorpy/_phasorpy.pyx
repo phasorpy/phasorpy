@@ -1976,35 +1976,39 @@ def _signal_denoise_vector(
     with nogil, parallel(num_threads=num_threads):
 
         # integrate channel intensities for each pixel
+        # and filter low intensities
         for i in prange(size):
             sum = 0.0
             for m in range(samples):
                 sum = sum + <double> signal[i, m]
-            if sum <= vmin:
+            if sum < vmin:
                 sum = NAN
             integrated[i] = <float_t> sum
 
+        # loop over all pixels
         for i in prange(size):
 
             n = integrated[i]
-            if not n > 0:
+            if not n > 0.0:
                 # n is NaN or zero; cannot denoise; return original signal
                 continue
 
             for m in range(samples):
                 denoised[i, m] /= n  # weight = 1.0
 
+            # loop over other pixels
             for j in range(size):
                 if i == j:
                     # weight = 1.0 already accounted for
                     continue
 
                 n = integrated[j]
-                if not n > 0:
+                if not n > 0.0:
                     # n is NaN or zero
                     continue
 
-                # calculate weight from Euclidean distance
+                # calculate weight from Euclidean distance of
+                # pixels i and j in spectral vector space
                 sum = 0.0
                 for m in range(dims):
                     t = spectral_vector[i, m] - spectral_vector[j, m]
@@ -2018,11 +2022,12 @@ def _signal_denoise_vector(
                     # sum is NaN or greater than threshold
                     continue
 
-                # apply weight
+                # add weighted signal[j] to denoised[i]
                 for m in range(samples):
                     denoised[i, m] += <float_t> (weight * signal[j, m])
 
             # re-normalize to original intensity
+            # sum cannot be zero because integrated == 0 was filtered
             sum = 0.0
             for m in range(samples):
                 sum = sum + denoised[i, m]
