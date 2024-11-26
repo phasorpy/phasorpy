@@ -2696,7 +2696,7 @@ def phasor_filter(
 
         - ``'median'``: Spatial median of phasor coordinates.
         - ``'median_scipy'``: Spatial median of phasor coordinates
-            based on :py:func:`scipy.ndimage.median_filter`.
+          based on :py:func:`scipy.ndimage.median_filter`.
 
     repeat : int, optional
         Number of times to apply filter. The default is 1.
