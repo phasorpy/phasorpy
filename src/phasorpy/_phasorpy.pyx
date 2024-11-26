@@ -2086,12 +2086,12 @@ cdef float_t _median(const float_t *values, const ssize_t n) noexcept nogil:
             (_quickselect(values, 0, n - 1, n // 2 - 1) +
              _quickselect(values, 0, n - 1, n // 2)) / 2
         )
-    
+
     return _quickselect(values, 0, n - 1, n // 2)
 
 
 def _apply_2d_median_filter(
-    const float_t[:, :] image, 
+    const float_t[:, :] image,
     float_t[:, :] filtered_image,
     const ssize_t kernel_size
 ):
@@ -2103,7 +2103,7 @@ def _apply_2d_median_filter(
         int rows = image.shape[0]
         int cols = image.shape[1]
         int k = kernel_size // 2
-        int i, j, di, dj, iter
+        int i, j, di, dj
         int ki, kj
         int valid_count
         float_t element
@@ -2113,7 +2113,7 @@ def _apply_2d_median_filter(
 
     if kernel == NULL:
         raise MemoryError("Unable to allocate memory for kernel")
-    
+
     with nogil:
         for i in range(rows):
             for j in range(cols):

@@ -2718,8 +2718,9 @@ def phasor_filter(
     ------
     ValueError
         If the specified method is not supported.
-        The array shapes of `real` and `imag` do not match.
         If `repeat` is less than 1.
+        If `size` is less than 2.
+        The array shapes of `real` and `imag` do not match.
 
     Notes
     -----
@@ -2728,8 +2729,9 @@ def phasor_filter(
     The `median` method ignores `NaN` values. If the kernel contains an even
     number of elements, the median is the average of the two middle elements.
 
-    For filtering in more than two dimensions, the `median` method is 3 to 6
-    times slower than the `median_scipy` method.
+    When filtering in more than two dimensions, the `median` method is 3 to 6
+    times slower than the `median_scipy` method. When filtering in two
+    dimensions, both methods have similar performance.
 
     The implementation of the `median_scipy` method is based on
     :py:func:`scipy.ndimage.median_filter`,
@@ -2763,16 +2765,21 @@ def phasor_filter(
             f'Method not supported, supported methods are: '
             f"{', '.join(methods)}"
         )
+    if repeat < 1:
+        raise ValueError(f'{repeat=} < 1')
+    if size < 2:
+        raise ValueError(f'{size=} < 2')
 
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
-    if repeat < 1:
-        raise ValueError(f'{repeat=} < 1')
 
     _, axes = _parse_skip_axis(skip_axis, real.ndim)
+
+    if 'axes' in kwargs and method == 'median_scipy':
+        axes = kwargs.pop('axes')
 
     return methods[method](  # type: ignore[no-any-return]
         real, imag, repeat=repeat, size=size, axes=axes, **kwargs
@@ -3099,7 +3106,7 @@ def _median_filter_2d(
     *,
     repeat: int = 1,
     size: int = 3,
-    axes: Sequence[int] | None = None,
+    axes: Sequence[int],
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return the phasor coordinates after applying a 2D median filter.
 
@@ -3125,9 +3132,6 @@ def _median_filter_2d(
         Filtered imaginary component of phasor coordinates.
 
     """
-    if size < 1:
-        raise ValueError(f'invalid {size=} < 1')
-
     real = numpy.asarray(real)
     if real.dtype == numpy.float32:
         real = real.copy()
@@ -3140,15 +3144,9 @@ def _median_filter_2d(
     else:
         imag = imag.astype(float)
 
-    if axes is None:
-        axes = range(real.ndim)
     if len(axes) != 2:
         return _median_filter_nd(
             real, imag, repeat=repeat, size=size, axes=axes
-        )
-    if any(ax >= real.ndim or ax < -real.ndim for ax in axes):
-        raise ValueError(
-            f"Axes {axes} are out of bounds for array of dimension {real.ndim}"
         )
 
     for _ in range(repeat):
@@ -3179,7 +3177,7 @@ def _median_filter_nd(
     *,
     repeat: int = 1,
     size: int = 3,
-    axes: Sequence[int] | None = None,
+    axes: Sequence[int],
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return the phasor coordinates after applying a median filter.
 
@@ -3209,15 +3207,6 @@ def _median_filter_nd(
 
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
-
-    if size < 1:
-        raise ValueError(f'invalid {size=} < 1')
-    if not axes:
-        axes = list(range(real.ndim))
-    if any(ax >= real.ndim or ax < -real.ndim for ax in axes):
-        raise ValueError(
-            f"Axes {axes} are out of bounds for array of dimension {real.ndim}"
-        )
 
     kernel_shape = (size,) * numpy.ndim(real)
     nan_mask = numpy.isnan(real) | numpy.isnan(imag)

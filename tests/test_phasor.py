@@ -2224,16 +2224,17 @@ def test_parse_skip_axis():
 
 
 @pytest.mark.parametrize(
-    'real, imag, method, repeat, kwargs, expected',
+    'real, imag, method, repeat, skip_axis, kwargs, expected',
     [
         # single element
-        ([0], [0], 'median', 1, {}, ([0], [0])),
+        ([0], [0], 'median', 1, None, {}, ([0], [0])),
         # all equal
         (
             [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
             [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
             'median',
             1,
+            None,
             {},
             (
                 [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
@@ -2246,6 +2247,7 @@ def test_parse_skip_axis():
             [[5.0, 6.0, 2.0], [10.0, 4.0, 8.0], [0.0, 7.0, 8.0]],
             'median',
             1,
+            None,
             {},
             (
                 [[0.5, 1.0, 2.0], [1.0, 2.0, 2.0], [5.0, 3.0, 2.0]],
@@ -2258,6 +2260,7 @@ def test_parse_skip_axis():
             numpy.arange(25, 50).reshape(5, 5),
             'median',
             1,
+            None,
             {},
             (
                 [
@@ -2282,6 +2285,7 @@ def test_parse_skip_axis():
             numpy.arange(25, 50).reshape(5, 5),
             'median',
             5,
+            None,
             {},
             (
                 [
@@ -2300,12 +2304,59 @@ def test_parse_skip_axis():
                 ],
             ),
         ),
-        # 3x3x3 array with 3x3 filter repeated 3 times along axes 1 and 2
+        # 5x5 array with float32 dtype values
+        (
+            numpy.arange(25, dtype=numpy.float32).reshape(5, 5),
+            numpy.arange(25, 50, dtype=numpy.float32).reshape(5, 5),
+            'median',
+            5,
+            None,
+            {},
+            (
+                [
+                    [4, 4, 4, 4, 4],
+                    [5, 6, 7, 8, 9],
+                    [10, 11, 12, 13, 14],
+                    [15, 16, 17, 18, 19],
+                    [20, 20, 20, 20, 20],
+                ],
+                [
+                    [29, 29, 29, 29, 29],
+                    [30, 31, 32, 33, 34],
+                    [35, 36, 37, 38, 39],
+                    [40, 41, 42, 43, 44],
+                    [45, 45, 45, 45, 45],
+                ],
+            ),
+        ),
+        # 3x3x3 array with 3x3 filter repeated 3 with first axis skipped
         (
             numpy.arange(27).reshape(3, 3, 3),
             numpy.arange(10, 37).reshape(3, 3, 3),
             'median',
             3,
+            0,
+            {},
+            (
+                [
+                    [[2, 2, 2], [3, 4, 5], [6, 6, 6]],
+                    [[11, 11, 11], [12, 13, 14], [15, 15, 15]],
+                    [[20, 20, 20], [21, 22, 23], [24, 24, 24]],
+                ],
+                [
+                    [[12, 12, 12], [13, 14, 15], [16, 16, 16]],
+                    [[21, 21, 21], [22, 23, 24], [25, 25, 25]],
+                    [[30, 30, 30], [31, 32, 33], [34, 34, 34]],
+                ],
+            ),
+        ),
+        # 'median_scipy' method with axes as kwarg
+        (
+            numpy.arange(27).reshape(3, 3, 3),
+            numpy.arange(10, 37).reshape(3, 3, 3),
+            'median_scipy',
+            3,
+            None,
             {'axes': (1, 2)},
             (
                 [
@@ -2322,10 +2373,19 @@ def test_parse_skip_axis():
         ),
     ],
 )
-def test_phasor_filter(real, imag, method, repeat, kwargs, expected):
+def test_phasor_filter(
+    real, imag, method, repeat, skip_axis, kwargs, expected
+):
     """Test `phasor_filter` function."""
     assert_allclose(
-        phasor_filter(real, imag, method=method, repeat=repeat, **kwargs),
+        phasor_filter(
+            real,
+            imag,
+            method=method,
+            repeat=repeat,
+            skip_axis=skip_axis,
+            **kwargs,
+        ),
         expected,
     )
 
@@ -2347,6 +2407,9 @@ def test_phasor_filter_errors():
     # repeat < 1
     with pytest.raises(ValueError):
         phasor_filter([[0]], [[0]], repeat=-3)
+    # size < 2
+    with pytest.raises(ValueError):
+        phasor_filter([[0]], [[0]], size=0)
 
 
 def test_phasor_threshold():
