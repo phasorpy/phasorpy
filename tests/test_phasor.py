@@ -2371,6 +2371,49 @@ def test_parse_skip_axis():
                 ],
             ),
         ),
+        # same output for methods from 2D array without `NaN`
+        (
+            numpy.arange(25).reshape(5, 5),
+            numpy.arange(25, 50).reshape(5, 5),
+            'median',
+            1,
+            None,
+            {},
+            phasor_filter(
+                numpy.arange(25).reshape(5, 5),
+                numpy.arange(25, 50).reshape(5, 5),
+                method='median_scipy',
+            ),
+        ),
+        # same output for methods from 3D array without `NaN`
+        (
+            numpy.arange(27).reshape(3, 3, 3),
+            numpy.arange(10, 37).reshape(3, 3, 3),
+            'median',
+            1,
+            None,
+            {},
+            phasor_filter(
+                numpy.arange(27).reshape(3, 3, 3),
+                numpy.arange(10, 37).reshape(3, 3, 3),
+                method='median_scipy',
+            ),
+        ),
+        # same output for methods from 3D array without `NaN` and skip axes
+        (
+            numpy.arange(27).reshape(3, 3, 3),
+            numpy.arange(10, 37).reshape(3, 3, 3),
+            'median',
+            1,
+            0,
+            {},
+            phasor_filter(
+                numpy.arange(27).reshape(3, 3, 3),
+                numpy.arange(10, 37).reshape(3, 3, 3),
+                method='median_scipy',
+                skip_axis=0,
+            ),
+        ),
     ],
 )
 def test_phasor_filter(
