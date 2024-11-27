@@ -2725,8 +2725,8 @@ def phasor_filter(
     ------
     ValueError
         If the specified method is not supported.
-        If `repeat` is less than 1.
-        If `size` is less than 2.
+        If `repeat` is less than 0.
+        If `size` is less than 1.
         The array shapes of `real` and `imag` do not match.
 
     Notes
@@ -2772,10 +2772,12 @@ def phasor_filter(
             f'Method not supported, supported methods are: '
             f"{', '.join(methods)}"
         )
-    if repeat < 1:
-        raise ValueError(f'{repeat=} < 1')
-    if size < 2:
-        raise ValueError(f'{size=} < 2')
+    if repeat == 0 or size == 1:
+        return numpy.asarray(real), numpy.asarray(imag)
+    if repeat < 0:
+        raise ValueError(f'{repeat=} < 0')
+    if size < 1:
+        raise ValueError(f'{size=} < 1')
 
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
@@ -3172,18 +3174,21 @@ def _median_filter_2d(
                 index_list = index_list[:ax] + [slice(None)] + index_list[ax:]
             full_index = tuple(index_list)
 
-            real_slice = real[full_index].copy()
-            imag_slice = imag[full_index].copy()
+            real_slice = real[full_index]
+            imag_slice = imag[full_index]
+
+            filtered_real_slice = numpy.empty_like(real_slice)
+            filtered_imag_slice = numpy.empty_like(imag_slice)
 
             _apply_2d_median_filter(
-                real[full_index], real_slice, size, num_threads
+                real_slice, filtered_real_slice, size, num_threads
             )
             _apply_2d_median_filter(
-                imag[full_index], imag_slice, size, num_threads
+                imag_slice, filtered_imag_slice, size, num_threads
             )
 
-            real[full_index] = real_slice
-            imag[full_index] = imag_slice
+            real[full_index] = filtered_real_slice
+            imag[full_index] = filtered_imag_slice
 
     return numpy.asarray(real), numpy.asarray(imag)
 
@@ -3226,28 +3231,22 @@ def _median_filter_nd(
     imag = numpy.asarray(imag)
 
     kernel_shape = (size,) * numpy.ndim(real)
+    kernel_shape = tuple(
+        kernel_shape[i] if i in axes else 1 for i in range(numpy.ndim(real))
+    )
+    pad_width = [(s // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape]
     nan_mask = numpy.isnan(real) | numpy.isnan(imag)
+    axis = tuple(range(-len(kernel_shape), 0))
 
     for _ in range(repeat):
-        kernel_shape = tuple(
-            kernel_shape[i] if i in axes else 1
-            for i in range(numpy.ndim(real))
-        )
-        pad_width = [
-            (s // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
-        ]
         real_pad = numpy.pad(real, pad_width, mode='edge')
         imag_pad = numpy.pad(imag, pad_width, mode='edge')
 
         windows_real = sliding_window_view(real_pad, tuple(kernel_shape))
         windows_imag = sliding_window_view(imag_pad, tuple(kernel_shape))
 
-        real = numpy.nanmedian(
-            windows_real, axis=tuple(range(-len(kernel_shape), 0))
-        )
-        imag = numpy.nanmedian(
-            windows_imag, axis=tuple(range(-len(kernel_shape), 0))
-        )
+        real = numpy.nanmedian(windows_real, axis=axis)
+        imag = numpy.nanmedian(windows_imag, axis=axis)
         real = numpy.where(nan_mask, numpy.nan, numpy.asarray(real))
         imag = numpy.where(nan_mask, numpy.nan, numpy.asarray(imag))
 

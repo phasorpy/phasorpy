@@ -2139,7 +2139,6 @@ def _apply_2d_median_filter(
                         if not isnan(element):
                             kernel[valid_count] = element
                             valid_count = valid_count + 1
-                if valid_count > 0:
-                    filtered_image[i, j] = _median(kernel, valid_count)
+                filtered_image[i, j] = _median(kernel, valid_count)
 
         free(kernel)

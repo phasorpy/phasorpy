@@ -2401,13 +2401,10 @@ def test_phasor_filter_errors():
     # shape mismatch
     with pytest.raises(ValueError):
         phasor_filter([0], [[0]], repeat=1)
-    # repeat = 0
-    with pytest.raises(ValueError):
-        phasor_filter([[0]], [[0]], repeat=0)
-    # repeat < 1
+    # repeat < 0
     with pytest.raises(ValueError):
         phasor_filter([[0]], [[0]], repeat=-3)
-    # size < 2
+    # size < 1
     with pytest.raises(ValueError):
         phasor_filter([[0]], [[0]], size=0)
 
