@@ -2782,7 +2782,7 @@ def phasor_filter(
         axes = kwargs.pop('axes')
 
     return methods[method](  # type: ignore[no-any-return]
-        real, imag, repeat=repeat, size=size, axes=axes, **kwargs
+        real, imag, axes, repeat=repeat, size=size, **kwargs
     )
 
 
@@ -3100,13 +3100,13 @@ def _median(
 
 
 def _median_filter_2d(
-    real: ArrayLike,
-    imag: ArrayLike,
+    real: NDArray[Any],
+    imag: NDArray[Any],
+    axes: Sequence[int],
     /,
     *,
     repeat: int = 1,
     size: int = 3,
-    axes: Sequence[int],
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return the phasor coordinates after applying a 2D median filter.
 
@@ -3116,12 +3116,11 @@ def _median_filter_2d(
         Real components of the phasor coordinates.
     imag : ndarray
         Imaginary components of the phasor coordinates.
-    axes : int or sequence of int
-        Axes along which to apply the filter. By default, filtering is
-        applied to all axes.
+    axes : sequence of int
+        Axes along which to apply the filter.
     repeat : int, optional
         Number of times to apply filter. The default is 1.
-    size : int or tuple of int, optional
+    size : int, optional
         The size of the median filter kernel. Default is 3.
 
     Returns
@@ -3145,9 +3144,7 @@ def _median_filter_2d(
         imag = imag.astype(float)
 
     if len(axes) != 2:
-        return _median_filter_nd(
-            real, imag, repeat=repeat, size=size, axes=axes
-        )
+        return _median_filter_nd(real, imag, axes, repeat=repeat, size=size)
 
     for _ in range(repeat):
         for index in numpy.ndindex(
@@ -3171,13 +3168,13 @@ def _median_filter_2d(
 
 
 def _median_filter_nd(
-    real: ArrayLike,
-    imag: ArrayLike,
+    real: NDArray[Any],
+    imag: NDArray[Any],
+    axes: Sequence[int],
     /,
     *,
     repeat: int = 1,
     size: int = 3,
-    axes: Sequence[int],
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return the phasor coordinates after applying a median filter.
 
@@ -3187,12 +3184,11 @@ def _median_filter_nd(
         Real components of the phasor coordinates.
     imag : numpy.ndarray
         Imaginary components of the phasor coordinates.
-    axes : int or sequence of int
-        Axes along which to apply the filter. By default, filtering is
-        applied to all axes.
+    axes : sequence of int
+        Axes along which to apply the filter.
     repeat : int, optional
         Number of times to apply filter. The default is 1.
-    size : int or tuple of int, optional
+    size : int, optional
         The size of the median filter kernel. Default is 3.
 
     Returns
@@ -3238,13 +3234,13 @@ def _median_filter_nd(
 
 
 def _median_filter_scipy(
-    real: ArrayLike,
-    imag: ArrayLike,
+    real: NDArray[Any],
+    imag: NDArray[Any],
+    axes: Sequence[int],
     /,
     *,
     repeat: int = 1,
-    size: int | None = 3,
-    axes: Sequence[int] | None = None,
+    size: int = 3,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return the phasor coordinates after applying a median filter.
@@ -3257,12 +3253,11 @@ def _median_filter_scipy(
         Real components of the phasor coordinates.
     imag : ndarray
         Imaginary components of the phasor coordinates.
-    axes : int or sequence of int
-        Axes along which to apply the filter. By default, filtering is
-        applied to all axes.
+    axes : sequence of int
+        Axes along which to apply the filter.
     repeat : int, optional
         Number of times to apply filter. The default is 1.
-    size : int or tuple of int, optional
+    size : int, optional
         The size of the median filter kernel. Default is 3.
     **kwargs
         Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
