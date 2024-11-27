@@ -3242,8 +3242,8 @@ def _median_filter_nd(
         real_pad = numpy.pad(real, pad_width, mode='edge')
         imag_pad = numpy.pad(imag, pad_width, mode='edge')
 
-        windows_real = sliding_window_view(real_pad, tuple(kernel_shape))
-        windows_imag = sliding_window_view(imag_pad, tuple(kernel_shape))
+        windows_real = sliding_window_view(real_pad, kernel_shape)
+        windows_imag = sliding_window_view(imag_pad, kernel_shape)
 
         real = numpy.nanmedian(windows_real, axis=axis)
         imag = numpy.nanmedian(windows_imag, axis=axis)
