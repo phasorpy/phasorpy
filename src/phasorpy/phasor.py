@@ -2677,6 +2677,7 @@ def phasor_filter(
     repeat: int = 1,
     size: int = 3,
     skip_axis: int | Sequence[int] | None = None,
+    num_threads: int | None = None,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return filtered phasor coordinates.
@@ -2704,6 +2705,12 @@ def phasor_filter(
         Size of the filter kernel. The default is 3.
     skip_axis : int or sequence of int, optional
         Axis or axes to skip filtering. By default all axes are filtered.
+    num_threads : int, optional
+        Number of OpenMP threads to use for parallelization. Available for
+        filtering in two dimensions with the `median` method only.
+        By default, multi-threading is disabled.
+        If zero, up to half of logical CPUs are used.
+        OpenMP may not be available on all platforms.
     **kwargs
         Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
 
@@ -2780,6 +2787,8 @@ def phasor_filter(
 
     if 'axes' in kwargs and method == 'median_scipy':
         axes = kwargs.pop('axes')
+    if method == 'median':
+        kwargs['num_threads'] = num_threads
 
     return methods[method](  # type: ignore[no-any-return]
         real, imag, axes, repeat=repeat, size=size, **kwargs
@@ -3107,6 +3116,7 @@ def _median_filter_2d(
     *,
     repeat: int = 1,
     size: int = 3,
+    num_threads: int | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return the phasor coordinates after applying a 2D median filter.
 
@@ -3122,6 +3132,11 @@ def _median_filter_2d(
         Number of times to apply filter. The default is 1.
     size : int, optional
         The size of the median filter kernel. Default is 3.
+    num_threads : int, optional
+        Number of OpenMP threads to use for parallelization.
+        By default, multi-threading is disabled.
+        If zero, up to half of logical CPUs are used.
+        OpenMP may not be available on all platforms.
 
     Returns
     -------
@@ -3146,6 +3161,8 @@ def _median_filter_2d(
     if len(axes) != 2:
         return _median_filter_nd(real, imag, axes, repeat=repeat, size=size)
 
+    num_threads = number_threads(num_threads)
+
     for _ in range(repeat):
         for index in numpy.ndindex(
             *[real.shape[ax] for ax in range(real.ndim) if ax not in axes]
@@ -3158,8 +3175,12 @@ def _median_filter_2d(
             real_slice = real[full_index].copy()
             imag_slice = imag[full_index].copy()
 
-            _apply_2d_median_filter(real[full_index], real_slice, size)
-            _apply_2d_median_filter(imag[full_index], imag_slice, size)
+            _apply_2d_median_filter(
+                real[full_index], real_slice, size, num_threads
+            )
+            _apply_2d_median_filter(
+                imag[full_index], imag_slice, size, num_threads
+            )
 
             real[full_index] = real_slice
             imag[full_index] = imag_slice

@@ -2093,48 +2093,53 @@ cdef inline float_t _median(float_t *values, const ssize_t n) noexcept nogil:
 def _apply_2d_median_filter(
     const float_t[:, ::1] image,
     float_t[:, ::1] filtered_image,
-    const ssize_t kernel_size
+    const ssize_t kernel_size,
+    const int num_threads=1,
 ):
     """Apply a 2D median filter ignoring NaN."""
     cdef:
         ssize_t rows = image.shape[0]
         ssize_t cols = image.shape[1]
         ssize_t k = kernel_size // 2
-        ssize_t i, j, di, dj
-        ssize_t ki, kj
-        ssize_t valid_count
+        ssize_t i, j, di, dj, ki, kj, valid_count
         float_t element
-        float_t *kernel = <float_t *>malloc(
-            kernel_size * kernel_size * sizeof(float_t)
-        )
+        float_t *kernel
 
     if kernel_size <= 0:
         raise ValueError("kernel_size must be greater than 0")
-    if kernel == NULL:
-        raise MemoryError("Unable to allocate memory for kernel")
 
-    with nogil:
-        for i in range(rows):
+    with nogil, parallel(num_threads=num_threads):
+
+        kernel = <float_t *> malloc(
+            kernel_size * kernel_size * sizeof(float_t)
+        )
+        if kernel == NULL:
+            with gil:
+                raise MemoryError("Unable to allocate memory for kernel")
+
+        for i in prange(rows):
             for j in range(cols):
-                if not isnan(image[i, j]):
-                    valid_count = 0
-                    for di in range(kernel_size):
-                        ki = i - k + di
-                        if ki < 0:
-                            ki = 0
-                        elif ki >= rows:
-                            ki = rows - 1
-                        for dj in range(kernel_size):
-                            kj = j - k + dj
-                            if kj < 0:
-                                kj = 0
-                            elif kj >= cols:
-                                kj = cols - 1
-                            element = image[ki, kj]
-                            if not isnan(element):
-                                kernel[valid_count] = element
-                                valid_count += 1
-                    if valid_count > 0:
-                        filtered_image[i, j] = _median(kernel, valid_count)
+                if isnan(image[i, j]):
+                    filtered_image[i, j] = <float_t> NAN
+                    continue
+                valid_count = 0
+                for di in range(kernel_size):
+                    ki = i - k + di
+                    if ki < 0:
+                        ki = 0
+                    elif ki >= rows:
+                        ki = rows - 1
+                    for dj in range(kernel_size):
+                        kj = j - k + dj
+                        if kj < 0:
+                            kj = 0
+                        elif kj >= cols:
+                            kj = cols - 1
+                        element = image[ki, kj]
+                        if not isnan(element):
+                            kernel[valid_count] = element
+                            valid_count = valid_count + 1
+                if valid_count > 0:
+                    filtered_image[i, j] = _median(kernel, valid_count)
 
-    free(kernel)
+        free(kernel)
