@@ -3184,11 +3184,9 @@ def _median_filter_2d(
             _apply_2d_median_filter(
                 real_slice, filtered_slice, size, num_threads
             )
-            # numpy.copyto(real_slice, filtered_slice)
             _apply_2d_median_filter(
                 imag_slice, filtered_slice, size, num_threads
             )
-            # numpy.copyto(imag_slice, filtered_slice)
 
             real[full_index] = real_slice
             imag[full_index] = imag_slice
