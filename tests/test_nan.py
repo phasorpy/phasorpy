@@ -42,6 +42,11 @@ from phasorpy.phasor import (
 from phasorpy.plot import PhasorPlot, plot_phasor_image
 
 VALUES_WITH_NAN = [0.5, nan, 0.1], [0.5, 0.5, 0.1]
+VALUES_WITH_NAN_2D = [[0.5, nan, 0.1], [0.5, 0.5, 0.1], [0.2, 0.3, nan]], [
+    [0.5, 0.5, 0.1],
+    [0.2, nan, 0.3],
+    [0.4, 0.4, 0.4],
+]
 
 
 def test_phasorplot_nan():
@@ -151,15 +156,21 @@ def test_phasor_divide_nan():
     assert_allclose(phasor, [[0.5, nan, 0.1], [0.0, nan, 0.0]], atol=1e-3)
 
 
-@pytest.mark.xfail
 def test_phasor_filter_nan():
     """Test phasor_filter function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_filter(*VALUES_WITH_NAN)
-    # TODO: this is undefined. https://github.com/phasorpy/phasorpy/issues/87
-    assert_allclose(phasor[0], [0.5, nan, 0.1], atol=1e-3)
-    assert_allclose(phasor[1], [0.5, 0.5, 0.1], atol=1e-3)
+        phasor = phasor_filter(*VALUES_WITH_NAN_2D)
+    assert_allclose(
+        phasor[0],
+        [[0.5, nan, 0.1], [0.5, 0.3, 0.1], [0.3, 0.3, nan]],
+        atol=1e-3,
+    )
+    assert_allclose(
+        phasor[1],
+        [[0.5, 0.4, 0.2], [0.4, nan, 0.35], [0.4, 0.4, 0.4]],
+        atol=1e-3,
+    )
 
 
 def test_phasor_from_apparent_lifetime_nan():

@@ -122,10 +122,10 @@ numpy.testing.assert_allclose(
 # Applying median filter to the calibrated phasor coordinates,
 # often multiple times, improves contrast and reduces noise.
 # This is done at multiple harmonics simultaneously by excluding the
-# harmonic axis from the filter:å
+# harmonic axis from the filter:
 
 real, imag = phasor_filter(
-    real, imag, method='median', size=3, repeat=2, axes=(1, 2)
+    real, imag, method='median', size=3, repeat=2, skip_axis=0
 )
 
 # %%
