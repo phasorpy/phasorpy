@@ -2477,7 +2477,7 @@ def test_parse_skip_axis():
             {},
             (
                 numpy.arange(9).reshape(3, 3),
-                numpy.arange(10, 19).reshape(3, 3)
+                numpy.arange(10, 19).reshape(3, 3),
             ),
         ),
         # size = 1
@@ -2491,7 +2491,7 @@ def test_parse_skip_axis():
             {},
             (
                 numpy.arange(9).reshape(3, 3),
-                numpy.arange(10, 19).reshape(3, 3)
+                numpy.arange(10, 19).reshape(3, 3),
             ),
         ),
     ],
