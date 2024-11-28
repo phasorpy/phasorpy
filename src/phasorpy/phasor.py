@@ -3188,9 +3188,6 @@ def _median_filter_2d(
                 imag_slice, filtered_slice, size, num_threads
             )
 
-            real[full_index] = real_slice
-            imag[full_index] = imag_slice
-
     return numpy.asarray(real), numpy.asarray(imag)
 
 

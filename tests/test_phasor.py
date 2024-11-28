@@ -2224,16 +2224,17 @@ def test_parse_skip_axis():
 
 
 @pytest.mark.parametrize(
-    'real, imag, method, repeat, skip_axis, kwargs, expected',
+    'real, imag, method, repeat, size, skip_axis, kwargs, expected',
     [
         # single element
-        ([0], [0], 'median', 1, None, {}, ([0], [0])),
+        ([0], [0], 'median', 1, 3, None, {}, ([0], [0])),
         # all equal
         (
             [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
             [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
             'median',
             1,
+            3,
             None,
             {},
             (
@@ -2247,6 +2248,7 @@ def test_parse_skip_axis():
             [[5.0, 6.0, 2.0], [10.0, 4.0, 8.0], [0.0, 7.0, 8.0]],
             'median',
             1,
+            3,
             None,
             {},
             (
@@ -2260,6 +2262,7 @@ def test_parse_skip_axis():
             numpy.arange(25, 50).reshape(5, 5),
             'median',
             1,
+            3,
             None,
             {},
             (
@@ -2285,6 +2288,7 @@ def test_parse_skip_axis():
             numpy.arange(25, 50).reshape(5, 5),
             'median',
             5,
+            3,
             None,
             {},
             (
@@ -2304,12 +2308,39 @@ def test_parse_skip_axis():
                 ],
             ),
         ),
+        # 5x5 array with 5x5 filter repeated 1 time
+        (
+            numpy.arange(25).reshape(5, 5),
+            numpy.arange(25, 50).reshape(5, 5),
+            'median',
+            1,
+            5,
+            None,
+            {},
+            (
+                [
+                    [2, 3, 4, 4, 4],
+                    [5, 6, 7, 8, 9],
+                    [10, 11, 12, 13, 14],
+                    [15, 16, 17, 18, 19],
+                    [20, 20, 20, 21, 22],
+                ],
+                [
+                    [27, 28, 29, 29, 29],
+                    [30, 31, 32, 33, 34],
+                    [35, 36, 37, 38, 39],
+                    [40, 41, 42, 43, 44],
+                    [45, 45, 45, 46, 47],
+                ],
+            ),
+        ),
         # 5x5 array with float32 dtype values
         (
             numpy.arange(25, dtype=numpy.float32).reshape(5, 5),
             numpy.arange(25, 50, dtype=numpy.float32).reshape(5, 5),
             'median',
             5,
+            3,
             None,
             {},
             (
@@ -2335,6 +2366,7 @@ def test_parse_skip_axis():
             numpy.arange(10, 37).reshape(3, 3, 3),
             'median',
             3,
+            3,
             0,
             {},
             (
@@ -2355,6 +2387,7 @@ def test_parse_skip_axis():
             numpy.arange(27).reshape(3, 3, 3),
             numpy.arange(10, 37).reshape(3, 3, 3),
             'median_scipy',
+            3,
             3,
             None,
             {'axes': (1, 2)},
@@ -2377,6 +2410,7 @@ def test_parse_skip_axis():
             numpy.arange(25, 50).reshape(5, 5),
             'median',
             1,
+            3,
             None,
             {},
             phasor_filter(
@@ -2391,6 +2425,7 @@ def test_parse_skip_axis():
             numpy.arange(10, 37).reshape(3, 3, 3),
             'median',
             1,
+            3,
             None,
             {},
             phasor_filter(
@@ -2405,6 +2440,7 @@ def test_parse_skip_axis():
             numpy.arange(10, 37).reshape(3, 3, 3),
             'median',
             1,
+            3,
             0,
             {},
             phasor_filter(
@@ -2420,6 +2456,7 @@ def test_parse_skip_axis():
             numpy.arange(10, 91).reshape(3, 3, 3, 3),
             'median',
             1,
+            3,
             [0, 2],
             {},
             phasor_filter(
@@ -2429,10 +2466,38 @@ def test_parse_skip_axis():
                 skip_axis=[0, 2],
             ),
         ),
+        # repeat = 0
+        (
+            numpy.arange(9).reshape(3, 3),
+            numpy.arange(10, 19).reshape(3, 3),
+            'median',
+            0,
+            3,
+            None,
+            {},
+            (
+                numpy.arange(9).reshape(3, 3),
+                numpy.arange(10, 19).reshape(3, 3)
+            ),
+        ),
+        # size = 1
+        (
+            numpy.arange(9).reshape(3, 3),
+            numpy.arange(10, 19).reshape(3, 3),
+            'median',
+            1,
+            1,
+            None,
+            {},
+            (
+                numpy.arange(9).reshape(3, 3),
+                numpy.arange(10, 19).reshape(3, 3)
+            ),
+        ),
     ],
 )
 def test_phasor_filter(
-    real, imag, method, repeat, skip_axis, kwargs, expected
+    real, imag, method, repeat, size, skip_axis, kwargs, expected
 ):
     """Test `phasor_filter` function."""
     assert_allclose(
@@ -2441,6 +2506,7 @@ def test_phasor_filter(
             imag,
             method=method,
             repeat=repeat,
+            size=size,
             skip_axis=skip_axis,
             **kwargs,
         ),
