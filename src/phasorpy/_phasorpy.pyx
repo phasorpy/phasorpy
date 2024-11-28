@@ -2091,7 +2091,7 @@ cdef inline float_t _median(float_t *values, const ssize_t n) noexcept nogil:
 
 
 def _apply_2d_median_filter(
-    const float_t[:, ::1] image,
+    float_t[:, :] image,
     float_t[:, ::1] filtered_image,
     const ssize_t kernel_size,
     const int num_threads=1,
@@ -2142,3 +2142,7 @@ def _apply_2d_median_filter(
                 filtered_image[i, j] = _median(kernel, valid_count)
 
         free(kernel)
+
+        for i in prange(rows):
+            for j in range(cols):
+                image[i, j] = filtered_image[i, j]

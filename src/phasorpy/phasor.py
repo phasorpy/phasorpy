@@ -3165,6 +3165,10 @@ def _median_filter_2d(
 
     num_threads = number_threads(num_threads)
 
+    filtered_slice = numpy.empty(
+        tuple(real.shape[axis] for axis in axes), dtype=real.dtype
+    )
+
     for _ in range(repeat):
         for index in numpy.ndindex(
             *[real.shape[ax] for ax in range(real.ndim) if ax not in axes]
@@ -3177,18 +3181,17 @@ def _median_filter_2d(
             real_slice = real[full_index]
             imag_slice = imag[full_index]
 
-            filtered_real_slice = numpy.empty_like(real_slice)
-            filtered_imag_slice = numpy.empty_like(imag_slice)
-
             _apply_2d_median_filter(
-                real_slice, filtered_real_slice, size, num_threads
+                real_slice, filtered_slice, size, num_threads
             )
+            # numpy.copyto(real_slice, filtered_slice)
             _apply_2d_median_filter(
-                imag_slice, filtered_imag_slice, size, num_threads
+                imag_slice, filtered_slice, size, num_threads
             )
+            # numpy.copyto(imag_slice, filtered_slice)
 
-            real[full_index] = filtered_real_slice
-            imag[full_index] = filtered_imag_slice
+            real[full_index] = real_slice
+            imag[full_index] = imag_slice
 
     return numpy.asarray(real), numpy.asarray(imag)
 

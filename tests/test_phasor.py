@@ -2414,6 +2414,21 @@ def test_parse_skip_axis():
                 skip_axis=0,
             ),
         ),
+        # non-contiguos axes for 2D filtering.
+        (
+            numpy.arange(81).reshape(3, 3, 3, 3),
+            numpy.arange(10, 91).reshape(3, 3, 3, 3),
+            'median',
+            1,
+            [0, 2],
+            {},
+            phasor_filter(
+                numpy.arange(81).reshape(3, 3, 3, 3),
+                numpy.arange(10, 91).reshape(3, 3, 3, 3),
+                method='median_scipy',
+                skip_axis=[0, 2],
+            ),
+        ),
     ],
 )
 def test_phasor_filter(
