@@ -230,22 +230,20 @@ numpy.testing.assert_allclose(
 # Filter phasor coordinates
 # -------------------------
 #
+# Applying median filter to the calibrated phasor coordinates,
+# often multiple times, improves contrast and reduces noise:
+
+from phasorpy.phasor import phasor_filter
+
+real, imag = phasor_filter(real, imag, method='median', size=3, repeat=2)
+
+# %%
 # Pixels with low intensities are commonly excluded from analysis and
 # visualization of phasor coordinates:
 
 from phasorpy.phasor import phasor_threshold
 
 mean, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
-
-# %%
-# Applying median filter to the calibrated phasor coordinates,
-# often multiple times, improves contrast and reduces noise when
-# visualizing phasor coordinates (however, the filtered coordinates
-# can no longer be used to reconstruct the original signal):
-
-from phasorpy.phasor import phasor_filter
-
-real, imag = phasor_filter(real, imag, method='median', size=3, repeat=2)
 
 # %%
 # Show the calibrated, filtered phasor coordinates:
