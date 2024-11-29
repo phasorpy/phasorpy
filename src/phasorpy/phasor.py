@@ -120,8 +120,8 @@ if TYPE_CHECKING:
 import numpy
 
 from ._phasorpy import (
-    _apply_2d_median_filter,
     _gaussian_signal,
+    _median_filter_2d,
     _phasor_at_harmonic,
     _phasor_divide,
     _phasor_from_apparent_lifetime,
@@ -2682,8 +2682,8 @@ def phasor_filter(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return filtered phasor coordinates.
 
-    By default, a median filter is applied to the real and imaginary
-    components of phasor coordinates once with a kernel size of 3
+    By default, a median filter is applied independently to the real and
+    imaginary components of phasor coordinates once with a kernel size of 3
     multiplied by the number of dimensions of the input arrays.
 
     Parameters
@@ -2702,12 +2702,12 @@ def phasor_filter(
     repeat : int, optional
         Number of times to apply filter. The default is 1.
     size : int, optional
-        Size of the filter kernel. The default is 3.
+        Size of filter kernel. The default is 3.
     skip_axis : int or sequence of int, optional
         Axis or axes to skip filtering. By default all axes are filtered.
     num_threads : int, optional
-        Number of OpenMP threads to use for parallelization. Available for
-        filtering in two dimensions with the `median` method only.
+        Number of OpenMP threads to use for parallelization.
+        Applies to filtering in two dimensions with the `median` method only.
         By default, multi-threading is disabled.
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
@@ -2736,14 +2736,14 @@ def phasor_filter(
     The `median` method ignores `NaN` values. If the kernel contains an even
     number of elements, the median is the average of the two middle elements.
 
-    When filtering in more than two dimensions, the `median` method is 3 to 6
-    times slower than the `median_scipy` method. When filtering in two
-    dimensions, both methods have similar performance.
-
     The implementation of the `median_scipy` method is based on
     :py:func:`scipy.ndimage.median_filter`,
     which has undefined behavior if the input arrays contain `NaN` values.
     See `issue #87 <https://github.com/phasorpy/phasorpy/issues/87>`_.
+
+    When filtering in more than two dimensions, the `median` method is
+    slower than the `median_scipy` method. When filtering in two
+    dimensions, both methods have similar performance.
 
     Examples
     --------
@@ -2751,7 +2751,7 @@ def phasor_filter(
 
     >>> phasor_filter(
     ...     [[0, 0, 0], [5, 5, 5], [2, 2, 2]],
-    ...     [[3, 3, 3], [6, 6, 6], [4, 4, 4]],
+    ...     [[3, 3, 3], [6, math.nan, 6], [4, 4, 4]],
     ...     size=3,
     ...     repeat=3,
     ... )
@@ -2759,12 +2759,12 @@ def phasor_filter(
             [2, 2, 2],
             [2, 2, 2]]),
     array([[3, 3, 3],
-            [4, 4, 4],
+            [4, nan, 4],
             [4, 4, 4]]))
 
     """
     methods: dict[str, Callable[..., Any]] = {
-        'median': _median_filter_2d,
+        'median': _median_filter,
         'median_scipy': _median_filter_scipy,
     }
     if method not in methods:
@@ -3088,18 +3088,18 @@ def _median(
     Parameters
     ----------
     real : ndarray
-        Real components of the phasor coordinates.
+        Real components of phasor coordinates.
     imag : ndarray
-        Imaginary components of the phasor coordinates.
+        Imaginary components of phasor coordinates.
     **kwargs
         Optional arguments passed to :py:func:`numpy.nanmedian`.
 
     Returns
     -------
     real_center : ndarray
-        Spatial median center for real coordinates.
+        Spatial median center of real coordinates.
     imag_center : ndarray
-        Spatial median center for imaginary coordinates.
+        Spatial median center of imaginary coordinates.
 
     Examples
     --------
@@ -3110,7 +3110,7 @@ def _median(
     return numpy.nanmedian(real, **kwargs), numpy.nanmedian(imag, **kwargs)
 
 
-def _median_filter_2d(
+def _median_filter(
     real: NDArray[Any],
     imag: NDArray[Any],
     axes: Sequence[int],
@@ -3120,20 +3120,20 @@ def _median_filter_2d(
     size: int = 3,
     num_threads: int | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return the phasor coordinates after applying a 2D median filter.
+    """Return median-filtered phasor coordinates, ignoring NaN values.
 
     Parameters
     ----------
     real : ndarray
-        Real components of the phasor coordinates.
+        Real components of phasor coordinates.
     imag : ndarray
-        Imaginary components of the phasor coordinates.
+        Imaginary components of phasor coordinates.
     axes : sequence of int
-        Axes along which to apply the filter.
+        Axes along which to apply median filter.
     repeat : int, optional
         Number of times to apply filter. The default is 1.
     size : int, optional
-        The size of the median filter kernel. Default is 3.
+        Size of median filter kernel. The default is 3.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
         By default, multi-threading is disabled.
@@ -3143,9 +3143,9 @@ def _median_filter_2d(
     Returns
     -------
     real : ndarray
-        Filtered real component of phasor coordinates.
+        Median-filtered real component of phasor coordinates.
     imag : ndarray
-        Filtered imaginary component of phasor coordinates.
+        Median-filtered imaginary component of phasor coordinates.
 
     """
     real = numpy.asarray(real)
@@ -3161,92 +3161,55 @@ def _median_filter_2d(
         imag = imag.astype(float)
 
     if len(axes) != 2:
-        return _median_filter_nd(real, imag, axes, repeat=repeat, size=size)
+        # n-dimensional median filter using numpy
+        from numpy.lib.stride_tricks import sliding_window_view
 
+        kernel_shape = tuple(
+            size if i in axes else 1 for i in range(real.ndim)
+        )
+        pad_width = [
+            (s // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
+        ]
+        axis = tuple(range(-real.ndim, 0))
+
+        nan_mask = numpy.isnan(real)
+        for _ in range(repeat):
+            real = numpy.pad(real, pad_width, mode='edge')
+            real = sliding_window_view(real, kernel_shape)
+            real = numpy.nanmedian(real, axis=axis)
+            real = numpy.where(nan_mask, numpy.nan, real)
+
+        nan_mask = numpy.isnan(imag)
+        for _ in range(repeat):
+            imag = numpy.pad(imag, pad_width, mode='edge')
+            imag = sliding_window_view(imag, kernel_shape)
+            imag = numpy.nanmedian(imag, axis=axis)
+            imag = numpy.where(nan_mask, numpy.nan, imag)
+
+        return real, imag
+
+    # 2-dimensional median filter using optimized Cython implementation
     num_threads = number_threads(num_threads)
 
     filtered_slice = numpy.empty(
         tuple(real.shape[axis] for axis in axes), dtype=real.dtype
     )
 
-    for _ in range(repeat):
-        for index in numpy.ndindex(
-            *[real.shape[ax] for ax in range(real.ndim) if ax not in axes]
-        ):
-            index_list: list[int | slice] = list(index)
-            for ax in axes:
-                index_list = index_list[:ax] + [slice(None)] + index_list[ax:]
-            full_index = tuple(index_list)
+    for index in numpy.ndindex(
+        *[real.shape[ax] for ax in range(real.ndim) if ax not in axes]
+    ):
+        index_list: list[int | slice] = list(index)
+        for ax in axes:
+            index_list = index_list[:ax] + [slice(None)] + index_list[ax:]
+        full_index = tuple(index_list)
 
-            real_slice = real[full_index]
-            imag_slice = imag[full_index]
+        _median_filter_2d(
+            real[full_index], filtered_slice, size, repeat, num_threads
+        )
 
-            _apply_2d_median_filter(
-                real_slice, filtered_slice, size, num_threads
-            )
-            _apply_2d_median_filter(
-                imag_slice, filtered_slice, size, num_threads
-            )
-
-    return numpy.asarray(real), numpy.asarray(imag)
-
-
-def _median_filter_nd(
-    real: NDArray[Any],
-    imag: NDArray[Any],
-    axes: Sequence[int],
-    /,
-    *,
-    repeat: int = 1,
-    size: int = 3,
-) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return the phasor coordinates after applying a median filter.
-
-    Parameters
-    ----------
-    real : numpy.ndarray
-        Real components of the phasor coordinates.
-    imag : numpy.ndarray
-        Imaginary components of the phasor coordinates.
-    axes : sequence of int
-        Axes along which to apply the filter.
-    repeat : int, optional
-        Number of times to apply filter. The default is 1.
-    size : int, optional
-        The size of the median filter kernel. Default is 3.
-
-    Returns
-    -------
-    real : ndarray
-        Filtered real component of phasor coordinates.
-    imag : ndarray
-        Filtered imaginary component of phasor coordinates.
-
-    """
-    from numpy.lib.stride_tricks import sliding_window_view
-
-    real = numpy.asarray(real)
-    imag = numpy.asarray(imag)
-
-    kernel_shape = (size,) * numpy.ndim(real)
-    kernel_shape = tuple(
-        kernel_shape[i] if i in axes else 1 for i in range(numpy.ndim(real))
-    )
-    pad_width = [(s // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape]
-    nan_mask = numpy.isnan(real) | numpy.isnan(imag)
-    axis = tuple(range(-len(kernel_shape), 0))
-
-    for _ in range(repeat):
-        real_pad = numpy.pad(real, pad_width, mode='edge')
-        imag_pad = numpy.pad(imag, pad_width, mode='edge')
-
-        windows_real = sliding_window_view(real_pad, kernel_shape)
-        windows_imag = sliding_window_view(imag_pad, kernel_shape)
-
-        real = numpy.nanmedian(windows_real, axis=axis)
-        imag = numpy.nanmedian(windows_imag, axis=axis)
-        real = numpy.where(nan_mask, numpy.nan, numpy.asarray(real))
-        imag = numpy.where(nan_mask, numpy.nan, numpy.asarray(imag))
+        _median_filter_2d(
+            imag[full_index], filtered_slice, size, repeat, num_threads
+        )
 
     return real, imag
 
@@ -3261,31 +3224,31 @@ def _median_filter_scipy(
     size: int = 3,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return the phasor coordinates after applying a median filter.
+    """Return median-filtered phasor coordinates.
 
     Convenience wrapper around :py:func:`scipy.ndimage.median_filter`.
 
     Parameters
     ----------
     real : ndarray
-        Real components of the phasor coordinates.
+        Real components of phasor coordinates.
     imag : ndarray
-        Imaginary components of the phasor coordinates.
+        Imaginary components of phasor coordinates.
     axes : sequence of int
-        Axes along which to apply the filter.
+        Axes along which to apply median filter.
     repeat : int, optional
         Number of times to apply filter. The default is 1.
     size : int, optional
-        The size of the median filter kernel. Default is 3.
+        Size of median filter kernel. The default is 3.
     **kwargs
         Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
 
     Returns
     -------
     real : ndarray
-        Filtered real component of phasor coordinates.
+        Median-filtered real component of phasor coordinates.
     imag : ndarray
-        Filtered imaginary component of phasor coordinates.
+        Median-filtered imaginary component of phasor coordinates.
 
     """
     from scipy.ndimage import median_filter
