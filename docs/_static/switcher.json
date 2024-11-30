@@ -1,12 +1,12 @@
 [
   {
     "name": "dev",
-    "version": "0.2",
+    "version": "0.3",
     "url": "https://www.phasorpy.org/docs/dev/"
   },
   {
-    "name": "0.1 (stable)",
-    "version": "0.1",
+    "name": "0.2 (stable)",
+    "version": "0.2",
     "url": "https://www.phasorpy.org/docs/stable/",
     "preferred": true
   }
