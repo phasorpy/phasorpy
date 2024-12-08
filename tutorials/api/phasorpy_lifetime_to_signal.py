@@ -70,7 +70,7 @@ def verify_signal(fractions):
     numpy.testing.assert_allclose(
         phasor_calibrate(
             *phasor_from_signal(signal)[1:],
-            *phasor_from_signal(reference_signal)[1:],
+            *phasor_from_signal(reference_signal),
             frequency,
             reference_lifetime,
         ),
