@@ -1044,9 +1044,9 @@ def phasor_normalize(
     ):
         real = real_unnormalized.copy()
     else:
-        real = numpy.asarray(real_unnormalized, dtype, copy=True)
-    imag = numpy.asarray(imag_unnormalized, real.dtype, copy=True)
-    mean = numpy.asarray(
+        real = numpy.array(real_unnormalized, dtype, copy=True)
+    imag = numpy.array(imag_unnormalized, real.dtype, copy=True)
+    mean = numpy.array(
         mean_unnormalized, real.dtype, copy=None if samples == 1 else True
     )
 
@@ -2900,13 +2900,13 @@ def phasor_filter_median(
     elif isinstance(real, numpy.ndarray) and real.dtype == numpy.float32:
         real = real.copy()
     else:
-        real = numpy.asarray(real, numpy.float64, copy=True)
+        real = numpy.array(real, numpy.float64, copy=True)
     if use_scipy or repeat == 0:  # or using nD numpy filter
         imag = numpy.asarray(imag)
     elif isinstance(imag, numpy.ndarray) and imag.dtype == numpy.float32:
         imag = imag.copy()
     else:
-        imag = numpy.asarray(imag, numpy.float64, copy=True)
+        imag = numpy.array(imag, numpy.float64, copy=True)
 
     if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
         raise ValueError(f'{mean.shape=} != {real.shape=}')
