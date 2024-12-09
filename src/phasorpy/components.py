@@ -311,3 +311,74 @@ def graphical_component_analysis(
             counts.append(numpy.asarray(component_counts))
 
     return tuple(counts)
+
+
+
+def components_unmixing_from_phasor(
+        multi_harmonic_real: ArrayLike,
+        multi_harmonic_imag: ArrayLike,
+        matrixA: ArrayLike, 
+        /,
+) -> NDArray[Any]:
+    """ Return fractions in each pixel from multiple components.
+
+    Parameters
+    ----------
+    multi_harmonic_real : array_like
+        Real components of the phasor coordinate for many harmonics.
+    multi_harmonic_imag : array_like
+        Imaginary components of the phasor coordinate for many harmonics.
+    matrixA : array_like 
+        Coefficient matrix for each component.
+
+    Returns
+    -------
+    fractions : ndarray
+        Fractions of each component. 
+
+    Raises
+    ------
+    ValueError
+        If multi_harmonic_real and multi_harmonic_imag have different shapes.
+        If the coefficient matrix is empty.
+    """
+    # Convert inputs to NumPy arrays
+    multi_harmonic_real = numpy.asarray(multi_harmonic_real)
+    multi_harmonic_imag = numpy.asarray(multi_harmonic_imag)
+    matrixA = numpy.asarray(matrixA)
+
+    # Ensure the arrays have the same shape
+    if multi_harmonic_real.shape != multi_harmonic_imag.shape:
+        raise ValueError("multi_harmonic_real and multi_harmonic_imag have different shapes")
+    if matrixA.size == 0:
+        raise ValueError("matrixA is empty")
+
+    # Define the number of components and harmonics
+    ncomp = matrixA.shape[0]
+    nh = int(ncomp / 2)
+
+    # Case 1: If the inputs are 1D, solve the system for a single pixel
+    if len(multi_harmonic_real.shape) == 1:
+        vecB = numpy.hstack([multi_harmonic_real[:nh], multi_harmonic_imag[:nh], 1])
+        return numpy.linalg.lstsq(matrixA, vecB, rcond=None)[0]
+    
+    # Case 2: If the inputs are multi-dimensional (images)
+    # Reshape the real and imaginary arrays and combine them into a single B array
+    # multi_harmonic dimensions: (N, M, nh), where N and M are the image dimensions
+    # Concatenate the real and imaginary parts to form vecB in a single vectorized step
+    vecB = numpy.concatenate(
+        [multi_harmonic_real[..., :nh], multi_harmonic_imag[..., :nh], numpy.ones(
+            (*multi_harmonic_real.shape[:-1], 1))],
+        axis=-1
+    )
+    
+    # Reshape to have (N*M, ncomp) and solve all pixels simultaneously
+    vecB_reshaped = vecB.reshape(-1, 2*nh + 1)
+
+    # Use lstsq to solve all pixels at once
+    fractions_reshaped = numpy.linalg.lstsq(matrixA, vecB_reshaped.T, rcond=None)[0].T
+
+    # Reshape back to the original image shape
+    fractions = fractions_reshaped.reshape(*multi_harmonic_real.shape[:-1], ncomp)
+
+    return fractions
