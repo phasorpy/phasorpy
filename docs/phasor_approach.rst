@@ -195,6 +195,11 @@ approach to analyze fluorescence time-resolved or spectral images:
   raw TCSPC-FLIM data. The software is written in Python and distributed
   under the BSD-3-Clause license.
 
+- `GSLab <https://figshare.com/articles/software/GSLab_Open-Source_Platform_for_Advanced_Phasor_Analysis_in_Fluorescence_Microscopy/27921966>`_
+  is open-source platform for advanced phasor analysis in fluorescence
+  microscopy written in MATLAB by Alexander Vallmitjana, released under
+  the CC BY 4.0 license.
+
 - `AlliGator <https://alligator-distribution.readthedocs.io>`_
   is a free, closed-source software for fluorescence lifetime image data
   analysis using the phasor approach and standard nonlinear fitting.
