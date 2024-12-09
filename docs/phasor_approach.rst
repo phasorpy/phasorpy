@@ -196,7 +196,7 @@ approach to analyze fluorescence time-resolved or spectral images:
   under the BSD-3-Clause license.
 
 - `GSLab <https://figshare.com/articles/software/GSLab_Open-Source_Platform_for_Advanced_Phasor_Analysis_in_Fluorescence_Microscopy/27921966>`_
-  is open-source platform for advanced phasor analysis in fluorescence
+  is an open-source platform for advanced phasor analysis in fluorescence
   microscopy written in MATLAB by Alexander Vallmitjana, released under
   the CC BY 4.0 license.
 
@@ -204,6 +204,12 @@ approach to analyze fluorescence time-resolved or spectral images:
   is a free, closed-source software for fluorescence lifetime image data
   analysis using the phasor approach and standard nonlinear fitting.
   The software is written in LabVIEW for Windows by Xavier Michalet.
+
+- `BrightEyes <https://github.com/VicidominiLab>`_
+  is a collection of open-source software for the acquisition, analysis,
+  and simulation of image-scanning microscopy data, including FLIM-phasor
+  analysis of time-resolved images. The software is written in Python/VHDL
+  by the lab of Giuseppe Vicidomini and distributed under the GPL3 license.
 
 - `FLIM_tools <https://github.com/jayunruh/FLIM_tools>`_
   is an open-source Python library for linear unmixing and phasor tools for
