@@ -30,7 +30,7 @@ from phasorpy.io import phasor_from_simfcs_referenced
 from phasorpy.phasor import (
     lifetime_fraction_from_amplitude,
     lifetime_to_signal,
-    phasor_filter,
+    phasor_filter_median,
     phasor_from_fret_donor,
     phasor_from_lifetime,
     phasor_threshold,
@@ -173,15 +173,13 @@ frequency = 80.0  # MHz
 mean, real, imag = phasor_from_simfcs_referenced(
     fetch('capillaries1001.ref'), harmonic=[1, 2]
 )
-real1, real2 = real
-imag1, imag2 = imag
 
 # %%
 plot_phasor_image(mean, real, imag, title='capillaries1001.ref')
 # %%
 plot_phasor(
-    real1,
-    imag1,
+    real[0],
+    imag[0],
     frequency=frequency,
     style='hist2d',
     cmin=4,
@@ -189,8 +187,8 @@ plot_phasor(
 )
 # %%
 plot_phasor(
-    real2,
-    imag2,
+    real[1],
+    imag[1],
     frequency=frequency * 2,
     style='hist2d',
     cmin=4,
@@ -210,24 +208,20 @@ plot_phasor(
 # If high spatial resolution is needed, make sure to have at least 100
 # photons in each pixel of the image.
 
-real1, imag1 = phasor_filter(real1, imag1, method='median', repeat=2)
-real2, imag2 = phasor_filter(real2, imag2, method='median', repeat=2)
+mean, real, imag = phasor_filter_median(mean, real, imag, repeat=2)
 
 # %%
 # In addition, small amounts of room light will appear towards the lower
 # left-hand corner of the phasor (room light is uncorrelated, so it has
 # zero modulation depth). This can be eliminated by setting a threshold.
 
-_, real1, imag1 = phasor_threshold(
-    mean, real1, imag1, mean_min=20, real_min=0, imag_min=0, open_interval=True
-)
-_, real2, imag2 = phasor_threshold(
-    mean, real2, imag2, mean_min=20, real_min=0, imag_min=0, open_interval=True
+_, real, imag = phasor_threshold(
+    mean, real, imag, mean_min=20, real_min=0, imag_min=0, open_interval=True
 )
 # %%
 plot_phasor(
-    real1,
-    imag1,
+    real[0],
+    imag[0],
     frequency=frequency,
     style='hist2d',
     cmin=4,
@@ -235,8 +229,8 @@ plot_phasor(
 )
 # %%
 plot_phasor(
-    real2,
-    imag2,
+    real[1],
+    imag[1],
     frequency=frequency * 2,
     style='hist2d',
     cmin=4,
@@ -404,8 +398,8 @@ plot.show()
 # Set the intensity threshold to 32 to remove any room light
 # and smooth the phasor.
 
-real1, imag1 = phasor_filter(real1, imag1, method='median', repeat=2)
-real2, imag2 = phasor_filter(real2, imag2, method='median', repeat=2)
+_, real1, imag1 = phasor_filter_median(mean1, real1, imag1, repeat=2)
+_, real2, imag2 = phasor_filter_median(mean2, real2, imag2, repeat=2)
 
 _, real1, imag1 = phasor_threshold(
     mean, real1, imag1, mean_min=32, real_min=0, imag_min=0, open_interval=True
@@ -454,7 +448,7 @@ mean = numpy.vstack((mean1, mean2))
 real = numpy.vstack((real1, real2))
 imag = numpy.vstack((imag1, imag2))
 
-real, imag = phasor_filter(real, imag, method='median', repeat=2)
+mean, real, imag = phasor_filter_median(mean, real, imag, repeat=2)
 
 _, real, imag = phasor_threshold(
     mean, real, imag, mean_min=6202, real_min=0, imag_min=0, open_interval=True

@@ -33,7 +33,7 @@ from phasorpy.phasor import (
     phasor_calibrate,
     phasor_center,
     phasor_divide,
-    phasor_filter,
+    phasor_filter_median,
     phasor_from_apparent_lifetime,
     phasor_from_fret_acceptor,
     phasor_from_fret_donor,
@@ -41,6 +41,7 @@ from phasorpy.phasor import (
     phasor_from_polar,
     phasor_from_signal,
     phasor_multiply,
+    phasor_normalize,
     phasor_semicircle,
     phasor_threshold,
     phasor_to_apparent_lifetime,
@@ -347,6 +348,69 @@ def test_phasor_from_signal_fft_func(fft, scalar, harmonic):
     assert_allclose(imag0, imag1, 1e-8)
 
 
+@pytest.mark.parametrize('harmonics', (True, False))
+@pytest.mark.parametrize('normalize', (True, False))
+def test_phasor_normalization(harmonics, normalize):
+    """Test phasor_from_signal and phasor_normalize functions."""
+    rng = numpy.random.default_rng(1)
+    samples = 33
+    signal = rng.random((3, samples, 61, 63))
+    signal += 1.1
+    if normalize:
+        # TODO: NaN handling seems to differ with FFT in unnormalized case
+        signal[0, 0, 0, 0] = numpy.nan
+        signal[0, :, 1, 1] = 0.0
+
+    harmonic = [1, 2] if harmonics else None
+    mean0, real0, imag0 = phasor_from_signal(
+        signal, axis=1, harmonic=harmonic, normalize=normalize
+    )
+    mean1, real1, imag1 = phasor_from_signal(
+        signal, axis=1, harmonic=harmonic, normalize=normalize, use_fft=True
+    )
+    assert_allclose(mean0, mean1, 1e-8)
+    assert_allclose(real0, real1, 1e-8)
+    assert_allclose(imag0, imag1, 1e-8)
+
+    if not normalize:
+        mean1, real1, imag1 = phasor_from_signal(
+            signal, axis=1, harmonic=harmonic
+        )
+        assert_allclose(mean0, mean1 * samples, 1e-8)
+        assert_allclose(real0, real1 * mean0, 1e-8)
+        assert_allclose(imag0, imag1 * mean0, 1e-8)
+
+        mean_ = mean0.copy()
+        real_ = real0.copy()
+        imag_ = imag0.copy()
+
+        mean2, real2, imag2 = phasor_normalize(
+            mean0, real0, imag0, samples=samples, dtype=numpy.float64
+        )
+        assert_array_equal(mean0, mean_)
+        assert_array_equal(real0, real_)
+        assert_array_equal(imag0, imag_)
+        assert_allclose(mean2, mean1, 1e-8)
+        assert_allclose(real2, real1, 1e-8)
+        assert_allclose(imag2, imag1, 1e-8)
+
+        mean2, real2, imag2 = phasor_normalize(
+            mean0, real0.astype(numpy.float32), imag0, samples=samples
+        )
+        assert mean2.dtype == numpy.float32
+        assert real2.dtype == numpy.float32
+        assert imag2.dtype == numpy.float32
+        assert_array_equal(mean0, mean_)
+        assert_array_equal(real0, real_)
+        assert_array_equal(imag0, imag_)
+        assert_allclose(mean2, mean1, 1e-4)
+        assert_allclose(real2, real1, 1e-4)
+        assert_allclose(imag2, imag1, 1e-4)
+
+        with pytest.raises(ValueError):
+            phasor_normalize(mean0, real0, imag0, samples=0)
+
+
 @pytest.mark.parametrize(
     'shape, axis',
     [
@@ -638,7 +702,7 @@ def test_lifetime_to_signal_error():
 
 
 def test_phasor_semicircle():
-    """Test `phasor_semicircle` function."""
+    """Test phasor_semicircle function."""
     real, imag = phasor_semicircle(1)
     assert_allclose(real, 0.0, atol=1e-6)
     assert_allclose(imag, 0.0, atol=1e-6)
@@ -795,7 +859,7 @@ def test_polar_from_reference(
     expected_phase,
     expected_modulation,
 ):
-    """Test `polar_from_reference` function with various inputs."""
+    """Test polar_from_reference function with various inputs."""
     measured_phase_copy = copy.deepcopy(measured_phase)
     measured_modulation_copy = copy.deepcopy(measured_modulation)
     known_phase_copy = copy.deepcopy(known_phase)
@@ -849,7 +913,7 @@ def test_polar_from_reference_phasor(
     expected_phase,
     expected_modulation,
 ):
-    """Test `polar_from_reference_phasor` function with various inputs."""
+    """Test polar_from_reference_phasor function with various inputs."""
     measured_real_copy = copy.deepcopy(measured_real)
     measured_imag_copy = copy.deepcopy(measured_imag)
     known_real_copy = copy.deepcopy(known_real)
@@ -1165,21 +1229,38 @@ def test_phasor_center(
     """Test phasor_center function with various inputs and methods."""
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
-    real_center, imag_center = phasor_center(real_copy, imag_copy, **kwargs)
+    mean = numpy.full_like(real_copy, 0.666, dtype=numpy.float64)
+    mean_center, real_center, imag_center = phasor_center(
+        mean, real_copy, imag_copy, **kwargs
+    )
+    assert_array_equal(mean, 0.666)
     assert_array_equal(real, real_copy)
     assert_array_equal(imag, imag_copy)
     assert_almost_equal(real_center, expected_real_center)
     assert_almost_equal(imag_center, expected_imag_center)
 
 
+def test_phasor_center_mean():
+    """Test phasor_center function mean normalization."""
+    assert_allclose(
+        phasor_center(
+            [3.3, 2.2, 1.1], [0.1, 0.2, 0.3], [0.4, 0.5, 0.6], method='mean'
+        ),
+        [2.2, 0.166667, 0.466667],  # not [2.2, 0.2, 0.5]
+        atol=1e-5,
+    )
+
+
 def test_phasor_center_exceptions():
     """Test exceptions in phasor_center function."""
     with pytest.raises(ValueError):
-        phasor_center(0, 0, method='method_not_supported')
+        phasor_center(0, 0, 0, method='method_not_supported')
     with pytest.raises(ValueError):
-        phasor_center([0], [0, 0])
+        phasor_center([0], [0, 0], [0, 0])
+    with pytest.raises(ValueError):
+        phasor_center([0, 0], [0, 0], [0])
     with pytest.raises(IndexError):
-        phasor_center([0, 0], [0, 0], skip_axis=1)
+        phasor_center([0, 0], [0, 0], [0, 0], skip_axis=1)
 
 
 @pytest.mark.parametrize(
@@ -1292,7 +1373,7 @@ def test_phasor_center_exceptions():
     ],
 )
 def test_phasor_from_lifetime(args, kwargs, expected):
-    """Test `phasor_from_lifetime` function."""
+    """Test phasor_from_lifetime function."""
     result = phasor_from_lifetime(*args, **kwargs, keepdims=True)
     for actual, desired in zip(result, expected):
         assert actual.ndim == 2
@@ -1300,7 +1381,7 @@ def test_phasor_from_lifetime(args, kwargs, expected):
 
 
 def test_phasor_from_lifetime_exceptions():
-    """Test exceptions in `phasor_from_lifetime` function."""
+    """Test exceptions in phasor_from_lifetime function."""
     with pytest.raises(ValueError):
         phasor_from_lifetime(80.0, 0.0, unit_conversion=0.0)
     with pytest.raises(ValueError):
@@ -1322,7 +1403,7 @@ def test_phasor_from_lifetime_exceptions():
 
 
 def test_phasor_from_lifetime_modify():
-    """Test `phasor_from_lifetime` function does not modify input."""
+    """Test phasor_from_lifetime function does not modify input."""
     frequency = 80.0
     lifetime = numpy.array([0.0, 1.9894368, 1e9], dtype=numpy.float64)
     fraction = numpy.array([1.0, 1.0, 1.0], dtype=numpy.float64)
@@ -1349,6 +1430,11 @@ def test_phasor_from_lifetime_modify():
         (
             (0.5, 0.7, 0.4, 0.3),
             {'frequency': 80, 'lifetime': 4},
+            (numpy.array(0.11789139), numpy.array(0.75703471)),
+        ),
+        (
+            (0.5, 0.7, 0.4, 0.3),
+            {'frequency': 40, 'lifetime': 4, 'harmonic': 2},
             (numpy.array(0.11789139), numpy.array(0.75703471)),
         ),
         (
@@ -1570,7 +1656,6 @@ def test_phasor_from_lifetime_modify():
                 'frequency': 80,
                 'harmonic': [1, 2, 3],
                 'lifetime': 4,
-                'skip_axis': 0,
             },
             (
                 numpy.array(
@@ -1680,22 +1765,61 @@ def test_phasor_from_lifetime_modify():
     ],
 )
 def test_phasor_calibrate(args, kwargs, expected):
-    """Test `phasor_calibrate` function with various inputs."""
-    result = phasor_calibrate(*args, **kwargs)
+    """Test phasor_calibrate function with various inputs."""
+    real, imag, real_ref, imag_ref = args
+    mean_ref = numpy.full_like(real_ref, 2)
+    if 'harmonic' in kwargs and not isinstance(kwargs['harmonic'], int):
+        mean_ref = mean_ref[0]
+    result = phasor_calibrate(
+        real, imag, mean_ref, real_ref, imag_ref, **kwargs
+    )
     assert_almost_equal(result, expected)
-    result = phasor_calibrate(*result, *args[2:], reverse=True, **kwargs)
+    result = phasor_calibrate(
+        *result, mean_ref, real_ref, imag_ref, reverse=True, **kwargs
+    )
     assert_almost_equal(result, args[:2])
 
 
 def test_phasor_calibrate_exceptions():
-    """Test exceptions in `phasor_calibrate` function."""
+    """Test exceptions in phasor_calibrate function."""
+    kwargs = {'frequency': 1, 'lifetime': 1}
+    phasor_calibrate(0, 0, 0, 0, 0, **kwargs)
     with pytest.raises(ValueError):
-        phasor_calibrate(0, 0, [0], [0, 0], frequency=1, lifetime=1)
+        phasor_calibrate(0, 0, 0, [0], [0, 0], **kwargs)
     with pytest.raises(ValueError):
-        phasor_calibrate([0], [0, 0], 0, 0, frequency=1, lifetime=1)
+        phasor_calibrate([0], [0, 0], 0, 0, 0, **kwargs)
+    with pytest.raises(ValueError):
+        phasor_calibrate(0, 0, 0, [0], [0, 0], **kwargs)
+    with pytest.raises(ValueError):
+        phasor_calibrate(0, [0], 0, 0, 0, **kwargs)
+    with pytest.raises(ValueError):
+        phasor_calibrate(0, 0, 0, 0, 0, **kwargs, harmonic=[1, 2])
+    with pytest.raises((ValueError, IndexError)):
+        phasor_calibrate(0, 0, 0, [0], [0], **kwargs, harmonic=[1, 2])
+    with pytest.raises(ValueError):
+        phasor_calibrate(
+            [0], [0], 0, [0, 0], [0, 0], **kwargs, harmonic=[1, 2]
+        )
+    with pytest.raises(ValueError):
+        phasor_calibrate(0, 0, 0, [0, 0], [0, 0], **kwargs)
+    with pytest.raises(ValueError):
+        phasor_calibrate(0, 0, 0, [[0]], [[0]], **kwargs)
+    with pytest.raises(ValueError):
+        phasor_calibrate([0], [0], [0], [[0], [0]], [[0], [0]], **kwargs)
+    with pytest.raises(ValueError):
+        phasor_calibrate(
+            [[0], [0]],
+            [[0], [0]],
+            [0, 0],
+            [[0], [0]],
+            [[0], [0]],
+            **kwargs,
+            harmonic=[1, 2],
+        )
     stack_array = numpy.stack([SYNTH_DATA_ARRAY] * 3, axis=0)
     with pytest.raises(ValueError):
         phasor_calibrate(
+            stack_array,
             stack_array,
             stack_array,
             stack_array,
@@ -1706,6 +1830,7 @@ def test_phasor_calibrate_exceptions():
         )
     with pytest.raises(ValueError):
         phasor_calibrate(
+            stack_array,
             stack_array,
             stack_array,
             stack_array,
@@ -2224,15 +2349,15 @@ def test_parse_skip_axis():
 
 
 @pytest.mark.parametrize(
-    'real, imag, method, repeat, size, skip_axis, kwargs, expected',
+    'real, imag, use_scipy, repeat, size, skip_axis, kwargs, expected',
     [
         # single element
-        ([0], [0], 'median', 1, 3, None, {}, ([0], [0])),
+        ([0], [0], False, 1, 3, None, {}, ([0], [0])),
         # all equal
         (
             [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
             [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
-            'median',
+            False,
             1,
             3,
             None,
@@ -2246,7 +2371,7 @@ def test_parse_skip_axis():
         (
             [[0.5, 0.5, 2.0], [1.0, 2.0, 3.0], [10.0, 5.0, 1.0]],
             [[5.0, 6.0, 2.0], [10.0, 4.0, 8.0], [0.0, 7.0, 8.0]],
-            'median',
+            False,
             1,
             3,
             None,
@@ -2260,7 +2385,7 @@ def test_parse_skip_axis():
         (
             numpy.arange(25).reshape(5, 5),
             numpy.arange(25, 50).reshape(5, 5),
-            'median',
+            False,
             1,
             3,
             None,
@@ -2286,7 +2411,7 @@ def test_parse_skip_axis():
         (
             numpy.arange(25).reshape(5, 5),
             numpy.arange(25, 50).reshape(5, 5),
-            'median',
+            False,
             5,
             3,
             None,
@@ -2312,7 +2437,7 @@ def test_parse_skip_axis():
         (
             numpy.arange(25).reshape(5, 5),
             numpy.arange(25, 50).reshape(5, 5),
-            'median',
+            False,
             1,
             5,
             None,
@@ -2338,7 +2463,7 @@ def test_parse_skip_axis():
         (
             numpy.arange(25, dtype=numpy.float32).reshape(5, 5),
             numpy.arange(25, 50, dtype=numpy.float32).reshape(5, 5),
-            'median',
+            False,
             5,
             3,
             None,
@@ -2364,7 +2489,7 @@ def test_parse_skip_axis():
         (
             numpy.arange(27).reshape(3, 3, 3),
             numpy.arange(10, 37).reshape(3, 3, 3),
-            'median',
+            False,
             3,
             3,
             0,
@@ -2386,11 +2511,11 @@ def test_parse_skip_axis():
         (
             numpy.arange(27).reshape(3, 3, 3),
             numpy.arange(10, 37).reshape(3, 3, 3),
-            'median_scipy',
+            True,
             3,
             3,
-            None,
-            {'axes': (1, 2)},
+            0,  # None,
+            {},  # {'axes': (1, 2)},
             (
                 [
                     [[2, 2, 2], [3, 4, 5], [6, 6, 6]],
@@ -2404,73 +2529,77 @@ def test_parse_skip_axis():
                 ],
             ),
         ),
-        # same output for methods from 2D array without `NaN`
+        # same output for methods from 2D array without NaN
         (
             numpy.arange(25).reshape(5, 5),
             numpy.arange(25, 50).reshape(5, 5),
-            'median',
+            False,
             1,
             3,
             None,
             {},
-            phasor_filter(
+            phasor_filter_median(
+                numpy.ones((5, 5)),
                 numpy.arange(25).reshape(5, 5),
                 numpy.arange(25, 50).reshape(5, 5),
-                method='median_scipy',
-            ),
+                use_scipy=True,
+            )[1:],
         ),
-        # same output for methods from 3D array without `NaN`
+        # same output for methods from 3D array without NaN
         (
             numpy.arange(27).reshape(3, 3, 3),
             numpy.arange(10, 37).reshape(3, 3, 3),
-            'median',
+            False,
             1,
             3,
             None,
             {},
-            phasor_filter(
+            phasor_filter_median(
+                numpy.ones((3, 3, 3)),
                 numpy.arange(27).reshape(3, 3, 3),
                 numpy.arange(10, 37).reshape(3, 3, 3),
-                method='median_scipy',
-            ),
+                use_scipy=True,
+            )[1:],
         ),
-        # same output for methods from 3D array without `NaN` and skip axes
+        # same output for methods from 3D array without NaN and skip axes
         (
             numpy.arange(27).reshape(3, 3, 3),
             numpy.arange(10, 37).reshape(3, 3, 3),
-            'median',
+            False,
             1,
             3,
             0,
             {},
-            phasor_filter(
+            phasor_filter_median(
+                numpy.ones((3, 3, 3)),
                 numpy.arange(27).reshape(3, 3, 3),
                 numpy.arange(10, 37).reshape(3, 3, 3),
-                method='median_scipy',
+                use_scipy=True,
                 skip_axis=0,
-            ),
+            )[1:],
         ),
-        # non-contiguos axes for 2D filtering.
+        # non-contiguos axes for 2D filtering
         (
             numpy.arange(81).reshape(3, 3, 3, 3),
             numpy.arange(10, 91).reshape(3, 3, 3, 3),
-            'median',
+            False,
             1,
             3,
             [0, 2],
             {},
-            phasor_filter(
+            phasor_filter_median(
+                numpy.ones((3, 3, 3, 3)),
                 numpy.arange(81).reshape(3, 3, 3, 3),
                 numpy.arange(10, 91).reshape(3, 3, 3, 3),
-                method='median_scipy',
+                use_scipy=True,
                 skip_axis=[0, 2],
-            ),
+            )[1:],
         ),
         # repeat = 0
         (
             numpy.arange(9).reshape(3, 3),
             numpy.arange(10, 19).reshape(3, 3),
-            'median',
+            False,
             0,
             3,
             None,
@@ -2484,7 +2613,7 @@ def test_parse_skip_axis():
         (
             numpy.arange(9).reshape(3, 3),
             numpy.arange(10, 19).reshape(3, 3),
-            'median',
+            False,
             1,
             1,
             None,
@@ -2496,45 +2625,43 @@ def test_parse_skip_axis():
         ),
     ],
 )
-def test_phasor_filter(
-    real, imag, method, repeat, size, skip_axis, kwargs, expected
+def test_phasor_filter_median(
+    real, imag, use_scipy, repeat, size, skip_axis, kwargs, expected
 ):
-    """Test `phasor_filter` function."""
+    """Test phasor_filter_median function."""
     assert_allclose(
-        phasor_filter(
+        phasor_filter_median(
+            numpy.full_like(real, 1),
             real,
             imag,
-            method=method,
+            use_scipy=use_scipy,
             repeat=repeat,
             size=size,
             skip_axis=skip_axis,
             **kwargs,
-        ),
+        )[1:],
         expected,
     )
 
 
-def test_phasor_filter_errors():
-    """Test `phasor_filter` function errors."""
-    # method not supported
-    with pytest.raises(ValueError):
-        phasor_filter([0], [0], method='error', repeat=1)
+def test_phasor_filter_median_errors():
+    """Test phasor_filter_median function errors."""
     # shape mismatch
     with pytest.raises(ValueError):
-        phasor_filter([[0]], [0], repeat=1)
+        phasor_filter_median([[0]], [0], [0], repeat=1)
     # shape mismatch
     with pytest.raises(ValueError):
-        phasor_filter([0], [[0]], repeat=1)
+        phasor_filter_median([0], [0], [[0]], repeat=1)
     # repeat < 0
     with pytest.raises(ValueError):
-        phasor_filter([[0]], [[0]], repeat=-3)
+        phasor_filter_median([[0]], [[0]], [[0]], repeat=-3)
     # size < 1
     with pytest.raises(ValueError):
-        phasor_filter([[0]], [[0]], size=0)
+        phasor_filter_median([[0]], [[0]], [[0]], size=0)
 
 
 def test_phasor_threshold():
-    """Test `phasor_threshold` function."""
+    """Test phasor_threshold function."""
     nan = numpy.nan
     # no threshold
     assert_allclose(
@@ -2766,6 +2893,67 @@ def test_phasor_threshold():
             [[nan, nan], [imag[1][0], nan]],
         ),
     )
+
+
+def test_phasor_threshold_harmonic():
+    """Test phasor_threshold function with multiple harmonics."""
+    nan = numpy.nan
+    data = numpy.random.random((3, 2, 8))
+    data[0, 0, 0] = nan
+    data[1, 0, 1] = nan
+    data[1, 1, 2] = nan
+    data[2, 0, 3] = nan
+    data[2, 1, 4] = nan
+    mean, real, imag = data
+    mean_copy, real_copy, imag_copy = data.copy()
+
+    # NaNs should propagate to all dimensions
+    result = data.copy()
+    result[:, :, :5] = nan
+    mean_, real_, imag_ = result
+
+    # detect harmonic axis
+    mean1, real1, imag1 = phasor_threshold(mean[0], real, imag)
+    assert_array_equal(mean, mean_copy)
+    assert_array_equal(real, real_copy)
+    assert_array_equal(imag, imag_copy)
+    assert_allclose(mean1, mean_[0])
+    assert_allclose(real1, real_)
+    assert_allclose(imag1, imag_)
+
+    # scalar
+    mean, real, imag = data[..., 0]
+    mean_, real_, imag_ = result[..., 0]
+
+    mean1, real1, imag1 = phasor_threshold(mean[0], real, imag)
+    assert_allclose(mean1, mean_[0])
+    assert_allclose(real1, real_)
+    assert_allclose(imag1, imag_)
+
+    # use ufunc: disable detect harmonic axis
+    mean, real, imag = data
+    result = data.copy()
+    result[0, 1, :] = result[0, 0, :]
+    result[0, 0, 1] = nan
+    result[0, 1, 2] = nan
+    result[0, 0, 3] = nan
+    result[0, 1, 4] = nan
+    result[1, 0, 0] = nan
+    result[1, 0, 3] = nan
+    result[1, 1, 0] = nan
+    result[1, 1, 4] = nan
+    result[2, 0, 0] = nan
+    result[2, 0, 1] = nan
+    result[2, 1, 0] = nan
+    result[2, 1, 2] = nan
+    mean_, real_, imag_ = result
+
+    mean1, real1, imag1 = phasor_threshold(
+        mean[0], real, imag, detect_harmonics=False
+    )
+    assert_allclose(mean1, mean_)
+    assert_allclose(real1, real_)
+    assert_allclose(imag1, imag_)
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls
