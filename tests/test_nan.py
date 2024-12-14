@@ -125,11 +125,14 @@ def test_phasor_at_harmonic_nan():
     )
 
 
-def test_phasor_calibrate_nan():
+@pytest.mark.parametrize('nan_safe', (True, False))
+def test_phasor_calibrate_nan(nan_safe):
     """Test phasor_calibrate function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_calibrate(*VALUES_WITH_NAN[1:], 1.0, 0.0, 1.0, 80, 4.2)
+        phasor = phasor_calibrate(
+            *VALUES_WITH_NAN[1:], 1.0, 0.0, 1.0, 80, 4.2, nan_safe=nan_safe
+        )
     assert_allclose(
         phasor, [[0.28506, nan, 0.05701], [0.10181, nan, 0.02036]], atol=1e-3
     )
@@ -144,7 +147,19 @@ def test_phasor_center_nan():
 
     with warnings.catch_warnings():
         warnings.simplefilter('error')
+        center = phasor_center(*VALUES_WITH_NAN, nan_safe=False)
+    assert_allclose(center, [1.1, 0.3, 0.366667], atol=1e-3)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
         center = phasor_center(*VALUES_WITH_NAN, method='median')
+    assert_allclose(center, [1.1, 0.3, 0.3], atol=1e-3)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        center = phasor_center(
+            *VALUES_WITH_NAN, method='median', nan_safe=False
+        )
     assert_allclose(center, [1.1, 0.3, 0.5], atol=1e-3)
 
 

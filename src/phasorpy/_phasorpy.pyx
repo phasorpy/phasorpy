@@ -971,34 +971,6 @@ cdef (float_t, float_t) _phasor_divide(
     )
 
 
-# @cython.ufunc
-# cdef (float_t, float_t) _phasor_divide_real(
-#     float_t real,
-#     float_t imag,
-#     float_t divisor,
-# ) noexcept nogil:
-#     """Return phasor coordinates divided by real number."""
-#     if divisor != 0.0:
-#         # includes isnan(divisor)
-#         return real / divisor, imag / divisor
-#     return (
-#         NAN if real == 0.0 else real * INFINITY,
-#         NAN if imag == 0.0 else imag * INFINITY
-#     )
-
-
-# @cython.ufunc
-# cdef float_t _divide(
-#     float_t dividend,
-#     float_t divisor,
-# ) noexcept nogil:
-#     """Return dividend divided by divisor."""
-#     if divisor != 0.0:
-#         # includes isnan(divisor)
-#         return dividend / divisor
-#     return NAN if dividend == 0.0 else dividend * INFINITY
-
-
 ###############################################################################
 # Geometry ufuncs
 

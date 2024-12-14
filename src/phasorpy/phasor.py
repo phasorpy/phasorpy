@@ -998,9 +998,9 @@ def phasor_normalize(
     mean : ndarray
         Normalized intensity.
     real : ndarray
-        Normalized real component of complex division.
+        Normalized real component.
     imag : ndarray
-        Normalized imaginary component of complex division.
+        Normalized imaginary component.
 
     Notes
     -----
@@ -1075,6 +1075,7 @@ def phasor_calibrate(
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
     method: Literal['mean', 'median'] = 'mean',
+    nan_safe: bool = True,
     reverse: bool = False,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return calibrated/referenced phasor coordinates.
@@ -1129,12 +1130,15 @@ def phasor_calibrate(
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
     method : str, optional
-        Method used for calculating center of `reference_real` and
-        `reference_imag`:
+        Method used for calculating center of reference phasor coordinates:
 
-        - ``'mean'``: Arithmetic mean of phasor coordinates.
-        - ``'median'``: Spatial median of phasor coordinates.
+        - ``'mean'``: Arithmetic mean.
+        - ``'median'``: Spatial median.
 
+    nan_safe : bool, optional
+        Ensure `method` is applied to same elements of reference arrays.
+        By default, distribute NaNs among reference arrays before applying
+        `method`.
     reverse : bool, optional
         Reverse calibration.
 
@@ -1175,6 +1179,7 @@ def phasor_calibrate(
                     reference_imag,
                     skip_axis,
                     method,
+                    nan_safe,
                 )[1:],
                 *phasor_from_lifetime(
                     frequency,
@@ -1268,6 +1273,7 @@ def phasor_calibrate(
         reference_imag,
         skip_axis=skip_axis,
         method=method,
+        nan_safe=nan_safe,
     )
 
     known_re, known_im = phasor_from_lifetime(
@@ -3214,6 +3220,7 @@ def phasor_center(
     *,
     skip_axis: int | Sequence[int] | None = None,
     method: Literal['mean', 'median'] = 'mean',
+    nan_safe: bool = True,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return center of phasor coordinates.
@@ -3235,6 +3242,11 @@ def phasor_center(
         - ``'mean'``: Arithmetic mean of phasor coordinates.
         - ``'median'``: Spatial median of phasor coordinates.
 
+    nan_safe : bool, optional
+        Ensure `method` is applied to same elements of input arrays.
+        By default, distribute NaNs among input arrays before applying
+        `method`. May be disabled if phasor coordinates were filtered by
+        :py:func:`phasor_threshold`.
     **kwargs
         Optional arguments passed to :py:func:`numpy.nanmean` or
         :py:func:`numpy.nanmedian`.
@@ -3294,8 +3306,7 @@ def phasor_center(
     if prepend_axis:
         mean = numpy.expand_dims(mean, axis=0)
 
-    if method == 'mean':
-        # must propagate NaN among arrays to calculate mean over same elements
+    if nan_safe:
         mean, real, imag = phasor_threshold(mean, real, imag)
 
     mean, real, imag = methods[method](mean, real, imag, axis=axis, **kwargs)
