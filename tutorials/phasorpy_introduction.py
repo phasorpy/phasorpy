@@ -61,10 +61,7 @@ print(phasorpy.__version__)
 # array computing and plotting throughout this tutorial:
 
 import numpy
-import tifffile  # TODO: from phasorpy.io import read_ometiff
 from matplotlib import pyplot
-
-from phasorpy.datasets import fetch
 
 # %%
 # Read signal from file
@@ -83,11 +80,13 @@ from phasorpy.datasets import fetch
 # files. For example, an Imspector TIFF file from the
 # `FLUTE <https://zenodo.org/records/8046636>`_  project containing a
 # time-correlated single photon counting (TCSPC) histogram
-# of a zebrafish embryo at day 3, acquired at 80 MHz:
+# of a zebrafish embryo at day 3, acquired at 80.11 MHz:
 
+from phasorpy.datasets import fetch
+from phasorpy.io import read_imspector_tiff
 
-signal = tifffile.imread(fetch('Embryo.tif'))
-frequency = 80.11  # MHz; from the XML metadata in the file
+signal = read_imspector_tiff(fetch('Embryo.tif'))
+frequency = signal.attrs['frequency']
 
 print(signal.shape, signal.dtype)
 
@@ -167,7 +166,8 @@ numpy.testing.assert_allclose(
 #
 # Read the signal of the reference measurement from a file:
 
-reference_signal = tifffile.imread(fetch('Fluorescein_Embryo.tif'))
+reference_signal = read_imspector_tiff(fetch('Fluorescein_Embryo.tif'))
+assert reference_signal.attrs['frequency'] == frequency
 
 # %%
 # Calculate phasor coordinates from the measured reference signal:
@@ -461,3 +461,4 @@ print(phasorpy.versions())
 # sphinx_gallery_thumbnail_number = -7
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# isort: skip_file

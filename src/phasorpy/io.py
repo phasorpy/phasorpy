@@ -16,6 +16,7 @@ The ``phasorpy.io`` module provides functions to:
 - read time-resolved and hyperspectral image data and metadata (as relevant
   to phasor analysis) from many file formats used in bio-imaging:
 
+  - :py:func:`read_imspector_tiff` - Imspector FLIM TIFF
   - :py:func:`read_lsm` - Zeiss LSM
   - :py:func:`read_ifli` - ISS IFLI
   - :py:func:`read_sdt` - Becker & Hickl SDT
@@ -123,6 +124,7 @@ __all__ = [
     'read_fbd',
     'read_flif',
     'read_ifli',
+    'read_imspector_tiff',
     # 'read_lif',
     'read_lsm',
     # 'read_nd2',
@@ -887,6 +889,148 @@ def read_lsm(
     return DataArray(data, **metadata)
 
 
+def read_imspector_tiff(
+    filename: str | PathLike[Any],
+    /,
+) -> DataArray:
+    """Return FLIM image stack and metadata from Imspector TIFF file.
+
+    Imspector FLIM TIFF files contain TCSPC image stacks and metadata.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of OME-TIFF file to read.
+
+    Returns
+    -------
+    xarray.DataArray
+        TCSPC image stack.
+        Usually, a 3-to-5-dimensional array of type ``uint16``.
+
+        - ``coords['H']``: times of histogram bins.
+        - ``attrs['frequency']``: repetition frequency in MHz.
+
+    Raises
+    ------
+    tifffile.TiffFileError
+        File is not a TIFF file.
+    ValueError
+        File is not an Imspector FLIM TIFF file.
+
+    Examples
+    --------
+    >>> data = read_imspector_tiff(fetch('Embryo.tif'))
+    >>> data.values
+    array(...)
+    >>> data.dtype
+    dtype('uint16')
+    >>> data.shape
+    (56, 512, 512)
+    >>> data.dims
+    ('H', 'Y', 'X')
+    >>> data.coords['H'].data  # dtime bins
+    array(...)
+    >>> data.attrs['frequency']  # doctest: +NUMBER
+    80.109
+
+    """
+    from xml.etree import ElementTree
+
+    import tifffile
+
+    with tifffile.TiffFile(filename) as tif:
+        tags = tif.pages.first.tags
+        omexml = tags.valueof(270, '')
+        make = tags.valueof(271, '')
+
+        if (
+            make != 'ImSpector'
+            or not omexml.startswith('<?xml version')
+            or len(tif.series) != 1
+            or not tif.is_ome
+        ):
+            raise ValueError(f'{tif.filename} is not an Imspector TIFF file')
+
+        series = tif.series[0]
+        ndim = series.ndim
+        axes = series.axes
+        shape = series.shape
+
+        if ndim < 3 or not axes.endswith('YX'):
+            raise ValueError(
+                f'{tif.filename} is not an Imspector FLIM TIFF file'
+            )
+
+        data = series.asarray()
+
+    attrs: dict[str, Any] = {}
+    coords = {}
+    physical_size = {}
+
+    root = ElementTree.fromstring(omexml)
+    ns = {
+        '': 'http://www.openmicroscopy.org/Schemas/OME/2008-02',
+        'ca': 'http://www.openmicroscopy.org/Schemas/CA/2008-02',
+    }
+
+    description = root.find('.//Description', ns)
+    if (
+        description is not None
+        and description.text
+        and description.text != 'not_specified'
+    ):
+        attrs['description'] = description.text
+
+    pixels = root.find('.//Image/Pixels', ns)
+    assert pixels is not None
+    for ax in 'TZYX':
+        attrib = 'TimeIncrement' if ax == 'T' else f'PhysicalSize{ax}'
+        if ax not in axes or attrib not in pixels.attrib:
+            continue
+        size = float(pixels.attrib[attrib])
+        physical_size[ax] = size
+        coords[ax] = numpy.linspace(
+            0.0,
+            size,
+            shape[axes.index(ax)],
+            endpoint=False,
+            dtype=numpy.float64,
+        )
+
+    axes_labels = root.find('.//ca:CustomAttributes/AxesLabels', ns)
+    if (
+        axes_labels is None
+        or 'X' not in axes_labels.attrib
+        or 'TCSPC' not in axes_labels.attrib['X']
+        or 'FirstAxis' not in axes_labels.attrib
+        or 'SecondAxis' not in axes_labels.attrib
+    ):
+        raise ValueError(f'{tif.filename} is not an Imspector FLIM TIFF file')
+
+    if axes_labels.attrib['FirstAxis'].endswith('TCSPC T'):
+        ax = axes[-3]
+        assert axes_labels.attrib['FirstAxis-Unit'] == 'ns'
+    elif axes_labels.attrib['SecondAxis'].endswith('TCSPC T') and ndim > 3:
+        ax = axes[-4]
+        assert axes_labels.attrib['SecondAxis-Unit'] == 'ns'
+    else:
+        raise ValueError(f'{tif.filename} is not an Imspector FLIM TIFF file')
+    axes = axes.replace(ax, 'H')
+    coords['H'] = coords[ax]
+    del coords[ax]
+
+    attrs['frequency'] = float(
+        1000.0 / (shape[axes.index('H')] * physical_size[ax])
+    )
+
+    metadata = _metadata(axes, shape, filename, attrs=attrs, **coords)
+
+    from xarray import DataArray
+
+    return DataArray(data, **metadata)
+
+
 def read_ifli(
     filename: str | PathLike[Any],
     /,
@@ -942,8 +1086,8 @@ def read_ifli(
     (256, 256, 4, 3)
     >>> data.dims
     ('Y', 'X', 'F', 'S')
-    >>> data.coords['F'].data
-    array([8.033...])
+    >>> data.coords['F'].data  # doctest: +NUMBER
+    array([8.033e+07, 1.607e+08, 2.41e+08, 4.017e+08])
     >>> data.coords['S'].data
     array(['mean', 'real', 'imag'], dtype='<U4')
     >>> data.attrs
@@ -1035,8 +1179,8 @@ def read_sdt(
     ('Y', 'X', 'H')
     >>> data.coords['H'].data
     array(...)
-    >>> data.attrs['frequency']
-    79...
+    >>> data.attrs['frequency']  # doctest: +NUMBER
+    79.99
 
     """
     import sdtfile
@@ -1148,7 +1292,7 @@ def read_ptu(
     ('T', 'Y', 'X', 'C', 'H')
     >>> data.coords['H'].data
     array(...)
-    >>> data.attrs['frequency']
+    >>> data.attrs['frequency']  # doctest: +NUMBER
     78.02
 
     """
@@ -1221,8 +1365,8 @@ def read_flif(
     ('H', 'Y', 'X')
     >>> data.coords['H'].data
     array(...)
-    >>> data.attrs['frequency']
-    80.65...
+    >>> data.attrs['frequency']  # doctest: +NUMBER
+    80.65
 
     """
     import lfdfiles
