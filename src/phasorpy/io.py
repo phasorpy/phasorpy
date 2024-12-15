@@ -16,7 +16,7 @@ The ``phasorpy.io`` module provides functions to:
 - read time-resolved and hyperspectral image data and metadata (as relevant
   to phasor analysis) from many file formats used in bio-imaging:
 
-  - :py:func:`read_imspector_tiff` - Imspector FLIM TIFF
+  - :py:func:`read_imspector_tiff` - ImSpector FLIM TIFF
   - :py:func:`read_lsm` - Zeiss LSM
   - :py:func:`read_ifli` - ISS IFLI
   - :py:func:`read_sdt` - Becker & Hickl SDT
@@ -948,7 +948,7 @@ def read_imspector_tiff(
             or len(tif.series) != 1
             or not tif.is_ome
         ):
-            raise ValueError(f'{tif.filename} is not an Imspector TIFF file')
+            raise ValueError(f'{tif.filename} is not an ImSpector TIFF file')
 
         series = tif.series[0]
         ndim = series.ndim
@@ -957,7 +957,7 @@ def read_imspector_tiff(
 
         if ndim < 3 or not axes.endswith('YX'):
             raise ValueError(
-                f'{tif.filename} is not an Imspector FLIM TIFF file'
+                f'{tif.filename} is not an ImSpector FLIM TIFF file'
             )
 
         data = series.asarray()
@@ -1004,7 +1004,7 @@ def read_imspector_tiff(
         or 'FirstAxis' not in axes_labels.attrib
         or 'SecondAxis' not in axes_labels.attrib
     ):
-        raise ValueError(f'{tif.filename} is not an Imspector FLIM TIFF file')
+        raise ValueError(f'{tif.filename} is not an ImSpector FLIM TIFF file')
 
     if axes_labels.attrib['FirstAxis'].endswith('TCSPC T'):
         ax = axes[-3]
@@ -1013,7 +1013,7 @@ def read_imspector_tiff(
         ax = axes[-4]
         assert axes_labels.attrib['SecondAxis-Unit'] == 'ns'
     else:
-        raise ValueError(f'{tif.filename} is not an Imspector FLIM TIFF file')
+        raise ValueError(f'{tif.filename} is not an ImSpector FLIM TIFF file')
     axes = axes.replace(ax, 'H')
     coords['H'] = coords[ax]
     del coords[ax]
