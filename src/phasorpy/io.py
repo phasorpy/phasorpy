@@ -893,14 +893,12 @@ def read_imspector_tiff(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
-    """Return FLIM image stack and metadata from Imspector TIFF file.
-
-    Imspector FLIM TIFF files contain TCSPC image stacks and metadata.
+    """Return FLIM image stack and metadata from ImSpector TIFF file.
 
     Parameters
     ----------
     filename : str or Path
-        Name of OME-TIFF file to read.
+        Name of ImSpector FLIM TIFF file to read.
 
     Returns
     -------
@@ -916,7 +914,7 @@ def read_imspector_tiff(
     tifffile.TiffFileError
         File is not a TIFF file.
     ValueError
-        File is not an Imspector FLIM TIFF file.
+        File is not an ImSpector FLIM TIFF file.
 
     Examples
     --------

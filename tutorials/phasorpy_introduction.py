@@ -77,7 +77,7 @@ from matplotlib import pyplot
 # ``signal`` in the PhasorPy library.
 #
 # The :py:mod:`phasorpy.datasets` module provides access to various sample
-# files. For example, an Imspector TIFF file from the
+# files. For example, an ImSpector TIFF file from the
 # `FLUTE <https://zenodo.org/records/8046636>`_  project containing a
 # time-correlated single photon counting (TCSPC) histogram
 # of a zebrafish embryo at day 3, acquired at 80.11 MHz:
