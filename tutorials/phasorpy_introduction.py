@@ -192,6 +192,7 @@ from phasorpy.phasor import phasor_calibrate
 real, imag = phasor_calibrate(
     real,
     imag,
+    reference_mean,
     reference_real,
     reference_imag,
     frequency=frequency,
@@ -213,6 +214,7 @@ plot_phasor_image(mean, real, imag, title='Calibrated')
 uncalibrated_real, uncalibrated_imag = phasor_calibrate(
     real,
     imag,
+    reference_mean,
     reference_real,
     reference_imag,
     frequency=frequency,
@@ -231,11 +233,13 @@ numpy.testing.assert_allclose(
 # -------------------------
 #
 # Applying median filter to the calibrated phasor coordinates,
-# often multiple times, improves contrast and reduces noise:
+# often multiple times, improves contrast and reduces noise.
+# The filter is applied independently to the real and imaginary components,
+# but not to the signal average:
 
-from phasorpy.phasor import phasor_filter
+from phasorpy.phasor import phasor_filter_median
 
-real, imag = phasor_filter(real, imag, method='median', size=3, repeat=2)
+mean, real, imag = phasor_filter_median(mean, real, imag, size=3, repeat=2)
 
 # %%
 # Pixels with low intensities are commonly excluded from analysis and

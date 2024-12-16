@@ -30,6 +30,7 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_transform`
   - :py:func:`phasor_multiply`
   - :py:func:`phasor_divide`
+  - :py:func:`phasor_normalize`
 
 - calibrate phasor coordinates with reference of known fluorescence
   lifetime:
@@ -64,7 +65,7 @@ The ``phasorpy.phasor`` module provides functions to:
 
 - filter phasor coordinates:
 
-  - :py:func:`phasor_filter`
+  - :py:func:`phasor_filter_median`
   - :py:func:`phasor_threshold`
 
 """
@@ -81,7 +82,7 @@ __all__ = [
     'phasor_calibrate',
     'phasor_center',
     'phasor_divide',
-    'phasor_filter',
+    'phasor_filter_median',
     'phasor_from_apparent_lifetime',
     'phasor_from_fret_acceptor',
     'phasor_from_fret_donor',
@@ -89,6 +90,7 @@ __all__ = [
     'phasor_from_polar',
     'phasor_from_signal',
     'phasor_multiply',
+    'phasor_normalize',
     'phasor_semicircle',
     'phasor_threshold',
     'phasor_to_apparent_lifetime',
@@ -161,6 +163,7 @@ def phasor_from_signal(
     use_fft: bool | None = None,
     rfft: Callable[..., NDArray[Any]] | None = None,
     dtype: DTypeLike = None,
+    normalize: bool = True,
     num_threads: int | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     r"""Return phasor coordinates from signal.
@@ -201,6 +204,14 @@ def phasor_from_signal(
     dtype : dtype_like, optional
         Data type of output arrays. Either float32 or float64.
         The default is float64 unless the `signal` is float32.
+    normalize : bool, optional
+        Return normalized phasor coordinates.
+        If true (default), return average of `signal` along `axis` and
+        Fourier coefficients divided by sum of `signal` along `axis`.
+        Else, return sum of `signal` along `axis` and unscaled Fourier
+        coefficients.
+        Un-normalized phasor coordinates cannot be used with most of PhasorPy's
+        functions but may be required for intermediate processing.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization when not using FFT.
         By default, multi-threading is disabled.
@@ -231,13 +242,15 @@ def phasor_from_signal(
     See Also
     --------
     phasorpy.phasor.phasor_to_signal
+    phasorpy.phasor.phasor_normalize
     :ref:`sphx_glr_tutorials_benchmarks_phasorpy_phasor_from_signal.py`
 
     Notes
     -----
-    The phasor coordinates `real` (:math:`G`), `imag` (:math:`S`), and
-    `mean` (:math:`F_{DC}`) are calculated from :math:`K\ge3` samples of the
-    signal :math:`F` af `harmonic` :math:`h` according to:
+    The normalized phasor coordinates `real` (:math:`G`), `imag` (:math:`S`),
+    and average intensity `mean` (:math:`F_{DC}`) are calculated from
+    :math:`K\ge3` samples of the signal :math:`F` af `harmonic` :math:`h`
+    according to:
 
     .. math::
 
@@ -312,7 +325,9 @@ def phasor_from_signal(
         if rfft is None:
             rfft = numpy.fft.rfft
 
-        fft: NDArray[Any] = rfft(signal, axis=axis, norm='forward')
+        fft: NDArray[Any] = rfft(
+            signal, axis=axis, norm='forward' if normalize else 'backward'
+        )
 
         mean = fft.take(0, axis=axis).real
         if not mean.ndim == 0:
@@ -332,10 +347,10 @@ def phasor_from_signal(
             real = numpy.moveaxis(real, axis, 0)
             imag = numpy.moveaxis(imag, axis, 0)
 
-        # complex division by mean signal
-        with numpy.errstate(divide='ignore', invalid='ignore'):
-            real /= dc
-            imag /= dc
+        if normalize:
+            with numpy.errstate(divide='ignore', invalid='ignore'):
+                real /= dc
+                imag /= dc
         numpy.negative(imag, out=imag)
 
         if not keepdims and real.ndim == 0:
@@ -369,7 +384,7 @@ def phasor_from_signal(
     phasor = numpy.empty((num_harmonics * 2 + 1, size0, size1), dtype)
     signal = signal.reshape((size0, samples, size1))
 
-    _phasor_from_signal(phasor, signal, sincos, num_threads)
+    _phasor_from_signal(phasor, signal, sincos, normalize, num_threads)
 
     # restore original shape
     shape = shape0 + shape1
@@ -400,7 +415,7 @@ def phasor_to_signal(
     ----------
     mean : array_like
         Average signal intensity (DC).
-        If not scalar, shape must match the last two dimensions of `real`.
+        If not scalar, shape must match the last dimensions of `real`.
     real : array_like
         Real component of phasor coordinates.
         Multiple harmonics, if any, must be in the first axis.
@@ -507,7 +522,6 @@ def phasor_to_signal(
     if len(harmonic) != real.shape[0]:
         raise ValueError(f'{len(harmonic)=} != {real.shape[0]=}')
 
-    # complex multiplication by mean signal
     real *= mean
     imag *= mean
     numpy.negative(imag, out=imag)
@@ -952,9 +966,103 @@ def phasor_divide(
     )
 
 
+def phasor_normalize(
+    mean_unnormalized: ArrayLike,
+    real_unnormalized: ArrayLike,
+    imag_unnormalized: ArrayLike,
+    /,
+    samples: int = 1,
+    dtype: DTypeLike = None,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    r"""Return normalized phasor coordinates.
+
+    Use to normalize the phasor coordinates returned by
+    ``phasor_from_signal(..., normalize=False)``.
+
+    Parameters
+    ----------
+    mean_unnormalized : array_like
+        Unnormalized intensity of phasor coordinates.
+    real_unnormalized : array_like
+        Unnormalized real component of phasor coordinates.
+    imag_unnormalized : array_like
+        Unnormalized imaginary component of phasor coordinates.
+    samples : int, default: 1
+        Number of signal samples over which `mean` was integrated.
+    dtype : dtype_like, optional
+        Data type of output arrays. Either float32 or float64.
+        The default is float64 unless the `real` is float32.
+
+    Returns
+    -------
+    mean : ndarray
+        Normalized intensity.
+    real : ndarray
+        Normalized real component.
+    imag : ndarray
+        Normalized imaginary component.
+
+    Notes
+    -----
+    The average intensity `mean` (:math:`F_{DC}`) and normalized phasor
+    coordinates `real` (:math:`G`) and `imag` (:math:`S`) are calculated from
+    the signal `intensity` (:math:`F`), the  number of `samples` (:math:`K`),
+    `real_unnormalized` (:math:`G'`), and `imag_unnormalized` (:math:`S'`)
+    according to:
+
+    .. math::
+
+        F_{DC} &= F / K
+
+        G &= G' / F
+
+        S &= S' / F
+
+    If :math:`F = 0`, the normalized phasor coordinates (:math:`G`)
+    and (:math:`S`) are undefined (:math:`NaN` or :math:`\infty`).
+
+    Examples
+    --------
+    Normalize phasor coordinates with intensity integrated over 10 samples:
+
+    >>> phasor_normalize([0.0, 0.1], [0.0, 0.3], [0.4, 0.5], samples=10)
+    (array([0, 0.01]), array([nan, 3]), array([inf, 5]))
+
+    Normalize multi-harmonic phasor coordinates:
+
+    >>> phasor_normalize(0.1, [0.0, 0.3], [0.4, 0.5], samples=10)
+    (array(0.01), array([0, 3]), array([4, 5]))
+
+    """
+    if samples < 1:
+        raise ValueError(f'{samples=} < 1')
+
+    if (
+        dtype is None
+        and isinstance(real_unnormalized, numpy.ndarray)
+        and real_unnormalized.dtype == numpy.float32
+    ):
+        real = real_unnormalized.copy()
+    else:
+        real = numpy.array(real_unnormalized, dtype, copy=True)
+    imag = numpy.array(imag_unnormalized, real.dtype, copy=True)
+    mean = numpy.array(
+        mean_unnormalized, real.dtype, copy=None if samples == 1 else True
+    )
+
+    with numpy.errstate(divide='ignore', invalid='ignore'):
+        numpy.divide(real, mean, out=real)
+        numpy.divide(imag, mean, out=imag)
+    if samples > 1:
+        numpy.divide(mean, samples, out=mean)
+
+    return mean, real, imag
+
+
 def phasor_calibrate(
     real: ArrayLike,
     imag: ArrayLike,
+    reference_mean: ArrayLike,
     reference_real: ArrayLike,
     reference_imag: ArrayLike,
     /,
@@ -966,11 +1074,11 @@ def phasor_calibrate(
     fraction: ArrayLike | None = None,
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
-    reverse: bool = False,
     method: Literal['mean', 'median'] = 'mean',
+    nan_safe: bool = True,
+    reverse: bool = False,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """
-    Return calibrated/referenced phasor coordinates.
+    """Return calibrated/referenced phasor coordinates.
 
     Calibration of phasor coordinates from time-resolved measurements is
     necessary to account for the instrument response function (IRF) and delays
@@ -982,10 +1090,13 @@ def phasor_calibrate(
         Real component of phasor coordinates to be calibrated.
     imag : array_like
         Imaginary component of phasor coordinates to be calibrated.
+    reference_mean : array_like or None
+        Intensity of phasor coordinates from reference of known lifetime.
+        Used to re-normalize averaged phasor coordinates.
     reference_real : array_like
         Real component of phasor coordinates from reference of known lifetime.
         Must be measured with the same instrument setting as the phasor
-        coordinates to be calibrated.
+        coordinates to be calibrated. Dimensions must be the same as `real`.
     reference_imag : array_like
         Imaginary component of phasor coordinates from reference of known
         lifetime.
@@ -1005,9 +1116,8 @@ def phasor_calibrate(
         harmonics.
         The default is the first harmonic (fundamental frequency).
     skip_axis : int or sequence of int, optional
-        Axes to be excluded during center calculation. If None, all
-        axes are considered, except for the first axis if multiple harmonics
-        are specified.
+        Axes in `reference_mean` to exclude from reference center calculation.
+        By default, all axes except harmonics are included.
     fraction : array_like, optional
         Fractional intensities or pre-exponential amplitudes of the lifetime
         components. Fractions are normalized to sum to 1.
@@ -1019,14 +1129,18 @@ def phasor_calibrate(
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
+    method : str, optional
+        Method used for calculating center of reference phasor coordinates:
+
+        - ``'mean'``: Arithmetic mean.
+        - ``'median'``: Spatial median.
+
+    nan_safe : bool, optional
+        Ensure `method` is applied to same elements of reference arrays.
+        By default, distribute NaNs among reference arrays before applying
+        `method`.
     reverse : bool, optional
         Reverse calibration.
-    method : str, optional
-        Method used for calculating center of `reference_real` and
-        `reference_imag`:
-
-        - ``'mean'``: Arithmetic mean of phasor coordinates.
-        - ``'median'``: Spatial median of phasor coordinates.
 
     Returns
     -------
@@ -1060,11 +1174,13 @@ def phasor_calibrate(
             imag,
             *polar_from_reference_phasor(
                 *phasor_center(
+                    reference_mean,
                     reference_real,
                     reference_imag,
                     skip_axis,
                     method,
-                ),
+                    nan_safe,
+                )[1:],
                 *phasor_from_lifetime(
                     frequency,
                     lifetime,
@@ -1091,6 +1207,7 @@ def phasor_calibrate(
     >>> phasor_calibrate(
     ...     [0.1, 0.2, 0.3],
     ...     [0.4, 0.5, 0.6],
+    ...     [1.0, 1.0, 1.0],
     ...     [0.2, 0.3, 0.4],
     ...     [0.5, 0.6, 0.7],
     ...     frequency=80,
@@ -1103,6 +1220,7 @@ def phasor_calibrate(
     >>> phasor_calibrate(
     ...     [0.0658, 0.132, 0.198],
     ...     [0.2657, 0.332, 0.399],
+    ...     [1.0, 1.0, 1.0],
     ...     [0.2, 0.3, 0.4],
     ...     [0.5, 0.6, 0.7],
     ...     frequency=80,
@@ -1112,36 +1230,52 @@ def phasor_calibrate(
     (array([0.1, 0.2, 0.3]), array([0.4, 0.5, 0.6]))
 
     """
-    re = numpy.asarray(real)
-    im = numpy.asarray(imag)
-    if re.shape != im.shape:
-        raise ValueError(f'real.shape={re.shape} != imag.shape={im.shape}')
-    ref_re = numpy.asarray(reference_real)
-    ref_im = numpy.asarray(reference_imag)
-    if ref_re.shape != ref_im.shape:
-        raise ValueError(
-            f'reference_real.shape={ref_re.shape} '
-            f'!= reference_imag.shape{ref_im.shape}'
-        )
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    reference_mean = numpy.asarray(reference_mean)
+    reference_real = numpy.asarray(reference_real)
+    reference_imag = numpy.asarray(reference_imag)
 
-    if harmonic == 'all' and re.ndim > 0:
-        harmonic, has_harmonic_axis = parse_harmonic(harmonic, re.shape[0])
-    else:
-        harmonic, has_harmonic_axis = parse_harmonic(harmonic)
-    if has_harmonic_axis and len(harmonic) != re.shape[0]:
-        raise ValueError(f'{len(harmonic)=} != real.shape[0]={re.shape[0]}')
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if reference_real.shape != reference_imag.shape:
+        raise ValueError(f'{reference_real.shape=} != {reference_imag.shape=}')
+
+    has_harmonic_axis = reference_mean.ndim + 1 == reference_real.ndim
+    harmonic, _ = parse_harmonic(
+        harmonic, reference_real.shape[0] if has_harmonic_axis else None
+    )
+
+    if has_harmonic_axis:
+        if real.ndim == 0:
+            raise ValueError(f'{real.shape=} != {len(harmonic)=}')
+        if real.shape[0] != len(harmonic):
+            raise ValueError(f'{real.shape[0]=} != {len(harmonic)=}')
+        if reference_real.shape[0] != len(harmonic):
+            raise ValueError(f'{reference_real.shape[0]=} != {len(harmonic)=}')
+        if reference_mean.shape != reference_real.shape[1:]:
+            raise ValueError(
+                f'{reference_mean.shape=} != {reference_real.shape[1:]=}'
+            )
+    elif reference_mean.shape != reference_real.shape:
+        raise ValueError(f'{reference_mean.shape=} != {reference_real.shape=}')
+    elif len(harmonic) > 1:
+        raise ValueError(
+            f'{reference_mean.shape=} does not have harmonic axis'
+        )
 
     frequency = numpy.asarray(frequency)
     frequency = frequency * harmonic
 
-    skip_axis, axis = _parse_skip_axis(skip_axis, re.ndim)
-    if has_harmonic_axis:
-        skip_axis = (0,) + skip_axis if 0 not in skip_axis else skip_axis
-        skip_axis, axis = _parse_skip_axis(skip_axis, re.ndim)
-
-    measured_re, measured_im = phasor_center(
-        reference_real, reference_imag, skip_axis=skip_axis, method=method
+    _, measured_re, measured_im = phasor_center(
+        reference_mean,
+        reference_real,
+        reference_imag,
+        skip_axis=skip_axis,
+        method=method,
+        nan_safe=nan_safe,
     )
+
     known_re, known_im = phasor_from_lifetime(
         frequency,
         lifetime,
@@ -1149,26 +1283,26 @@ def phasor_calibrate(
         preexponential=preexponential,
         unit_conversion=unit_conversion,
     )
+
     phi_zero, mod_zero = polar_from_reference_phasor(
         measured_re, measured_im, known_re, known_im
     )
+
     if numpy.ndim(phi_zero) > 0:
         if reverse:
             numpy.negative(phi_zero, out=phi_zero)
             numpy.reciprocal(mod_zero, out=mod_zero)
+        _, axis = _parse_skip_axis(
+            skip_axis, real.ndim - int(has_harmonic_axis), has_harmonic_axis
+        )
         if axis is not None:
-            phi_zero = numpy.expand_dims(
-                phi_zero,
-                axis=axis,
-            )
-            mod_zero = numpy.expand_dims(
-                mod_zero,
-                axis=axis,
-            )
+            phi_zero = numpy.expand_dims(phi_zero, axis=axis)
+            mod_zero = numpy.expand_dims(mod_zero, axis=axis)
     elif reverse:
         phi_zero = -phi_zero
         mod_zero = 1.0 / mod_zero
-    return phasor_transform(re, im, phi_zero, mod_zero)
+
+    return phasor_transform(real, imag, phi_zero, mod_zero)
 
 
 def phasor_transform(
@@ -2668,46 +2802,49 @@ def phasor_to_principal_plane(
     )
 
 
-def phasor_filter(
+def phasor_filter_median(
+    mean: ArrayLike,
     real: ArrayLike,
     imag: ArrayLike,
     /,
     *,
-    method: Literal['median', 'median_scipy'] = 'median',
     repeat: int = 1,
     size: int = 3,
     skip_axis: int | Sequence[int] | None = None,
+    use_scipy: bool = False,
     num_threads: int | None = None,
     **kwargs: Any,
-) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return filtered phasor coordinates.
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """Return median-filtered phasor coordinates.
 
-    By default, a median filter is applied independently to the real and
-    imaginary components of phasor coordinates once with a kernel size of 3
-    multiplied by the number of dimensions of the input arrays.
+    By default, apply a NaN-aware median filter independently to the real
+    and imaginary components of phasor coordinates once with a kernel size of 3
+    multiplied by the number of dimensions of the input arrays. Return the
+    intensity unchanged.
 
     Parameters
     ----------
+    mean : array_like
+        Intensity of phasor coordinates.
     real : array_like
         Real component of phasor coordinates to be filtered.
     imag : array_like
         Imaginary component of phasor coordinates to be filtered.
-    method : str, optional
-        Method used for filtering:
-
-        - ``'median'``: Spatial median of phasor coordinates.
-        - ``'median_scipy'``: Spatial median of phasor coordinates
-          based on :py:func:`scipy.ndimage.median_filter`.
-
     repeat : int, optional
-        Number of times to apply filter. The default is 1.
+        Number of times to apply median filter. The default is 1.
     size : int, optional
-        Size of filter kernel. The default is 3.
+        Size of median filter kernel. The default is 3.
     skip_axis : int or sequence of int, optional
-        Axis or axes to skip filtering. By default all axes are filtered.
+        Axes in `mean` to exclude from filter.
+        By default, all axes except harmonics are included.
+    use_scipy : bool, optional
+        Use :py:func:`scipy.ndimage.median_filter`.
+        This function has undefined behavior if the input arrays contain
+        `NaN` values but is faster when filtering more than 2 dimensions.
+        See `issue #87 <https://github.com/phasorpy/phasorpy/issues/87>`_.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
-        Applies to filtering in two dimensions with the `median` method only.
+        Applies to filtering in two dimensions when not using scipy.
         By default, multi-threading is disabled.
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
@@ -2716,6 +2853,8 @@ def phasor_filter(
 
     Returns
     -------
+    mean : ndarray
+        Unchanged intensity of phasor coordinates.
     real : ndarray
         Filtered real component of phasor coordinates.
     imag : ndarray
@@ -2724,77 +2863,135 @@ def phasor_filter(
     Raises
     ------
     ValueError
-        If the specified method is not supported.
         If `repeat` is less than 0.
         If `size` is less than 1.
-        The array shapes of `real` and `imag` do not match.
-
-    Notes
-    -----
-    Additional filtering methods may be added in the future.
-
-    The `median` method ignores `NaN` values. If the kernel contains an even
-    number of elements, the median is the average of the two middle elements.
-
-    The implementation of the `median_scipy` method is based on
-    :py:func:`scipy.ndimage.median_filter`,
-    which has undefined behavior if the input arrays contain `NaN` values.
-    See `issue #87 <https://github.com/phasorpy/phasorpy/issues/87>`_.
-
-    When filtering in more than two dimensions, the `median` method is
-    slower than the `median_scipy` method. When filtering in two
-    dimensions, both methods have similar performance.
+        The array shapes of `mean`, `real`, and `imag` do not match.
 
     Examples
     --------
     Apply three times a median filter with a kernel size of three:
 
-    >>> phasor_filter(
-    ...     [[0, 0, 0], [5, 5, 5], [2, 2, 2]],
-    ...     [[3, 3, 3], [6, math.nan, 6], [4, 4, 4]],
+    >>> mean, real, imag = phasor_filter_median(
+    ...     [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+    ...     [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5], [0.2, 0.2, 0.2]],
+    ...     [[0.3, 0.3, 0.3], [0.6, math.nan, 0.6], [0.4, 0.4, 0.4]],
     ...     size=3,
     ...     repeat=3,
     ... )
-    (array([[0, 0, 0],
-            [2, 2, 2],
-            [2, 2, 2]]),
-    array([[3, 3, 3],
-            [4, nan, 4],
-            [4, 4, 4]]))
+    >>> mean
+    array([[1, 2, 3],
+           [4, 5, 6],
+           [7, 8, 9]])
+    >>> real
+    array([[0, 0, 0],
+           [0.2, 0.2, 0.2],
+           [0.2, 0.2, 0.2]])
+    >>> imag
+    array([[0.3, 0.3, 0.3],
+           [0.4, nan, 0.4],
+           [0.4, 0.4, 0.4]])
 
     """
-    methods: dict[str, Callable[..., Any]] = {
-        'median': _median_filter,
-        'median_scipy': _median_filter_scipy,
-    }
-    if method not in methods:
-        raise ValueError(
-            f'Method not supported, supported methods are: '
-            f"{', '.join(methods)}"
-        )
-    if repeat == 0 or size == 1:
-        return numpy.asarray(real), numpy.asarray(imag)
     if repeat < 0:
         raise ValueError(f'{repeat=} < 0')
     if size < 1:
         raise ValueError(f'{size=} < 1')
+    if size == 1:
+        # no need to filter
+        repeat = 0
 
-    real = numpy.asarray(real)
-    imag = numpy.asarray(imag)
+    mean = numpy.asarray(mean)
+    if use_scipy or repeat == 0:  # or using nD numpy filter
+        real = numpy.asarray(real)
+    elif isinstance(real, numpy.ndarray) and real.dtype == numpy.float32:
+        real = real.copy()
+    else:
+        real = numpy.array(real, numpy.float64, copy=True)
+    if use_scipy or repeat == 0:  # or using nD numpy filter
+        imag = numpy.asarray(imag)
+    elif isinstance(imag, numpy.ndarray) and imag.dtype == numpy.float32:
+        imag = imag.copy()
+    else:
+        imag = numpy.array(imag, numpy.float64, copy=True)
 
+    if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
+        raise ValueError(f'{mean.shape=} != {real.shape=}')
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
 
-    _, axes = _parse_skip_axis(skip_axis, real.ndim)
+    prepend_axis = mean.ndim + 1 == real.ndim
+    _, axes = _parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
 
-    if 'axes' in kwargs and method == 'median_scipy':
-        axes = kwargs.pop('axes')
-    if method == 'median':
-        kwargs['num_threads'] = num_threads
+    # in case mean is also filtered
+    # if prepend_axis:
+    #     mean = numpy.expand_dims(mean, axis=0)
+    # ...
+    # if prepend_axis:
+    #     mean = numpy.asarray(mean[0])
 
-    return methods[method](  # type: ignore[no-any-return]
-        real, imag, axes, repeat=repeat, size=size, **kwargs
+    if repeat == 0:
+        # no need to call filter
+        return mean, real, imag
+
+    if use_scipy:
+        # use scipy NaN-unaware fallback
+        from scipy.ndimage import median_filter
+
+        kwargs.pop('axes', None)
+
+        for _ in range(repeat):
+            real = median_filter(real, size=size, axes=axes, **kwargs)
+            imag = median_filter(imag, size=size, axes=axes, **kwargs)
+
+        return mean, numpy.asarray(real), numpy.asarray(imag)
+
+    if len(axes) != 2:
+        # n-dimensional median filter using numpy
+        from numpy.lib.stride_tricks import sliding_window_view
+
+        kernel_shape = tuple(
+            size if i in axes else 1 for i in range(real.ndim)
+        )
+        pad_width = [
+            (s // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
+        ]
+        axis = tuple(range(-real.ndim, 0))
+
+        nan_mask = numpy.isnan(real)
+        for _ in range(repeat):
+            real = numpy.pad(real, pad_width, mode='edge')
+            real = sliding_window_view(real, kernel_shape)
+            real = numpy.nanmedian(real, axis=axis)
+            real = numpy.where(nan_mask, numpy.nan, real)
+
+        nan_mask = numpy.isnan(imag)
+        for _ in range(repeat):
+            imag = numpy.pad(imag, pad_width, mode='edge')
+            imag = sliding_window_view(imag, kernel_shape)
+            imag = numpy.nanmedian(imag, axis=axis)
+            imag = numpy.where(nan_mask, numpy.nan, imag)
+
+        return mean, real, imag
+
+    # 2-dimensional median filter using optimized Cython implementation
+    num_threads = number_threads(num_threads)
+
+    buffer = numpy.empty(
+        tuple(real.shape[axis] for axis in axes), dtype=real.dtype
     )
+
+    for index in numpy.ndindex(
+        *[real.shape[ax] for ax in range(real.ndim) if ax not in axes]
+    ):
+        index_list: list[int | slice] = list(index)
+        for ax in axes:
+            index_list = index_list[:ax] + [slice(None)] + index_list[ax:]
+        full_index = tuple(index_list)
+
+        _median_filter_2d(real[full_index], buffer, size, repeat, num_threads)
+        _median_filter_2d(imag[full_index], buffer, size, repeat, num_threads)
+
+    return mean, real, imag
 
 
 def phasor_threshold(
@@ -2814,6 +3011,7 @@ def phasor_threshold(
     modulation_min: ArrayLike | None = None,
     modulation_max: ArrayLike | None = None,
     open_interval: bool = False,
+    detect_harmonics: bool = True,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates with values out of interval replaced by NaN.
@@ -2823,11 +3021,13 @@ def phasor_threshold(
     Phasor coordinates smaller than minimum thresholds or larger than maximum
     thresholds are replaced NaN.
     No threshold is applied by default.
+    NaNs in `mean` or any `real` and `imag` harmonic are propagated to
+    `mean` and all harmonics in `real` and `imag`.
 
     Parameters
     ----------
     mean : array_like
-        Mean intensity of phasor coordinates.
+        Intensity of phasor coordinates.
     real : array_like
         Real component of phasor coordinates.
     imag : array_like
@@ -2855,8 +3055,12 @@ def phasor_threshold(
     open_interval : bool, optional
         If true, the interval is open, and the threshold values are
         not included in the interval.
-        If False, the interval is closed, and the threshold values are
-        included in the interval. The default is False.
+        If false (default), the interval is closed, and the threshold values
+        are included in the interval.
+    detect_harmonics : bool, optional
+        By default, detect presence of multiple harmonics from array shapes.
+        If false, no harmonics are assumed to be present, and the function
+        behaves like a numpy universal function.
     **kwargs
         Optional `arguments passed to numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
@@ -2864,7 +3068,7 @@ def phasor_threshold(
     Returns
     -------
     mean : ndarray
-        Thresholded mean intensity of phasor coordinates.
+        Thresholded intensity of phasor coordinates.
     real : ndarray
         Thresholded real component of phasor coordinates.
     imag : ndarray
@@ -2939,96 +3143,144 @@ def phasor_threshold(
     else:
         threshold_mean_only = False
 
-    if threshold_mean_only is None:
-        return _phasor_threshold_nan(  # type: ignore[no-any-return]
-            mean, real, imag, **kwargs
-        )
+    if detect_harmonics:
+        mean = numpy.asarray(mean)
+        real = numpy.asarray(real)
+        imag = numpy.asarray(imag)
 
-    if threshold_mean_only:
+        shape = numpy.broadcast_shapes(mean.shape, real.shape, imag.shape)
+        ndim = len(shape)
+
+        has_harmonic_axis = (
+            # detect multi-harmonic in axis 0
+            mean.ndim + 1 == ndim
+            and real.shape == shape
+            and imag.shape == shape
+            and mean.shape == shape[-mean.ndim if mean.ndim else 1 :]
+        )
+    else:
+        has_harmonic_axis = False
+
+    if threshold_mean_only is None:
+        mean, real, imag = _phasor_threshold_nan(mean, real, imag, **kwargs)
+
+    elif threshold_mean_only:
         mean_func = (
             _phasor_threshold_mean_open
             if open_interval
             else _phasor_threshold_mean_closed
         )
-        return mean_func(  # type: ignore[no-any-return]
+        mean, real, imag = mean_func(
             mean, real, imag, mean_min, mean_max, **kwargs
         )
 
-    func = (
-        _phasor_threshold_open if open_interval else _phasor_threshold_closed
-    )
-    return func(  # type: ignore[no-any-return]
-        mean,
-        real,
-        imag,
-        mean_min,
-        mean_max,
-        real_min,
-        real_max,
-        imag_min,
-        imag_max,
-        phase_min,
-        phase_max,
-        modulation_min,
-        modulation_max,
-        **kwargs,
-    )
+    else:
+        func = (
+            _phasor_threshold_open
+            if open_interval
+            else _phasor_threshold_closed
+        )
+        mean, real, imag = func(
+            mean,
+            real,
+            imag,
+            mean_min,
+            mean_max,
+            real_min,
+            real_max,
+            imag_min,
+            imag_max,
+            phase_min,
+            phase_max,
+            modulation_min,
+            modulation_max,
+            **kwargs,
+        )
+
+    mean = numpy.asarray(mean)
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    if has_harmonic_axis and mean.ndim > 0:
+        # propagate NaN to all dimensions
+        mean = numpy.mean(mean, axis=0, keepdims=True)
+        mask = numpy.where(numpy.isnan(mean), numpy.nan, 1.0)
+        numpy.multiply(real, mask, out=real)
+        numpy.multiply(imag, mask, out=imag)
+        # remove harmonic dimension created by broadcasting
+        mean = numpy.asarray(numpy.asarray(mean)[0])
+
+    return mean, real, imag
 
 
 def phasor_center(
+    mean: ArrayLike,
     real: ArrayLike,
     imag: ArrayLike,
     /,
     *,
     skip_axis: int | Sequence[int] | None = None,
     method: Literal['mean', 'median'] = 'mean',
+    nan_safe: bool = True,
     **kwargs: Any,
-) -> tuple[NDArray[Any], NDArray[Any]]:
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return center of phasor coordinates.
 
     Parameters
     ----------
+    mean : array_like
+        Intensity of phasor coordinates.
     real : array_like
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
     skip_axis : int or sequence of int, optional
-        Axes to be excluded during center calculation. If None, all
-        axes are considered.
+        Axes in `mean` to excluded from center calculation.
+        By default, all axes except harmonics are included.
     method : str, optional
         Method used for center calculation:
 
         - ``'mean'``: Arithmetic mean of phasor coordinates.
         - ``'median'``: Spatial median of phasor coordinates.
 
+    nan_safe : bool, optional
+        Ensure `method` is applied to same elements of input arrays.
+        By default, distribute NaNs among input arrays before applying
+        `method`. May be disabled if phasor coordinates were filtered by
+        :py:func:`phasor_threshold`.
     **kwargs
         Optional arguments passed to :py:func:`numpy.nanmean` or
         :py:func:`numpy.nanmedian`.
 
     Returns
     -------
+    mean_center : ndarray
+        Intensity center coordinates.
     real_center : ndarray
-        Real center coordinates calculated based on the specified method.
+        Real center coordinates.
     imag_center : ndarray
-        Imaginary center coordinates calculated based on the specified method.
+        Imaginary center coordinates.
 
     Raises
     ------
     ValueError
         If the specified method is not supported.
-        If the shapes of the `real` and `imag` do not match.
+        If the shapes of `mean`, `real`, and `imag` do not match.
 
     Examples
     --------
-    Compute center coordinates with the 'mean' method:
+    Compute center coordinates with the default 'mean' method:
 
-    >>> phasor_center([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], method='mean')
-    (2.0, 5.0)
+    >>> phasor_center(
+    ...     [2, 1, 2], [0.1, 0.2, 0.3], [0.4, 0.5, 0.6]
+    ... )  # doctest: +NUMBER
+    (1.67, 0.2, 0.5)
 
     Compute center coordinates with the 'median' method:
 
-    >>> phasor_center([1.0, 2.0, 3.0], [4.0, 5.0, 6.0], method='median')
-    (2.0, 5.0)
+    >>> phasor_center(
+    ...     [1, 2, 3], [0.1, 0.2, 0.3], [0.4, 0.5, 0.6], method='median'
+    ... )
+    (2.0, 0.2, 0.5)
 
     """
     methods = {
@@ -3040,233 +3292,67 @@ def phasor_center(
             f'Method not supported, supported methods are: '
             f"{', '.join(methods)}"
         )
+
+    mean = numpy.asarray(mean)
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
+        raise ValueError(f'{mean.shape=} != {real.shape=}')
 
-    _, axis = _parse_skip_axis(skip_axis, real.ndim)
+    prepend_axis = mean.ndim + 1 == real.ndim
+    _, axis = _parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
+    if prepend_axis:
+        mean = numpy.expand_dims(mean, axis=0)
 
-    return methods[method](real, imag, axis=axis, **kwargs)
+    if nan_safe:
+        mean, real, imag = phasor_threshold(mean, real, imag)
+
+    mean, real, imag = methods[method](mean, real, imag, axis=axis, **kwargs)
+
+    if prepend_axis:
+        mean = numpy.asarray(mean[0])
+    return mean, real, imag
 
 
 def _mean(
-    real: NDArray[Any], imag: NDArray[Any], /, **kwargs: Any
-) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return the mean center of phasor coordinates.
-
-    Parameters
-    ----------
-    real : ndarray
-        Real components of phasor coordinates.
-    imag : ndarray
-        Imaginary components of phasor coordinates.
-    **kwargs
-        Optional arguments passed to :py:func:`numpy.nanmean`.
-
-    Returns
-    -------
-    real_center : ndarray
-        Mean real center coordinates.
-    imag_center : ndarray
-        Mean imaginary center coordinates.
-
-    Examples
-    --------
-    >>> _mean([1.0, 2.0, 3.0], [4.0, 5.0, 6.0])
-    (2.0, 5.0)
-
-    """
-    return numpy.nanmean(real, **kwargs), numpy.nanmean(imag, **kwargs)
+    mean: NDArray[Any],
+    real: NDArray[Any],
+    imag: NDArray[Any],
+    /,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """Return mean center of phasor coordinates."""
+    real = numpy.nanmean(real * mean, **kwargs)
+    imag = numpy.nanmean(imag * mean, **kwargs)
+    mean = numpy.nanmean(mean, **kwargs)
+    with numpy.errstate(divide='ignore', invalid='ignore'):
+        real /= mean
+        imag /= mean
+    return mean, real, imag
 
 
 def _median(
-    real: NDArray[Any], imag: NDArray[Any], /, **kwargs: Any
-) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return the spatial median center of phasor coordinates.
-
-    Parameters
-    ----------
-    real : ndarray
-        Real components of phasor coordinates.
-    imag : ndarray
-        Imaginary components of phasor coordinates.
-    **kwargs
-        Optional arguments passed to :py:func:`numpy.nanmedian`.
-
-    Returns
-    -------
-    real_center : ndarray
-        Spatial median center of real coordinates.
-    imag_center : ndarray
-        Spatial median center of imaginary coordinates.
-
-    Examples
-    --------
-    >>> _median([1.0, 2.0, 3.0], [4.0, 5.0, 6.0])
-    (2.0, 5.0)
-
-    """
-    return numpy.nanmedian(real, **kwargs), numpy.nanmedian(imag, **kwargs)
-
-
-def _median_filter(
+    mean: NDArray[Any],
     real: NDArray[Any],
     imag: NDArray[Any],
-    axes: Sequence[int],
     /,
-    *,
-    repeat: int = 1,
-    size: int = 3,
-    num_threads: int | None = None,
-) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return median-filtered phasor coordinates, ignoring NaN values.
-
-    Parameters
-    ----------
-    real : ndarray
-        Real components of phasor coordinates.
-    imag : ndarray
-        Imaginary components of phasor coordinates.
-    axes : sequence of int
-        Axes along which to apply median filter.
-    repeat : int, optional
-        Number of times to apply filter. The default is 1.
-    size : int, optional
-        Size of median filter kernel. The default is 3.
-    num_threads : int, optional
-        Number of OpenMP threads to use for parallelization.
-        By default, multi-threading is disabled.
-        If zero, up to half of logical CPUs are used.
-        OpenMP may not be available on all platforms.
-
-    Returns
-    -------
-    real : ndarray
-        Median-filtered real component of phasor coordinates.
-    imag : ndarray
-        Median-filtered imaginary component of phasor coordinates.
-
-    """
-    real = numpy.asarray(real)
-    if real.dtype == numpy.float32:
-        real = real.copy()
-    else:
-        real = real.astype(float)
-
-    imag = numpy.asarray(imag)
-    if imag.dtype == numpy.float32:
-        imag = imag.copy()
-    else:
-        imag = imag.astype(float)
-
-    if len(axes) != 2:
-        # n-dimensional median filter using numpy
-        from numpy.lib.stride_tricks import sliding_window_view
-
-        kernel_shape = tuple(
-            size if i in axes else 1 for i in range(real.ndim)
-        )
-        pad_width = [
-            (s // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
-        ]
-        axis = tuple(range(-real.ndim, 0))
-
-        nan_mask = numpy.isnan(real)
-        for _ in range(repeat):
-            real = numpy.pad(real, pad_width, mode='edge')
-            real = sliding_window_view(real, kernel_shape)
-            real = numpy.nanmedian(real, axis=axis)
-            real = numpy.where(nan_mask, numpy.nan, real)
-
-        nan_mask = numpy.isnan(imag)
-        for _ in range(repeat):
-            imag = numpy.pad(imag, pad_width, mode='edge')
-            imag = sliding_window_view(imag, kernel_shape)
-            imag = numpy.nanmedian(imag, axis=axis)
-            imag = numpy.where(nan_mask, numpy.nan, imag)
-
-        return real, imag
-
-    # 2-dimensional median filter using optimized Cython implementation
-    num_threads = number_threads(num_threads)
-
-    filtered_slice = numpy.empty(
-        tuple(real.shape[axis] for axis in axes), dtype=real.dtype
-    )
-
-    for index in numpy.ndindex(
-        *[real.shape[ax] for ax in range(real.ndim) if ax not in axes]
-    ):
-        index_list: list[int | slice] = list(index)
-        for ax in axes:
-            index_list = index_list[:ax] + [slice(None)] + index_list[ax:]
-        full_index = tuple(index_list)
-
-        _median_filter_2d(
-            real[full_index], filtered_slice, size, repeat, num_threads
-        )
-
-        _median_filter_2d(
-            imag[full_index], filtered_slice, size, repeat, num_threads
-        )
-
-    return real, imag
-
-
-def _median_filter_scipy(
-    real: NDArray[Any],
-    imag: NDArray[Any],
-    axes: Sequence[int],
-    /,
-    *,
-    repeat: int = 1,
-    size: int = 3,
     **kwargs: Any,
-) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return median-filtered phasor coordinates.
-
-    Convenience wrapper around :py:func:`scipy.ndimage.median_filter`.
-
-    Parameters
-    ----------
-    real : ndarray
-        Real components of phasor coordinates.
-    imag : ndarray
-        Imaginary components of phasor coordinates.
-    axes : sequence of int
-        Axes along which to apply median filter.
-    repeat : int, optional
-        Number of times to apply filter. The default is 1.
-    size : int, optional
-        Size of median filter kernel. The default is 3.
-    **kwargs
-        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
-
-    Returns
-    -------
-    real : ndarray
-        Median-filtered real component of phasor coordinates.
-    imag : ndarray
-        Median-filtered imaginary component of phasor coordinates.
-
-    """
-    from scipy.ndimage import median_filter
-
-    real = numpy.asarray(real)
-    imag = numpy.asarray(imag)
-
-    for _ in range(repeat):
-        real = median_filter(real, size=size, axes=axes, **kwargs)
-        imag = median_filter(imag, size=size, axes=axes, **kwargs)
-
-    return numpy.asarray(real), numpy.asarray(imag)
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """Return spatial median center of phasor coordinates."""
+    return (
+        numpy.nanmedian(mean, **kwargs),
+        numpy.nanmedian(real, **kwargs),
+        numpy.nanmedian(imag, **kwargs),
+    )
 
 
 def _parse_skip_axis(
     skip_axis: int | Sequence[int] | None,
     /,
     ndim: int,
+    prepend_axis: bool = False,
 ) -> tuple[tuple[int, ...], tuple[int, ...]]:
     """Return axes to skip and not to skip.
 
@@ -3275,10 +3361,12 @@ def _parse_skip_axis(
 
     Parameters
     ----------
-    skip_axis : Sequence of int, or None
+    skip_axis : int or sequence of int, optional
         Axes to skip. If None, no axes are skipped.
     ndim : int
         Dimensionality of array in which to skip axes.
+    prepend_axis : bool, optional
+        Prepend one dimension and include in `skip_axis`.
 
     Returns
     -------
@@ -3297,15 +3385,23 @@ def _parse_skip_axis(
     >>> _parse_skip_axis((1, -2), 5)
     ((1, 3), (0, 2, 4))
 
+    >>> _parse_skip_axis((1, -2), 5, True)
+    ((0, 2, 4), (1, 3, 5))
+
     """
     if ndim < 0:
         raise ValueError(f'invalid {ndim=}')
     if skip_axis is None:
+        if prepend_axis:
+            return (0,), tuple(range(1, ndim + 1))
         return (), tuple(range(ndim))
     if not isinstance(skip_axis, Sequence):
         skip_axis = (skip_axis,)
     if any(i >= ndim or i < -ndim for i in skip_axis):
         raise IndexError(f'skip_axis={skip_axis} out of range for {ndim=}')
-    skip_axis = tuple(sorted(int(i % ndim) for i in skip_axis))
+    skip_axis = sorted(int(i % ndim) for i in skip_axis)
+    if prepend_axis:
+        skip_axis = [0] + [i + 1 for i in skip_axis]
+        ndim += 1
     other_axis = tuple(i for i in range(ndim) if i not in skip_axis)
-    return skip_axis, other_axis
+    return tuple(skip_axis), other_axis
