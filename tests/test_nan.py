@@ -6,7 +6,7 @@ import numpy
 import pytest
 from matplotlib import pyplot
 from numpy import nan
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, assert_array_equal
 
 from phasorpy.components import (
     graphical_component_analysis,
@@ -22,7 +22,7 @@ from phasorpy.phasor import (
     phasor_calibrate,
     phasor_center,
     phasor_divide,
-    phasor_filter,
+    phasor_filter_median,
     phasor_from_apparent_lifetime,
     phasor_from_polar,
     phasor_from_signal,
@@ -41,12 +41,12 @@ from phasorpy.phasor import (
 )
 from phasorpy.plot import PhasorPlot, plot_phasor_image
 
-VALUES_WITH_NAN = [0.5, nan, 0.1], [0.5, 0.5, 0.1]
-VALUES_WITH_NAN_2D = [[0.5, nan, 0.1], [0.5, 0.5, 0.1], [0.2, 0.3, nan]], [
-    [0.5, 0.5, 0.1],
-    [0.2, nan, 0.3],
-    [0.4, 0.4, 0.4],
-]
+VALUES_WITH_NAN = [1.1, 1.1, 1.1], [0.5, nan, 0.1], [0.5, 0.5, 0.1]
+VALUES_WITH_NAN_2D = (
+    [[1.1, 1.1, 1.1], [1.1, 1.1, 1.1], [1.1, 1.1, 1.1]],
+    [[0.5, nan, 0.1], [0.5, 0.5, 0.1], [0.2, 0.3, nan]],
+    [[0.5, 0.5, 0.1], [0.2, nan, 0.3], [0.4, 0.4, 0.4]],
+)
 
 
 def test_phasorplot_nan():
@@ -54,20 +54,20 @@ def test_phasorplot_nan():
     plot = PhasorPlot()
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        plot.plot(*VALUES_WITH_NAN)
+        plot.plot(*VALUES_WITH_NAN[1:])
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        plot.hist2d(*VALUES_WITH_NAN)
+        plot.hist2d(*VALUES_WITH_NAN[1:])
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        plot.contour(*VALUES_WITH_NAN)
+        plot.contour(*VALUES_WITH_NAN[1:])
 
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        plot.components(*VALUES_WITH_NAN)
+        plot.components(*VALUES_WITH_NAN[1:])
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        plot.line(*VALUES_WITH_NAN)
+        plot.line(*VALUES_WITH_NAN[1:])
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         plot.circle(nan, 0.5, radius=0.1)
@@ -92,7 +92,7 @@ def test_mask_from_circular_cursor_nan():
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         mask = mask_from_circular_cursor(
-            *VALUES_WITH_NAN, 0.55, 0.55, radius=0.1
+            *VALUES_WITH_NAN[1:], 0.55, 0.55, radius=0.1
         )
     assert_allclose(mask, [True, False, False])
 
@@ -102,7 +102,7 @@ def test_mask_from_elliptic_cursor_nan():
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         mask = mask_from_elliptic_cursor(
-            *VALUES_WITH_NAN, 0.55, 0.55, radius=0.1
+            *VALUES_WITH_NAN[1:], 0.55, 0.55, radius=0.1
         )
     assert_allclose(mask, [True, False, False])
 
@@ -111,7 +111,7 @@ def test_mask_from_polar_cursor_nan():
     """Test mask_from_polar_cursor function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        mask = mask_from_polar_cursor(*VALUES_WITH_NAN, 0, 1, 0.6, 0.8)
+        mask = mask_from_polar_cursor(*VALUES_WITH_NAN[1:], 0, 1, 0.6, 0.8)
     assert_allclose(mask, [True, False, False])
 
 
@@ -119,17 +119,20 @@ def test_phasor_at_harmonic_nan():
     """Test phasor_at_harmonic function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_at_harmonic(VALUES_WITH_NAN[0], 1, 2)
+        phasor = phasor_at_harmonic(VALUES_WITH_NAN[1], 1, 2)
     assert_allclose(
         phasor, [[0.2, nan, 0.027027], [0.4, nan, 0.162162]], atol=1e-3
     )
 
 
-def test_phasor_calibrate_nan():
+@pytest.mark.parametrize('nan_safe', (True, False))
+def test_phasor_calibrate_nan(nan_safe):
     """Test phasor_calibrate function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_calibrate(*VALUES_WITH_NAN, 0.0, 1.0, 80, 4.2)
+        phasor = phasor_calibrate(
+            *VALUES_WITH_NAN[1:], 1.0, 0.0, 1.0, 80, 4.2, nan_safe=nan_safe
+        )
     assert_allclose(
         phasor, [[0.28506, nan, 0.05701], [0.10181, nan, 0.02036]], atol=1e-3
     )
@@ -140,34 +143,47 @@ def test_phasor_center_nan():
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         center = phasor_center(*VALUES_WITH_NAN)
-    assert_allclose(center, [0.3, 0.366667], atol=1e-3)
+    assert_allclose(center, [1.1, 0.3, 0.3], atol=1e-3)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        center = phasor_center(*VALUES_WITH_NAN, nan_safe=False)
+    assert_allclose(center, [1.1, 0.3, 0.366667], atol=1e-3)
 
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         center = phasor_center(*VALUES_WITH_NAN, method='median')
-    assert_allclose(center, [0.3, 0.5], atol=1e-3)
+    assert_allclose(center, [1.1, 0.3, 0.3], atol=1e-3)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        center = phasor_center(
+            *VALUES_WITH_NAN, method='median', nan_safe=False
+        )
+    assert_allclose(center, [1.1, 0.3, 0.5], atol=1e-3)
 
 
 def test_phasor_divide_nan():
     """Test phasor_divide function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_divide(*VALUES_WITH_NAN, 1.0, 1.0)
+        phasor = phasor_divide(*VALUES_WITH_NAN[1:], 1.0, 1.0)
     assert_allclose(phasor, [[0.5, nan, 0.1], [0.0, nan, 0.0]], atol=1e-3)
 
 
-def test_phasor_filter_nan():
-    """Test phasor_filter function with NaN values."""
+def test_phasor_filter_median_nan():
+    """Test phasor_filter_median function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_filter(*VALUES_WITH_NAN_2D)
+        phasor = phasor_filter_median(*VALUES_WITH_NAN_2D)
+    assert_array_equal(phasor[0], VALUES_WITH_NAN_2D[0])
     assert_allclose(
-        phasor[0],
+        phasor[1],
         [[0.5, nan, 0.1], [0.5, 0.3, 0.1], [0.3, 0.3, nan]],
         atol=1e-3,
     )
     assert_allclose(
-        phasor[1],
+        phasor[2],
         [[0.5, 0.4, 0.2], [0.4, nan, 0.35], [0.4, 0.4, 0.4]],
         atol=1e-3,
     )
@@ -177,7 +193,7 @@ def test_phasor_from_apparent_lifetime_nan():
     """Test phasor_from_apparent_lifetime function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_from_apparent_lifetime(*VALUES_WITH_NAN, 80)
+        phasor = phasor_from_apparent_lifetime(*VALUES_WITH_NAN[1:], 80)
     assert_allclose(
         phasor,
         [[0.940587, nan, 0.99748], [0.236395, nan, 0.050139]],
@@ -189,7 +205,7 @@ def test_phasor_from_polar_nan():
     """Test phasor_from_polar function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_from_polar(*VALUES_WITH_NAN)
+        phasor = phasor_from_polar(*VALUES_WITH_NAN[1:])
     assert_allclose(
         phasor,
         [[0.438791, nan, 0.0995], [0.239713, nan, 0.009983]],
@@ -217,7 +233,7 @@ def test_phasor_multiply_nan():
     """Test phasor_multiply function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_multiply(*VALUES_WITH_NAN, 1.0, 1.0)
+        phasor = phasor_multiply(*VALUES_WITH_NAN[1:], 1.0, 1.0)
     assert_allclose(phasor, [[0.0, nan, 0.0], [1.0, nan, 0.2]], atol=1e-3)
 
 
@@ -225,9 +241,9 @@ def test_phasor_threshold_nan():
     """Test phasor_threshold function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_threshold(1.0, *VALUES_WITH_NAN, real_min=0.2)
+        phasor = phasor_threshold(*VALUES_WITH_NAN, real_min=0.2)
     assert_allclose(
-        phasor, [[1.0, nan, nan], [0.5, nan, nan], [0.5, nan, nan]], atol=1e-3
+        phasor, [[1.1, nan, nan], [0.5, nan, nan], [0.5, nan, nan]], atol=1e-3
     )
 
 
@@ -235,7 +251,7 @@ def test_phasor_to_apparent_lifetime_nan():
     """Test phasor_to_apparent_lifetime function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        lifetimes = phasor_to_apparent_lifetime(*VALUES_WITH_NAN, 80)
+        lifetimes = phasor_to_apparent_lifetime(*VALUES_WITH_NAN[1:], 80)
     assert_allclose(
         lifetimes,
         [[1.989437, nan, 1.989437], [1.989437, nan, 13.926058]],
@@ -247,7 +263,7 @@ def test_phasor_to_complex_nan():
     """Test phasor_to_complex function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_to_complex(*VALUES_WITH_NAN)
+        phasor = phasor_to_complex(*VALUES_WITH_NAN[1:])
     assert_allclose(
         phasor,
         [0.5 + 0.5j, nan + 0.5j, 0.1 + 0.1j],
@@ -259,7 +275,7 @@ def test_phasor_to_polar_nan():
     """Test phasor_to_polar function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        polar = phasor_to_polar(*VALUES_WITH_NAN)
+        polar = phasor_to_polar(*VALUES_WITH_NAN[1:])
     assert_allclose(
         polar,
         [[0.785398, nan, 0.785398], [0.707107, nan, 0.141421]],
@@ -285,7 +301,7 @@ def test_phasor_to_signal_nan():
     """Test phasor_to_signal function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        signal = phasor_to_signal(1.1, *VALUES_WITH_NAN, samples=16)
+        signal = phasor_to_signal(*VALUES_WITH_NAN, samples=16)
     assert signal.shape == (3, 16)
     assert_allclose(
         signal[0][:9],
@@ -300,7 +316,7 @@ def test_phasor_transform_nan():
     """Test phasor_transform function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        phasor = phasor_transform(*VALUES_WITH_NAN, 1, 0.9)
+        phasor = phasor_transform(*VALUES_WITH_NAN[1:], 1, 0.9)
     assert_allclose(
         phasor,
         [[-0.135526, nan, -0.027105], [0.621798, nan, 0.12436]],
@@ -312,7 +328,7 @@ def test_polar_from_apparent_lifetime_nan():
     """Test polar_from_apparent_lifetime function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        polar = polar_from_apparent_lifetime(*VALUES_WITH_NAN, 80)
+        polar = polar_from_apparent_lifetime(*VALUES_WITH_NAN[1:], 80)
     assert_allclose(
         polar,
         [[0.246228, nan, 0.050223], [0.969839, nan, 0.998739]],
@@ -324,7 +340,7 @@ def test_polar_from_reference_nan():
     """Test polar_from_reference function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        polar = polar_from_reference(*VALUES_WITH_NAN, 0.5, 0.5)
+        polar = polar_from_reference(*VALUES_WITH_NAN[1:], 0.5, 0.5)
     assert_allclose(
         polar,
         [[0.0, nan, 0.4], [1.0, nan, 5.0]],
@@ -336,7 +352,7 @@ def test_polar_from_reference_phasor_nan():
     """Test polar_from_reference_phasor function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        polar = polar_from_reference_phasor(*VALUES_WITH_NAN, 0.5, 0.5)
+        polar = polar_from_reference_phasor(*VALUES_WITH_NAN[1:], 0.5, 0.5)
     assert_allclose(
         polar,
         [[0.0, nan, 0.0], [1.0, nan, 5.0]],
@@ -348,7 +364,7 @@ def test_polar_to_apparent_lifetime_nan():
     """Test polar_to_apparent_lifetime function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        lifetime = polar_to_apparent_lifetime(*VALUES_WITH_NAN, 80)
+        lifetime = polar_to_apparent_lifetime(*VALUES_WITH_NAN[1:], 80)
     assert_allclose(
         lifetime,
         [[1.086834, nan, 0.199609], [3.445806, nan, 19.794646]],
@@ -361,7 +377,7 @@ def test_two_fractions_from_phasor_nan():
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         fractions = two_fractions_from_phasor(
-            *VALUES_WITH_NAN, [0.5, 1.0], [0.5, 1.0]
+            *VALUES_WITH_NAN[1:], [0.5, 1.0], [0.5, 1.0]
         )
     assert_allclose(fractions, [1.0, nan, 1.0])
 
@@ -371,7 +387,10 @@ def test_graphical_component_analysis_nan():
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         counts = graphical_component_analysis(
-            *VALUES_WITH_NAN, [0.0, 0.0, 1.0], [0.0, 1.0, 0.0], fractions=10
+            *VALUES_WITH_NAN[1:],
+            [0.0, 0.0, 1.0],
+            [0.0, 1.0, 0.0],
+            fractions=10,
         )
     assert_allclose(
         counts,

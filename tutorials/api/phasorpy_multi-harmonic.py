@@ -24,11 +24,11 @@ from phasorpy.io import (
 )
 from phasorpy.phasor import (
     phasor_calibrate,
-    phasor_filter,
+    phasor_filter_median,
     phasor_from_signal,
     phasor_threshold,
 )
-from phasorpy.plot import PhasorPlot
+from phasorpy.plot import plot_phasor
 
 # %%
 # Read signal from file
@@ -56,6 +56,13 @@ mean, real, imag = phasor_from_signal(signal, harmonic=[1, 2], axis=0)
 # `real` and `imag`:
 
 print(mean.shape, real.shape, imag.shape)
+
+# %%
+# Plot the calculated phasor coordinates:
+
+from phasorpy.plot import plot_phasor_image
+
+plot_phasor_image(mean, real, imag, title='Sample')
 
 # %%
 # To calculate all harmonics, use ``harmonic='all'``:
@@ -88,12 +95,12 @@ reference_mean, reference_real, reference_imag = phasor_from_signal(
 real, imag = phasor_calibrate(
     real,
     imag,
+    reference_mean,
     reference_real,
     reference_imag,
     frequency=frequency,
     harmonic=[1, 2],
     lifetime=4.2,
-    skip_axis=0,
 )
 
 # %%
@@ -103,13 +110,13 @@ real, imag = phasor_calibrate(
 uncalibrated_real, uncalibrated_imag = phasor_calibrate(
     real,
     imag,
+    reference_mean,
     reference_real,
     reference_imag,
     frequency=frequency,
     harmonic=[1, 2],
     lifetime=4.2,
     reverse=True,
-    skip_axis=0,
 )
 
 numpy.testing.assert_allclose(
@@ -124,22 +131,23 @@ numpy.testing.assert_allclose(
 #
 # Applying median filter to the calibrated phasor coordinates,
 # often multiple times, improves contrast and reduces noise.
-# This is done at multiple harmonics simultaneously by excluding the
-# harmonic axis from the filter:
+# The filter is applied independently to the real and imaginary components
+# of the harmonics, but not to the average signal:
 
-real, imag = phasor_filter(
-    real, imag, method='median', size=3, repeat=2, skip_axis=0
-)
+mean, real, imag = phasor_filter_median(mean, real, imag, size=3, repeat=2)
 
 # %%
 # Pixels with low intensities are commonly excluded from analysis and
-# visualization of phasor coordinates. For now, harmonics must be treated
-# separately when thresholding:
+# visualization of phasor coordinates:
 
-real1, real2 = real
-imag1, imag2 = imag
-mean, real1, imag1 = phasor_threshold(mean, real1, imag1, mean_min=1)
-mean, real2, imag2 = phasor_threshold(mean, real2, imag2, mean_min=1)
+mean, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
+
+# %%
+# Show the calibrated, filtered phasor coordinates:
+
+plot_phasor_image(
+    mean, real, imag, title='Calibrated, filtered phasor coordinates'
+)
 
 # %%
 # Store phasor coordinates
@@ -173,7 +181,7 @@ assert real_.dtype == numpy.float32
 assert attrs['frequency'] == frequency
 assert attrs['harmonic'] == [1, 2]
 assert attrs['description'].startswith(
-    'Phasor coordinates at first and second'
+    'Phasor coordinates at first and second harmonics'
 )
 
 # %%
@@ -183,22 +191,24 @@ assert attrs['description'].startswith(
 # Visualize the 2D histogram of the calibrated and filtered phasor coordinates
 # at the second harmonic:
 
-phasorplot = PhasorPlot(
+plot_phasor(
+    real[1],
+    imag[1],
     frequency=frequency,
     title='Calibrated, filtered phasor coordinates at second harmonic',
 )
-phasorplot.hist2d(real2, imag2)
-phasorplot.show()
 
 # %%
 # For comparison, the uncalibrated, unfiltered phasor coordinates at the
 # second harmonic:
 
-phasorplot = PhasorPlot(
-    allquadrants=True, title='Raw phasor coordinates at second harmonic'
+plot_phasor(
+    uncalibrated_real[1],
+    uncalibrated_imag[1],
+    frequency=frequency,
+    allquadrants=True,
+    title='Raw phasor coordinates at second harmonic',
 )
-phasorplot.hist2d(uncalibrated_real[1], uncalibrated_imag[1])
-phasorplot.show()
 
 # %%
 # Component analysis

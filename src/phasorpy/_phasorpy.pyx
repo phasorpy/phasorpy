@@ -68,7 +68,8 @@ def _phasor_from_signal(
     float_t[:, :, ::1] phasor,
     const signal_t[:, :, ::1] signal,
     const double[:, :, ::1] sincos,
-    const int num_threads
+    const bint normalize,
+    const int num_threads,
 ):
     """Return phasor coordinates from signal along middle axis.
 
@@ -97,6 +98,8 @@ def _phasor_from_signal(
         1. number samples
         2. cos and sin
 
+    normalize : bool
+        Normalize phasor coordinates.
     num_threads : int
         Number of OpenMP threads to use for parallelization.
 
@@ -145,14 +148,16 @@ def _phasor_from_signal(
                             dc = dc + sample
                             re = re + sample * sincos[h, k, 0]
                             im = im + sample * sincos[h, k, 1]
-                        if dc != 0.0:
-                            re = re / dc
-                            im = im / dc
-                            dc = dc /samples
-                        else:
-                            dc = 0.0
-                            re = NAN if re == 0.0 else re * INFINITY
-                            im = NAN if im == 0.0 else im * INFINITY
+                        if normalize:
+                            if dc != 0.0:
+                                # includes isnan(dc)
+                                re = re / dc
+                                im = im / dc
+                                dc = dc / samples
+                            else:
+                                # dc = 0.0
+                                re = NAN if re == 0.0 else re * INFINITY
+                                im = NAN if im == 0.0 else im * INFINITY
                         if h == 0:
                             mean[i, j] = <float_t> dc
                         real[h, i, j] = <float_t> re
@@ -173,14 +178,16 @@ def _phasor_from_signal(
                             dc = dc + sample
                             re = re + sample * sincos[h, k, 0]
                             im = im + sample * sincos[h, k, 1]
-                        if dc != 0.0:
-                            re = re / dc
-                            im = im / dc
-                            dc = dc /samples
-                        else:
-                            dc = 0.0
-                            re = NAN if re == 0.0 else re * INFINITY
-                            im = NAN if im == 0.0 else im * INFINITY
+                        if normalize:
+                            if dc != 0.0:
+                                # includes isnan(dc)
+                                re = re / dc
+                                im = im / dc
+                                dc = dc / samples
+                            else:
+                                # dc = 0.0
+                                re = NAN if re == 0.0 else re * INFINITY
+                                im = NAN if im == 0.0 else im * INFINITY
                         if h == 0:
                             mean[i, j] = <float_t> dc
                         real[h, i, j] = <float_t> re
@@ -201,14 +208,16 @@ def _phasor_from_signal(
                             dc += sample
                             re += sample * sincos[h, k, 0]
                             im += sample * sincos[h, k, 1]
-                        if dc != 0.0:
-                            re /= dc
-                            im /= dc
-                            dc /= samples
-                        else:
-                            dc = 0.0
-                            re = NAN if re == 0.0 else re * INFINITY
-                            im = NAN if im == 0.0 else im * INFINITY
+                        if normalize:
+                            if dc != 0.0:
+                                # includes isnan(dc)
+                                re /= dc
+                                im /= dc
+                                dc = dc / samples
+                            else:
+                                # dc = 0.0
+                                re = NAN if re == 0.0 else re * INFINITY
+                                im = NAN if im == 0.0 else im * INFINITY
                         if h == 0:
                             mean[i, j] = <float_t> dc
                         real[h, i, j] = <float_t> re
@@ -924,32 +933,41 @@ cdef (float_t, float_t) _phasor_at_harmonic(
 
 @cython.ufunc
 cdef (float_t, float_t) _phasor_multiply(
-    float_t real1,
-    float_t imag1,
+    float_t real,
+    float_t imag,
     float_t real2,
     float_t imag2,
 ) noexcept nogil:
-    """Return multiplication of two phasors."""
-    return real1 * real2 - imag1 * imag2, real1 * imag2 + imag1 * real2
+    """Return complex multiplication of two phasors."""
+    return (
+        real * real2 - imag * imag2,
+        real * imag2 + imag * real2
+    )
 
 
 @cython.ufunc
 cdef (float_t, float_t) _phasor_divide(
-    float_t real1,
-    float_t imag1,
+    float_t real,
+    float_t imag,
     float_t real2,
     float_t imag2,
 ) noexcept nogil:
-    """Return division of two phasors."""
+    """Return complex division of two phasors."""
     cdef:
-        float_t denom = real2 * real2 + imag2 * imag2
+        float_t divisor = real2 * real2 + imag2 * imag2
 
-    if isnan(denom) or denom == 0.0:
-        return <float_t> NAN, <float_t> NAN
+    if divisor != 0.0:
+        # includes isnan(divisor)
+        return (
+            (real * real2 + imag * imag2) / divisor,
+            (imag * real2 - real * imag2) / divisor
+        )
 
+    real = real * real2 + imag * imag2
+    imag = imag * real2 - real * imag2
     return (
-        (real1 * real2 + imag1 * imag2) / denom,
-        (imag1 * real2 - real1 * imag2) / denom
+        NAN if real == 0.0 else real * INFINITY,
+        NAN if imag == 0.0 else imag * INFINITY
     )
 
 
