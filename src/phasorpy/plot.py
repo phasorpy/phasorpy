@@ -171,12 +171,16 @@ class PhasorPlot:
     @property
     def fig(self) -> Figure | None:
         """Matplotlib :py:class:`matplotlib.figure.Figure`."""
-        return self._ax.get_figure()
+        try:
+            # matplotlib >= 3.10.0
+            return self._ax.get_figure(root=True)
+        except TypeError:
+            return self._ax.get_figure()  # type: ignore[return-value]
 
     @property
     def dataunit_to_point(self) -> float:
         """Factor to convert data to point unit."""
-        fig = self._ax.get_figure()
+        fig = self.fig
         assert fig is not None
         length = fig.bbox_inches.height * self._ax.get_position().height * 72.0
         vrange: float = numpy.diff(self._ax.get_ylim()).item()
