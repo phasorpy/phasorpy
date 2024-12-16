@@ -25,6 +25,7 @@ from phasorpy.io import (
     read_fbd,
     read_flif,
     read_ifli,
+    read_imspector_tiff,
     read_lsm,
     read_ptu,
     read_sdt,
@@ -127,6 +128,34 @@ def test_read_lsm_paramecium():
     assert_almost_equal(
         data.coords['X'][[0, -1]], [0.0, 0.000424265835], decimal=9
     )
+
+
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
+def test_imspector_tiff():
+    """Test read Imspector FLIM TIFF file."""
+    data = read_imspector_tiff(fetch('Embryo.tif'))
+    assert data.values.sum(dtype=numpy.uint64) == 31348436
+    assert data.dtype == numpy.uint16
+    assert data.shape == (56, 512, 512)
+    assert data.dims == ('H', 'Y', 'X')
+    assert_almost_equal(
+        data.coords['H'][[0, -1]], [0.0, 0.218928482143], decimal=12
+    )
+    assert data.attrs['frequency'] == 80.10956424883184
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_imspector_tiff_t():
+    """Test read Imspector FLIM TIFF file with TCSPC in T-axis."""
+    data = read_imspector_tiff(private_file('ZF-1100_noEF.tif'))
+    assert data.values.sum(dtype=numpy.uint64) == 18636271
+    assert data.dtype == numpy.uint16
+    assert data.shape == (56, 512, 512)
+    assert data.dims == ('H', 'Y', 'X')
+    assert_almost_equal(
+        data.coords['H'][[0, -1]], [0.0, 0.218928482143], decimal=12
+    )
+    assert data.attrs['frequency'] == 80.10956424883184
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')

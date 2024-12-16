@@ -15,10 +15,13 @@ of multi-harmonic phasor coordinates.
 # Import required modules and functions:
 
 import numpy
-import tifffile  # TODO: from phasorpy.io import read_ometiff
 
 from phasorpy.datasets import fetch
-from phasorpy.io import phasor_from_ometiff, phasor_to_ometiff
+from phasorpy.io import (
+    phasor_from_ometiff,
+    phasor_to_ometiff,
+    read_imspector_tiff,
+)
 from phasorpy.phasor import (
     phasor_calibrate,
     phasor_filter_median,
@@ -34,9 +37,8 @@ from phasorpy.plot import plot_phasor
 # Read a time-correlated single photon counting (TCSPC) histogram,
 # acquired at 80.11 MHz, from a file:
 
-
-signal = tifffile.imread(fetch('Embryo.tif'))
-frequency = 80.11  # MHz; from the XML metadata in the file
+signal = read_imspector_tiff(fetch('Embryo.tif'))
+frequency = signal.attrs['frequency']
 
 # %%
 # Calculate phasor coordinates
@@ -74,7 +76,8 @@ _ = phasor_from_signal(signal, harmonic='all', axis=0)
 # A homogeneous solution of Fluorescein with a fluorescence lifetime of 4.2 ns
 # was imaged as a reference for calibration:
 
-reference_signal = tifffile.imread(fetch('Fluorescein_Embryo.tif'))
+reference_signal = read_imspector_tiff(fetch('Fluorescein_Embryo.tif'))
+assert reference_signal.attrs['frequency'] == frequency
 
 # %%
 # Calculate phasor coordinates from the measured reference signal at
