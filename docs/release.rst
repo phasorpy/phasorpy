@@ -33,6 +33,8 @@ What's Changed
 * Add support for ImSpector FLIM TIFF files by @cgohlke in https://github.com/phasorpy/phasorpy/pull/161
 * Release v0.3 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/162
 
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.2...v0.3
+
 0.2 (2024.11.30)
 ----------------
 
