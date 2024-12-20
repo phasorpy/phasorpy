@@ -149,7 +149,7 @@ from ._phasorpy import (
     _polar_from_single_lifetime,
     _polar_to_apparent_lifetime,
 )
-from ._utils import parse_harmonic
+from ._utils import parse_harmonic, parse_signal_axis
 from .utils import number_threads
 
 
@@ -157,7 +157,7 @@ def phasor_from_signal(
     signal: ArrayLike,
     /,
     *,
-    axis: int = -1,
+    axis: int | str | None = None,
     harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
     sample_phase: ArrayLike | None = None,
     use_fft: bool | None = None,
@@ -174,9 +174,10 @@ def phasor_from_signal(
         Frequency-domain, time-domain, or hyperspectral data.
         A minimum of three samples are required along `axis`.
         The samples must be uniformly spaced.
-    axis : int, optional
+    axis : int or str, optional
         Axis over which to compute phasor coordinates.
-        The default is the last axis (-1).
+        By default, the 'H' or 'C' axes if signal contains such dimension
+        names, else the last axis (-1).
     harmonic : int, sequence of int, or 'all', optional
         Harmonics to return.
         If `'all'`, return all harmonics for `signal` samples along `axis`.
@@ -287,6 +288,9 @@ def phasor_from_signal(
     """
     # TODO: C-order not required by rfft?
     # TODO: preserve array subtypes?
+
+    axis, _ = parse_signal_axis(signal, axis)
+
     signal = numpy.asarray(signal, order='C')
     if signal.dtype.kind not in 'uif':
         raise TypeError(f'signal must be real valued, not {signal.dtype=}')
