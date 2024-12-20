@@ -24,6 +24,7 @@ from phasorpy.io import (
     read_bhz,
     read_fbd,
     read_flif,
+    read_flimlabs_json,
     read_ifli,
     read_imspector_tiff,
     read_lsm,
@@ -156,6 +157,31 @@ def test_imspector_tiff_t():
         data.coords['H'][[0, -1]], [0.0, 0.218928482143], decimal=12
     )
     assert data.attrs['frequency'] == 80.10956424883184
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_flimlabs_json():
+    """Test read FLIMLABS JSON image file."""
+    filename = private_file('test03_1733492714_imaging.json')
+    data = read_flimlabs_json(filename)
+    assert data.values.sum(dtype=numpy.uint64) == 4680256
+    assert data.dtype == numpy.uint16
+    assert data.shape == (3, 256, 256, 256)
+    assert data.dims == ('C', 'Y', 'X', 'H')
+    assert_almost_equal(
+        data.coords['H'][[0, -1]], [0.0, 12.451171875], decimal=12
+    )
+    assert_array_equal(data.coords['C'], [0, 1, 2])
+    assert data.attrs['frequency'] == 80.0
+
+    data = read_flimlabs_json(filename, channel=1, dtype=numpy.uint8)
+    assert data.values.sum(dtype=numpy.uint64) == 1388562
+    assert data.dtype == numpy.uint8
+    assert data.shape == (256, 256, 256)
+    assert data.dims == ('Y', 'X', 'H')
+
+    with pytest.raises(ValueError):
+        data = read_flimlabs_json(filename, channel=1, dtype=numpy.int8)
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')

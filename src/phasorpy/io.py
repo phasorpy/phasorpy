@@ -17,6 +17,7 @@ The ``phasorpy.io`` module provides functions to:
   to phasor analysis) from many file formats used in bio-imaging:
 
   - :py:func:`read_imspector_tiff` - ImSpector FLIM TIFF
+  - :py:func:`read_flimlabs_json` - FLIMLABS JSON
   - :py:func:`read_lsm` - Zeiss LSM
   - :py:func:`read_ifli` - ISS IFLI
   - :py:func:`read_sdt` - Becker & Hickl SDT
@@ -123,6 +124,7 @@ __all__ = [
     # 'read_czi',
     'read_fbd',
     'read_flif',
+    'read_flimlabs_json',
     'read_ifli',
     'read_imspector_tiff',
     # 'read_lif',
@@ -1027,6 +1029,127 @@ def read_imspector_tiff(
     from xarray import DataArray
 
     return DataArray(data, **metadata)
+
+
+def read_flimlabs_json(
+    filename: str | PathLike[Any],
+    /,
+    *,
+    channel: int | None = None,
+    dtype: DTypeLike | None = None,
+) -> DataArray:
+    """Return FLIM image stack and metadata from FLIMLABS JSON image file.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of FLIMLABS JSON image file to read.
+    channel : int, optional
+        If None (default), return all channels, else return specified channel.
+    dtype : dtype-like, optional, default: uint16
+        Unsigned integer type of image histogram array.
+        Increase the bit-depth for high photon counts.
+
+    Returns
+    -------
+    xarray.DataArray
+        TCSPC image stack.
+        A 3 or 4-dimensional array of type `dtype`.
+
+        - ``coords['H']``: times of histogram bins in ns.
+        - ``attrs['frequency']``: laser repetition frequency in MHz.
+
+    Raises
+    ------
+    ValueError
+        File is not a FLIMLABS JSON image file.
+
+    Examples
+    --------
+    >>> data = read_flimlabs_json(
+    ...     fetch('test03_1733492714_imaging.json')
+    ... )  # doctest: +SKIP
+    >>> data.values  # doctest: +SKIP
+    array(...)
+    >>> data.shape  # doctest: +SKIP
+    (3, 256, 256, 256)
+    >>> data.dims  # doctest: +SKIP
+    ('C', 'Y', 'X', 'H')
+    >>> data.coords['H'].data  # doctest: +SKIP
+    array(...)
+    >>> data.attrs['frequency']  # doctest: +SKIP
+    80.0
+
+    """
+    import json
+
+    with open(filename) as fh:
+        try:
+            jdata = json.load(fh)
+        except json.JSONDecodeError as exc:
+            raise ValueError('not a FLIMLABS JSON file') from exc
+
+    if (
+        'data' not in jdata
+        or 'header' not in jdata
+        or 'laser_period_ns' not in jdata['header']
+    ):
+        raise ValueError('not a FLIMLABS JSON file')
+
+    if dtype is None:
+        dtype = numpy.uint16
+    else:
+        dtype = numpy.dtype(dtype)
+        if dtype.kind != 'u':
+            raise ValueError(f'{dtype=} is not unsigned')
+
+    header = jdata['header']
+    channels = len([c for c in header['channels'] if c])
+    # TODO: how to use header['frames']?
+    height = header['image_height']
+    width = header['image_width']
+    frequency = 1000.0 / header['laser_period_ns']
+
+    if channel is None:
+        histogram = numpy.zeros((channels, height * width, 256), dtype)
+        axes = 'CYXH'
+    else:
+        histogram = numpy.zeros((height * width, 256), dtype)
+        axes = 'YXH'
+
+    if channel is None:
+        for c, channel_ in enumerate(jdata['data']):
+            for i, pixel in enumerate(channel_):
+                hist = histogram[c, i]
+                for index, count in pixel:
+                    hist[index] = count
+    else:
+        for i, pixel in enumerate(jdata['data'][channel]):
+            hist = histogram[i]
+            for index, count in pixel:
+                hist[index] = count
+
+    if channel is None:
+        histogram.shape = (channels, height, width, 256)
+    else:
+        histogram.shape = (height, width, 256)
+
+    coords: dict[str, Any] = {}
+    coords['H'] = numpy.linspace(
+        0.0, header['laser_period_ns'], 256, endpoint=False
+    )
+    if channel is None:
+        coords['C'] = numpy.asarray(
+            [i for i, c in enumerate(header['channels']) if c]
+        )
+
+    metadata = _metadata(axes, histogram.shape, filename, **coords)
+    attrs = metadata['attrs']
+    attrs['frequency'] = frequency
+
+    from xarray import DataArray
+
+    return DataArray(histogram, **metadata)
 
 
 def read_ifli(
