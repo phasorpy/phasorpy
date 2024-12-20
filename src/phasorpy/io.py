@@ -1063,6 +1063,7 @@ def read_flimlabs_json(
     ------
     ValueError
         File is not a FLIMLABS JSON image file.
+        `dtype` is not an unsigned integer.
 
     Examples
     --------
@@ -1085,14 +1086,14 @@ def read_flimlabs_json(
 
     with open(filename) as fh:
         try:
-            jdata = json.load(fh)
+            data = json.load(fh)
         except json.JSONDecodeError as exc:
             raise ValueError('not a FLIMLABS JSON file') from exc
 
     if (
-        'data' not in jdata
-        or 'header' not in jdata
-        or 'laser_period_ns' not in jdata['header']
+        'data' not in data
+        or 'header' not in data
+        or 'laser_period_ns' not in data['header']
     ):
         raise ValueError('not a FLIMLABS JSON file')
 
@@ -1101,9 +1102,9 @@ def read_flimlabs_json(
     else:
         dtype = numpy.dtype(dtype)
         if dtype.kind != 'u':
-            raise ValueError(f'{dtype=} is not unsigned')
+            raise ValueError(f'{dtype=} is not an unsigned integer type')
 
-    header = jdata['header']
+    header = data['header']
     channels = len([c for c in header['channels'] if c])
     # TODO: how to use header['frames']?
     height = header['image_height']
@@ -1118,13 +1119,13 @@ def read_flimlabs_json(
         axes = 'YXH'
 
     if channel is None:
-        for c, channel_ in enumerate(jdata['data']):
+        for c, channel_ in enumerate(data['data']):
             for i, pixel in enumerate(channel_):
                 hist = histogram[c, i]
                 for index, count in pixel:
                     hist[index] = count
     else:
-        for i, pixel in enumerate(jdata['data'][channel]):
+        for i, pixel in enumerate(data['data'][channel]):
             hist = histogram[i]
             for index, count in pixel:
                 hist[index] = count
