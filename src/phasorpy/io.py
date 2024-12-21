@@ -988,7 +988,7 @@ def read_imspector_tiff(
         attrib = 'TimeIncrement' if ax == 'T' else f'PhysicalSize{ax}'
         if ax not in axes or attrib not in pixels.attrib:
             continue
-        size = float(pixels.attrib[attrib])
+        size = float(pixels.attrib[attrib]) * shape[axes.index(ax)]
         physical_size[ax] = size
         coords[ax] = numpy.linspace(
             0.0,
@@ -998,7 +998,7 @@ def read_imspector_tiff(
             dtype=numpy.float64,
         )
 
-    axes_labels = root.find('.//ca:CustomAttributes/AxesLabels', ns)
+    axes_labels = root.find('.//Image/ca:CustomAttributes/AxesLabels', ns)
     if (
         axes_labels is None
         or 'X' not in axes_labels.attrib
@@ -1008,10 +1008,15 @@ def read_imspector_tiff(
     ):
         raise ValueError(f'{tif.filename} is not an ImSpector FLIM TIFF file')
 
-    if axes_labels.attrib['FirstAxis'].endswith('TCSPC T'):
+    if axes_labels.attrib['FirstAxis'] == 'lifetime' or axes_labels.attrib[
+        'FirstAxis'
+    ].endswith('TCSPC T'):
         ax = axes[-3]
         assert axes_labels.attrib['FirstAxis-Unit'] == 'ns'
-    elif axes_labels.attrib['SecondAxis'].endswith('TCSPC T') and ndim > 3:
+    elif ndim > 3 and (
+        axes_labels.attrib['SecondAxis'] == 'lifetime'
+        or axes_labels.attrib['SecondAxis'].endswith('TCSPC T')
+    ):
         ax = axes[-4]
         assert axes_labels.attrib['SecondAxis-Unit'] == 'ns'
     else:
@@ -1020,9 +1025,7 @@ def read_imspector_tiff(
     coords['H'] = coords[ax]
     del coords[ax]
 
-    attrs['frequency'] = float(
-        1000.0 / (shape[axes.index('H')] * physical_size[ax])
-    )
+    attrs['frequency'] = float(1000.0 / physical_size[ax])
 
     metadata = _metadata(axes, shape, filename, attrs=attrs, **coords)
 

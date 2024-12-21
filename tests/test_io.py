@@ -140,7 +140,7 @@ def test_imspector_tiff():
     assert data.shape == (56, 512, 512)
     assert data.dims == ('H', 'Y', 'X')
     assert_almost_equal(
-        data.coords['H'][[0, -1]], [0.0, 0.218928482143], decimal=12
+        data.coords['H'][[0, -1]], [0.0, 12.259995], decimal=12
     )
     assert data.attrs['frequency'] == 80.10956424883184
 
@@ -154,7 +154,7 @@ def test_imspector_tiff_t():
     assert data.shape == (56, 512, 512)
     assert data.dims == ('H', 'Y', 'X')
     assert_almost_equal(
-        data.coords['H'][[0, -1]], [0.0, 0.218928482143], decimal=12
+        data.coords['H'][[0, -1]], [0.0, 12.259995], decimal=12
     )
     assert data.attrs['frequency'] == 80.10956424883184
 

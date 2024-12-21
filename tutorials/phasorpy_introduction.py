@@ -91,11 +91,12 @@ frequency = signal.attrs['frequency']
 print(signal.shape, signal.dtype)
 
 # %%
-# Plot the spatial and histogram averages:
+# Plot the spatial and histogram averages. The histogram bins are in the
+# first dimension of the signal array (`axis='H'` or `axis=0`):
 
 from phasorpy.plot import plot_signal_image
 
-plot_signal_image(signal, axis=0)
+plot_signal_image(signal, axis='H')
 
 # %%
 # Calculate phasor coordinates
@@ -112,13 +113,12 @@ plot_signal_image(signal, axis=0)
 # In literature and other software, they are also known as
 # :math:`G` and :math:`S` or :math:`a` and :math:`b` (as in :math:`a + bi`).
 #
-# Phasor coordinates of the first harmonic are calculated from the signal,
-# a TCSPC histogram in this case.
-# The histogram samples are in the first dimension (`axis=0`):
+# Phasor coordinates of the first harmonic are calculated from the signal
+# over the axis containing the TCSPC histogram bins (`axis='H'` or `axis=0`):
 
 from phasorpy.phasor import phasor_from_signal
 
-mean, real, imag = phasor_from_signal(signal, axis=0)
+mean, real, imag = phasor_from_signal(signal, axis='H')
 
 # %%
 # The phasor coordinates are undefined if the mean intensity is zero.

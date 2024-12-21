@@ -10,6 +10,7 @@ from phasorpy._utils import (
     kwargs_notnone,
     parse_harmonic,
     parse_kwargs,
+    parse_signal_axis,
     phasor_from_polar_scalar,
     phasor_to_polar_scalar,
     scale_matrix,
@@ -166,6 +167,28 @@ def test_parse_harmonic():
         parse_harmonic(1.0, 1)
     with pytest.raises(TypeError):
         parse_harmonic('all')
+
+
+def test_parse_signal_axis():
+    """Test parse_signal_axis function."""
+
+    class DataArray:
+        dims = ('T', 'C', 'H', 'Y', 'X')
+
+    assert parse_signal_axis(DataArray()) == (2, 'H')
+    assert parse_signal_axis(DataArray(), 'C') == (1, 'C')
+    assert parse_signal_axis(DataArray(), -3) == (-3, 'H')
+    assert parse_signal_axis([]) == (-1, '')
+    assert parse_signal_axis([], 2) == (2, '')
+
+    DataArray.dims = ('T', 'A', 'B', 'Y', 'X')
+    assert parse_signal_axis(DataArray()) == (-1, 'X')
+
+    with pytest.raises(ValueError):
+        parse_signal_axis([], 'H')
+
+    with pytest.raises(ValueError):
+        parse_signal_axis(DataArray(), 'not found')
 
 
 def test_chunk_iter():
