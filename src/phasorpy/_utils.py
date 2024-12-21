@@ -10,6 +10,7 @@ __all__: list[str] = [
     'kwargs_notnone',
     'parse_harmonic',
     'parse_kwargs',
+    'parse_signal_axis',
     'phasor_from_polar_scalar',
     'phasor_to_polar_scalar',
     'scale_matrix',
@@ -245,6 +246,72 @@ def phasor_from_polar_scalar(
     real = modulation * math.cos(phase)
     imag = modulation * math.sin(phase)
     return real, imag
+
+
+def parse_signal_axis(
+    signal: ArrayLike,
+    /,
+    axis: int | str | None = None,
+) -> tuple[int, str]:
+    """Return axis over which phasor coordinates are computed.
+
+    The axis parameter is not validated against the signal shape.
+
+    Parameters
+    ----------
+    signal : array_like
+        Image stack.
+    axis : int or str, optional
+        Axis over which phasor coordinates are computed.
+        By default, the 'H' or 'C' axes if `signal` contains such
+        dimension names, else the last axis (-1).
+
+    Returns
+    -------
+    axis : int
+        Axis over which phasor coordinates are computed.
+    axis_label: str
+        Axis label from `signal.dims` if any.
+
+    Raises
+    ------
+    ValueError
+        Axis not found in signal.dims or invalid for signal type.
+
+    Examples
+    --------
+    >>> parse_signal_axis([])
+    (-1, '')
+    >>> parse_signal_axis([], 1)
+    (1, '')
+    >>> class DataArray:
+    ...     dims = ('C', 'H', 'Y', 'X')
+    ...
+    >>> parse_signal_axis(DataArray())
+    (1, 'H')
+    >>> parse_signal_axis(DataArray(), 'C')
+    (0, 'C')
+    >>> parse_signal_axis(DataArray(), 1)
+    (1, 'H')
+
+    """
+    if hasattr(signal, 'dims'):
+        assert isinstance(signal.dims, tuple)
+        if axis is None:
+            for ax in 'HC':
+                if ax in signal.dims:
+                    return signal.dims.index(ax), ax
+            return -1, signal.dims[-1]
+        if isinstance(axis, int):
+            return axis, signal.dims[axis]
+        if axis in signal.dims:
+            return signal.dims.index(axis), axis
+        raise ValueError(f'{axis=} not found in {signal.dims}')
+    if axis is None:
+        return -1, ''
+    if isinstance(axis, int):
+        return axis, ''
+    raise ValueError(f'{axis=} not valid for {type(signal)=}')
 
 
 def parse_harmonic(
