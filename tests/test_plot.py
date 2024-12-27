@@ -6,6 +6,7 @@ import math
 import numpy
 import pytest
 from matplotlib import pyplot
+from xarray import DataArray
 
 from phasorpy.plot import (
     PhasorPlot,
@@ -430,6 +431,12 @@ def test_plot_signal_image():
         title='percentile',
         show=INTERACTIVE,
     )
+    pyplot.close()
+
+    dataarray = DataArray(
+        data, {'H': numpy.linspace(1, 2, 11)}, ('T', 'Y', 'X', 'H')
+    )
+    plot_signal_image(dataarray, title='DataArray', show=INTERACTIVE)
     pyplot.close()
 
     with pytest.raises(ValueError):

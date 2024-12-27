@@ -10,6 +10,31 @@ documentation and maintenance changes.
     It is not nearly feature complete.
     Large, backwards-incompatible changes may occur between revisions.
 
+0.3 (2024.12.16)
+----------------
+
+This is the third alpha release of the PhasorPy library.
+It fixes the averaging of phasor coordinates in the `phasor_center` and
+`phasor_calibrate` functions, replaces the `phasor_filter` function
+with `phasor_filter_median`, adds support for multiple harmonics to
+`phasor_threshold`, and adds the `read_imspector_tiff` function to read
+ImSpector FLIM TIFF files. This release supports Python 3.10 to 3.13.
+
+What's Changed
+..............
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/152
+* Bump the github-actions group with 2 updates by @dependabot in https://github.com/phasorpy/phasorpy/pull/153
+* Mention GSLab software by @cgohlke in https://github.com/phasorpy/phasorpy/pull/156
+* Mention BrightEyes software by @cgohlke in https://github.com/phasorpy/phasorpy/pull/157
+* Pin numpy<2.2.0 for static code analysis by @cgohlke in https://github.com/phasorpy/phasorpy/pull/159
+* Fix mypy errors with matplotlib-3.10 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/160
+* Fix averaging phasor coordinates and related issues by @cgohlke in https://github.com/phasorpy/phasorpy/pull/155
+* Add support for ImSpector FLIM TIFF files by @cgohlke in https://github.com/phasorpy/phasorpy/pull/161
+* Release v0.3 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/162
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.2...v0.3
+
 0.2 (2024.11.30)
 ----------------
 

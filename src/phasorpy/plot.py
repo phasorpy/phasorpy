@@ -43,6 +43,7 @@ from ._phasorpy import _intersection_circle_circle, _intersection_circle_line
 from ._utils import (
     dilate_coordinates,
     parse_kwargs,
+    parse_signal_axis,
     phasor_from_polar_scalar,
     phasor_to_polar_scalar,
     sort_coordinates,
@@ -1858,7 +1859,7 @@ def plot_signal_image(
     signal: ArrayLike,
     /,
     *,
-    axis: int | None = None,
+    axis: int | str | None = None,
     percentile: float | Sequence[float] | None = None,
     title: str | None = None,
     show: bool = True,
@@ -1876,9 +1877,10 @@ def plot_signal_image(
     ----------
     signal : array_like
         Image stack. Must be three or more dimensional.
-    axis : int, optional, default: -1
+    axis : int or str, optional
         Axis over which phasor coordinates would be computed.
-        The default is the last axis (-1).
+        By default, the 'H' or 'C' axes if signal contains such dimension
+        names, else the last axis (-1).
     percentile : float or [float, float], optional
         The [q, 100-q] percentiles of image data are covered by colormaps.
         By default, the complete value range of `mean` is covered,
@@ -1899,13 +1901,22 @@ def plot_signal_image(
     """
     # TODO: add option to separate channels?
     # TODO: add option to plot non-images?
+
+    axis, axis_label = parse_signal_axis(signal, axis)
+    if (
+        axis_label
+        and hasattr(signal, 'coords')
+        and axis_label in signal.coords
+    ):
+        axis_coords = signal.coords[axis_label]
+    else:
+        axis_coords = None
+
     update_kwargs(kwargs, interpolation='nearest')
     signal = numpy.asarray(signal)
     if signal.ndim < 3:
         raise ValueError(f'not an image stack {signal.ndim=} < 3')
 
-    if axis is None:
-        axis = -1
     axis %= signal.ndim
 
     # for MyPy
@@ -1922,8 +1933,13 @@ def plot_signal_image(
     axes = list(range(signal.ndim))
     del axes[axis]
     ax = fig.add_subplot(gs[0, 1])
-    ax.set_title(f'mean, axis {axis}')
-    ax.plot(numpy.nanmean(signal, axis=tuple(axes)))
+
+    if axis_coords is not None:
+        ax.set_title(f'{axis=} {axis_label!r}')
+        ax.plot(axis_coords, numpy.nanmean(signal, axis=tuple(axes)))
+    else:
+        ax.set_title(f'{axis=}')
+        ax.plot(numpy.nanmean(signal, axis=tuple(axes)))
 
     # image
     axes = list(sorted(axes[:-2] + [axis]))
