@@ -9,6 +9,7 @@ pooch
 tqdm
 xarray
 tifffile>=2024.8.30
+pawflim
 #
 # build requirements
 setuptools

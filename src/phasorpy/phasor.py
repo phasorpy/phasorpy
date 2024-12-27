@@ -66,6 +66,7 @@ The ``phasorpy.phasor`` module provides functions to:
 - filter phasor coordinates:
 
   - :py:func:`phasor_filter_median`
+  - :py:func:`phasor_filter_wavelet`
   - :py:func:`phasor_threshold`
 
 """
@@ -83,6 +84,7 @@ __all__ = [
     'phasor_center',
     'phasor_divide',
     'phasor_filter_median',
+    'phasor_filter_wavelet',
     'phasor_from_apparent_lifetime',
     'phasor_from_fret_acceptor',
     'phasor_from_fret_donor',
@@ -2990,6 +2992,168 @@ def phasor_filter_median(
 
         _median_filter_2d(real[full_index], buffer, size, repeat, num_threads)
         _median_filter_2d(imag[full_index], buffer, size, repeat, num_threads)
+
+    return mean, real, imag
+
+
+def phasor_filter_wavelet(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    *,
+    sigma: float = 2.0,
+    levels: int = 1,
+    harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
+    skip_axis: int | Sequence[int] | None = None,
+    normalize: bool = False,
+    samples: int = 1,
+    nan_safe: bool = True,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """Return wavelet-filtered phasor coordinates.
+
+    Parameters
+    ----------
+    mean : array_like
+        Intensity of phasor coordinates.
+    real : array_like
+        Real component of phasor coordinates to be filtered.
+    imag : array_like
+        Imaginary component of phasor coordinates to be filtered.
+    sigma : float, optional
+        Significance level to test the difference between two phasors, given
+        in terms of the equivalent 1D standard deviations. sigma=2 corresponds
+        to ~95% (or 5%) significance.
+    levels : int, optional
+        Number of levels for the wavelet decomposition.
+        Controls the maximum averaging area, which has a length of 2**level.
+    harmonic : int, sequence of int, or 'all', default: 1
+        Harmonics included in `real` and `imag`.
+        If an integer, the harmonics at which `real` and `imag` were acquired
+        or calculated.
+        If a sequence, the harmonics included in the first axis of `real` and
+        `imag`.
+        If `'all'`, the first axis of `real` and `imag` contains lower
+        harmonics.
+        The default is the first harmonic (fundamental frequency).
+    skip_axis : int or sequence of int, optional
+        Axes in `mean` to exclude from filter.
+        By default, all axes except harmonics are included.
+    normalize : bool, optional
+        By default (False), expects and returns normalized phasor coordinates.
+        If True, unnormalized phasor coordinates are expected as input.
+    samples : int, optional
+        Number of samples used to calculate the phasor coordinates.
+        By default, 1.
+    nan_safe : bool, optional
+        By default, distribute NaNs among filtered arrays.
+
+    Returns
+    -------
+    mean : ndarray
+        Unchanged intensity of phasor coordinates.
+    real : ndarray
+        Filtered real component of phasor coordinates.
+    imag : ndarray
+        Filtered imaginary component of phasor coordinates.
+
+    Raises
+    ------
+    ValueError
+        If `level` is less than 0.
+        If `samples` is less than 1.
+        If the number of harmonics in `harmonic` is less than 2.
+        If `real` and `imag` have no harmonic axis.
+        The array shapes of `mean`, `real`, and `imag` do not match.
+
+    Examples
+    --------
+
+    """
+    from pawflim import pawflim  # type: ignore[import-untyped]
+
+    mean = numpy.asarray(mean)
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+
+    if levels < 0:
+        raise ValueError(f'{levels=} < 0')
+    if levels == 0:
+        return mean, real, imag
+    if samples < 1:
+        raise ValueError(f'{samples=} < 1')
+
+    if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
+        raise ValueError(f'{mean.shape=} != {real.shape=}')
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+
+    has_harmonic_axis = mean.ndim + 1 == real.ndim
+    if not has_harmonic_axis:
+        raise ValueError('No harmonic axis')
+    harmonic_max = real.shape[0]
+    if harmonic_max < 2:
+        raise ValueError(f'{harmonic=} < 2')
+    harmonics, _ = parse_harmonic(harmonic, harmonic_max)
+    harmonic_list = [
+        n for n in harmonics if 2 * n in range(1, harmonic_max + 1)
+    ]
+
+    mean = numpy.nan_to_num(mean)
+    real = numpy.nan_to_num(real)
+    imag = numpy.nan_to_num(imag)
+
+    if not normalize:
+        unnormalized_mean = numpy.asarray(mean * samples)
+        real = numpy.asarray(real * unnormalized_mean)
+        imag = numpy.asarray(imag * unnormalized_mean)
+
+    unnormalized_mean = numpy.broadcast_to(unnormalized_mean, real).copy()
+
+    _, axes = _parse_skip_axis(skip_axis, mean.ndim, True)
+
+    for index in numpy.ndindex(
+        *[real.shape[ax] for ax in range(real) if ax not in axes and ax != 0]
+    ):
+        index_list: list[int | slice] = list(index)
+        for ax in axes:
+            index_list = index_list[:ax] + [slice(None)] + index_list[ax:]
+        full_index = tuple(index_list)
+
+        for harmonic in harmonic_list:
+            n = 0 if harmonic == 1 else harmonic - 1
+            n2 = 1 if harmonic == 1 else 2 * harmonic - 1
+
+            complex_phasor = numpy.empty(
+                (3, *unnormalized_mean[n][full_index].shape), dtype=complex
+            )
+            complex_phasor[0] = unnormalized_mean[n][full_index]
+            complex_phasor[1] = real[n][full_index] + 1j * imag[n][full_index]
+            complex_phasor[2] = (
+                real[n2][full_index] + 1j * imag[n2][full_index]
+            )
+
+            complex_phasor = pawflim(
+                complex_phasor, n_sigmas=sigma, levels=levels
+            )
+
+            unnormalized_mean[n][full_index] = complex_phasor[0].real
+            real[n][full_index] = complex_phasor[1].real
+            imag[n][full_index] = complex_phasor[1].imag
+            if 2 * harmonic in harmonics and 2 * harmonic not in harmonic_list:
+                real[n2][full_index] = complex_phasor[2].real
+                imag[n2][full_index] = complex_phasor[2].imag
+                unnormalized_mean[n2][full_index] = complex_phasor[0].real
+
+    _, real, imag = phasor_normalize(
+        unnormalized_mean, real, imag, samples=samples
+    )
+
+    if normalize and samples > 1:
+        numpy.divide(mean, samples, out=mean)
+
+    if nan_safe:
+        return phasor_threshold(mean, real, imag, 0, open_interval=True)
 
     return mean, real, imag
 
