@@ -1,7 +1,7 @@
 MIT License
 ===========
 
-Copyright © 2022-2024 :ref:`PhasorPy Contributors <contributors>`
+Copyright © 2022-2025 :ref:`PhasorPy Contributors <contributors>`
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the “Software”), to deal
