@@ -6,7 +6,7 @@ lifetime and hyperspectral images using the phasor approach.
 - [Homepage](https://www.phasorpy.org)
 - [Documentation](https://www.phasorpy.org/docs/stable/)
 - [Source code](https://github.com/phasorpy/phasorpy)
-- [Download releases](https://pypi.org/project/phasorpy/#files)
+- [Install with pip](https://pypi.org/project/phasorpy/) or [conda](https://anaconda.org/conda-forge/phasorpy).
 - [Data files](https://zenodo.org/communities/phasorpy/)
 - [Issues and questions](https://github.com/phasorpy/phasorpy/issues)
 

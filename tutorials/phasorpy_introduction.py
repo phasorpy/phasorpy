@@ -34,6 +34,12 @@ image processing, array programming, and Python.
 #
 #     python -m pip install -U "phasorpy[all]"
 #
+# Alternatively, PhasorPy can be installed via
+# `conda-forge <https://anaconda.org/conda-forge/phasorpy>`_ in an Anaconda
+# environment::
+#
+#    conda install conda-forge::phasorpy
+#
 # The development version of PhasorPy can be installed instead from the
 # latest source code on GitHub. This requires a C compiler, such as
 # XCode, Visual Studio, or gcc, to be installed::

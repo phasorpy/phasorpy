@@ -40,7 +40,8 @@ The library's source code and documentation are maintained in the
 `PhasorPy repository on GitHub <https://github.com/phasorpy/phasorpy>`_.
 
 Releases can be downloaded and installed from the
-`PhasorPy project on PyPI <https://pypi.org/project/phasorpy/>`_.
+`PhasorPy project on PyPI <https://pypi.org/project/phasorpy/>`_
+or `conda-forge <https://anaconda.org/conda-forge/phasorpy>`_.
 
 Sample data files used in tutorials and testing are available from the
 `PhasorPy community on Zenodo <https://zenodo.org/communities/phasorpy>`_.
