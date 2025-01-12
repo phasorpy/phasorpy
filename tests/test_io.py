@@ -236,6 +236,7 @@ def test_read_ptu():
         data.coords['H'].data[[1, -1]], [0.0969697, 12.7030303], decimal=4
     )
     assert data.attrs['frequency'] == 78.02
+    assert data.attrs['ptu_tags']['HW_Type'] == 'PicoHarp'
 
     data = read_ptu(
         filename,
@@ -253,6 +254,39 @@ def test_read_ptu():
         data.coords['H'].data[[1, -1]], [0.0969697, 397.09091], decimal=4
     )
     assert data.attrs['frequency'] == 78.02
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_read_ptu_irf():
+    """Test read PicoQuant PTU file containing IRF."""
+    # data file from PicoQuant's Samples.sptw
+    filename = private_file('Cy5_diff_IRF+FLCS-pattern.ptu')
+    data = read_ptu(filename)
+    assert data.values.sum(dtype=numpy.uint64) == 13268548
+    assert data.dtype == numpy.uint32
+    assert data.shape == (1, 1, 1, 2, 6250)
+    assert data.dims == ('T', 'Y', 'X', 'C', 'H')
+    assert_almost_equal(
+        data.coords['H'].data[[1, -1]], [0.007999, 49.991999], decimal=4
+    )
+    assert pytest.approx(data.attrs['frequency'], abs=1e-4) == 19.999732
+    assert data.attrs['ptu_tags']['HW_Type'] == 'PicoHarp 300'
+
+    data = read_ptu(filename, channel=0, keepdims=True)
+    assert data.values.sum(dtype=numpy.uint64) == 6984849
+    assert data.shape == (1, 1, 1, 1, 6250)
+    assert data.dims == ('T', 'Y', 'X', 'C', 'H')
+
+    with pytest.raises(ValueError):
+        read_ptu(filename, dtime=-1)
+
+    data = read_ptu(filename, channel=0, dtime=None, keepdims=False)
+    assert data.values.sum(dtype=numpy.uint64) == 6984849
+    assert data.shape == (1, 1, 4096)
+    assert data.dims == ('Y', 'X', 'H')
+    assert_almost_equal(
+        data.coords['H'].data[[1, -1]], [0.007999, 32.759999], decimal=4
+    )
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')

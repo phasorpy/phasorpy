@@ -1229,7 +1229,7 @@ def read_ptu(
     dtime: int | None = 0,
     keepdims: bool = True,
 ) -> DataArray:
-    """Return image histogram and metadata from PicoQuant PTU T3 mode file.
+    """Return TCSPC histogram and metadata from PicoQuant PTU T3 mode file.
 
     PTU files contain time-correlated single photon counting measurement data
     and instrumentation parameters.
@@ -1239,7 +1239,7 @@ def read_ptu(
     filename : str or Path
         Name of PTU file to read.
     selection : sequence of index types, optional
-        Indices for all dimensions:
+        Indices for all dimensions of image mode files:
 
         - ``None``: return all items along axis (default).
         - ``Ellipsis``: return all items along multiple axes.
@@ -1262,7 +1262,7 @@ def read_ptu(
     dtime : int, optional, default: 0
         Specifies number of bins in image histogram.
         If 0 (default), return number of bins in one period.
-        If < 0, integrate delay time axis.
+        If < 0, integrate delay time axis (image mode only).
         If > 0, return up to specified bin.
         Overrides `selection` for axis ``H``.
     keepdims : bool, optional, default: True
@@ -1277,6 +1277,10 @@ def read_ptu(
 
         - ``coords['H']``: times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
+        - ``attrs['ptu_tags']``: metadata read from PTU file.
+
+        Size-one dimensions are prepended to point mode data to make them
+        broadcastable to image data.
 
     Raises
     ------
@@ -1307,21 +1311,42 @@ def read_ptu(
     from xarray import DataArray
 
     with ptufile.PtuFile(filename, trimdims=trimdims) as ptu:
-        if not ptu.is_t3 or not ptu.is_image:
-            raise ValueError(
-                f'{os.path.basename(filename)!r} '
-                'is not a PTU file containing a T3 mode image'
+        if not ptu.is_t3:
+            raise ValueError(f'{ptu.filename!r} is not a T3 mode PTU file')
+        if ptu.is_image:
+            data = ptu.decode_image(
+                selection,
+                dtype=dtype,
+                frame=frame,
+                channel=channel,
+                dtime=dtime,
+                keepdims=keepdims,
+                asxarray=True,
             )
-        data = ptu.decode_image(
-            selection,
-            dtype=dtype,
-            frame=frame,
-            channel=channel,
-            dtime=dtime,
-            keepdims=keepdims,
-            asxarray=True,
-        )
-        assert isinstance(data, DataArray)
+            assert isinstance(data, DataArray)
+        elif ptu.measurement_submode == 1:
+            # point mode IRF
+            if dtime == -1:
+                raise ValueError(f'{dtime=} not supported for point mode')
+            data = ptu.decode_histogram(
+                dtype=dtype, dtime=dtime, asxarray=True
+            )
+            assert isinstance(data, DataArray)
+            if channel is not None:
+                if keepdims:
+                    data = data[channel : channel + 1]
+                else:
+                    data = data[channel]
+            # prepend dimensions as needed to appear image-like
+            data = data.expand_dims(dim={'Y': 1, 'X': 1})
+            if keepdims:
+                data = data.expand_dims(dim={'T': 1})
+        else:
+            raise ValueError(
+                f'{ptu.filename!r} is not a point or image mode PTU file'
+            )
+
+        data.attrs['ptu_tags'] = ptu.tags
         data.attrs['frequency'] = ptu.frequency * 1e-6  # MHz
         data.coords['H'] = data.coords['H'] * 1e9
 
