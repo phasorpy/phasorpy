@@ -209,6 +209,7 @@ def phasor_to_ometiff(
         Write to image series named 'Phasor imag'.
     frequency : float, optional
         Fundamental frequency of time-resolved phasor coordinates.
+        Usually in unit of MHz.
         Write to image series named 'Phasor frequency'.
     harmonic : int or sequence of int, optional
         Harmonics present in the first dimension of `real` and `imag`, if any.
@@ -407,6 +408,7 @@ def phasor_from_ometiff(
           first axis.
         - ``'frequency'`` (float, optional):
           Fundamental frequency of time-resolved phasor coordinates.
+          Usually in unit of MHz.
         - ``'description'`` (str, optional):
           OME dataset plain-text description.
 
@@ -806,6 +808,9 @@ def read_lsm(
         Hyperspectral image data.
         Usually, a 3-to-5-dimensional array of type ``uint8`` or ``uint16``.
 
+        - ``coords['C']``: wavelengths in nm.
+        - ``coords['T']``: time coordinates in s, if any.
+
     Raises
     ------
     tifffile.TiffFileError
@@ -825,7 +830,7 @@ def read_lsm(
     >>> data.dims
     ('C', 'Y', 'X')
     >>> data.coords['C'].data  # wavelengths
-    array(...)
+    array([423, ..., 713])
 
     """
     import tifffile
@@ -862,11 +867,12 @@ def read_lsm(
             raise ValueError(
                 f'{tif.filename} does not contain hyperspectral image'
             )
+        wavelengths *= 1e9
         data = data.take(indices.nonzero()[0], axis=axis)
         coords['C'] = wavelengths
         # time stamps
         if 'T' in dims:
-            coords['T'] = lsminfo['TimeStamps']
+            coords['T'] = lsminfo['TimeStamps'] - lsminfo['TimeStamps'][0]
             if coords['T'].size != data.shape[dims.index('T')]:
                 raise ValueError(
                     f'{tif.filename} timestamps do not match time axis'
@@ -906,7 +912,7 @@ def read_imspector_tiff(
         TCSPC image stack.
         Usually, a 3-to-5-dimensional array of type ``uint16``.
 
-        - ``coords['H']``: times of histogram bins.
+        - ``coords['H']``: times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
 
     Raises
@@ -928,7 +934,7 @@ def read_imspector_tiff(
     >>> data.dims
     ('H', 'Y', 'X')
     >>> data.coords['H'].data  # dtime bins
-    array(...)
+    array([0, ..., 12.26])
     >>> data.attrs['frequency']  # doctest: +NUMBER
     80.109
 
@@ -1064,9 +1070,9 @@ def read_ifli(
         The last dimension contains `mean`, `real`, and `imag` phasor
         coordinates.
 
-        - ``coords['F']``: modulation frequencies.
-        - ``coords['C']``: emission wavelengths, if any.
-        - ``attrs['ref_tau']``: reference lifetimes.
+        - ``coords['F']``: modulation frequencies in MHz.
+        - ``coords['C']``: emission wavelengths in nm, if any.
+        - ``attrs['ref_tau']``: reference lifetimes in ns.
         - ``attrs['ref_tau_frac']``: reference lifetime fractions.
         - ``attrs['ref_phasor']``: reference phasor coordinates for all
           frequencies.
@@ -1088,7 +1094,7 @@ def read_ifli(
     >>> data.dims
     ('Y', 'X', 'F', 'S')
     >>> data.coords['F'].data  # doctest: +NUMBER
-    array([8.033e+07, 1.607e+08, 2.41e+08, 4.017e+08])
+    array([80.33, 160.7, 241, 401.7])
     >>> data.coords['S'].data
     array(['mean', 'real', 'imag'], dtype='<U4')
     >>> data.attrs
@@ -1107,7 +1113,7 @@ def read_ifli(
         header = ifli.header
         coords: dict[str, Any] = {}
         coords['S'] = ['mean', 'real', 'imag']
-        coords['F'] = numpy.array(header['ModFrequency'])
+        coords['F'] = numpy.array(header['ModFrequency']) * 1e-6
         # TODO: how to distinguish time- from frequency-domain?
         # TODO: how to extract spatial coordinates?
         if 'T' in axes:
@@ -1158,7 +1164,7 @@ def read_sdt(
         :ref:`axes codes <axes>` ``'YXH'`` and type ``uint16``, ``uint32``,
         or ``float32``.
 
-        - ``coords['H']``: times of the histogram bins.
+        - ``coords['H']``: times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
 
     Raises
@@ -1179,7 +1185,7 @@ def read_sdt(
     >>> data.dims
     ('Y', 'X', 'H')
     >>> data.coords['H'].data
-    array(...)
+    array([0, ..., 12.45])
     >>> data.attrs['frequency']  # doctest: +NUMBER
     79.99
 
@@ -1200,11 +1206,11 @@ def read_sdt(
         # sdtfile.BlockType(sdt.block_headers[index].block_type).contents
         # == 'PAGE_BLOCK'
         data = sdt.data[index]
-        times = sdt.times[index]
+        times = sdt.times[index] * 1e9
 
     # TODO: get spatial coordinates from scanner settings?
     metadata = _metadata('QYXH'[-data.ndim :], data.shape, filename, H=times)
-    metadata['attrs']['frequency'] = 1e-6 / float(times[-1] + times[1])
+    metadata['attrs']['frequency'] = 1e3 / float(times[-1] + times[1])
 
     from xarray import DataArray
 
@@ -1223,7 +1229,7 @@ def read_ptu(
     dtime: int | None = 0,
     keepdims: bool = True,
 ) -> DataArray:
-    """Return image histogram and metadata from PicoQuant PTU T3 mode file.
+    """Return TCSPC histogram and metadata from PicoQuant PTU T3 mode file.
 
     PTU files contain time-correlated single photon counting measurement data
     and instrumentation parameters.
@@ -1233,7 +1239,7 @@ def read_ptu(
     filename : str or Path
         Name of PTU file to read.
     selection : sequence of index types, optional
-        Indices for all dimensions:
+        Indices for all dimensions of image mode files:
 
         - ``None``: return all items along axis (default).
         - ``Ellipsis``: return all items along multiple axes.
@@ -1256,7 +1262,7 @@ def read_ptu(
     dtime : int, optional, default: 0
         Specifies number of bins in image histogram.
         If 0 (default), return number of bins in one period.
-        If < 0, integrate delay time axis.
+        If < 0, integrate delay time axis (image mode only).
         If > 0, return up to specified bin.
         Overrides `selection` for axis ``H``.
     keepdims : bool, optional, default: True
@@ -1269,8 +1275,12 @@ def read_ptu(
         with :ref:`axes codes <axes>` ``'TYXCH'`` and type specified
         in ``dtype``:
 
-        - ``coords['H']``: times of the histogram bins.
+        - ``coords['H']``: times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
+        - ``attrs['ptu_tags']``: metadata read from PTU file.
+
+        Size-one dimensions are prepended to point mode data to make them
+        broadcastable to image data.
 
     Raises
     ------
@@ -1292,7 +1302,7 @@ def read_ptu(
     >>> data.dims
     ('T', 'Y', 'X', 'C', 'H')
     >>> data.coords['H'].data
-    array(...)
+    array([0, ..., 12.7])
     >>> data.attrs['frequency']  # doctest: +NUMBER
     78.02
 
@@ -1301,22 +1311,44 @@ def read_ptu(
     from xarray import DataArray
 
     with ptufile.PtuFile(filename, trimdims=trimdims) as ptu:
-        if not ptu.is_t3 or not ptu.is_image:
-            raise ValueError(
-                f'{os.path.basename(filename)!r} '
-                'is not a PTU file containing a T3 mode image'
+        if not ptu.is_t3:
+            raise ValueError(f'{ptu.filename!r} is not a T3 mode PTU file')
+        if ptu.is_image:
+            data = ptu.decode_image(
+                selection,
+                dtype=dtype,
+                frame=frame,
+                channel=channel,
+                dtime=dtime,
+                keepdims=keepdims,
+                asxarray=True,
             )
-        data = ptu.decode_image(
-            selection,
-            dtype=dtype,
-            frame=frame,
-            channel=channel,
-            dtime=dtime,
-            keepdims=keepdims,
-            asxarray=True,
-        )
-        assert isinstance(data, DataArray)
+            assert isinstance(data, DataArray)
+        elif ptu.measurement_submode == 1:
+            # point mode IRF
+            if dtime == -1:
+                raise ValueError(f'{dtime=} not supported for point mode')
+            data = ptu.decode_histogram(
+                dtype=dtype, dtime=dtime, asxarray=True
+            )
+            assert isinstance(data, DataArray)
+            if channel is not None:
+                if keepdims:
+                    data = data[channel : channel + 1]
+                else:
+                    data = data[channel]
+            # prepend dimensions as needed to appear image-like
+            data = data.expand_dims(dim={'Y': 1, 'X': 1})
+            if keepdims:
+                data = data.expand_dims(dim={'T': 1})
+        else:
+            raise ValueError(
+                f'{ptu.filename!r} is not a point or image mode PTU file'
+            )
+
+        data.attrs['ptu_tags'] = ptu.tags
         data.attrs['frequency'] = ptu.frequency * 1e-6  # MHz
+        data.coords['H'] = data.coords['H'] * 1e9
 
     return data
 
@@ -1345,8 +1377,8 @@ def read_flif(
         - ``attrs['frequency']``: repetition frequency in MHz.
         - ``attrs['ref_phase']``: measured phase of reference.
         - ``attrs['ref_mod']``: measured modulation of reference.
-        - ``attrs['ref_tauphase']``: lifetime from phase of reference.
-        - ``attrs['ref_taumod']``: lifetime from modulation of reference.
+        - ``attrs['ref_tauphase']``: lifetime from phase of reference in ns.
+        - ``attrs['ref_taumod']``: lifetime from modulation of reference in ns.
 
     Raises
     ------
@@ -1365,7 +1397,7 @@ def read_flif(
     >>> data.dims
     ('H', 'Y', 'X')
     >>> data.coords['H'].data
-    array(...)
+    array([0, ..., 6.087], dtype=float32)
     >>> data.attrs['frequency']  # doctest: +NUMBER
     80.65
 
@@ -1461,7 +1493,7 @@ def read_fbd(
     >>> data.dims  # doctest: +SKIP
     ('T', 'C', 'Y', 'X', 'H')
     >>> data.coords['H'].data  # doctest: +SKIP
-    array(...)
+    array([0, ..., 6.185])
     >>> data.attrs['frequency']  # doctest: +SKIP
     40.0
 

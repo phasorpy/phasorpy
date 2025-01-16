@@ -103,13 +103,9 @@ def test_read_lsm_tzcyx():
     assert data.shape == (10, 21, 32, 256, 256)
     assert data.dims == ('T', 'Z', 'C', 'Y', 'X')
     assert_almost_equal(
-        data.coords['C'][[0, -1]],
-        [414.936272e-9, 690.47537e-9],
-        decimal=12,
+        data.coords['C'][[0, -1]], [414.936272, 690.47537], decimal=4
     )
-    assert_almost_equal(
-        data.coords['T'][[0, -1]], [40557.75229085, 42488.21737206]
-    )
+    assert_almost_equal(data.coords['T'][[0, -1]], [0.0, 1930.4651], decimal=4)
     assert_almost_equal(data.coords['Z'][[0, -1]], [0.0, 7.4440772e-05])
 
 
@@ -123,7 +119,7 @@ def test_read_lsm_paramecium():
     assert data.shape == (30, 512, 512)
     assert data.dims == ('C', 'Y', 'X')
     assert_almost_equal(
-        data.coords['C'][[0, -1]], [4.2301329e-7, 7.1301329e-7], decimal=12
+        data.coords['C'][[0, -1]], [423.0133, 713.0133], decimal=4
     )
     assert_almost_equal(
         data.coords['X'][[0, -1]], [0.0, 0.000424265835], decimal=9
@@ -141,7 +137,7 @@ def test_imspector_tiff():
     assert_almost_equal(
         data.coords['H'][[0, -1]], [0.0, 12.259995], decimal=12
     )
-    assert data.attrs['frequency'] == 80.10956424883184
+    assert pytest.approx(data.attrs['frequency']) == 80.1095
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
@@ -155,7 +151,7 @@ def test_imspector_tiff_t():
     assert_almost_equal(
         data.coords['H'][[0, -1]], [0.0, 12.259995], decimal=12
     )
-    assert data.attrs['frequency'] == 80.10956424883184
+    assert pytest.approx(data.attrs['frequency']) == 80.109564
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
@@ -167,9 +163,8 @@ def test_read_sdt():
     assert data.dtype == numpy.uint16
     assert data.shape == (128, 128, 256)
     assert data.dims == ('Y', 'X', 'H')
-    assert_almost_equal(
-        data.coords['H'][[0, -1]], [0.0, 1.2451172e-8], decimal=12
-    )
+    assert_almost_equal(data.coords['H'][[0, -1]], [0.0, 12.451172], decimal=5)
+    assert pytest.approx(data.attrs['frequency']) == 79.999999
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
@@ -182,9 +177,8 @@ def test_read_sdt_fcs():
     assert data.dtype == numpy.uint16
     assert data.shape == (512, 512, 1024)
     assert data.dims == ('Y', 'X', 'H')
-    assert_almost_equal(
-        data.coords['H'][[0, -1]], [0.0, 1.666157034737e-08], decimal=12
-    )
+    assert_almost_equal(data.coords['H'][[0, -1]], [0.0, 16.66157], decimal=5)
+    assert pytest.approx(data.attrs['frequency']) == 59.959740
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
@@ -200,7 +194,7 @@ def test_read_ifli():
     assert_array_equal(data.coords['S'].data, ['mean', 'real', 'imag'])
     assert_almost_equal(
         data.coords['F'],
-        (80332416.0, 160664832.0, 240997248.0, 401662080.0),
+        (80.332416, 160.664832, 240.997248, 401.66208),
     )
     assert_almost_equal(
         data.attrs['ref_phasor'][0], (1.1425294e7, 5.9600395e-1, -9.4883347e-1)
@@ -239,9 +233,10 @@ def test_read_ptu():
     assert data.shape == (256, 256, 132)
     assert data.dims == ('Y', 'X', 'H')
     assert_almost_equal(
-        data.coords['H'].data[[1, -1]], [9.69696970e-11, 1.2703030e-08]
+        data.coords['H'].data[[1, -1]], [0.0969697, 12.7030303], decimal=4
     )
     assert data.attrs['frequency'] == 78.02
+    assert data.attrs['ptu_tags']['HW_Type'] == 'PicoHarp'
 
     data = read_ptu(
         filename,
@@ -256,9 +251,42 @@ def test_read_ptu():
     assert data.shape == (1, 256, 256, 1, 4096)
     assert data.dims == ('T', 'Y', 'X', 'C', 'H')
     assert_almost_equal(
-        data.coords['H'].data[[1, -1]], [9.69696970e-11, 3.97090909e-07]
+        data.coords['H'].data[[1, -1]], [0.0969697, 397.09091], decimal=4
     )
     assert data.attrs['frequency'] == 78.02
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_read_ptu_irf():
+    """Test read PicoQuant PTU file containing IRF."""
+    # data file from PicoQuant's Samples.sptw
+    filename = private_file('Cy5_diff_IRF+FLCS-pattern.ptu')
+    data = read_ptu(filename)
+    assert data.values.sum(dtype=numpy.uint64) == 13268548
+    assert data.dtype == numpy.uint32
+    assert data.shape == (1, 1, 1, 2, 6250)
+    assert data.dims == ('T', 'Y', 'X', 'C', 'H')
+    assert_almost_equal(
+        data.coords['H'].data[[1, -1]], [0.007999, 49.991999], decimal=4
+    )
+    assert pytest.approx(data.attrs['frequency'], abs=1e-4) == 19.999732
+    assert data.attrs['ptu_tags']['HW_Type'] == 'PicoHarp 300'
+
+    data = read_ptu(filename, channel=0, keepdims=True)
+    assert data.values.sum(dtype=numpy.uint64) == 6984849
+    assert data.shape == (1, 1, 1, 1, 6250)
+    assert data.dims == ('T', 'Y', 'X', 'C', 'H')
+
+    with pytest.raises(ValueError):
+        read_ptu(filename, dtime=-1)
+
+    data = read_ptu(filename, channel=0, dtime=None, keepdims=False)
+    assert data.values.sum(dtype=numpy.uint64) == 6984849
+    assert data.shape == (1, 1, 4096)
+    assert data.dims == ('Y', 'X', 'H')
+    assert_almost_equal(
+        data.coords['H'].data[[1, -1]], [0.007999, 32.759999], decimal=4
+    )
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')

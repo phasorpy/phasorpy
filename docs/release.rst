@@ -14,10 +14,10 @@ documentation and maintenance changes.
 ----------------
 
 This is the third alpha release of the PhasorPy library.
-It fixes the averaging of phasor coordinates in the `phasor_center` and
-`phasor_calibrate` functions, replaces the `phasor_filter` function
-with `phasor_filter_median`, adds support for multiple harmonics to
-`phasor_threshold`, and adds the `read_imspector_tiff` function to read
+It fixes the averaging of phasor coordinates in the ``phasor_center`` and
+``phasor_calibrate`` functions, replaces the ``phasor_filter`` function
+with ``phasor_filter_median``, adds support for multiple harmonics to
+``phasor_threshold``, and adds the ``read_imspector_tiff`` function to read
 ImSpector FLIM TIFF files. This release supports Python 3.10 to 3.13.
 
 What's Changed
