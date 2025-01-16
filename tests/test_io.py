@@ -150,7 +150,7 @@ def test_signal_from_imspector_tiff():
     )
     assert pytest.approx(signal.attrs['frequency']) == 80.1095
 
-    filename = private_file('tzcyx.lsm')
+    filename = fetch('paramecium.lsm')
     with pytest.raises(ValueError):
         signal_from_imspector_tiff(filename)
 
@@ -865,7 +865,7 @@ def test_phasor_from_ometiff_exceptions(caplog):
         mean, real, imag, attrs = phasor_from_ometiff(filename)
         assert attrs['harmonic'] == 1
 
-    filename = private_file('tzcyx.lsm')
+    filename = fetch('paramecium.lsm')
     with pytest.raises(ValueError):
         phasor_from_ometiff(filename)
 
