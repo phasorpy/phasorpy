@@ -59,7 +59,7 @@ def wavelength2rgb(
         else:
             rgb = rgb.astype(dtype)
     if astuple:
-        return tuple(rgb.tolist()[:3])  # type: ignore[index]
+        return tuple(rgb.tolist()[:3])
     return rgb
 
 

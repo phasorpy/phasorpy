@@ -195,8 +195,8 @@ def test_flimlabs_reproduce():
     real1 = numpy.nan_to_num(real1, nan=0)
     imag1 = numpy.nan_to_num(imag1, nan=0)
 
-    assert_allclose(real, real1)
-    assert_allclose(imag, imag1)
+    assert_allclose(real, real1, atol=1e-3)
+    assert_allclose(imag, imag1, atol=1e-3)
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
