@@ -1718,6 +1718,24 @@ def test_phasor_from_lifetime_modify():
                 ),
             ),
         ),
+        # harmonics higher than size of first dimension in `reference_real`
+        (
+            (
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+                SYNTH_DATA_LIST,
+            ),
+            {
+                'frequency': 80,
+                'harmonic': [1, 2, 6],
+                'lifetime': 4,
+            },
+            (
+                [0.19831079, 0.0582399, 0.00682439],
+                [0.3987275, 0.23419652, 0.0823275],
+            ),
+        ),
         # harmonics = 'all' parameter
         (
             (

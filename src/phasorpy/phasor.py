@@ -1247,7 +1247,14 @@ def phasor_calibrate(
 
     has_harmonic_axis = reference_mean.ndim + 1 == reference_real.ndim
     harmonic, _ = parse_harmonic(
-        harmonic, reference_real.shape[0] if has_harmonic_axis else None
+        harmonic,
+        (
+            reference_real.shape[0]
+            if has_harmonic_axis
+            and isinstance(harmonic, str)
+            and harmonic == 'all'
+            else None
+        ),
     )
 
     if has_harmonic_axis:
