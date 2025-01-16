@@ -671,7 +671,7 @@ def phasor_to_simfcs_referenced(
 
     if dims is not None and len(dims) == phi.ndim - 1:
         dims = tuple(dims)
-        dims = ('H',) + dims
+        dims = ('h' if dims[0].islower() else 'H',) + dims
 
     chunk = numpy.empty((size, size), dtype=numpy.float32)
 
