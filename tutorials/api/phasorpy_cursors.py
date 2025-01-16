@@ -19,14 +19,14 @@ from phasorpy.cursors import (
     pseudo_color,
 )
 from phasorpy.datasets import fetch
-from phasorpy.io import read_lsm
+from phasorpy.io import signal_from_lsm
 from phasorpy.phasor import phasor_from_signal, phasor_threshold
 from phasorpy.plot import PhasorPlot
 
 # %%
 # Open a hyperspectral dataset used throughout this tutorial:
 
-signal = read_lsm(fetch('paramecium.lsm'))
+signal = signal_from_lsm(fetch('paramecium.lsm'))
 mean, real, imag = phasor_from_signal(signal, axis=0)
 
 # remove coordinates with zero intensity

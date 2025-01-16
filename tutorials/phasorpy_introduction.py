@@ -89,9 +89,9 @@ from matplotlib import pyplot
 # of a zebrafish embryo at day 3, acquired at 80.11 MHz:
 
 from phasorpy.datasets import fetch
-from phasorpy.io import read_imspector_tiff
+from phasorpy.io import signal_from_imspector_tiff
 
-signal = read_imspector_tiff(fetch('Embryo.tif'))
+signal = signal_from_imspector_tiff(fetch('Embryo.tif'))
 frequency = signal.attrs['frequency']
 
 print(signal.shape, signal.dtype)
@@ -172,7 +172,7 @@ numpy.testing.assert_allclose(
 #
 # Read the signal of the reference measurement from a file:
 
-reference_signal = read_imspector_tiff(fetch('Fluorescein_Embryo.tif'))
+reference_signal = signal_from_imspector_tiff(fetch('Fluorescein_Embryo.tif'))
 assert reference_signal.attrs['frequency'] == frequency
 
 # %%
@@ -399,9 +399,9 @@ pyplot.show()
 # Open a hyperspectral dataset acquired with a laser scanning microscope
 # at 30 emission wavelengths:
 
-from phasorpy.io import read_lsm
+from phasorpy.io import signal_from_lsm
 
-hyperspectral_signal = read_lsm(fetch('paramecium.lsm'))
+hyperspectral_signal = signal_from_lsm(fetch('paramecium.lsm'))
 
 plot_signal_image(hyperspectral_signal, axis=0, title='Hyperspectral image')
 

@@ -4,7 +4,9 @@ import os
 import tempfile
 from glob import glob
 
+import lfdfiles
 import numpy
+import ptufile
 import pytest
 import tifffile
 from numpy.testing import (
@@ -15,22 +17,25 @@ from numpy.testing import (
 
 from phasorpy.datasets import fetch
 from phasorpy.io import (
+    phasor_from_flimlabs_json,
+    phasor_from_ifli,
     phasor_from_ometiff,
     phasor_from_simfcs_referenced,
     phasor_to_ometiff,
     phasor_to_simfcs_referenced,
-    read_b64,
-    read_bh,
-    read_bhz,
-    read_fbd,
-    read_flif,
-    read_ifli,
-    read_imspector_tiff,
-    read_lsm,
-    read_ptu,
-    read_sdt,
-    read_z64,
+    signal_from_b64,
+    signal_from_bh,
+    signal_from_bhz,
+    signal_from_fbd,
+    signal_from_flif,
+    signal_from_flimlabs_json,
+    signal_from_imspector_tiff,
+    signal_from_lsm,
+    signal_from_ptu,
+    signal_from_sdt,
+    signal_from_z64,
 )
+from phasorpy.phasor import phasor_from_signal, phasor_transform
 
 HERE = os.path.dirname(__file__)
 TEMP_DIR = os.path.normpath(
@@ -86,159 +91,336 @@ def private_file(filename: str, /) -> str:
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_read_lsm_non_hyperspectral():
+def test_signal_from_lsm_non_hyperspectral():
     """Test read non-hyperspectral LSM image fails."""
     filename = private_file('non_hyperspectral.lsm')
     with pytest.raises(ValueError):
-        read_lsm(filename)
+        signal_from_lsm(filename)
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(tifffile.TiffFileError):
+        signal_from_lsm(filename)
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_read_lsm_tzcyx():
+def test_signal_from_lsm_tzcyx():
     """Test read TZC hyperspectral LSM image."""
     filename = private_file('tzcyx.lsm')
-    data = read_lsm(filename)
-    assert data.values.sum(dtype=numpy.uint64) == 142328063165
-    assert data.dtype == numpy.uint16
-    assert data.shape == (10, 21, 32, 256, 256)
-    assert data.dims == ('T', 'Z', 'C', 'Y', 'X')
+    signal = signal_from_lsm(filename)
+    assert signal.values.sum(dtype=numpy.uint64) == 142328063165
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (10, 21, 32, 256, 256)
+    assert signal.dims == ('T', 'Z', 'C', 'Y', 'X')
     assert_almost_equal(
-        data.coords['C'][[0, -1]], [414.936272, 690.47537], decimal=4
+        signal.coords['C'][[0, -1]], [414.936272, 690.47537], decimal=4
     )
-    assert_almost_equal(data.coords['T'][[0, -1]], [0.0, 1930.4651], decimal=4)
-    assert_almost_equal(data.coords['Z'][[0, -1]], [0.0, 7.4440772e-05])
+    assert_almost_equal(
+        signal.coords['T'][[0, -1]], [0.0, 1930.4651], decimal=4
+    )
+    assert_almost_equal(signal.coords['Z'][[0, -1]], [0.0, 7.4440772e-05])
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_read_lsm_paramecium():
+def test_signal_from_lsm_paramecium():
     """Test read paramecium.lsm."""
     filename = fetch('paramecium.lsm')
-    data = read_lsm(filename)
-    assert data.values.sum(dtype=numpy.uint64) == 14050194
-    assert data.dtype == numpy.uint8
-    assert data.shape == (30, 512, 512)
-    assert data.dims == ('C', 'Y', 'X')
+    signal = signal_from_lsm(filename)
+    assert signal.values.sum(dtype=numpy.uint64) == 14050194
+    assert signal.dtype == numpy.uint8
+    assert signal.shape == (30, 512, 512)
+    assert signal.dims == ('C', 'Y', 'X')
     assert_almost_equal(
-        data.coords['C'][[0, -1]], [423.0133, 713.0133], decimal=4
+        signal.coords['C'][[0, -1]], [423.0133, 713.0133], decimal=4
     )
     assert_almost_equal(
-        data.coords['X'][[0, -1]], [0.0, 0.000424265835], decimal=9
+        signal.coords['X'][[0, -1]], [0.0, 0.000424265835], decimal=9
     )
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_imspector_tiff():
+def test_signal_from_imspector_tiff():
     """Test read Imspector FLIM TIFF file."""
-    data = read_imspector_tiff(fetch('Embryo.tif'))
-    assert data.values.sum(dtype=numpy.uint64) == 31348436
-    assert data.dtype == numpy.uint16
-    assert data.shape == (56, 512, 512)
-    assert data.dims == ('H', 'Y', 'X')
+    signal = signal_from_imspector_tiff(fetch('Embryo.tif'))
+    assert signal.values.sum(dtype=numpy.uint64) == 31348436
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (56, 512, 512)
+    assert signal.dims == ('H', 'Y', 'X')
     assert_almost_equal(
-        data.coords['H'][[0, -1]], [0.0, 12.259995], decimal=12
+        signal.coords['H'][[0, -1]], [0.0, 12.259995], decimal=12
     )
-    assert pytest.approx(data.attrs['frequency']) == 80.1095
+    assert pytest.approx(signal.attrs['frequency']) == 80.1095
+
+    filename = private_file('tzcyx.lsm')
+    with pytest.raises(ValueError):
+        signal_from_imspector_tiff(filename)
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_imspector_tiff_t():
+def test_signal_from_imspector_tiff_t():
     """Test read Imspector FLIM TIFF file with TCSPC in T-axis."""
-    data = read_imspector_tiff(private_file('ZF-1100_noEF.tif'))
-    assert data.values.sum(dtype=numpy.uint64) == 18636271
-    assert data.dtype == numpy.uint16
-    assert data.shape == (56, 512, 512)
-    assert data.dims == ('H', 'Y', 'X')
+    signal = signal_from_imspector_tiff(private_file('ZF-1100_noEF.tif'))
+    assert signal.values.sum(dtype=numpy.uint64) == 18636271
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (56, 512, 512)
+    assert signal.dims == ('H', 'Y', 'X')
     assert_almost_equal(
-        data.coords['H'][[0, -1]], [0.0, 12.259995], decimal=12
+        signal.coords['H'][[0, -1]], [0.0, 12.259995], decimal=12
     )
-    assert pytest.approx(data.attrs['frequency']) == 80.109564
+    assert pytest.approx(signal.attrs['frequency']) == 80.109564
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_read_sdt():
+def test_flimlabs_reproduce():
+    """Test FLIM LABS results can be reproduced with PhasorPy."""
+    import json
+
+    filename = fetch('dataset_1.json')
+    signal = signal_from_flimlabs_json(filename, channel=0)
+
+    filename = fetch('dataset_1_phasor_ch1_h1.json')
+    mean, real, imag, attrs = phasor_from_flimlabs_json(filename)
+
+    filename = fetch('calibrator2_imaging_calibration.json')
+    with open(filename) as fh:
+        attrs = json.load(fh)
+
+    mean1, real1, imag1 = phasor_from_signal(signal, harmonic=1)
+
+    real1, imag1 = phasor_transform(
+        real1,
+        imag1,
+        -attrs['calibrations'][0][0][0],
+        1 / attrs['calibrations'][0][0][1],
+    )
+    real1 = numpy.nan_to_num(real1, nan=0)
+    imag1 = numpy.nan_to_num(imag1, nan=0)
+
+    assert_allclose(real, real1)
+    assert_allclose(imag, imag1)
+
+
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
+def test_phasor_from_flimlabs_json():
+    """Test phasor_from_flimlabs_json function."""
+    filename = fetch('dataset_1_phasor_ch1_h1.json')
+    mean, real, imag, attrs = phasor_from_flimlabs_json(filename)
+    assert mean.dtype == numpy.float32
+    assert mean.shape == (256, 256)
+    assert real.shape == (256, 256)
+    assert imag.shape == (256, 256)
+    assert attrs['dims'] == ('Y', 'X')
+    assert attrs['harmonic'] == 1
+    assert pytest.approx(attrs['frequency']) == 79.510677
+    lpns = attrs['flimlabs_header']['laser_period_ns']
+    assert pytest.approx(lpns) == 12.576927184822562
+
+    filename = fetch('dataset_1.json')
+    with pytest.raises(ValueError):
+        phasor_from_flimlabs_json(filename)
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(ValueError):
+        phasor_from_flimlabs_json(filename)
+
+
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
+def test_signal_from_flimlabs_json():
+    """Test signal_from_flimlabs_json function."""
+    filename = fetch('dataset_1.json')
+    signal = signal_from_flimlabs_json(filename)
+    assert signal.values.sum(dtype=numpy.uint64) == 3115336
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (1, 256, 256, 256)
+    assert signal.dims == ('C', 'Y', 'X', 'H')
+    assert_almost_equal(
+        signal.coords['H'][[0, -1]], [0.0, 12.527799], decimal=6
+    )
+    assert_array_equal(signal.coords['C'], [0])
+    assert pytest.approx(signal.attrs['frequency']) == 79.510677
+    lpns = signal.attrs['flimlabs_header']['laser_period_ns']
+    assert pytest.approx(lpns) == 12.576927184822562
+
+    signal = signal_from_flimlabs_json(filename, channel=0)
+    assert signal.shape == (256, 256, 256)
+
+    with pytest.raises(IndexError):
+        signal_from_flimlabs_json(filename, channel=1)
+
+    with pytest.raises(ValueError):
+        signal_from_flimlabs_json(filename, dtype=numpy.int8)
+
+    filename = fetch('dataset_1_phasor_ch1_h1.json')
+    with pytest.raises(ValueError):
+        signal_from_flimlabs_json(filename)
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(ValueError):
+        signal_from_flimlabs_json(filename)
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_signal_from_flimlabs_json_channel():
+    """Test read FLIM LABS JSON image file."""
+    filename = private_file('test03_1733492714_imaging.json')
+    signal = signal_from_flimlabs_json(filename)
+    assert signal.values.sum(dtype=numpy.uint64) == 4680256
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (3, 256, 256, 256)
+    assert signal.dims == ('C', 'Y', 'X', 'H')
+    assert_almost_equal(
+        signal.coords['H'][[0, -1]], [0.0, 12.451171875], decimal=12
+    )
+    assert_array_equal(signal.coords['C'], [0, 1, 2])
+    assert signal.attrs['frequency'] == 80.0
+
+    signal = signal_from_flimlabs_json(filename, channel=1, dtype=numpy.uint8)
+    assert signal.values.sum(dtype=numpy.uint64) == 1388562
+    assert signal.dtype == numpy.uint8
+    assert signal.shape == (256, 256, 256)
+    assert signal.dims == ('Y', 'X', 'H')
+
+    with pytest.raises(ValueError):
+        signal_from_flimlabs_json(filename, channel=1, dtype=numpy.int8)
+
+
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
+def test_signal_from_sdt():
     """Test read Becker & Hickl SDT file."""
     filename = fetch('tcspc.sdt')
-    data = read_sdt(filename)
-    assert data.values.sum(dtype=numpy.uint64) == 224606420
-    assert data.dtype == numpy.uint16
-    assert data.shape == (128, 128, 256)
-    assert data.dims == ('Y', 'X', 'H')
-    assert_almost_equal(data.coords['H'][[0, -1]], [0.0, 12.451172], decimal=5)
-    assert pytest.approx(data.attrs['frequency']) == 79.999999
+    signal = signal_from_sdt(filename)
+    assert signal.values.sum(dtype=numpy.uint64) == 224606420
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (128, 128, 256)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert_almost_equal(
+        signal.coords['H'][[0, -1]], [0.0, 12.451172], decimal=5
+    )
+    assert pytest.approx(signal.attrs['frequency']) == 79.999999
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(ValueError):
+        signal_from_sdt(filename)
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_read_sdt_fcs():
+def test_signal_from_sdt_fcs():
     """Test read Becker & Hickl SDT FCS file."""
     # file provided by lmalacrida via email on Nov 13, 2023
     filename = private_file('j3_405_z1.sdt')
-    data = read_sdt(filename)
-    assert data.values.sum(dtype=numpy.uint64) == 16929780
-    assert data.dtype == numpy.uint16
-    assert data.shape == (512, 512, 1024)
-    assert data.dims == ('Y', 'X', 'H')
-    assert_almost_equal(data.coords['H'][[0, -1]], [0.0, 16.66157], decimal=5)
-    assert pytest.approx(data.attrs['frequency']) == 59.959740
+    signal = signal_from_sdt(filename)
+    assert signal.values.sum(dtype=numpy.uint64) == 16929780
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (512, 512, 1024)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert_almost_equal(
+        signal.coords['H'][[0, -1]], [0.0, 16.66157], decimal=5
+    )
+    assert pytest.approx(signal.attrs['frequency']) == 59.959740
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_read_ifli():
+def test_phasor_from_ifli():
     """Test read ISS VistaVision file."""
     # TODO: test spectral file
     filename = fetch('frequency_domain.ifli')
-    data = read_ifli(filename, memmap=True)
-    assert data.values.sum() == 62603316.0
-    assert data.dtype == numpy.float32
-    assert data.shape == (256, 256, 4, 3)
-    assert data.dims == ('Y', 'X', 'F', 'S')
-    assert_array_equal(data.coords['S'].data, ['mean', 'real', 'imag'])
-    assert_almost_equal(
-        data.coords['F'],
-        (80.332416, 160.664832, 240.997248, 401.66208),
+    mean, real, imag, attr = phasor_from_ifli(filename, harmonic='all')
+    assert mean.sum(dtype=numpy.float64) == 15614850.0
+    assert mean.dtype == numpy.float32
+    assert mean.shape == (256, 256)
+    assert real.shape == (4, 256, 256)
+    assert imag.shape == (4, 256, 256)
+    assert attr['dims'] == ('Y', 'X')
+    assert attr['frequency'] == 80.332416
+    assert attr['harmonic'] == [1, 2, 3, 5]
+
+    mean, real1, imag1, attr = phasor_from_ifli(
+        filename, harmonic='any', memmap=True
     )
-    assert_almost_equal(
-        data.attrs['ref_phasor'][0], (1.1425294e7, 5.9600395e-1, -9.4883347e-1)
-    )
-    assert data.attrs['ref_tau'] == (2.5, 0.0)
-    assert data.attrs['ref_tau_frac'] == (1.0, 0.0)
-    assert data.attrs['ref_phasor'].shape == (4, 3)
+    assert mean.sum(dtype=numpy.float64) == 15614850.0
+    assert attr['harmonic'] == [1, 2, 3, 5]
+    assert_array_equal(real1, real)
+    assert_array_equal(imag1, imag)
+
+    mean, real1, imag1, attr = phasor_from_ifli(filename)
+    assert mean.shape == (256, 256)
+    assert real1.shape == (256, 256)
+    assert imag1.shape == (256, 256)
+    assert attr['harmonic'] == [1]
+    assert_array_equal(real1, real[0])
+
+    mean, real1, imag1, attr = phasor_from_ifli(filename, harmonic=2)
+    assert mean.shape == (256, 256)
+    assert real1.shape == (256, 256)
+    assert imag1.shape == (256, 256)
+    assert attr['harmonic'] == [2]
+    assert_array_equal(real1, real[1])
+
+    mean, real1, imag1, attr = phasor_from_ifli(filename, harmonic=[3])
+    assert real1.shape == (1, 256, 256)
+    assert imag1.shape == (1, 256, 256)
+    assert attr['harmonic'] == [3]
+    assert_array_equal(real1, real[2:3])
+
+    mean, real1, imag1, attr = phasor_from_ifli(filename, harmonic=[2, 5])
+    assert real1.shape == (2, 256, 256)
+    assert imag1.shape == (2, 256, 256)
+    assert attr['harmonic'] == [2, 5]
+    assert_array_equal(real1, real[[1, 3]])
+
+    with pytest.raises(IndexError):
+        phasor_from_ifli(filename, channel=1)
+
+    with pytest.raises(IndexError):
+        phasor_from_ifli(filename, harmonic=4)
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(lfdfiles.LfdFileError):
+        phasor_from_ifli(filename)
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_read_flif():
+def test_signal_from_flif():
     """Test read FlimFast FLIF file."""
     # TODO: test time series
     filename = fetch('flimfast.flif')
-    data = read_flif(filename)
-    data = read_flif(fetch('flimfast.flif'))
-    assert data.values.sum(dtype=numpy.uint64) == 706233156
-    assert data.dtype == 'uint16'
-    assert data.shape == (32, 220, 300)
-    assert data.dims == ('H', 'Y', 'X')
-    assert_almost_equal(data.coords['H'].data[[1, -1]], [0.1963495, 6.086836])
-    assert_almost_equal(data.attrs['frequency'], 80.6520004272461)
-    assert_almost_equal(data.attrs['ref_phase'], 120.63999938964844)
-    assert_almost_equal(data.attrs['ref_mod'], 31.670000076293945)
-    assert_almost_equal(data.attrs['ref_tauphase'], 1.0160000324249268)
-    assert_almost_equal(data.attrs['ref_taumod'], 1.2580000162124634)
+    signal = signal_from_flif(filename)
+    signal = signal_from_flif(fetch('flimfast.flif'))
+    assert signal.values.sum(dtype=numpy.uint64) == 706233156
+    assert signal.dtype == 'uint16'
+    assert signal.shape == (32, 220, 300)
+    assert signal.dims == ('H', 'Y', 'X')
+    assert_almost_equal(
+        signal.coords['H'].data[[1, -1]], [0.1963495, 6.086836]
+    )
+    assert_almost_equal(signal.attrs['frequency'], 80.6520004272461)
+    assert_almost_equal(signal.attrs['ref_phase'], 120.63999938964844)
+    assert_almost_equal(signal.attrs['ref_mod'], 31.670000076293945)
+    assert_almost_equal(signal.attrs['ref_tauphase'], 1.0160000324249268)
+    assert_almost_equal(signal.attrs['ref_taumod'], 1.2580000162124634)
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(lfdfiles.LfdFileError):
+        signal_from_flif(filename)
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_read_ptu():
+def test_signal_from_ptu():
     """Test read PicoQuant PTU file."""
     filename = fetch('hazelnut_FLIM_single_image.ptu')
-    data = read_ptu(filename, frame=-1, channel=0, dtime=0, keepdims=False)
-    assert data.values.sum(dtype=numpy.uint64) == 6064854
-    assert data.dtype == numpy.uint16
-    assert data.shape == (256, 256, 132)
-    assert data.dims == ('Y', 'X', 'H')
-    assert_almost_equal(
-        data.coords['H'].data[[1, -1]], [0.0969697, 12.7030303], decimal=4
+    signal = signal_from_ptu(
+        filename, frame=-1, channel=0, dtime=0, keepdims=False
     )
-    assert data.attrs['frequency'] == 78.02
-    assert data.attrs['ptu_tags']['HW_Type'] == 'PicoHarp'
+    assert signal.values.sum(dtype=numpy.uint64) == 6064854
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (256, 256, 132)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert_almost_equal(
+        signal.coords['H'].data[[1, -1]], [0.0969697, 12.7030303], decimal=4
+    )
+    assert signal.attrs['frequency'] == 78.02
+    assert signal.attrs['ptu_tags']['HW_Type'] == 'PicoHarp'
 
-    data = read_ptu(
+    signal = signal_from_ptu(
         filename,
         frame=-1,
         channel=0,
@@ -246,133 +428,156 @@ def test_read_ptu():
         keepdims=True,
         trimdims='TC',
     )
-    assert data.values.sum(dtype=numpy.uint64) == 6065123
-    assert data.dtype == numpy.uint16
-    assert data.shape == (1, 256, 256, 1, 4096)
-    assert data.dims == ('T', 'Y', 'X', 'C', 'H')
+    assert signal.values.sum(dtype=numpy.uint64) == 6065123
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (1, 256, 256, 1, 4096)
+    assert signal.dims == ('T', 'Y', 'X', 'C', 'H')
     assert_almost_equal(
-        data.coords['H'].data[[1, -1]], [0.0969697, 397.09091], decimal=4
+        signal.coords['H'].data[[1, -1]], [0.0969697, 397.09091], decimal=4
     )
-    assert data.attrs['frequency'] == 78.02
+    assert signal.attrs['frequency'] == 78.02
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(ptufile.PqFileError):
+        signal_from_ptu(filename)
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_read_ptu_irf():
+def test_signal_from_ptu_irf():
     """Test read PicoQuant PTU file containing IRF."""
     # data file from PicoQuant's Samples.sptw
     filename = private_file('Cy5_diff_IRF+FLCS-pattern.ptu')
-    data = read_ptu(filename)
-    assert data.values.sum(dtype=numpy.uint64) == 13268548
-    assert data.dtype == numpy.uint32
-    assert data.shape == (1, 1, 1, 2, 6250)
-    assert data.dims == ('T', 'Y', 'X', 'C', 'H')
+    signal = signal_from_ptu(filename)
+    assert signal.values.sum(dtype=numpy.uint64) == 13268548
+    assert signal.dtype == numpy.uint32
+    assert signal.shape == (1, 1, 1, 2, 6250)
+    assert signal.dims == ('T', 'Y', 'X', 'C', 'H')
     assert_almost_equal(
-        data.coords['H'].data[[1, -1]], [0.007999, 49.991999], decimal=4
+        signal.coords['H'].data[[1, -1]], [0.007999, 49.991999], decimal=4
     )
-    assert pytest.approx(data.attrs['frequency'], abs=1e-4) == 19.999732
-    assert data.attrs['ptu_tags']['HW_Type'] == 'PicoHarp 300'
+    assert pytest.approx(signal.attrs['frequency'], abs=1e-4) == 19.999732
+    assert signal.attrs['ptu_tags']['HW_Type'] == 'PicoHarp 300'
 
-    data = read_ptu(filename, channel=0, keepdims=True)
-    assert data.values.sum(dtype=numpy.uint64) == 6984849
-    assert data.shape == (1, 1, 1, 1, 6250)
-    assert data.dims == ('T', 'Y', 'X', 'C', 'H')
+    signal = signal_from_ptu(filename, channel=0, keepdims=True)
+    assert signal.values.sum(dtype=numpy.uint64) == 6984849
+    assert signal.shape == (1, 1, 1, 1, 6250)
+    assert signal.dims == ('T', 'Y', 'X', 'C', 'H')
 
     with pytest.raises(ValueError):
-        read_ptu(filename, dtime=-1)
+        signal_from_ptu(filename, dtime=-1)
 
-    data = read_ptu(filename, channel=0, dtime=None, keepdims=False)
-    assert data.values.sum(dtype=numpy.uint64) == 6984849
-    assert data.shape == (1, 1, 4096)
-    assert data.dims == ('Y', 'X', 'H')
+    signal = signal_from_ptu(filename, channel=0, dtime=None, keepdims=False)
+    assert signal.values.sum(dtype=numpy.uint64) == 6984849
+    assert signal.shape == (1, 1, 4096)
+    assert signal.dims == ('Y', 'X', 'H')
     assert_almost_equal(
-        data.coords['H'].data[[1, -1]], [0.007999, 32.759999], decimal=4
+        signal.coords['H'].data[[1, -1]], [0.007999, 32.759999], decimal=4
     )
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_read_fbd():
+def test_signal_from_fbd():
     """Test read FLIMbox FBD file."""
     # TODO: test files with different firmwares
     # TODO: gather public FBD files and upload to Zenodo
     filename = private_file('convallaria_000$EI0S.fbd')
-    data = read_fbd(filename)
-    assert data.values.sum(dtype=numpy.uint64) == 9310275
-    assert data.dtype == numpy.uint16
-    assert data.shape == (9, 2, 256, 256, 64)
-    assert data.dims == ('T', 'C', 'Y', 'X', 'H')
-    assert_almost_equal(data.coords['H'].data[[1, -1]], [0.0981748, 6.1850105])
-    assert_almost_equal(data.attrs['frequency'], 40.0)
+    signal = signal_from_fbd(filename)
+    assert signal.values.sum(dtype=numpy.uint64) == 9310275
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (9, 2, 256, 256, 64)
+    assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
+    assert_almost_equal(
+        signal.coords['H'].data[[1, -1]], [0.0981748, 6.1850105]
+    )
+    assert_almost_equal(signal.attrs['frequency'], 40.0)
 
-    data = read_fbd(filename, frame=-1, channel=0)
-    assert data.values.sum(dtype=numpy.uint64) == 9310275
-    assert data.shape == (1, 1, 256, 256, 64)
-    assert data.dims == ('T', 'C', 'Y', 'X', 'H')
+    signal = signal_from_fbd(filename, frame=-1, channel=0)
+    assert signal.values.sum(dtype=numpy.uint64) == 9310275
+    assert signal.shape == (1, 1, 256, 256, 64)
+    assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
 
-    data = read_fbd(filename, frame=-1, channel=1, keepdims=False)
-    assert data.values.sum(dtype=numpy.uint64) == 0  # channel 1 is empty
-    assert data.shape == (256, 256, 64)
-    assert data.dims == ('Y', 'X', 'H')
+    signal = signal_from_fbd(filename, frame=-1, channel=1, keepdims=False)
+    assert signal.values.sum(dtype=numpy.uint64) == 0  # channel 1 is empty
+    assert signal.shape == (256, 256, 64)
+    assert signal.dims == ('Y', 'X', 'H')
 
-    data = read_fbd(filename, frame=1, channel=0, keepdims=False)
-    assert data.values.sum(dtype=numpy.uint64) == 1033137
-    assert data.shape == (256, 256, 64)
-    assert data.dims == ('Y', 'X', 'H')
+    signal = signal_from_fbd(filename, frame=1, channel=0, keepdims=False)
+    assert signal.values.sum(dtype=numpy.uint64) == 1033137
+    assert signal.shape == (256, 256, 64)
+    assert signal.dims == ('Y', 'X', 'H')
 
-    data = read_fbd(filename, frame=1, channel=0)
-    assert data.values.sum(dtype=numpy.uint64) == 1033137
-    assert data.shape == (1, 1, 256, 256, 64)
-    assert data.dims == ('T', 'C', 'Y', 'X', 'H')
+    signal = signal_from_fbd(filename, frame=1, channel=0)
+    assert signal.values.sum(dtype=numpy.uint64) == 1033137
+    assert signal.shape == (1, 1, 256, 256, 64)
+    assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(lfdfiles.LfdFileError):
+        signal_from_fbd(filename)
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_read_bh():
+def test_signal_from_bh():
     """Test read SimFCS B&H file."""
     filename = fetch('simfcs.b&h')
-    data = read_bh(filename)
-    assert data.values.sum() == 7973051.0
-    assert data.dtype == numpy.float32
-    assert data.shape == (256, 256, 256)
-    assert data.dims == ('H', 'Y', 'X')
-    assert not data.coords
+    signal = signal_from_bh(filename)
+    assert signal.values.sum() == 7973051.0
+    assert signal.dtype == numpy.float32
+    assert signal.shape == (256, 256, 256)
+    assert signal.dims == ('H', 'Y', 'X')
+    assert not signal.coords
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(lfdfiles.LfdFileError):
+        signal_from_bh(filename)
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_read_bhz():
+def test_signal_from_bhz():
     """Test read SimFCS BHZ file."""
     filename = fetch('simfcs.bhz')
-    data = read_bhz(filename)
-    assert data.values.sum() == 7973051.0
-    assert data.dtype == numpy.float32
-    assert data.shape == (256, 256, 256)
-    assert data.dims == ('H', 'Y', 'X')
-    assert not data.coords
+    signal = signal_from_bhz(filename)
+    assert signal.values.sum() == 7973051.0
+    assert signal.dtype == numpy.float32
+    assert signal.shape == (256, 256, 256)
+    assert signal.dims == ('H', 'Y', 'X')
+    assert not signal.coords
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(lfdfiles.LfdFileError):
+        signal_from_bhz(filename)
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_read_b64():
+def test_signal_from_b64():
     """Test read SimFCS B64 file."""
     filename = fetch('simfcs.b64')
-    data = read_b64(filename)
-    assert data.values.sum(dtype=numpy.int64) == 8386914853
-    assert data.dtype == numpy.int16
-    assert data.shape == (22, 1024, 1024)
-    assert data.dims == ('I', 'Y', 'X')
-    assert not data.coords
-    # filename = fetch('simfcs_image.b64')
-    # with pytest.raises(ValueError):
-    #     read_b64(filename)
+    signal = signal_from_b64(filename)
+    assert signal.values.sum(dtype=numpy.int64) == 8386914853
+    assert signal.dtype == numpy.int16
+    assert signal.shape == (22, 1024, 1024)
+    assert signal.dims == ('I', 'Y', 'X')
+    assert not signal.coords
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(lfdfiles.LfdFileError):
+        signal_from_b64(filename)
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_read_z64():
+def test_signal_from_z64():
     """Test read SimFCS Z64 file."""
     filename = fetch('simfcs.z64')
-    data = read_z64(filename)
-    assert data.values.sum() == 5536049.0
-    assert data.dtype == numpy.float32
-    assert data.shape == (256, 256, 256)
-    assert data.dims == ('Q', 'Y', 'X')
-    assert not data.coords
+    signal = signal_from_z64(filename)
+    assert signal.values.sum() == 5536049.0
+    assert signal.dtype == numpy.float32
+    assert signal.shape == (256, 256, 256)
+    assert signal.dims == ('Q', 'Y', 'X')
+    assert not signal.coords
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(lfdfiles.LfdFileError):
+        signal_from_z64(filename)
 
 
 def test_phasor_ometiff_multiharmonic():
@@ -387,7 +592,7 @@ def test_phasor_ometiff_multiharmonic():
             data[0],
             data,
             data[::-1],
-            axes='TYX',
+            dims='TYX',
             description=description,
         )
 
@@ -411,7 +616,7 @@ def test_phasor_ometiff_multiharmonic():
                 filename, harmonic=harmonic
             )
             assert attrs['harmonic'] == [1, 2, 3]
-            assert attrs['axes'] == 'TYX'
+            assert attrs['dims'] == ('T', 'Y', 'X')
             assert attrs['description'] == description
             assert 'frequency' not in attrs
             assert_almost_equal(mean, data[0])
@@ -474,7 +679,7 @@ def test_phasor_ometiff_tiled():
                 filename, harmonic=harmonic
             )
             assert attrs['harmonic'] == 2
-            assert attrs['axes'] == 'YX'
+            assert attrs['dims'] == ('Y', 'X')
             assert attrs['frequency'] == 80.0
             assert_almost_equal(mean, data)
             assert_almost_equal(real, data)
@@ -509,7 +714,7 @@ def test_phasor_ometiff_scalar():
                 filename, harmonic=harmonic
             )
             assert attrs['harmonic'] == 1
-            assert attrs['axes'] == 'YX'
+            assert attrs['dims'] == ('Y', 'X')
             assert mean.shape == (1, 1)
             assert_almost_equal(mean, data.reshape(mean.shape))
             assert_almost_equal(real, data.reshape(mean.shape))
@@ -537,7 +742,7 @@ def test_phasor_ometiff_scalar_multiharmonic():
             data,
             data,
             harmonic=[2, 3, 4],
-            # axes='X',
+            # dims='X',
         )
 
         with tifffile.TiffFile(filename) as tif:
@@ -555,7 +760,7 @@ def test_phasor_ometiff_scalar_multiharmonic():
             mean, real, imag, attrs = phasor_from_ometiff(
                 filename, harmonic=harmonic
             )
-            assert attrs['axes'] == 'YX'
+            assert attrs['dims'] == ('Y', 'X')
             assert attrs['harmonic'] == [2, 3, 4]
             assert 'frequency' not in attrs
             assert_almost_equal(mean, data[0].reshape(mean.shape))
@@ -607,9 +812,9 @@ def test_phasor_to_ometiff_exceptions():
         with pytest.raises(ValueError):
             phasor_to_ometiff(filename, *data, frequency=[80, 90])
 
-        # len(axes) != mean.ndim
+        # len(dims) != mean.ndim
         with pytest.raises(ValueError):
-            phasor_to_ometiff(filename, *data, axes='ZYX')
+            phasor_to_ometiff(filename, *data, dims='ZYX')
 
 
 def test_phasor_from_ometiff_exceptions(caplog):
@@ -660,22 +865,27 @@ def test_phasor_from_ometiff_exceptions(caplog):
         mean, real, imag, attrs = phasor_from_ometiff(filename)
         assert attrs['harmonic'] == 1
 
+    filename = private_file('tzcyx.lsm')
+    with pytest.raises(ValueError):
+        phasor_from_ometiff(filename)
+
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_phasor_from_simfcs_referenced_ref():
     """Test phasor_from_simfcs_referenced with SimFCS REF file."""
     filename = fetch('simfcs.ref')
-    mean, real, imag = phasor_from_simfcs_referenced(filename)
+    mean, real, imag, attrs = phasor_from_simfcs_referenced(filename)
     assert mean.dtype == numpy.float32
     assert mean.shape == (256, 256)
     assert real.shape == (256, 256)
     assert imag.shape == (256, 256)
+    assert attrs['dims'] == ('Y', 'X')
     assert_allclose(numpy.nanmean(mean), 213.09485, atol=1e-3)
     assert_allclose(numpy.nanmean(real), 0.40588844, atol=1e-3)
     assert_allclose(numpy.nanmean(imag), 0.34678984, atol=1e-3)
 
     for harmonic in ('all', [1, 2]):
-        mean, real, imag = phasor_from_simfcs_referenced(
+        mean, real, imag, attrs = phasor_from_simfcs_referenced(
             filename, harmonic=harmonic
         )
         assert mean.shape == (256, 256)
@@ -693,21 +903,28 @@ def test_phasor_from_simfcs_referenced_ref():
             atol=1e-3,
         )
 
+    filename = fetch('simfcs.b64')
+    with pytest.raises(ValueError):
+        phasor_from_simfcs_referenced(filename)
+
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_phasor_from_simfcs_referenced_r64():
     """Test phasor_from_simfcs_referenced with SimFCS R64 file."""
     filename = fetch('simfcs.r64')
-    mean, real, imag = phasor_from_simfcs_referenced(filename)
+    mean, real, imag, attrs = phasor_from_simfcs_referenced(filename)
     assert mean.dtype == numpy.float32
     assert mean.shape == (256, 256)
     assert real.shape == (256, 256)
     assert imag.shape == (256, 256)
+    assert attrs['dims'] == ('Y', 'X')
     assert_allclose(numpy.nanmean(mean), 0.562504, atol=1e-3)
     assert_allclose(numpy.nanmean(real), 0.48188266, atol=1e-3)
     assert_allclose(numpy.nanmean(imag), 0.32413888, atol=1e-3)
 
-    mean, real, imag = phasor_from_simfcs_referenced(filename, harmonic=[1, 2])
+    mean, real, imag, attrs = phasor_from_simfcs_referenced(
+        filename, harmonic=[1, 2]
+    )
     assert mean.shape == (256, 256)
     assert real.shape == (2, 256, 256)
     assert imag.shape == (2, 256, 256)
@@ -728,10 +945,11 @@ def test_phasor_to_simfcs_referenced():
     with TempFileName('simple.r64') as filename:
         phasor_to_simfcs_referenced(filename, *data)
 
-        mean, real, imag = phasor_from_simfcs_referenced(filename)
+        mean, real, imag, attrs = phasor_from_simfcs_referenced(filename)
         assert mean.shape == (32, 32)
         assert real.shape == (32, 32)
         assert imag.shape == (32, 32)
+        assert attrs['dims'] == ('Y', 'X')
         assert_allclose(mean, data[0], atol=1e-3)
         assert_allclose(real, data[1], atol=1e-3)
         assert_allclose(imag, data[2], atol=1e-3)
@@ -744,10 +962,11 @@ def test_phasor_to_simfcs_referenced_scalar():
     with TempFileName('simple.r64') as filename:
         phasor_to_simfcs_referenced(filename, *data)
 
-        mean, real, imag = phasor_from_simfcs_referenced(filename)
+        mean, real, imag, attrs = phasor_from_simfcs_referenced(filename)
         assert mean.shape == (4, 4)
         assert real.shape == (4, 4)
         assert imag.shape == (4, 4)
+        assert attrs['dims'] == ('Y', 'X')
         assert_allclose(mean[0, 0], data[0], atol=1e-3)
         assert_allclose(real[0, 0], data[1], atol=1e-3)
         assert_allclose(imag[0, 0], data[2], atol=1e-3)
@@ -784,19 +1003,20 @@ def test_phasor_to_simfcs_referenced_multiharmonic():
             data,
             data[::-1],
             size=32,
-            axes='tyx',
+            dims='tyx',
         )
 
         name, ext = os.path.splitext(filename)
         files = glob(name + '*' + ext)
         assert len(files) == 16
 
-        mean, real, imag = phasor_from_simfcs_referenced(
+        mean, real, imag, attrs = phasor_from_simfcs_referenced(
             name + '_h2_t3_y32_x00' + ext, harmonic='all'
         )
         assert mean.shape == (32, 32)
         assert real.shape == (2, 32, 32)
         assert imag.shape == (2, 32, 32)
+        assert attrs['dims'] == ('Y', 'X')
         with pytest.warns(RuntimeWarning):
             assert numpy.isnan(numpy.nanmean(real[1]))
             assert numpy.isnan(numpy.nanmean(imag[1]))
@@ -807,7 +1027,7 @@ def test_phasor_to_simfcs_referenced_multiharmonic():
         assert_allclose(imag[0, :3, :31], data[0, 3, 32:35, :31], atol=1e-3)
 
         for fname in files:
-            mean, real, imag = phasor_from_simfcs_referenced(
+            mean, real, imag, attrs = phasor_from_simfcs_referenced(
                 fname, harmonic='all'
             )
             assert mean.shape == (32, 32)
