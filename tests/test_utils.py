@@ -4,10 +4,10 @@ import os
 
 import numpy
 import pytest
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose
 
 from phasorpy.datasets import fetch
-from phasorpy.io import read_lsm
+from phasorpy.io import signal_from_lsm
 from phasorpy.phasor import phasor_from_signal
 from phasorpy.utils import (
     anscombe_transformation,
@@ -66,7 +66,7 @@ def test_spectral_vector_denoise(dtype, spectral_vector):
     """Test spectral_vector_denoise function."""
     # TODO: test synthetic data
 
-    signal = read_lsm(fetch('paramecium.lsm')).data[:, ::16, ::16]
+    signal = signal_from_lsm(fetch('paramecium.lsm')).data[:, ::16, ::16]
     if dtype is not None:
         signal = signal.astype(dtype)
     mean, real, imag = phasor_from_signal(signal, axis=0)
@@ -93,7 +93,7 @@ def test_spectral_vector_denoise(dtype, spectral_vector):
 
 def test_spectral_vector_nan():
     """Test spectral_vector_denoise function NaN handling."""
-    signal = read_lsm(fetch('paramecium.lsm')).data[:, ::16, ::16]
+    signal = signal_from_lsm(fetch('paramecium.lsm')).data[:, ::16, ::16]
     signal = signal.astype(numpy.float64)
     signal[0, 0, 0] = numpy.nan
 

@@ -305,6 +305,61 @@ CONVALLARIA_FBD = pooch.create(
     },
 )
 
+FLIMLABS = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url='https://github.com/phasorpy/phasorpy-data/raw/main/flimlabs',
+    env=ENV,
+    registry={
+        'calibrator2_imaging.json': (
+            'sha256:'
+            '7bd575a9ed0cc6e4b5cd4ac236a6414443d496420d3fbc2c0474e95d9b65f046'
+        ),
+        'calibrator2_imaging.json.zip': (
+            'sha256:'
+            '7423d1faa9644e8e0dc1da5e3ce49811383487e0c17cfccf1030c250ecc6dada'
+        ),
+        'calibrator2_imaging_calibration.json': (
+            'sha256:'
+            '0d0481d1767336fa5e5dce8584b30bc83ac5d84e94514b87e4aa491f55acf59b'
+        ),
+        'calibrator2_imaging_calibration.json.zip': (
+            'sha256:'
+            '77235ba78202ebc774f4ee20f0ffb496461596191f7bee5bc5c9a8d1c54e9da3'
+        ),
+        'dataset_1.json': (
+            'sha256:'
+            'fe7c1d06d557d0bf5c002e3d4950b66e390d758d6517cb4d6c7fbd0525fc0635'
+        ),
+        'dataset_1.json.zip': (
+            'sha256:'
+            '0ea4dd9204a6f7d08f41b0f4c53005a452cb3d1a9d3291a805d2ff0433d83e3e'
+        ),
+        'dataset_1_phasor_ch1_h1.json': (
+            'sha256:'
+            '56f79d582e0af58aa256a59ab55b85395d865bcd7b126b78a54da63079ebe3a0'
+        ),
+        'dataset_1_phasor_ch1_h1.json.zip': (
+            'sha256:'
+            '8cfaf663e0716d5f8c612d213acc554e7e863b33d6dc1519683abe9f020e188b'
+        ),
+        'dataset_2.json': (
+            'sha256:'
+            '0b1f3034bc46b0f74cbf3c9a9a231ff877b3372cd3806aa5c2f7d443f258b448'
+        ),
+        'dataset_2.json.zip': (
+            'sha256:'
+            '57e9fdf456efbe92327ced7d71a009302b08ca459226c69877a2857453b5dfeb'
+        ),
+        'dataset_2_phasor_ch1_h1.json': (
+            'sha256:'
+            '9bd26dfe7cbb62befc9d6bd86336d698287a08c0fe2677c504876c7a24eba55a'
+        ),
+        'dataset_2_phasor_ch1_h1.json.zip': (
+            'sha256:'
+            '427dcffe43ef99f1e2b7d750af822b15b3414fb8da5afa6efb964228751fa180'
+        ),
+    },
+)
 
 REPOSITORIES: dict[str, pooch.Pooch] = {
     'tests': TESTS,
@@ -313,6 +368,7 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'napari-flim-phasor-plotter': NAPARI_FLIM_PHASOR_PLOTTER,
     'zenodo-13625087': ZENODO_13625087,
     'convallaria-fbd': CONVALLARIA_FBD,
+    'flimlabs': FLIMLABS,
 }
 """Pooch repositories."""
 

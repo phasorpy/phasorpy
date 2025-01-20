@@ -20,7 +20,7 @@ from phasorpy.datasets import fetch
 from phasorpy.io import (
     phasor_from_ometiff,
     phasor_to_ometiff,
-    read_imspector_tiff,
+    signal_from_imspector_tiff,
 )
 from phasorpy.phasor import (
     phasor_calibrate,
@@ -37,7 +37,7 @@ from phasorpy.plot import plot_phasor
 # Read a time-correlated single photon counting (TCSPC) histogram,
 # acquired at 80.11 MHz, from a file:
 
-signal = read_imspector_tiff(fetch('Embryo.tif'))
+signal = signal_from_imspector_tiff(fetch('Embryo.tif'))
 frequency = signal.attrs['frequency']
 
 # %%
@@ -76,7 +76,7 @@ _ = phasor_from_signal(signal, harmonic='all', axis=0)
 # A homogeneous solution of Fluorescein with a fluorescence lifetime of 4.2 ns
 # was imaged as a reference for calibration:
 
-reference_signal = read_imspector_tiff(fetch('Fluorescein_Embryo.tif'))
+reference_signal = signal_from_imspector_tiff(fetch('Fluorescein_Embryo.tif'))
 assert reference_signal.attrs['frequency'] == frequency
 
 # %%

@@ -218,7 +218,7 @@ class PhasorPlot:
         /,
         fmt: str = 'o',
         *,
-        label: str | Sequence[str] | None = None,
+        label: Sequence[str] | None = None,
         **kwargs: Any,
     ) -> list[Line2D]:
         """Plot imag versus real coordinates as markers and/or lines.
@@ -233,7 +233,7 @@ class PhasorPlot:
             Must be of same shape as `real`.
         fmt : str, optional, default: 'o'
             Matplotlib style format string.
-        label : str or sequence of str, optional
+        label : sequence of str, optional
             Plot label.
             May be a sequence if phasor coordinates are two dimensional arrays.
         **kwargs

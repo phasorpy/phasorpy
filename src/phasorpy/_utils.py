@@ -326,7 +326,7 @@ def parse_harmonic(
 
     Parameters
     ----------
-    harmonic : int, list of int, 'all', or None
+    harmonic : int, sequence of int, 'all', or None
         Harmonic parameter to parse.
     harmonic_max : int, optional
         Maximum value allowed in `hamonic`. Must be one or greater.
@@ -396,7 +396,7 @@ def chunk_iter(
     shape: tuple[int, ...],
     chunk_shape: tuple[int, ...],
     /,
-    axes: str | Sequence[str] | None = None,
+    dims: Sequence[str] | None = None,
     *,
     pattern: str | None = None,
     squeeze: bool = False,
@@ -410,11 +410,11 @@ def chunk_iter(
         Shape of C-order ndarray to chunk.
     chunk_shape : tuple of int
         Shape of chunks in the most significant dimensions.
-    axes : str or sequence of str, optional
+    dims : sequence of str, optional
         Labels for each axis in shape if `pattern` is None.
     pattern : str, optional
         String to format chunk indices.
-        If None, use ``_[{axes[index]}{chunk_index[index]}]`` for each axis.
+        If None, use ``_[{dims[index]}{chunk_index[index]}]`` for each axis.
     squeeze : bool
         If true, do not include length-1 chunked dimensions in label
         unless dimensions are part of `chunk_shape`.
@@ -451,11 +451,11 @@ def chunk_iter(
     ndim = len(shape)
 
     sep = '_'
-    if axes is None:
-        axes = sep * ndim
+    if dims is None:
+        dims = sep * ndim
         sep = ''
-    elif ndim != len(axes):
-        raise ValueError(f'{len(shape)=} != {len(axes)=}')
+    elif ndim != len(dims):
+        raise ValueError(f'{len(shape)=} != {len(dims)=}')
 
     if pattern is not None:
         try:
@@ -473,7 +473,7 @@ def chunk_iter(
 
     chunked_shape = []
     pattern_list = []
-    for i, (size, chunk_size, ax) in enumerate(zip(shape, chunk_shape, axes)):
+    for i, (size, chunk_size, ax) in enumerate(zip(shape, chunk_shape, dims)):
         if size <= 0:
             raise ValueError('shape must contain positive sizes')
         if chunk_size <= 0:

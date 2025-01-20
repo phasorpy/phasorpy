@@ -2,31 +2,32 @@
 
 The ``phasorpy.io`` module provides functions to:
 
-- read and write phasor coordinate images in OME-TIFF format, which can be
-  imported in Bio-Formats and Fiji:
+- write phasor coordinate images to OME-TIFF and SimFCS file formats:
 
   - :py:func:`phasor_to_ometiff`
-  - :py:func:`phasor_from_ometiff`
-
-- read and write phasor coordinate images in SimFCS referenced R64 format:
-
   - :py:func:`phasor_to_simfcs_referenced`
-  - :py:func:`phasor_from_simfcs_referenced`
 
-- read time-resolved and hyperspectral image data and metadata (as relevant
-  to phasor analysis) from many file formats used in bio-imaging:
+- read phasor coordinates and metadata from specialized file formats:
 
-  - :py:func:`read_imspector_tiff` - ImSpector FLIM TIFF
-  - :py:func:`read_lsm` - Zeiss LSM
-  - :py:func:`read_ifli` - ISS IFLI
-  - :py:func:`read_sdt` - Becker & Hickl SDT
-  - :py:func:`read_ptu` - PicoQuant PTU
-  - :py:func:`read_fbd` - FLIMbox FBD
-  - :py:func:`read_flif` - FlimFast FLIF
-  - :py:func:`read_b64` - SimFCS B64
-  - :py:func:`read_z64` - SimFCS Z64
-  - :py:func:`read_bhz` - SimFCS BHZ
-  - :py:func:`read_bh` - SimFCS B&H
+  - :py:func:`phasor_from_ometiff` - PhasorPy OME-TIFF
+  - :py:func:`phasor_from_ifli` - ISS IFLI
+  - :py:func:`phasor_from_flimlabs_json` - FLIM LABS JSON
+  - :py:func:`phasor_from_simfcs_referenced` - SimFCS REF and R64
+
+- read time-resolved and hyperspectral signals, as well as metadata from
+  many file formats used in bio-imaging:
+
+  - :py:func:`signal_from_lsm` - Zeiss LSM
+  - :py:func:`signal_from_ptu` - PicoQuant PTU
+  - :py:func:`signal_from_sdt` - Becker & Hickl SDT
+  - :py:func:`signal_from_fbd` - FLIMbox FBD
+  - :py:func:`signal_from_flimlabs_json` - FLIM LABS JSON
+  - :py:func:`signal_from_imspector_tiff` - ImSpector FLIM TIFF
+  - :py:func:`signal_from_flif` - FlimFast FLIF
+  - :py:func:`signal_from_b64` - SimFCS B64
+  - :py:func:`signal_from_z64` - SimFCS Z64
+  - :py:func:`signal_from_bhz` - SimFCS BHZ
+  - :py:func:`signal_from_bh` - SimFCS B&H
 
   Support for other file formats is being considered:
 
@@ -45,9 +46,9 @@ third-party file reader libraries, currently
 `lfdfiles <https://github.com/cgohlke/lfdfiles>`_.
 For advanced or unsupported use cases, consider using these libraries directly.
 
-The read functions typically have the following signature::
+The signal-reading functions typically have the following signature::
 
-    read_ext(
+    signal_from_ext(
         filename: str | PathLike,
         /,
         **kwargs
@@ -113,28 +114,30 @@ Axes character codes from the OME model and tifffile library are used as
 from __future__ import annotations
 
 __all__ = [
+    'phasor_from_flimlabs_json',
+    'phasor_from_ifli',
     'phasor_from_ometiff',
     'phasor_from_simfcs_referenced',
     'phasor_to_ometiff',
     'phasor_to_simfcs_referenced',
-    'read_b64',
-    'read_bh',
-    'read_bhz',
-    # 'read_czi',
-    'read_fbd',
-    'read_flif',
-    'read_ifli',
-    'read_imspector_tiff',
-    # 'read_lif',
-    'read_lsm',
-    # 'read_nd2',
-    # 'read_oif',
-    # 'read_oir',
-    # 'read_ometiff',
-    'read_ptu',
-    'read_sdt',
-    'read_z64',
-    '_squeeze_axes',
+    'signal_from_b64',
+    'signal_from_bh',
+    'signal_from_bhz',
+    # 'signal_from_czi',
+    'signal_from_fbd',
+    'signal_from_flif',
+    'signal_from_flimlabs_json',
+    'signal_from_imspector_tiff',
+    # 'signal_from_lif',
+    'signal_from_lsm',
+    # 'signal_from_nd2',
+    # 'signal_from_oif',
+    # 'signal_from_oir',
+    # 'signal_from_ometiff',
+    'signal_from_ptu',
+    'signal_from_sdt',
+    'signal_from_z64',
+    '_squeeze_dims',
 ]
 
 import logging
@@ -151,6 +154,7 @@ if TYPE_CHECKING:
     from ._typing import (
         Any,
         ArrayLike,
+        Container,
         DataArray,
         DTypeLike,
         EllipsisType,
@@ -174,7 +178,7 @@ def phasor_to_ometiff(
     *,
     frequency: float | None = None,
     harmonic: int | Sequence[int] | None = None,
-    axes: str | None = None,
+    dims: Sequence[str] | None = None,
     dtype: DTypeLike | None = None,
     description: str | None = None,
     **kwargs: Any,
@@ -196,9 +200,9 @@ def phasor_to_ometiff(
     Parameters
     ----------
     filename : str or Path
-        Name of OME-TIFF file to write.
+        Name of PhasorPy OME-TIFF file to write.
     mean : array_like
-        Average intensity image. Write to image series named 'Phasor mean'.
+        Average intensity image. Write to an image series named 'Phasor mean'.
     real : array_like
         Image of real component of phasor coordinates.
         Multiple harmonics, if any, must be in the first dimension.
@@ -209,13 +213,14 @@ def phasor_to_ometiff(
         Write to image series named 'Phasor imag'.
     frequency : float, optional
         Fundamental frequency of time-resolved phasor coordinates.
-        Usually in unit of MHz.
+        Usually in units of MHz.
         Write to image series named 'Phasor frequency'.
     harmonic : int or sequence of int, optional
         Harmonics present in the first dimension of `real` and `imag`, if any.
         Write to image series named 'Phasor harmonic'.
-        Only needed if harmonics are not starting at and increasing by one.
-    axes : str, optional
+        It is only needed if harmonics are not starting at and increasing by
+        one.
+    dims : sequence of str, optional
         Character codes for `mean` image dimensions.
         By default, the last dimensions are assumed to be 'TZCYX'.
         If harmonics are present in `real` and `imag`, an "other" (``Q``)
@@ -253,7 +258,7 @@ def phasor_to_ometiff(
     --------
     >>> mean, real, imag = numpy.random.rand(3, 32, 32, 32)
     >>> phasor_to_ometiff(
-    ...     '_phasorpy.ome.tif', mean, real, imag, axes='ZYX', frequency=80.0
+    ...     '_phasorpy.ome.tif', mean, real, imag, dims='ZYX', frequency=80.0
     ... )
 
     """
@@ -302,10 +307,7 @@ def phasor_to_ometiff(
         if frequency_array.size > 1:
             raise ValueError('frequency must be scalar')
 
-    if axes is None:
-        axes = 'TZCYX'[-mean.ndim :]
-    else:
-        axes = ''.join(tuple(axes))  # accept dims tuple and str
+    axes = 'TZCYX'[-mean.ndim :] if dims is None else ''.join(tuple(dims))
     if len(axes) != mean.ndim:
         raise ValueError(f'{axes=} does not match {mean.ndim=}')
     axes_phasor = axes if mean.ndim == real.ndim else 'Q' + axes
@@ -372,12 +374,12 @@ def phasor_from_ometiff(
     *,
     harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
-    """Return phasor images and metadata from OME-TIFF written by PhasorPy.
+    """Return phasor coordinates and metadata from PhasorPy OME-TIFF.
 
     Parameters
     ----------
     filename : str or Path
-        Name of OME-TIFF file to read.
+        Name of PhasorPy OME-TIFF file to read.
     harmonic : int, sequence of int, or 'all', optional
         Harmonic(s) to return from file.
         If None (default), return the first harmonic stored in the file.
@@ -398,8 +400,8 @@ def phasor_from_ometiff(
     attrs : dict
         Select metadata:
 
-        - ``'axes'`` (str):
-          Character codes for `mean` image dimensions.
+        - ``'dims'`` (tuple of str):
+          :ref:`Axes codes <axes>` for `mean` image dimensions.
         - ``'harmonic'`` (int or list of int):
           Harmonic(s) present in `real` and `imag`.
           If a scalar, `real` and `imag` are single harmonic and contain no
@@ -408,7 +410,7 @@ def phasor_from_ometiff(
           first axis.
         - ``'frequency'`` (float, optional):
           Fundamental frequency of time-resolved phasor coordinates.
-          Usually in unit of MHz.
+          Usually in units of MHz.
         - ``'description'`` (str, optional):
           OME dataset plain-text description.
 
@@ -419,7 +421,7 @@ def phasor_from_ometiff(
     ValueError
         File is not an OME-TIFF containing phasor coordinates.
     IndexError
-        Requested harmonic is not found in file.
+        Harmonic is not found in file.
 
     See Also
     --------
@@ -435,7 +437,7 @@ def phasor_from_ometiff(
     --------
     >>> mean, real, imag = numpy.random.rand(3, 32, 32, 32)
     >>> phasor_to_ometiff(
-    ...     '_phasorpy.ome.tif', mean, real, imag, axes='ZYX', frequency=80.0
+    ...     '_phasorpy.ome.tif', mean, real, imag, dims='ZYX', frequency=80.0
     ... )
     >>> mean, real, imag, attrs = phasor_from_ometiff('_phasorpy.ome.tif')
     >>> mean
@@ -444,8 +446,8 @@ def phasor_from_ometiff(
     dtype('float32')
     >>> mean.shape
     (32, 32, 32)
-    >>> attrs['axes']
-    'ZYX'
+    >>> attrs['dims']
+    ('Z', 'Y', 'X')
     >>> attrs['frequency']
     80.0
     >>> attrs['harmonic']
@@ -468,7 +470,7 @@ def phasor_from_ometiff(
                 f'{name!r} is not an OME-TIFF containing phasor images'
             )
 
-        attrs: dict[str, Any] = {'axes': tif.series[0].axes}
+        attrs: dict[str, Any] = {'dims': tuple(tif.series[0].axes)}
 
         # TODO: read coords from OME-XML
         ome_xml = tif.ome_metadata
@@ -581,7 +583,7 @@ def phasor_to_simfcs_referenced(
     /,
     *,
     size: int | None = None,
-    axes: str | None = None,
+    dims: Sequence[str] | None = None,
 ) -> None:
     """Write phasor coordinate images to SimFCS referenced R64 file(s).
 
@@ -615,7 +617,7 @@ def phasor_to_simfcs_referenced(
     size : int, optional
         Size of X and Y dimensions of square-sized images stored in file.
         By default, ``size = min(256, max(4, sizey, sizex))``.
-    axes : str, optional
+    dims : sequence of str, optional
         Character codes for `mean` dimensions used to format file names.
 
     See Also
@@ -667,8 +669,9 @@ def phasor_to_simfcs_referenced(
     )
     multi_file = any(i / j > 1 for i, j in zip(phi.shape, chunk_shape))
 
-    if axes is not None and len(axes) == phi.ndim - 1:
-        axes = 'h' + axes
+    if dims is not None and len(dims) == phi.ndim - 1:
+        dims = tuple(dims)
+        dims = ('h' if dims[0].islower() else 'H',) + dims
 
     chunk = numpy.empty((size, size), dtype=numpy.float32)
 
@@ -690,7 +693,7 @@ def phasor_to_simfcs_referenced(
                 raise RuntimeError  # should not be reached
 
     for index, label, _ in chunk_iter(
-        phi.shape, chunk_shape, axes, squeeze=False, use_index=True
+        phi.shape, chunk_shape, dims, squeeze=False, use_index=True
     ):
         rawdata = [struct.pack('I', size)]
         rawdata_append(rawdata, mean[index[1:]])
@@ -714,8 +717,8 @@ def phasor_from_simfcs_referenced(
     /,
     *,
     harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
-) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-    """Return phasor coordinate images from SimFCS referenced (REF, R64) file.
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
+    """Return phasor coordinates and metadata from SimFCS REF or R64 file.
 
     SimFCS referenced REF and R64 files contain phasor coordinate images
     (encoded as phase and modulation) for two harmonics.
@@ -724,7 +727,7 @@ def phasor_from_simfcs_referenced(
     Parameters
     ----------
     filename : str or Path
-        Name of REF or R64 file to read.
+        Name of SimFCS REF or R64 file to read.
     harmonic : int or sequence of int, optional
         Harmonic(s) to include in returned phasor coordinates.
         By default, only the first harmonic is returned.
@@ -739,6 +742,11 @@ def phasor_from_simfcs_referenced(
     imag : ndarray
         Image of imaginary component of phasor coordinates.
         Multiple harmonics, if any, are in the first axis.
+    attrs : dict
+        Select metadata:
+
+        - ``'dims'`` (tuple of str):
+          :ref:`Axes codes <axes>` for `mean` image dimensions.
 
     Raises
     ------
@@ -754,7 +762,7 @@ def phasor_from_simfcs_referenced(
     >>> phasor_to_simfcs_referenced(
     ...     '_phasorpy.r64', *numpy.random.rand(3, 32, 32)
     ... )
-    >>> mean, real, imag = phasor_from_simfcs_referenced('_phasorpy.r64')
+    >>> mean, real, imag, _ = phasor_from_simfcs_referenced('_phasorpy.r64')
     >>> mean
     array([[...]], dtype=float32)
 
@@ -785,10 +793,402 @@ def phasor_from_simfcs_referenced(
         real = real.reshape(mean.shape)
         imag = imag.reshape(mean.shape)
 
-    return mean, real, imag
+    return mean, real, imag, {'dims': ('Y', 'X')}
 
 
-def read_lsm(
+def phasor_from_ifli(
+    filename: str | PathLike[Any],
+    /,
+    *,
+    channel: int | None = None,
+    harmonic: int | Sequence[int] | Literal['all', 'any'] | str | None = None,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
+    """Return phasor coordinates and metadata from ISS IFLI file.
+
+    ISS VistaVision IFLI files contain calibrated phasor coordinates for
+    possibly several positions, wavelengths, time points, channels, slices,
+    and frequencies from analog or digital frequency-domain fluorescence
+    lifetime measurements.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of ISS IFLI file to read.
+    channel : int, optional
+        If None (default), return all channels, else return specified channel.
+    harmonic : int, sequence of int, or 'all', optional
+        Harmonic(s) to return from file.
+        If None (default), return the first harmonic stored in file.
+        If `'all'`, return all harmonics of first frequency stored in file.
+        If `'any'`, return all frequencies as stored in file, not necessarily
+        harmonics of the first frequency.
+        If a list, the first axes of the returned `real` and `imag` arrays
+        contain specified harmonic(s).
+        If an integer, the returned `real` and `imag` arrays are single
+        harmonic and have the same shape as `mean`.
+    **kwargs
+        Additional arguments passed to :py:meth:`lfdfiles.VistaIfli.asarray`,
+        for example ``memmap=True``.
+
+    Returns
+    -------
+    mean : ndarray
+        Average intensity image.
+        May have up to 7 dimensions in ``'RETCZYX'`` order.
+    real : ndarray
+        Image of real component of phasor coordinates.
+        Same shape as `mean`, except it may have a harmonic/frequency
+        dimension prepended.
+    imag : ndarray
+        Image of imaginary component of phasor coordinates.
+        Same shape as `real`.
+    attrs : dict
+        Select metadata:
+
+        - ``'dims'`` (tuple of str):
+          :ref:`Axes codes <axes>` for `mean` image dimensions.
+        - ``'harmonic'`` (int or list of int):
+          Harmonic(s) present in `real` and `imag`.
+          If a scalar, `real` and `imag` are single harmonic and contain no
+          harmonic axes.
+          If a list, `real` and `imag` contain one or more harmonics in the
+          first axis.
+        - ``'frequency'`` (float):
+          Fundamental frequency of time-resolved phasor coordinates in MHz.
+        - ``'ifli_header'`` (dict):
+          Metadata from IFLI file header.
+
+    Raises
+    ------
+    lfdfiles.LfdFileError
+        File is not an ISS IFLI file.
+    IndexError
+        Harmonic is not found in file.
+
+    Examples
+    --------
+    >>> mean, real, imag, attr = phasor_from_ifli(
+    ...     fetch('frequency_domain.ifli'), harmonic='all'
+    ... )
+    >>> mean.shape
+    (256, 256)
+    >>> real.shape
+    (4, 256, 256)
+    >>> attr['dims']
+    ('Y', 'X')
+    >>> attr['harmonic']
+    [1, 2, 3, 5]
+    >>> attr['frequency']  # doctest: +NUMBER
+    80.33
+    >>> attr['ifli_header']
+    {'Version': 16, ... 'ModFrequency': (...), 'RefLifetime': (2.5,), ...}
+
+    """
+    import lfdfiles
+
+    with lfdfiles.VistaIfli(filename) as ifli:
+        assert ifli.axes is not None
+        data = ifli.asarray(**kwargs)
+        header = ifli.header
+        axes = ifli.axes
+
+    if channel is not None:
+        data = data[:, :, :, channel]
+        axes = axes[:3] + axes[4:]
+
+    shape, dims, _ = _squeeze_dims(data.shape, axes, skip='YXF')
+    data = data.reshape(shape)
+    data = numpy.moveaxis(data, -2, 0)  # move frequency to first axis
+    mean = data[..., 0].mean(axis=0)  # average frequencies
+    real = data[..., 1].copy()
+    imag = data[..., 2].copy()
+    dims = dims[:-2]
+    del data
+
+    frequencies = header['ModFrequency']
+    frequency = frequencies[0]
+    harmonic_stored = [
+        (
+            int(round(f / frequency))
+            if (0.99 < f / frequency % 1.0) < 1.01
+            else None
+        )
+        for f in frequencies
+    ]
+
+    index: int | list[int]
+    if harmonic is None:
+        # return first harmonic in file
+        keepdims = False
+        harmonic = [1]
+        index = [0]
+    elif isinstance(harmonic, str) and harmonic in {'all', 'any'}:
+        keepdims = True
+        if harmonic == 'any':
+            # return any frequency
+            harmonic = [
+                (frequencies[i] / frequency if h is None else h)
+                for i, h in enumerate(harmonic_stored)
+            ]
+            index = list(range(len(harmonic_stored)))
+        else:
+            # return only harmonics of first frequency
+            harmonic = [h for h in harmonic_stored if h is not None]
+            index = [i for i, h in enumerate(harmonic_stored) if h is not None]
+    else:
+        # return specified harmonics
+        harmonic, keepdims = parse_harmonic(
+            harmonic, max(h for h in harmonic_stored if h is not None)
+        )
+        try:
+            index = [harmonic_stored.index(h) for h in harmonic]
+        except ValueError as exc:
+            raise IndexError('harmonic not found') from exc
+
+    real = real[index]
+    imag = imag[index]
+    if not keepdims:
+        real = real[0]
+        imag = imag[0]
+
+    attrs = {
+        'dims': tuple(dims),
+        'harmonic': harmonic,
+        'frequency': frequency * 1e-6,
+        'ifli_header': header,
+    }
+
+    return mean, real, imag, attrs
+
+
+def phasor_from_flimlabs_json(
+    filename: str | PathLike[Any],
+    /,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
+    """Return phasor coordinates and metadata from FLIM LABS JSON phasor file.
+
+    Some FLIM LABS JSON files contain uncalibrated real and imaginary phasor
+    coordinates of a single harmonics, but no intensity image (zero harmonic).
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of FLIM LABS JSON phasor file to read.
+        The file name usually contains the string "_phasor".
+
+    Returns
+    -------
+    mean : ndarray
+        Average intensity image.
+        Zeroed if an intensity image is not present in file.
+    real : ndarray
+        Image of real component of phasor coordinates.
+    imag : ndarray
+        Image of imaginary component of phasor coordinates.
+    attrs : dict
+        Select metadata:
+
+        - ``'dims'`` (tuple of str):
+          :ref:`Axes codes <axes>` for `mean` image dimensions.
+        - ``'harmonic'`` (int):
+          Harmonic of `real` and `imag`.
+        - ``'frequency'`` (float):
+          Fundamental frequency of time-resolved phasor coordinates in MHz.
+        - ``'flimlabs_header'`` (dict):
+          FLIM LABS file header.
+
+    Raises
+    ------
+    ValueError
+        File is not a FLIM LABS JSON file containing phasor coordinates.
+
+    See Also
+    --------
+    phasorpy.io.signal_from_flimlabs_json
+
+    Examples
+    --------
+    >>> mean, real, imag, attrs = phasor_from_flimlabs_json(
+    ...     fetch('dataset_1_phasor_ch1_h1.json')
+    ... )
+    >>> real.shape
+    (256, 256)
+    >>> attrs['dims']
+    ('Y', 'X')
+    >>> attrs['frequency']  # doctest: +NUMBER
+    79.51
+
+    """
+    import json
+
+    with open(filename) as fh:
+        try:
+            data = json.load(fh)
+        except Exception as exc:
+            raise ValueError('not a valid JSON file') from exc
+
+    if (
+        'data' not in data
+        or 'header' not in data
+        or 'laser_period_ns' not in data['header']
+        or 'file_id' not in data['header']
+        or data['header']['file_id'] != [73, 80, 71, 49]  # 'IPG1'
+    ):
+        raise ValueError(
+            'not a FLIM LABS JSON file containing phasor coordinates'
+        )
+
+    real = numpy.asarray(data['data']['g_data'], dtype=numpy.float32)
+    imag = numpy.asarray(data['data']['s_data'], dtype=numpy.float32)
+    assert real.shape == imag.shape
+
+    attrs = {
+        'dims': ('Q', 'Y', 'X')[-real.ndim :],
+        'harmonic': data['data']['harmonic'],
+        'frequency': 1000.0 / data['header']['laser_period_ns'],
+        'flimlabs_header': data['header'],
+    }
+
+    return numpy.zeros_like(real), real, imag, attrs
+
+
+def signal_from_flimlabs_json(
+    filename: str | PathLike[Any],
+    /,
+    *,
+    channel: int | None = None,
+    dtype: DTypeLike | None = None,
+) -> DataArray:
+    """Return TCSPC histogram and metadata from FLIM LABS JSON imaging file.
+
+    FLIM LABS JSON imaging files contain encoded, multi-channel TCSPC
+    histogram images and metadata from digital frequency-domain measurements.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of FLIM LABS JSON imaging file to read.
+        The file name usually contains the string "_imaging".
+    channel : int, optional
+        If None (default), return all channels, else return specified channel.
+    dtype : dtype-like, optional, default: uint16
+        Unsigned integer type of image histogram array.
+        Increase the bit-depth for high photon counts.
+
+    Returns
+    -------
+    xarray.DataArray
+        TCSPC histogram image stack.
+        A 3 or 4-dimensional array of type `dtype` in dimension order
+        ``'CYXH'``.
+
+        - ``coords['H']``: times of histogram bins in ns.
+        - ``attrs['frequency']``: laser repetition frequency in MHz.
+        - ``attrs['flimlabs_header']``: FLIM LABS file header.
+
+    Raises
+    ------
+    ValueError
+        File is not a FLIM LABS JSON file containing TCSPC histogram.
+        `dtype` is not an unsigned integer.
+
+    See Also
+    --------
+    phasorpy.io.phasor_from_flimlabs_json
+
+    Examples
+    --------
+    >>> signal = signal_from_flimlabs_json(fetch('dataset_1.json'))
+    >>> signal.values
+    array(...)
+    >>> signal.shape
+    (1, 256, 256, 256)
+    >>> signal.dims
+    ('C', 'Y', 'X', 'H')
+    >>> signal.coords['H'].data
+    array(...)
+    >>> signal.attrs['frequency']  # doctest: +NUMBER
+    79.51
+
+    """
+    import json
+
+    with open(filename) as fh:
+        try:
+            data = json.load(fh)
+        except Exception as exc:
+            raise ValueError('not a valid JSON file') from exc
+
+    if (
+        'data' not in data
+        or 'header' not in data
+        or 'laser_period_ns' not in data['header']
+        or 'file_id' not in data['header']
+        or data['header']['file_id'] != [73, 77, 71, 49]  # 'IMG1'
+    ):
+        raise ValueError(
+            'not a FLIM LABS JSON file containing TCSPC histogram'
+        )
+
+    if dtype is None:
+        dtype = numpy.uint16
+    else:
+        dtype = numpy.dtype(dtype)
+        if dtype.kind != 'u':
+            raise ValueError(f'{dtype=} is not an unsigned integer type')
+
+    header = data['header']
+    channels = len([c for c in header['channels'] if c])
+    # TODO: how to use header['frames']?
+    height = header['image_height']
+    width = header['image_width']
+    frequency = 1000.0 / header['laser_period_ns']
+
+    if channel is None:
+        histogram = numpy.zeros((channels, height * width, 256), dtype)
+        axes = 'CYXH'
+    else:
+        histogram = numpy.zeros((height * width, 256), dtype)
+        axes = 'YXH'
+
+    if channel is None:
+        for c, channel_ in enumerate(data['data']):
+            for i, pixel in enumerate(channel_):
+                hist = histogram[c, i]
+                for index, count in pixel:
+                    hist[index] = count
+    else:
+        for i, pixel in enumerate(data['data'][channel]):
+            hist = histogram[i]
+            for index, count in pixel:
+                hist[index] = count
+
+    if channel is None:
+        histogram.shape = (channels, height, width, 256)
+    else:
+        histogram.shape = (height, width, 256)
+
+    coords: dict[str, Any] = {}
+    coords['H'] = numpy.linspace(
+        0.0, header['laser_period_ns'], 256, endpoint=False
+    )
+    if channel is None:
+        coords['C'] = numpy.asarray(
+            [i for i, c in enumerate(header['channels']) if c]
+        )
+
+    metadata = _metadata(axes, histogram.shape, filename, **coords)
+    attrs = metadata['attrs']
+    attrs['frequency'] = frequency
+    attrs['flimlabs_header'] = header
+
+    from xarray import DataArray
+
+    return DataArray(histogram, **metadata)
+
+
+def signal_from_lsm(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
@@ -800,7 +1200,7 @@ def read_lsm(
     Parameters
     ----------
     filename : str or Path
-        Name of OME-TIFF file to read.
+        Name of Zeiss LSM file to read.
 
     Returns
     -------
@@ -820,16 +1220,16 @@ def read_lsm(
 
     Examples
     --------
-    >>> data = read_lsm(fetch('paramecium.lsm'))
-    >>> data.values
+    >>> signal = signal_from_lsm(fetch('paramecium.lsm'))
+    >>> signal.values
     array(...)
-    >>> data.dtype
+    >>> signal.dtype
     dtype('uint8')
-    >>> data.shape
+    >>> signal.shape
     (30, 512, 512)
-    >>> data.dims
+    >>> signal.dims
     ('C', 'Y', 'X')
-    >>> data.coords['C'].data  # wavelengths
+    >>> signal.coords['C'].data  # wavelengths
     array([423, ..., 713])
 
     """
@@ -895,7 +1295,7 @@ def read_lsm(
     return DataArray(data, **metadata)
 
 
-def read_imspector_tiff(
+def signal_from_imspector_tiff(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
@@ -924,18 +1324,18 @@ def read_imspector_tiff(
 
     Examples
     --------
-    >>> data = read_imspector_tiff(fetch('Embryo.tif'))
-    >>> data.values
+    >>> signal = signal_from_imspector_tiff(fetch('Embryo.tif'))
+    >>> signal.values
     array(...)
-    >>> data.dtype
+    >>> signal.dtype
     dtype('uint16')
-    >>> data.shape
+    >>> signal.shape
     (56, 512, 512)
-    >>> data.dims
+    >>> signal.dims
     ('H', 'Y', 'X')
-    >>> data.coords['H'].data  # dtime bins
+    >>> signal.coords['H'].data  # dtime bins
     array([0, ..., 12.26])
-    >>> data.attrs['frequency']  # doctest: +NUMBER
+    >>> signal.attrs['frequency']  # doctest: +NUMBER
     80.109
 
     """
@@ -1038,108 +1438,7 @@ def read_imspector_tiff(
     return DataArray(data, **metadata)
 
 
-def read_ifli(
-    filename: str | PathLike[Any],
-    /,
-    *,
-    channel: int = 0,
-    **kwargs: Any,
-) -> DataArray:
-    """Return image and metadata from ISS IFLI file.
-
-    ISS VistaVision IFLI files contain phasor coordinates for several
-    positions, wavelengths, time points, channels, slices, and frequencies
-    from analog or digital frequency-domain fluorescence lifetime measurements.
-
-    Parameters
-    ----------
-    filename : str or Path
-        Name of ISS IFLI file to read.
-    channel : int, optional
-        Index of channel to return. The first channel is returned by default.
-    **kwargs
-        Additional arguments passed to :py:meth:`lfdfiles.VistaIfli.asarray`,
-        for example ``memmap=True``.
-
-    Returns
-    -------
-    xarray.DataArray
-        Average intensity and phasor coordinates.
-        An array of up to 8 dimensions with :ref:`axes codes <axes>`
-        ``'RCTZYXFS'`` and type ``float32``.
-        The last dimension contains `mean`, `real`, and `imag` phasor
-        coordinates.
-
-        - ``coords['F']``: modulation frequencies in MHz.
-        - ``coords['C']``: emission wavelengths in nm, if any.
-        - ``attrs['ref_tau']``: reference lifetimes in ns.
-        - ``attrs['ref_tau_frac']``: reference lifetime fractions.
-        - ``attrs['ref_phasor']``: reference phasor coordinates for all
-          frequencies.
-
-    Raises
-    ------
-    lfdfiles.LfdFileError
-        File is not an ISS IFLI file.
-
-    Examples
-    --------
-    >>> data = read_ifli(fetch('frequency_domain.ifli'))
-    >>> data.values
-    array(...)
-    >>> data.dtype
-    dtype('float32')
-    >>> data.shape
-    (256, 256, 4, 3)
-    >>> data.dims
-    ('Y', 'X', 'F', 'S')
-    >>> data.coords['F'].data  # doctest: +NUMBER
-    array([80.33, 160.7, 241, 401.7])
-    >>> data.coords['S'].data
-    array(['mean', 'real', 'imag'], dtype='<U4')
-    >>> data.attrs
-    {'ref_tau': (2.5, 0.0), 'ref_tau_frac': (1.0, 0.0), 'ref_phasor': array...}
-
-    """
-    import lfdfiles
-
-    with lfdfiles.VistaIfli(filename) as ifli:
-        assert ifli.axes is not None
-        # always return one acquisition channel to simplify metadata handling
-        data = ifli.asarray(**kwargs)[:, channel : channel + 1].copy()
-        shape, axes, _ = _squeeze_axes(data.shape, ifli.axes, skip='FYX')
-        axes = axes.replace('E', 'C')  # spectral axis
-        data = data.reshape(shape)
-        header = ifli.header
-        coords: dict[str, Any] = {}
-        coords['S'] = ['mean', 'real', 'imag']
-        coords['F'] = numpy.array(header['ModFrequency']) * 1e-6
-        # TODO: how to distinguish time- from frequency-domain?
-        # TODO: how to extract spatial coordinates?
-        if 'T' in axes:
-            coords['T'] = numpy.array(header['TimeTags'])
-        if 'C' in axes:
-            coords['C'] = numpy.array(header['SpectrumInfo'])
-        # if 'Z' in axes:
-        #     coords['Z'] = numpy.array(header[])
-        metadata = _metadata(axes, shape, filename, **coords)
-        attrs = metadata['attrs']
-        attrs['ref_tau'] = (
-            header['RefLifetime'][channel],
-            header['RefLifetime2'][channel],
-        )
-        attrs['ref_tau_frac'] = (
-            header['RefLifetimeFrac'][channel],
-            1.0 - header['RefLifetimeFrac'][channel],
-        )
-        attrs['ref_phasor'] = numpy.array(header['RefDCPhasor'][channel])
-
-    from xarray import DataArray
-
-    return DataArray(data, **metadata)
-
-
-def read_sdt(
+def signal_from_sdt(
     filename: str | PathLike[Any],
     /,
     *,
@@ -1147,13 +1446,12 @@ def read_sdt(
 ) -> DataArray:
     """Return time-resolved image and metadata from Becker & Hickl SDT file.
 
-    SDT files contain time-correlated single photon counting measurement data
-    and instrumentation parameters.
+    SDT files contain TCSPC measurement data and instrumentation parameters.
 
     Parameters
     ----------
     filename : str or Path
-        Name of SDT file to read.
+        Name of Becker & Hickl SDT file to read.
     index : int, optional, default: 0
         Index of dataset to read in case the file contains multiple datasets.
 
@@ -1170,23 +1468,22 @@ def read_sdt(
     Raises
     ------
     ValueError
-        File is not an SDT file containing time-correlated single photon
-        counting data.
+        File is not a SDT file containing TCSPC histogram.
 
     Examples
     --------
-    >>> data = read_sdt(fetch('tcspc.sdt'))
-    >>> data.values
+    >>> signal = signal_from_sdt(fetch('tcspc.sdt'))
+    >>> signal.values
     array(...)
-    >>> data.dtype
+    >>> signal.dtype
     dtype('uint16')
-    >>> data.shape
+    >>> signal.shape
     (128, 128, 256)
-    >>> data.dims
+    >>> signal.dims
     ('Y', 'X', 'H')
-    >>> data.coords['H'].data
+    >>> signal.coords['H'].data
     array([0, ..., 12.45])
-    >>> data.attrs['frequency']  # doctest: +NUMBER
+    >>> signal.attrs['frequency']  # doctest: +NUMBER
     79.99
 
     """
@@ -1217,7 +1514,7 @@ def read_sdt(
     return DataArray(data, **metadata)
 
 
-def read_ptu(
+def signal_from_ptu(
     filename: str | PathLike[Any],
     /,
     selection: Sequence[int | slice | EllipsisType | None] | None = None,
@@ -1245,7 +1542,7 @@ def read_ptu(
         - ``Ellipsis``: return all items along multiple axes.
         - ``int``: return single item along axis.
         - ``slice``: return chunk of axis.
-          ``slice.step`` is binning factor.
+          ``slice.step`` is a binning factor.
           If ``slice.step=-1``, integrate all items along axis.
 
     trimdims : str, optional, default: 'TCH'
@@ -1261,7 +1558,7 @@ def read_ptu(
         Overrides `selection` for axis ``C``.
     dtime : int, optional, default: 0
         Specifies number of bins in image histogram.
-        If 0 (default), return number of bins in one period.
+        If 0 (default), return the number of bins in one period.
         If < 0, integrate delay time axis (image mode only).
         If > 0, return up to specified bin.
         Overrides `selection` for axis ``H``.
@@ -1287,23 +1584,22 @@ def read_ptu(
     ptufile.PqFileError
         File is not a PicoQuant PTU file or is corrupted.
     ValueError
-        File is not a PicoQuant PTU T3 mode file containing time-correlated
-        single photon counting data.
+        File is not a PicoQuant PTU T3 mode file containing TCSPC data.
 
     Examples
     --------
-    >>> data = read_ptu(fetch('hazelnut_FLIM_single_image.ptu'))
-    >>> data.values
+    >>> signal = signal_from_ptu(fetch('hazelnut_FLIM_single_image.ptu'))
+    >>> signal.values
     array(...)
-    >>> data.dtype
+    >>> signal.dtype
     dtype('uint16')
-    >>> data.shape
+    >>> signal.shape
     (5, 256, 256, 1, 132)
-    >>> data.dims
+    >>> signal.dims
     ('T', 'Y', 'X', 'C', 'H')
-    >>> data.coords['H'].data
+    >>> signal.coords['H'].data
     array([0, ..., 12.7])
-    >>> data.attrs['frequency']  # doctest: +NUMBER
+    >>> signal.attrs['frequency']  # doctest: +NUMBER
     78.02
 
     """
@@ -1353,7 +1649,7 @@ def read_ptu(
     return data
 
 
-def read_flif(
+def signal_from_flif(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
@@ -1387,18 +1683,18 @@ def read_flif(
 
     Examples
     --------
-    >>> data = read_flif(fetch('flimfast.flif'))
-    >>> data.values
+    >>> signal = signal_from_flif(fetch('flimfast.flif'))
+    >>> signal.values
     array(...)
-    >>> data.dtype
+    >>> signal.dtype
     dtype('uint16')
-    >>> data.shape
+    >>> signal.shape
     (32, 220, 300)
-    >>> data.dims
+    >>> signal.dims
     ('H', 'Y', 'X')
-    >>> data.coords['H'].data
+    >>> signal.coords['H'].data
     array([0, ..., 6.087], dtype=float32)
-    >>> data.attrs['frequency']  # doctest: +NUMBER
+    >>> signal.attrs['frequency']  # doctest: +NUMBER
     80.65
 
     """
@@ -1432,7 +1728,7 @@ def read_flif(
     return DataArray(data, **metadata)
 
 
-def read_fbd(
+def signal_from_fbd(
     filename: str | PathLike[Any],
     /,
     *,
@@ -1483,18 +1779,20 @@ def read_fbd(
 
     Examples
     --------
-    >>> data = read_fbd(fetch('convallaria_000$EI0S.fbd'))  # doctest: +SKIP
-    >>> data.values  # doctest: +SKIP
+    >>> signal = signal_from_fbd(
+    ...     fetch('convallaria_000$EI0S.fbd')
+    ... )  # doctest: +SKIP
+    >>> signal.values  # doctest: +SKIP
     array(...)
-    >>> data.dtype  # doctest: +SKIP
+    >>> signal.dtype  # doctest: +SKIP
     dtype('uint16')
-    >>> data.shape  # doctest: +SKIP
+    >>> signal.shape  # doctest: +SKIP
     (9, 2, 256, 256, 64)
-    >>> data.dims  # doctest: +SKIP
+    >>> signal.dims  # doctest: +SKIP
     ('T', 'C', 'Y', 'X', 'H')
-    >>> data.coords['H'].data  # doctest: +SKIP
+    >>> signal.coords['H'].data  # doctest: +SKIP
     array([0, ..., 6.185])
-    >>> data.attrs['frequency']  # doctest: +SKIP
+    >>> signal.attrs['frequency']  # doctest: +SKIP
     40.0
 
     """
@@ -1549,7 +1847,7 @@ def read_fbd(
     return DataArray(data, **metadata)
 
 
-def read_b64(
+def signal_from_b64(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
@@ -1577,16 +1875,16 @@ def read_b64(
 
     Examples
     --------
-    >>> data = read_b64(fetch('simfcs.b64'))
-    >>> data.values
+    >>> signal = signal_from_b64(fetch('simfcs.b64'))
+    >>> signal.values
     array(...)
-    >>> data.dtype
+    >>> signal.dtype
     dtype('int16')
-    >>> data.shape
+    >>> signal.shape
     (22, 1024, 1024)
-    >>> data.dtype
+    >>> signal.dtype
     dtype('int16')
-    >>> data.dims
+    >>> signal.dims
     ('I', 'Y', 'X')
 
     """
@@ -1606,7 +1904,7 @@ def read_b64(
     return DataArray(data, **metadata)
 
 
-def read_z64(
+def signal_from_z64(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
@@ -1633,14 +1931,14 @@ def read_z64(
 
     Examples
     --------
-    >>> data = read_z64(fetch('simfcs.z64'))
-    >>> data.values
+    >>> signal = signal_from_z64(fetch('simfcs.z64'))
+    >>> signal.values
     array(...)
-    >>> data.dtype
+    >>> signal.dtype
     dtype('float32')
-    >>> data.shape
+    >>> signal.shape
     (256, 256, 256)
-    >>> data.dims
+    >>> signal.dims
     ('Q', 'Y', 'X')
 
     """
@@ -1655,7 +1953,7 @@ def read_z64(
     return DataArray(data, **metadata)
 
 
-def read_bh(
+def signal_from_bh(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
@@ -1683,14 +1981,14 @@ def read_bh(
 
     Examples
     --------
-    >>> data = read_bh(fetch('simfcs.b&h'))
-    >>> data.values
+    >>> signal = signal_from_bh(fetch('simfcs.b&h'))
+    >>> signal.values
     array(...)
-    >>> data.dtype
+    >>> signal.dtype
     dtype('float32')
-    >>> data.shape
+    >>> signal.shape
     (256, 256, 256)
-    >>> data.dims
+    >>> signal.dims
     ('H', 'Y', 'X')
 
     """
@@ -1706,7 +2004,7 @@ def read_bh(
     return DataArray(data, **metadata)
 
 
-def read_bhz(
+def signal_from_bhz(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
@@ -1734,14 +2032,14 @@ def read_bhz(
 
     Examples
     --------
-    >>> data = read_bhz(fetch('simfcs.bhz'))
-    >>> data.values
+    >>> signal = signal_from_bhz(fetch('simfcs.bhz'))
+    >>> signal.values
     array(...)
-    >>> data.dtype
+    >>> signal.dtype
     dtype('float32')
-    >>> data.shape
+    >>> signal.shape
     (256, 256, 256)
-    >>> data.dims
+    >>> signal.dims
     ('H', 'Y', 'X')
 
     """
@@ -1786,12 +2084,12 @@ def _metadata(
     return metadata
 
 
-def _squeeze_axes(
+def _squeeze_dims(
     shape: Sequence[int],
-    axes: str,
+    dims: Sequence[str],
     /,
-    skip: str = 'XY',
-) -> tuple[tuple[int, ...], str, tuple[bool, ...]]:
+    skip: Container[str] = 'XY',
+) -> tuple[tuple[int, ...], tuple[str, ...], tuple[bool, ...]]:
     """Return shape and axes with length-1 dimensions removed.
 
     Remove unused dimensions unless their axes are listed in `skip`.
@@ -1802,9 +2100,9 @@ def _squeeze_axes(
     ----------
     shape : tuple of ints
         Sequence of dimension sizes.
-    axes : str
+    dims : sequence of str
         Character codes for dimensions in `shape`.
-    skip : str, optional
+    skip : container of str, optional
         Character codes for dimensions whose length-1 dimensions are
         not removed. The default is 'XY'.
 
@@ -1812,35 +2110,35 @@ def _squeeze_axes(
     -------
     shape : tuple of ints
         Sequence of dimension sizes with length-1 dimensions removed.
-    axes : str
+    dims : tuple of str
         Character codes for dimensions in output `shape`.
     squeezed : str
         Dimensions were kept (True) or removed (False).
 
     Examples
     --------
-    >>> _squeeze_axes((5, 1, 2, 1, 1), 'TZYXC')
-    ((5, 2, 1), 'TYX', (True, False, True, True, False))
-    >>> _squeeze_axes((1,), 'Q')
-    ((1,), 'Q', (True,))
+    >>> _squeeze_dims((5, 1, 2, 1, 1), 'TZYXC')
+    ((5, 2, 1), ('T', 'Y', 'X'), (True, False, True, True, False))
+    >>> _squeeze_dims((1,), ('Q',))
+    ((1,), ('Q',), (True,))
 
     """
-    if len(shape) != len(axes):
-        raise ValueError(f'{len(shape)=} != {len(axes)=}')
-    if not axes:
-        return tuple(shape), axes, ()
+    if len(shape) != len(dims):
+        raise ValueError(f'{len(shape)=} != {len(dims)=}')
+    if not dims:
+        return tuple(shape), tuple(dims), ()
     squeezed: list[bool] = []
     shape_squeezed: list[int] = []
-    axes_squeezed: list[str] = []
-    for size, ax in zip(shape, axes):
+    dims_squeezed: list[str] = []
+    for size, ax in zip(shape, dims):
         if size > 1 or ax in skip:
             squeezed.append(True)
             shape_squeezed.append(size)
-            axes_squeezed.append(ax)
+            dims_squeezed.append(ax)
         else:
             squeezed.append(False)
     if len(shape_squeezed) == 0:
         squeezed[-1] = True
         shape_squeezed.append(shape[-1])
-        axes_squeezed.append(axes[-1])
-    return tuple(shape_squeezed), ''.join(axes_squeezed), tuple(squeezed)
+        dims_squeezed.append(dims[-1])
+    return tuple(shape_squeezed), tuple(dims_squeezed), tuple(squeezed)
