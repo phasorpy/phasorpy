@@ -188,5 +188,5 @@ norecursedirs = [
 
 [tool.cibuildwheel]
 skip = "pp* cp37* cp38* cp39* *musllinux* *i686 *ppc64le *s390x cp39*win*arm64 cp310*win*arm64"
-test-requires = ["lfdfiles", "sdtfile", "ptufile", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage"]
+test-requires = ["lfdfiles", "sdtfile", "ptufile", "liffile", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage"]
 test-command = "pytest {project}/tests"
