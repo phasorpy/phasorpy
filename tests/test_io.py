@@ -1037,10 +1037,10 @@ def test_phasor_to_simfcs_referenced_multiharmonic():
             assert imag.shape == (2, 32, 32)
 
 
-@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_phasor_from_lif():
     """Test read phasor coordinates from Leica LIF file."""
-    filename = private_file('FLIM.lif')
+    filename = fetch('FLIM_testdata.lif')
     mean, real, imag, attrs = phasor_from_lif(filename)
     for data in (mean, real, imag):
         assert data.shape == (1024, 1024)
@@ -1096,7 +1096,7 @@ def test_signal_from_lif():
         signal_from_lif(filename, series='XYZLambdaT', dim='Λ')
 
     # file does not contain hyperspectral signal
-    filename = private_file('FLIM.lif')
+    filename = fetch('FLIM_testdata.lif')
     with pytest.raises(ValueError):
         signal_from_lif(filename)
 

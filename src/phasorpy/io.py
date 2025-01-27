@@ -1010,12 +1010,12 @@ def phasor_from_lif(
 
     Examples
     --------
-    >>> mean, real, imag, attrs = phasor_from_lif('FLIM.lif')  # doctest: +SKIP
-    >>> real.shape  # doctest: +SKIP
+    >>> mean, real, imag, attrs = phasor_from_lif(fetch('FLIM_testdata.lif'))
+    >>> real.shape
     (1024, 1024)
-    >>> attrs['dims']  # doctest: +SKIP
+    >>> attrs['dims']
     ('Y', 'X')
-    >>> attrs['frequency']  # doctest: +SKIP
+    >>> attrs['frequency']
     19.505
 
     """

@@ -361,6 +361,22 @@ FLIMLABS = pooch.create(
     },
 )
 
+FIGSHARE_22336594 = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/figshare_22336594'
+        if DATA_ON_GITHUB
+        else 'doi:10.6084/m9.figshare.22336594.v1'
+    ),
+    env=ENV,
+    registry={
+        'FLIM_testdata.lif': (
+            'sha256:'
+            '902d8fa6cd39da7cf062b32d43aab518fa2a851eab72b4bd8b8eca1bad591850'
+        ),
+    },
+)
+
 REPOSITORIES: dict[str, pooch.Pooch] = {
     'tests': TESTS,
     'lfd-workshop': LFD_WORKSHOP,
@@ -369,6 +385,7 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'zenodo-13625087': ZENODO_13625087,
     'convallaria-fbd': CONVALLARIA_FBD,
     'flimlabs': FLIMLABS,
+    'figshare_22336594': FIGSHARE_22336594,
 }
 """Pooch repositories."""
 
