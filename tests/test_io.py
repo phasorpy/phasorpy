@@ -1060,9 +1060,10 @@ def test_phasor_from_lif():
     # assert 'frequency' not in attrs
 
     # file does not contain FLIM data
-    filename = private_file('ScanModesExamples.lif')
-    with pytest.raises(ValueError):
-        phasor_from_lif(filename)
+    if not SKIP_PRIVATE:
+        filename = private_file('ScanModesExamples.lif')
+        with pytest.raises(ValueError):
+            phasor_from_lif(filename)
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
