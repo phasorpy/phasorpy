@@ -11,12 +11,14 @@ The ``phasorpy.io`` module provides functions to:
 
   - :py:func:`phasor_from_ometiff` - PhasorPy OME-TIFF
   - :py:func:`phasor_from_ifli` - ISS IFLI
+  - :py:func:`phasor_from_lif` - Leica LIF
   - :py:func:`phasor_from_flimlabs_json` - FLIM LABS JSON
   - :py:func:`phasor_from_simfcs_referenced` - SimFCS REF and R64
 
 - read time-resolved and hyperspectral signals, as well as metadata from
   many file formats used in bio-imaging:
 
+  - :py:func:`signal_from_lif` - Leica LIF
   - :py:func:`signal_from_lsm` - Zeiss LSM
   - :py:func:`signal_from_ptu` - PicoQuant PTU
   - :py:func:`signal_from_sdt` - Becker & Hickl SDT
@@ -33,7 +35,6 @@ The ``phasorpy.io`` module provides functions to:
 
   - OME-TIFF
   - Zeiss CZI
-  - Leica LIF
   - Nikon ND2
   - Olympus OIB/OIF
   - Olympus OIR
@@ -42,6 +43,7 @@ The functions are implemented as minimal wrappers around specialized
 third-party file reader libraries, currently
 `tifffile <https://github.com/cgohlke/tifffile>`_,
 `ptufile <https://github.com/cgohlke/ptufile>`_,
+`liffile <https://github.com/cgohlke/liffile>`_,
 `sdtfile <https://github.com/cgohlke/sdtfile>`_, and
 `lfdfiles <https://github.com/cgohlke/lfdfiles>`_.
 For advanced or unsupported use cases, consider using these libraries directly.
@@ -116,6 +118,7 @@ from __future__ import annotations
 __all__ = [
     'phasor_from_flimlabs_json',
     'phasor_from_ifli',
+    'phasor_from_lif',
     'phasor_from_ometiff',
     'phasor_from_simfcs_referenced',
     'phasor_to_ometiff',
@@ -128,7 +131,7 @@ __all__ = [
     'signal_from_flif',
     'signal_from_flimlabs_json',
     'signal_from_imspector_tiff',
-    # 'signal_from_lif',
+    'signal_from_lif',
     'signal_from_lsm',
     # 'signal_from_nd2',
     # 'signal_from_oif',
@@ -962,6 +965,100 @@ def phasor_from_ifli(
     return mean, real, imag, attrs
 
 
+def phasor_from_lif(
+    filename: str | PathLike[Any],
+    /,
+    series: str | None = None,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
+    """Return phasor coordinates and metadata from Leica LIF file.
+
+    LIF files may contain uncalibrated phasor coordinate images and metadata
+    from the analysis of fluorescence lifetime imaging measurements.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of Leica LIF file to read.
+    series : str, optional
+        Name of image containing phasor coordinates.
+
+    Returns
+    -------
+    mean : ndarray
+        Average intensity image.
+    real : ndarray
+        Image of real component of phasor coordinates.
+    imag : ndarray
+        Image of imaginary component of phasor coordinates.
+    attrs : dict
+        Select metadata:
+
+        - ``'dims'`` (tuple of str):
+          :ref:`Axes codes <axes>` for `mean` image dimensions.
+        - ``'frequency'`` (float):
+          Fundamental frequency of time-resolved phasor coordinates in MHz.
+          May not be present in all LIF files.
+        - ``'flim_rawdata'`` (dict):
+          Settings from LIF SingleMoleculeDetection/RawData XML element.
+
+    Raises
+    ------
+    liffile.LifFileError
+        File is not a Leica LIF file.
+    ValueError
+        File does not contain FLIM phasor images and metadata.
+
+    Examples
+    --------
+    >>> mean, real, imag, attrs = phasor_from_lif('FLIM.lif')  # doctest: +SKIP
+    >>> real.shape  # doctest: +SKIP
+    (1024, 1024)
+    >>> attrs['dims']  # doctest: +SKIP
+    ('Y', 'X')
+    >>> attrs['frequency']  # doctest: +SKIP
+    19.505
+
+    """
+    # TODO: read harmonic from XML if possible
+    # TODO: get calibration settings from XML metadata or lifetime and/or
+    #   phasor plot images
+    import liffile
+
+    if series is None:
+        series = ''
+    else:
+        series = f'.*{series}.*/'
+
+    with liffile.LifFile(filename) as lif:
+        try:
+            image = lif.series[series + 'Phasor Intensity$']
+            dims = image.dims
+            coords = image.coords
+            # meta = image.attrs
+            mean = image.asarray()
+            real = lif.series[series + 'Phasor Real$'].asarray()
+            imag = lif.series[series + 'Phasor Imaginary$'].asarray()
+            # mask = lif.series[series + 'Phasor Mask$'].asarray()
+        except Exception as exc:
+            raise ValueError(
+                f'{lif.filename} does not contain Phasor images'
+            ) from exc
+
+        attrs: dict[str, Any] = {'dims': dims}
+        if lif.flim_rawdata is not None:
+            attrs['frequency'] = lif.flim_rawdata['LaserPulseFrequency'] * 1e-6
+        attrs['coords'] = coords
+        attrs['flim_rawdata'] = lif.flim_rawdata
+        # attrs['lif_image_header'] = meta
+
+    return (
+        mean.astype(numpy.float32),
+        real.astype(numpy.float32),
+        imag.astype(numpy.float32),
+        attrs,
+    )
+
+
 def phasor_from_flimlabs_json(
     filename: str | PathLike[Any],
     /,
@@ -1186,6 +1283,95 @@ def signal_from_flimlabs_json(
     from xarray import DataArray
 
     return DataArray(histogram, **metadata)
+
+
+def signal_from_lif(
+    filename: str | PathLike[Any],
+    /,
+    *,
+    series: int | str | None = None,
+    dim: Literal['λ', 'Λ'] | str = 'λ',
+) -> DataArray:
+    """Return hyperspectral image and metadata from Leica LIF file.
+
+    LIF files may contain hyperspectral images and metadata from laser
+    scanning microscopy measurements.
+    Reading of TCSPC histograms from FLIM measurements is not supported
+    because the compression scheme is patent-pending.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of Leica LIF file to read.
+    series : str or int, optional
+        Index or regex pattern of image series to return.
+        By default, return the first series containing hyperspectral data.
+    dim : str or None
+        Character code of hyperspectral dimension.
+        Either ``'λ'`` for emission (default) or ``'Λ'`` for excitation.
+
+    Returns
+    -------
+    xarray.DataArray
+        Hyperspectral image data.
+
+        - ``coords['C']``: wavelengths in nm.
+        - ``coords['T']``: time coordinates in s, if any.
+
+    Raises
+    ------
+    liffile.LifFileError
+        File is not a Leica LIF file.
+    ValueError
+        File is not an LSM file or does not contain hyperspectral image.
+
+    Examples
+    --------
+    >>> signal = signal_from_lif('ScanModesExamples.lif')  # doctest: +SKIP
+    >>> signal.values  # doctest: +SKIP
+    array(...)
+    >>> signal.shape  # doctest: +SKIP
+    (9, 128, 128)
+    >>> signal.dims  # doctest: +SKIP
+    ('C', 'Y', 'X')
+    >>> signal.coords['C'].data  # doctest: +SKIP
+    array([560, 580, 600, ..., 680, 700, 720])
+
+    """
+    import liffile
+
+    with liffile.LifFile(filename) as lif:
+        if series is None:
+            # find series with excitation or emission dimension
+            for image in lif.series:
+                if dim in image.dims:
+                    break
+            else:
+                raise ValueError(
+                    f'{lif!r} does not contain hyperspectral image'
+                )
+        else:
+            image = lif.series[series]
+
+        if dim not in image.dims or image.sizes[dim] < 4:
+            raise ValueError(f'{image!r} does not contain spectral dimension')
+        if 'C' in image.dims:
+            raise ValueError(
+                'hyperspectral image must not contain channel axis'
+            )
+
+        data = image.asarray()
+        coords: dict[str, Any] = {
+            ('C' if k == dim else k): (v * 1e9 if k == dim else v)
+            for (k, v) in image.coords.items()
+        }
+        dims = tuple(('C' if d == dim else d) for d in image.dims)
+
+        metadata = _metadata(dims, image.shape, filename, **coords)
+
+    from xarray import DataArray
+
+    return DataArray(data, **metadata)
 
 
 def signal_from_lsm(

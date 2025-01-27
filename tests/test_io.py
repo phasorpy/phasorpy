@@ -19,6 +19,7 @@ from phasorpy.datasets import fetch
 from phasorpy.io import (
     phasor_from_flimlabs_json,
     phasor_from_ifli,
+    phasor_from_lif,
     phasor_from_ometiff,
     phasor_from_simfcs_referenced,
     phasor_to_ometiff,
@@ -30,6 +31,7 @@ from phasorpy.io import (
     signal_from_flif,
     signal_from_flimlabs_json,
     signal_from_imspector_tiff,
+    signal_from_lif,
     signal_from_lsm,
     signal_from_ptu,
     signal_from_sdt,
@@ -1033,6 +1035,70 @@ def test_phasor_to_simfcs_referenced_multiharmonic():
             assert mean.shape == (32, 32)
             assert real.shape == (2, 32, 32)
             assert imag.shape == (2, 32, 32)
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_phasor_from_lif():
+    """Test read phasor coordinates from Leica LIF file."""
+    filename = private_file('FLIM.lif')
+    mean, real, imag, attrs = phasor_from_lif(filename)
+    for data in (mean, real, imag):
+        assert data.shape == (1024, 1024)
+        assert data.dtype == numpy.float32
+    assert attrs['frequency'] == 19.505
+    assert 'harmonic' not in attrs
+
+    # select series
+    mean1, real1, imag1, attrs = phasor_from_lif(
+        filename, series='FLIM Compressed'
+    )
+    assert_array_equal(mean1, mean)
+
+    # TODO: file does not contain FLIM raw metadata
+    # filename = private_file('....lif')
+    # mean, real, imag, attrs = phasor_from_lif(filename)
+    # assert 'frequency' not in attrs
+
+    # file does not contain FLIM data
+    filename = private_file('ScanModesExamples.lif')
+    with pytest.raises(ValueError):
+        phasor_from_lif(filename)
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_signal_from_lif():
+    """Test read hyperspectral signal from Leica LIF file."""
+    filename = private_file('ScanModesExamples.lif')
+    signal = signal_from_lif(filename)
+    assert signal.dims == ('C', 'Y', 'X')
+    assert signal.shape == (9, 128, 128)
+    assert signal.dtype == numpy.uint8
+    assert_allclose(signal.coords['C'].data[[0, 1]], [560.0, 580.0])
+
+    # select series
+    signal = signal_from_lif(filename, series='XYZLambdaT')
+    assert signal.dims == ('T', 'C', 'Z', 'Y', 'X')
+    assert signal.shape == (7, 9, 5, 128, 128)
+    assert_allclose(signal.coords['C'].data[[0, 1]], [560.0, 580.0])
+    assert_allclose(signal.coords['T'].data[[0, 1]], [0.0, 23.897167])
+    assert_allclose(
+        signal.coords['Z'].data[[0, 1]], [4.999881e-6, 2.499821e-6]
+    )
+
+    # select excitation
+    signal = signal_from_lif(filename, dim='Λ')
+    assert signal.dims == ('C', 'Y', 'X')
+    assert signal.shape == (10, 128, 128)
+    assert_allclose(signal.coords['C'].data[[0, 1]], [470.0, 492.0])
+
+    # series does not contain dim
+    with pytest.raises(ValueError):
+        signal_from_lif(filename, series='XYZLambdaT', dim='Λ')
+
+    # file does not contain hyperspectral signal
+    filename = private_file('FLIM.lif')
+    with pytest.raises(ValueError):
+        signal_from_lif(filename)
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

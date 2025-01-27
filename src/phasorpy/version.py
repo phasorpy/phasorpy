@@ -44,6 +44,7 @@ def versions(
         'lfdfiles',
         'sdtfile',
         'ptufile',
+        'liffile',
         'matplotlib',
         'scipy',
         'skimage',
