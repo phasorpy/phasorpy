@@ -1977,6 +1977,7 @@ def lifetime_fraction_from_amplitude(
     array([0.8, 0.2])
 
     """
+    t: NDArray[numpy.float64]
     t = numpy.multiply(amplitude, lifetime, dtype=numpy.float64)
     t /= numpy.sum(t, axis=axis, keepdims=True)
     return t
