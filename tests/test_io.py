@@ -198,8 +198,6 @@ def test_flimlabs_reproduce():
     modulation = 1.0 / calibration[:, 1].reshape(-1, 1, 1)
 
     real1, imag1 = phasor_transform(real1, imag1, phase, modulation)
-    real1 = numpy.nan_to_num(real1, nan=0)
-    imag1 = numpy.nan_to_num(imag1, nan=0)
 
     assert_allclose(mean, mean1, atol=1e-2)
     assert_allclose(real, real1, atol=1e-2)

@@ -1071,6 +1071,9 @@ def phasor_from_flimlabs_json(
     (possibly for multiple channels and harmonics) and metadata from
     digital frequency-domain measurements.
 
+    The real and imaginary parts of the phasor coordinates are zero (not NaN)
+    if the intensity is zero.
+
     Parameters
     ----------
     filename : str or Path
@@ -1349,7 +1352,7 @@ def signal_from_flimlabs_json(
 
     from ._phasorpy import _flimlabs_signal
 
-    signal = numpy.empty((nchannels, height * width, 256), dtype)
+    signal = numpy.zeros((nchannels, height * width, 256), dtype)
     _flimlabs_signal(
         signal,
         intensities_data,
