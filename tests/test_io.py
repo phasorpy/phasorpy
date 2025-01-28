@@ -173,53 +173,108 @@ def test_signal_from_imspector_tiff_t():
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_flimlabs_reproduce():
-    """Test FLIM LABS results can be reproduced with PhasorPy."""
+    """Test FLIM LABS multiharmonic results can be reproduced with PhasorPy."""
     import json
 
-    filename = fetch('dataset_1.json')
-    signal = signal_from_flimlabs_json(filename, channel=0)
+    channel = 0
+    filename = fetch('convallaria_2_1737113097_phasor_ch1.json')
+    signal = signal_from_flimlabs_json(filename, channel=channel)
+    mean, real, imag, attrs = phasor_from_flimlabs_json(
+        filename, channel=channel, harmonic='all'
+    )
+    harmonic = attrs['harmonic']
 
-    filename = fetch('dataset_1_phasor_ch1_h1.json')
-    mean, real, imag, attrs = phasor_from_flimlabs_json(filename)
-
-    filename = fetch('calibrator2_imaging_calibration.json')
-    with open(filename) as fh:
+    filename = fetch('calibrator_2_5_1737112045_imaging_calibration.json')
+    with open(filename, 'rb') as fh:
         attrs = json.load(fh)
 
-    mean1, real1, imag1 = phasor_from_signal(signal, harmonic=1)
+    mean1, real1, imag1 = phasor_from_signal(signal, harmonic=harmonic)
+    assert mean.shape == mean1.shape
+    assert real.shape == real1.shape
+    assert imag.shape == imag1.shape
 
-    real1, imag1 = phasor_transform(
-        real1,
-        imag1,
-        -attrs['calibrations'][0][0][0],
-        1 / attrs['calibrations'][0][0][1],
-    )
+    calibration = numpy.asarray(attrs['calibrations'][channel])
+    phase = -calibration[:, 0].reshape(-1, 1, 1)
+    modulation = 1.0 / calibration[:, 1].reshape(-1, 1, 1)
+
+    real1, imag1 = phasor_transform(real1, imag1, phase, modulation)
     real1 = numpy.nan_to_num(real1, nan=0)
     imag1 = numpy.nan_to_num(imag1, nan=0)
 
-    assert_allclose(real, real1, atol=1e-3)
-    assert_allclose(imag, imag1, atol=1e-3)
+    assert_allclose(mean, mean1, atol=1e-2)
+    assert_allclose(real, real1, atol=1e-2)
+    assert_allclose(imag, imag1, atol=1e-2)
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_phasor_from_flimlabs_json():
     """Test phasor_from_flimlabs_json function."""
-    filename = fetch('dataset_1_phasor_ch1_h1.json')
-    mean, real, imag, attrs = phasor_from_flimlabs_json(filename)
+    filename = fetch('convallaria_2_1737113097_phasor_ch1.json')
+    mean, real, imag, attrs = phasor_from_flimlabs_json(
+        filename, harmonic='all', channel=0
+    )
     assert mean.dtype == numpy.float32
     assert mean.shape == (256, 256)
+    assert real.shape == (4, 256, 256)
+    assert imag.shape == (4, 256, 256)
+    assert pytest.approx(mean.mean(), abs=1e-2) == 4896155 / 256 / 256 / 256
+    assert_allclose(
+        real.mean(axis=(1, 2)),
+        [0.30063, 0.198757, 0.15185, 0.10898],
+        atol=1e-3,
+    )
+    assert_allclose(
+        imag.mean(axis=(1, 2)),
+        [0.202482, 0.059337, -0.018447, -0.063713],
+        atol=1e-3,
+    )
+    assert attrs['dims'] == ('Y', 'X')
+    assert attrs['harmonic'] == [1, 2, 3, 4]
+    assert attrs['samples'] == 256
+    assert pytest.approx(attrs['frequency']) == 79.51024
+    lpns = attrs['flimlabs_header']['laser_period_ns']
+    assert pytest.approx(lpns) == 12.576995
+
+    # first harmonic by default
+    mean, real, imag, attrs = phasor_from_flimlabs_json(filename)
     assert real.shape == (256, 256)
     assert imag.shape == (256, 256)
-    assert attrs['dims'] == ('Y', 'X')
+    assert pytest.approx(real.mean(), abs=1e-3) == 0.30063
+    assert pytest.approx(imag.mean(), abs=1e-3) == 0.202482
     assert attrs['harmonic'] == 1
-    assert pytest.approx(attrs['frequency']) == 79.510677
-    lpns = attrs['flimlabs_header']['laser_period_ns']
-    assert pytest.approx(lpns) == 12.576927184822562
 
-    filename = fetch('dataset_1.json')
+    # second harmonic, keep axis
+    mean, real, imag, attrs = phasor_from_flimlabs_json(filename, harmonic=[2])
+    assert real.shape == (1, 256, 256)
+    assert imag.shape == (1, 256, 256)
+    assert pytest.approx(real.mean(), abs=1e-3) == 0.198757
+    assert pytest.approx(imag.mean(), abs=1e-3) == 0.059337
+    assert attrs['harmonic'] == [2]
+
+    # first and third harmonic
+    mean, real, imag, attrs = phasor_from_flimlabs_json(
+        filename, harmonic=[1, 3]
+    )
+    assert real.shape == (2, 256, 256)
+    assert imag.shape == (2, 256, 256)
+    assert_allclose(real.mean(axis=(1, 2)), [0.30063, 0.15185], atol=1e-3)
+    assert_allclose(imag.mean(axis=(1, 2)), [0.202482, -0.018447], atol=1e-3)
+    assert attrs['harmonic'] == [1, 3]
+
+    # harmonic out of range
+    with pytest.raises(IndexError):
+        phasor_from_flimlabs_json(filename, harmonic=[1, 5])
+
+    # channel out of range
+    with pytest.raises(IndexError):
+        phasor_from_flimlabs_json(filename, channel=1)
+
+    # not a file containing phasor coordinates
+    filename = fetch('calibrator_2_5_1737112045_imaging_calibration.json')
     with pytest.raises(ValueError):
         phasor_from_flimlabs_json(filename)
 
+    # not a JSON file
     filename = fetch('simfcs.r64')
     with pytest.raises(ValueError):
         phasor_from_flimlabs_json(filename)
@@ -228,33 +283,46 @@ def test_phasor_from_flimlabs_json():
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_signal_from_flimlabs_json():
     """Test signal_from_flimlabs_json function."""
-    filename = fetch('dataset_1.json')
+    filename = fetch('convallaria_2_1737113097_phasor_ch1.json')
     signal = signal_from_flimlabs_json(filename)
-    assert signal.values.sum(dtype=numpy.uint64) == 3115336
+    assert signal.values.sum(dtype=numpy.uint64) == 4896155
     assert signal.dtype == numpy.uint16
-    assert signal.shape == (1, 256, 256, 256)
-    assert signal.dims == ('C', 'Y', 'X', 'H')
+    assert signal.shape == (256, 256, 256)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert 'C' not in signal.coords
     assert_almost_equal(
-        signal.coords['H'][[0, -1]], [0.0, 12.527799], decimal=6
+        signal.coords['H'][[0, -1]], [0.0, 12.527867], decimal=6
     )
-    assert_array_equal(signal.coords['C'], [0])
-    assert pytest.approx(signal.attrs['frequency']) == 79.510677
+    assert pytest.approx(signal.attrs['frequency']) == 79.510243
     lpns = signal.attrs['flimlabs_header']['laser_period_ns']
-    assert pytest.approx(lpns) == 12.576927184822562
+    assert pytest.approx(lpns) == 12.57699584916508
 
     signal = signal_from_flimlabs_json(filename, channel=0)
     assert signal.shape == (256, 256, 256)
 
+    # channel does not exist
     with pytest.raises(IndexError):
         signal_from_flimlabs_json(filename, channel=1)
 
+    # not an unsigned int dtype
     with pytest.raises(ValueError):
         signal_from_flimlabs_json(filename, dtype=numpy.int8)
 
-    filename = fetch('dataset_1_phasor_ch1_h1.json')
+    # old format file
+    filename = fetch('calibrator_2_5_1737112045_imaging.json')
+    signal = signal_from_flimlabs_json(filename)
+    assert signal.values.sum(dtype=numpy.uint64) == 6152493
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (256, 256, 256)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert pytest.approx(signal.attrs['frequency']) == 79.510243
+
+    # not a file containing a TCSPC signal
+    filename = fetch('calibrator_2_5_1737112045_imaging_calibration.json')
     with pytest.raises(ValueError):
         signal_from_flimlabs_json(filename)
 
+    # not a JSON file
     filename = fetch('simfcs.r64')
     with pytest.raises(ValueError):
         signal_from_flimlabs_json(filename)

@@ -49,6 +49,12 @@ ctypedef fused float_t:
     float
     double
 
+ctypedef fused uint_t:
+    uint8_t
+    uint16_t
+    uint32_t
+    uint64_t
+
 ctypedef fused signal_t:
     uint8_t
     uint16_t
@@ -2159,3 +2165,66 @@ def _median_filter_2d(
                     image[i, j] = filtered_image[i, j]
 
         free(kernel)
+
+
+###############################################################################
+# Decoder functions
+
+
+def _flimlabs_signal(
+    uint_t[:, :, ::] signal,   # channel, pixel, bin
+    list data,  # list[list[list[[int, int]]]]
+    ssize_t channel = -1  # -1 == None
+):
+    """Return TCSPC histogram image from FLIM LABS JSON intensity data."""
+    cdef:
+        list channels, pixels
+        ssize_t c, i, h, count
+
+    if channel < 0:
+        c = 0
+        for channels in data:
+            i = 0
+            for pixels in channels:
+                for h, count in pixels:
+                    signal[c, i, h] = <uint_t> count
+                i += 1
+            c += 1
+    else:
+        i = 0
+        for pixels in data[channel]:
+            for h, count in pixels:
+                signal[0, i, h] = <uint_t> count
+            i += 1
+
+
+def _flimlabs_mean(
+    float_t[:, ::] mean,   # channel, pixel
+    list data,  # list[list[list[[int, int]]]]
+    ssize_t channel = -1  # -1 == None
+):
+    """Return mean intensity image from FLIM LABS JSON intensity data."""
+    cdef:
+        list channels, pixels
+        ssize_t c, i, h, count
+        double sum
+
+    if channel < 0:
+        c = 0
+        for channels in data:
+            i = 0
+            for pixels in channels:
+                sum = 0.0
+                for h, count in pixels:
+                    sum += <double> count
+                mean[c, i] = <float_t> (sum / 255.0)
+                i += 1
+            c += 1
+    else:
+        i = 0
+        for pixels in data[channel]:
+            sum = 0.0
+            for h, count in pixels:
+                sum += <double> count
+            mean[0, i] = <float_t> (sum / 255.0)
+            i += 1
