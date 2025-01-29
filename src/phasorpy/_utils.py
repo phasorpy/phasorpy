@@ -1,6 +1,4 @@
-"""Private auxiliary and convenience functions.
-
-"""
+"""Private auxiliary and convenience functions."""
 
 from __future__ import annotations
 
