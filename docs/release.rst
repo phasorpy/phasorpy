@@ -10,6 +10,39 @@ documentation and maintenance changes.
     It is not nearly feature complete.
     Large, backwards-incompatible changes may occur between revisions.
 
+0.4 (2025.1.30)
+---------------
+
+This is the fourth alpha release of the PhasorPy library.
+It contains several bug fixes and many improvements, mostly to the ``phasorpy.io`` module.
+File reader functions are now named ``signal_from_*`` or ``phasor_from_*``
+and have a more consistent API.
+Point mode PTU files, LIF files containing phasor coordinates or hyperspectral
+signals, and FLIM LABS JSON files are supported.
+PhasorPy releases are now available on conda-forge.
+This release supports Python 3.10 to 3.13.
+
+What's Changed
+..............
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/163
+* Support labelled signal axes by @cgohlke in https://github.com/phasorpy/phasorpy/pull/166
+* Update copyright year by @cgohlke in https://github.com/phasorpy/phasorpy/pull/168
+* Return array coordinates from files in normal units by @cgohlke in https://github.com/phasorpy/phasorpy/pull/169
+* Document availability on conda-forge by @cgohlke in https://github.com/phasorpy/phasorpy/pull/170
+* Fix RST code is two backticks by @cgohlke in https://github.com/phasorpy/phasorpy/pull/171
+* Support reading point mode PTU files by @cgohlke in https://github.com/phasorpy/phasorpy/pull/172
+* Fix phasor_calibrate for handling higher harmonics than size of first dimension of reference_real by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/176
+* Improve io module by @cgohlke in https://github.com/phasorpy/phasorpy/pull/177
+* Add support for Leica LIF files by @cgohlke in https://github.com/phasorpy/phasorpy/pull/178
+* Add support for new FLIM LABS JSON format by @cgohlke in https://github.com/phasorpy/phasorpy/pull/179
+* Reformat with black 25.1 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/180
+* Release v0.4 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/181
+* Fixes for liffile 2025.1.30 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/182
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.3...v0.4
+
+
 0.3 (2024.12.16)
 ----------------
 
