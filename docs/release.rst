@@ -10,7 +10,7 @@ documentation and maintenance changes.
     It is not nearly feature complete.
     Large, backwards-incompatible changes may occur between revisions.
 
-0.4 (2025.1.31)
+0.4 (2025.1.30)
 ---------------
 
 This is the fourth alpha release of the PhasorPy library.
@@ -21,7 +21,6 @@ Point mode PTU files, LIF files containing phasor coordinates or hyperspectral
 signals, and FLIM LABS JSON files are supported.
 PhasorPy releases are now available on conda-forge.
 This release supports Python 3.10 to 3.13.
-
 
 What's Changed
 ..............
@@ -39,6 +38,7 @@ What's Changed
 * Add support for new FLIM LABS JSON format by @cgohlke in https://github.com/phasorpy/phasorpy/pull/179
 * Reformat with black 25.1 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/180
 * Release v0.4 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/181
+* Fixes for liffile 2025.1.30 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/182
 
 **Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.3...v0.4
 
