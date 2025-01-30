@@ -1045,11 +1045,12 @@ def phasor_from_lif(
             ) from exc
 
         attrs: dict[str, Any] = {'dims': dims}
-        if lif.flim_rawdata is not None:
-            attrs['frequency'] = lif.flim_rawdata['LaserPulseFrequency'] * 1e-6
+        xml = image.xml_element_smd
+        if xml is not None:
+            frequency = xml.find('.//Dataset/RawData/LaserPulseFrequency')
+            if frequency is not None and frequency.text is not None:
+                attrs['frequency'] = float(frequency.text) * 1e-6
         attrs['coords'] = coords
-        attrs['flim_rawdata'] = lif.flim_rawdata
-        # attrs['lif_image_header'] = meta
 
     return (
         mean.astype(numpy.float32),
