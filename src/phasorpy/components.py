@@ -18,8 +18,10 @@ The ``phasorpy.components`` module provides functions to:
 
   - :py:func:`graphical_component_analysis`
 
-- blindly resolve fractions of `n` components by using harmonic
-  information (not implemented)
+- phasor-based resolve fractions of `n` components by using harmonic
+  information
+
+  - :py:func: `phasor_based_unmixing`
 
 """
 
@@ -28,6 +30,7 @@ from __future__ import annotations
 __all__ = [
     'two_fractions_from_phasor',
     'graphical_component_analysis',
+    'phasor_based_unmixing',
 ]
 
 import numbers
@@ -37,6 +40,7 @@ if TYPE_CHECKING:
     from ._typing import Any, ArrayLike, NDArray
 
 import numpy
+from numpy.linalg import lstsq
 
 from ._phasorpy import (
     _fraction_on_segment,
@@ -311,3 +315,77 @@ def graphical_component_analysis(
             counts.append(numpy.asarray(component_counts))
 
     return tuple(counts)
+
+
+def phasor_based_unmixing(
+    real: ArrayLike,
+    imag: ArrayLike,
+    coeff_matrix: ArrayLike,
+    /, 
+) -> NDArray:
+    """
+    Returns the fractions of each component in each pixel.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Real component of phasor coordinates.
+    coeff_matrix : array_like
+        Pure components coefficients to compute unmixing. 
+        MAtrix is like [real1, imag1, ..., realN, imagN, [1...1]]
+        with real and imag component of phasor coordinates for the 
+        pure components.
+
+    Returns
+    -------
+    counts : ndarray
+        Array with the fractions values of each pure component in each pixel. 
+
+    Raises
+    ------
+    ValueError
+        The array shapes of `real` and `imag`
+        The coefficient matrix is empty
+
+    Example
+    -------
+
+    """
+    
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    coeff_matrix = numpy.asarray(coeff_matrix)
+
+    # Replace NaNs or infinite values in real, imag, and coeff_matrix with 0
+    real = numpy.nan_to_num(real, nan=0.0, posinf=0.0, neginf=0.0)
+    imag = numpy.nan_to_num(imag, nan=0.0, posinf=0.0, neginf=0.0)
+
+    if real.shape != imag.shape:
+        raise ValueError(f"{real.shape=} != {imag.shape=}")
+    
+    if coeff_matrix.size == 0:
+        raise ValueError("The coefficient matrix is empty.")
+
+    # If real and imag are 1D
+    if real.ndim == 1:
+        vecB = numpy.hstack([real[:1], imag[:1], 1])
+        return lstsq(coeff_matrix, vecB)[0]
+    
+    # If real and imag are multidimensional
+    nh, N, M = real.shape
+    real_reshaped = real.reshape(nh, -1)
+    imag_reshaped = imag.reshape(nh, -1)
+
+    # Create an array of ones with shape (1, N*M)
+    ones_array = numpy.ones((1, N * M))
+    
+    # Concatenate real, imag, and ones
+    vecB = numpy.concatenate([real_reshaped, imag_reshaped, ones_array],
+                             axis=0)
+    
+    # Solve the system
+    fractions, _, _, _ = lstsq(coeff_matrix, vecB, rcond=None)
+
+    return fractions
