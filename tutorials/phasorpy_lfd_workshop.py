@@ -170,7 +170,7 @@ plot_phasor(real, imag, fmt='o-', frequency=frequency)
 # harmonics:
 
 frequency = 80.0  # MHz
-mean, real, imag = phasor_from_simfcs_referenced(
+mean, real, imag, attrs = phasor_from_simfcs_referenced(
     fetch('capillaries1001.ref'), harmonic=[1, 2]
 )
 
@@ -373,7 +373,9 @@ plot.show()
 # Open the file ``CFPpax8651866.ref``, which contains referenced FLIM data
 # for a cell transfected with a CFP paxillin construct.
 
-mean1, real1, imag1 = phasor_from_simfcs_referenced(fetch('CFPpax8651866.ref'))
+mean1, real1, imag1, attrs = phasor_from_simfcs_referenced(
+    fetch('CFPpax8651866.ref')
+)
 
 plot_phasor_image(mean1, real1, imag1, title='CFPpax8651866.ref')
 
@@ -381,7 +383,9 @@ plot_phasor_image(mean1, real1, imag1, title='CFPpax8651866.ref')
 # Open the file ``1011rac1002.ref``, which contains referenced FLIM data
 # for a cell transfected with a CFP-YFP fusion protein:
 
-mean2, real2, imag2 = phasor_from_simfcs_referenced(fetch('1011rac1002.ref'))
+mean2, real2, imag2, attrs = phasor_from_simfcs_referenced(
+    fetch('1011rac1002.ref')
+)
 
 plot_phasor_image(mean2, real2, imag2, title='1011rac1002.ref')
 
@@ -426,7 +430,7 @@ plot.show()
 # is visible.
 
 frequency = 80.0  # MHz
-mean1, real1, imag1 = phasor_from_simfcs_referenced(
+mean1, real1, imag1, attrs = phasor_from_simfcs_referenced(
     fetch('CFP and CFP-YFp.ref')
 )
 
@@ -434,7 +438,7 @@ plot_phasor_image(mean1, real1, imag1, title='CFP and CFP-YFp.ref')
 
 # %%
 
-mean2, real2, imag2 = phasor_from_simfcs_referenced(
+mean2, real2, imag2, attrs = phasor_from_simfcs_referenced(
     fetch('CFP-YFP many cells with background.ref')
 )
 

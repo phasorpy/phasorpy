@@ -137,12 +137,14 @@ def test_parse_harmonic():
     assert parse_harmonic(1, 1) == ([1], False)
     assert parse_harmonic(numpy.int32(1), 1) == ([1], False)
     assert parse_harmonic([1], 1) == ([1], True)
+    assert parse_harmonic((1,), 1) == ([1], True)
     assert parse_harmonic([numpy.int32(1)], 1) == (  # type: ignore[list-item]
         [1],
         True,
     )
     assert parse_harmonic([1, 2], 2) == ([1, 2], True)
     assert parse_harmonic([2, 1], 2) == ([2, 1], True)
+    assert parse_harmonic((1, 2), 2) == ([1, 2], True)
     assert parse_harmonic(numpy.array([1, 2]), 2) == ([1, 2], True)
     assert parse_harmonic('all', 1) == ([1], True)
     assert parse_harmonic('all', 2) == ([1, 2], True)

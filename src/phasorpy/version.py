@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__version__ = '0.4.dev'
+__version__ = '0.5.dev'
 
 
 def versions(
@@ -44,6 +44,7 @@ def versions(
         'lfdfiles',
         'sdtfile',
         'ptufile',
+        'liffile',
         'matplotlib',
         'scipy',
         'skimage',
