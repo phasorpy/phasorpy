@@ -17,13 +17,13 @@ import numpy
 
 from phasorpy.components import (
     graphical_component_analysis,
-    two_fractions_from_phasor,
     phasor_based_unmixing,
+    two_fractions_from_phasor,
 )
 from phasorpy.phasor import (
-    phasor_from_lifetime, 
+    phasor_filter_median,
+    phasor_from_lifetime,
     phasor_from_signal,
-    phasor_filter_median
 )
 from phasorpy.plot import PhasorPlot
 
@@ -265,40 +265,49 @@ plt.show()
 # Theoretical solution for contributions of n components
 # ------------------------------------------------------
 #
-# The theoretical solution can be applied to the contributions 
-# of n components 
+# The theoretical solution can be applied to the contributions
+# of n components
 
 import tifffile
 
 # TODO add the data from https://zenodo.org/records/
 image = tifffile.imread(
-    "/Users/schutyb/Documents/Projects/phasorpy_in_use/data/"
-    "38_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm"
+    '/Users/schutyb/Documents/Projects/phasorpy_in_use/data/'
+    '38_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm'
 )
 
-components = ['Hoechst', 'Golgi', 'Mito', 'Lyso', 'CellMask']
+components = ['Hoechst', 'Lyso Tracker', 'Golgi', 'Mito Tracker', 'CellMask']
 
 avg, real, imag = phasor_from_signal(image, axis=0, harmonic=[1, 2])
 
-# avg, real, imag = phasor_filter_median(avg, real, imag, size=7, repeat=5)
+avg, real, imag = phasor_filter_median(avg, real, imag, size=5, repeat=3)
 
-# pure components positions 
-first_h = numpy.asarray([[ 0.1599, 0.5899],
-            [ -0.6015, 0.5807 ],
-            [ -0.6611, 0.151],
-            [ -0.6188, -0.5963 ],
-            [ 0.7233, -0.6268]])
+# pure components positions obtained experimentally for each component
+# computing the center of mass of the phasor plot
+first_h = numpy.asarray(
+    [
+        [0.1599, 0.5899],
+        [-0.6015, 0.5807],
+        [-0.6611, 0.151],
+        [-0.6188, -0.5963],
+        [0.7233, -0.6268],
+    ]
+)
 
-second_h = numpy.asarray([[ -0.0586, 0.2162],
-            [ -0.1255, -0.6531],
-            [ 0.1321, -0.2347],
-            [ 0.1578, 0.6098],
-            [ 0.1225, -0.8306]])
+second_h = numpy.asarray(
+    [
+        [-0.0586, 0.2162],
+        [-0.1255, -0.6531],
+        [0.1321, -0.2347],
+        [0.1578, 0.6098],
+        [0.1225, -0.8306],
+    ]
+)
 
 plt.figure()
-plt.imshow(avg, cmap="gray")
-plt.title("Average image")
-plt.axis("off")
+plt.imshow(avg, cmap='gray')
+plt.title('Average image')
+plt.axis('off')
 
 plot = PhasorPlot(allquadrants=True, title='First harmonic phasor')
 plot.hist2d(real[0], imag[0], cmap='RdYlBu_r', bins=300)
@@ -309,58 +318,35 @@ plot.hist2d(real[1], imag[1], cmap='RdYlBu_r', bins=300)
 plot.plot(second_h.T[0], second_h.T[1])
 
 matrixA = numpy.asarray(
-        [
-            [ 0.1599, -0.6015, -0.6611, -0.6188,  0.7233],  # real1
-            [ -0.0586, -0.1255,  0.1321,  0.1578,  0.1225], # real2
-            [ 0.5899,  0.5807,  0.151 , -0.5963, -0.6268,], # imag1
-            [ 0.2162, -0.6531, -0.2347,  0.6098, -0.8306],  # imag2
-            [1, 1, 1, 1, 1]
-        ]
-    )
+    [
+        [0.1599, -0.6015, -0.6611, -0.6188, 0.7233],  # real1
+        [-0.0586, -0.1255, 0.1321, 0.1578, 0.1225],  # real2
+        [0.5899, 0.5807, 0.151, -0.5963, -0.6268,],  # imag1
+        [0.2162, -0.6531, -0.2347, 0.6098, -0.8306],  # imag2
+        [1, 1, 1, 1, 1],
+    ]
+)
 
-fractions = phasor_based_unmixing(real, imag, matrixA)
+fractions = numpy.asarray(phasor_based_unmixing(real, imag, matrixA))
 
 # reshape to get 5 images of fractions for each componet
 fractions = fractions.reshape(5, real.shape[1], real.shape[2])
 
-cmap = plt.cm.nipy_spectral
+# normalize the fractions (remove negative values and scale to 0-1)
+fractions = numpy.maximum(fractions, 0)
+fractions = fractions / numpy.max(fractions)
+
+cmap = plt.cm.inferno
 
 # Plot the fractions of the components
 for i, fraction in enumerate(fractions[:5], start=4):
     plt.figure(i)
-    plt.imshow(fraction, cmap=cmap, vmin=fraction.min(), vmax=fraction.max())
-    plt.title(f"Fraction of component {components[i - 4]}")
+    plt.imshow(fraction, cmap=cmap, vmin=0, vmax=1)
+    plt.title(f'Fraction of component {components[i - 4]}')
     plt.colorbar()
     plt.tight_layout()
 
 plt.show()
-
-
-from phasorpy.phasor import phasor_from_lifetime, phasor_at_harmonic
-import numpy as np
-
-real_comp_1, imag_comp_1 = phasor_from_lifetime(80, [0.5, 2, 8, 10])
-real_comp_2, imag_comp_2 = phasor_at_harmonic(real_comp_1, 1, 2)
-
-real_1 = np.tile(real_comp_1, (2, 1))
-imag_1 = np.tile(imag_comp_1, (2, 1))
-real_2 = np.tile(real_comp_2, (2, 1))
-imag_2 = np.tile(imag_comp_2, (2, 1))
-
-matrixA = np.array(
-    [
-        real_comp_1,
-        real_comp_2,
-        imag_comp_1,
-        imag_comp_2,
-        [1, 1, 1,1]
-    ]
-)
-
-real = np.stack((real_1, real_2))
-imag = np.stack((imag_1, imag_2))
-
-result = phasor_based_unmixing(real, imag, matrixA)
 
 # %%
 # sphinx_gallery_thumbnail_number = 5

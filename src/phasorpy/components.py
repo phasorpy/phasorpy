@@ -321,8 +321,8 @@ def phasor_based_unmixing(
     real: ArrayLike,
     imag: ArrayLike,
     coeff_matrix: ArrayLike,
-    /, 
-) -> NDArray:
+    /,
+) -> tuple[NDArray[Any], ...]:
     """
     Returns the fractions of each component in each pixel.
 
@@ -333,15 +333,15 @@ def phasor_based_unmixing(
     imag : array_like
         Real component of phasor coordinates.
     coeff_matrix : array_like
-        Pure components coefficients to compute unmixing. 
+        Pure components coefficients to compute unmixing.
         MAtrix is like [real1, imag1, ..., realN, imagN, [1...1]]
-        with real and imag component of phasor coordinates for the 
+        with real and imag component of phasor coordinates for the
         pure components.
 
     Returns
     -------
     counts : ndarray
-        Array with the fractions values of each pure component in each pixel. 
+        Array with the fractions values of each pure component in each pixel.
 
     Raises
     ------
@@ -353,7 +353,7 @@ def phasor_based_unmixing(
     -------
 
     """
-    
+
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
     coeff_matrix = numpy.asarray(coeff_matrix)
@@ -363,16 +363,16 @@ def phasor_based_unmixing(
     imag = numpy.nan_to_num(imag, nan=0.0, posinf=0.0, neginf=0.0)
 
     if real.shape != imag.shape:
-        raise ValueError(f"{real.shape=} != {imag.shape=}")
-    
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+
     if coeff_matrix.size == 0:
-        raise ValueError("The coefficient matrix is empty.")
+        raise ValueError('The coefficient matrix is empty.')
 
     # If real and imag are 1D
     if real.ndim == 1:
         vecB = numpy.hstack([real[:1], imag[:1], 1])
-        return lstsq(coeff_matrix, vecB)[0]
-    
+        return tuple(lstsq(coeff_matrix, vecB)[0])
+
     # If real and imag are multidimensional
     nh, N, M = real.shape
     real_reshaped = real.reshape(nh, -1)
@@ -380,12 +380,12 @@ def phasor_based_unmixing(
 
     # Create an array of ones with shape (1, N*M)
     ones_array = numpy.ones((1, N * M))
-    
+
     # Concatenate real, imag, and ones
     vecB = numpy.concatenate([real_reshaped, imag_reshaped, ones_array],
                              axis=0)
-    
+
     # Solve the system
     fractions, _, _, _ = lstsq(coeff_matrix, vecB, rcond=None)
 
-    return fractions
+    return tuple(fractions)
