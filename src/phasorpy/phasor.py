@@ -1158,7 +1158,8 @@ def phasor_calibrate(
     ValueError
         The array shapes of `real` and `imag`, or `reference_real` and
         `reference_imag` do not match.
-        Number of harmonics does not match the first axis of `real` and `imag`.
+        Number of harmonics or frequencies does not match the first axis
+        of `real` and `imag`.
 
     See Also
     --------
@@ -1257,13 +1258,22 @@ def phasor_calibrate(
         ),
     )
 
+    frequency = numpy.asarray(frequency)
+    frequency = frequency * harmonic
+
     if has_harmonic_axis:
         if real.ndim == 0:
-            raise ValueError(f'{real.shape=} != {len(harmonic)=}')
-        if real.shape[0] != len(harmonic):
-            raise ValueError(f'{real.shape[0]=} != {len(harmonic)=}')
-        if reference_real.shape[0] != len(harmonic):
-            raise ValueError(f'{reference_real.shape[0]=} != {len(harmonic)=}')
+            raise ValueError(
+                f'{real.shape=} != {len(frequency)} frequencies or harmonics'
+            )
+        if real.shape[0] != len(frequency):
+            raise ValueError(
+                f'{real.shape[0]=} != {len(frequency)} frequencies or harmonics'
+            )
+        if reference_real.shape[0] != len(frequency):
+            raise ValueError(
+                f'{reference_real.shape[0]=} != {len(frequency)} frequencies or harmonics'
+            )
         if reference_mean.shape != reference_real.shape[1:]:
             raise ValueError(
                 f'{reference_mean.shape=} != {reference_real.shape[1:]=}'
@@ -1274,9 +1284,6 @@ def phasor_calibrate(
         raise ValueError(
             f'{reference_mean.shape=} does not have harmonic axis'
         )
-
-    frequency = numpy.asarray(frequency)
-    frequency = frequency * harmonic
 
     _, measured_re, measured_im = phasor_center(
         reference_mean,
@@ -1295,6 +1302,24 @@ def phasor_calibrate(
         unit_conversion=unit_conversion,
     )
 
+    skip_axis, axis = _parse_skip_axis(
+        skip_axis, real.ndim - int(has_harmonic_axis), has_harmonic_axis
+    )
+
+    if has_harmonic_axis and any(skip_axis):
+        known_re = numpy.expand_dims(
+            known_re, tuple(range(1, measured_re.ndim))
+        )
+        known_re = numpy.broadcast_to(
+            known_re, (len(frequency), *measured_re.shape[1:])
+        )
+        known_im = numpy.expand_dims(
+            known_im, tuple(range(1, measured_im.ndim))
+        )
+        known_im = numpy.broadcast_to(
+            known_im, (len(frequency), *measured_im.shape[1:])
+        )
+
     phi_zero, mod_zero = polar_from_reference_phasor(
         measured_re, measured_im, known_re, known_im
     )
@@ -1303,9 +1328,6 @@ def phasor_calibrate(
         if reverse:
             numpy.negative(phi_zero, out=phi_zero)
             numpy.reciprocal(mod_zero, out=mod_zero)
-        _, axis = _parse_skip_axis(
-            skip_axis, real.ndim - int(has_harmonic_axis), has_harmonic_axis
-        )
         if axis is not None:
             phi_zero = numpy.expand_dims(phi_zero, axis=axis)
             mod_zero = numpy.expand_dims(mod_zero, axis=axis)
