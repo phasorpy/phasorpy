@@ -3223,9 +3223,9 @@ def phasor_filter_pawflim(
             processed_harmonics.add(h)
             processed_harmonics.add(h * 2)
 
-    _, real, imag = phasor_normalize(
-        mean_expanded, real_filtered, imag_filtered
-    )
+    with numpy.errstate(divide='ignore', invalid='ignore'):
+        real = numpy.asarray(numpy.divide(real_filtered, mean_expanded))
+        imag = numpy.asarray(numpy.divide(imag_filtered, mean_expanded))
 
     return mean, real, imag
 
