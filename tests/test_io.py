@@ -1114,9 +1114,9 @@ def test_phasor_from_lif():
     assert attrs['frequency'] == 19.505
     assert 'harmonic' not in attrs
 
-    # select series
+    # select image
     mean1, real1, imag1, attrs = phasor_from_lif(
-        filename, series='FLIM Compressed'
+        filename, image='FLIM Compressed'
     )
     assert_array_equal(mean1, mean)
 
@@ -1142,8 +1142,8 @@ def test_signal_from_lif():
     assert signal.dtype == numpy.uint8
     assert_allclose(signal.coords['C'].data[[0, 1]], [560.0, 580.0])
 
-    # select series
-    signal = signal_from_lif(filename, series='XYZLambdaT')
+    # select image
+    signal = signal_from_lif(filename, image='XYZLambdaT')
     assert signal.dims == ('T', 'C', 'Z', 'Y', 'X')
     assert signal.shape == (7, 9, 5, 128, 128)
     assert_allclose(signal.coords['C'].data[[0, 1]], [560.0, 580.0])
@@ -1158,9 +1158,9 @@ def test_signal_from_lif():
     assert signal.shape == (10, 128, 128)
     assert_allclose(signal.coords['C'].data[[0, 1]], [470.0, 492.0])
 
-    # series does not contain dim
+    # image does not contain dim
     with pytest.raises(ValueError):
-        signal_from_lif(filename, series='XYZLambdaT', dim='Λ')
+        signal_from_lif(filename, image='XYZLambdaT', dim='Λ')
 
     # file does not contain hyperspectral signal
     filename = fetch('FLIM_testdata.lif')
