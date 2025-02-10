@@ -415,6 +415,16 @@ def test_phasor_normalization(harmonics, normalize):
         assert_allclose(real2, real1, 1e-4)
         assert_allclose(imag2, imag1, 1e-4)
 
+        mean2, real2, imag2 = phasor_normalize(
+            mean0, real0, imag0, samples=1, dtype=numpy.float64
+        )
+        assert_array_equal(mean0, mean_)
+        assert_array_equal(real0, real_)
+        assert_array_equal(imag0, imag_)
+        assert_array_equal(mean2, mean0)
+        assert_allclose(real2, real1, 1e-8)
+        assert_allclose(imag2, imag1, 1e-8)
+
         with pytest.raises(ValueError):
             phasor_normalize(mean0, real0, imag0, samples=0)
 
