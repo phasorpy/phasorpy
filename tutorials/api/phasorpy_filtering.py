@@ -56,8 +56,8 @@ real, imag = phasor_calibrate(
 )
 
 # %%
-# Plot unfiltered phasor coordinates
-# ----------------------------------
+# Unfiltered
+# ----------
 #
 # Plot the unfiltered, calibrated phasor coordinates after applying a
 # threshold based on the mean intensity to remove background values:
@@ -179,7 +179,7 @@ plot_phasor(
     real_filtered[0],
     imag_filtered[0],
     frequency=frequency,
-    title='pawFLIM-filtered phasor coordinates for first harmonic',
+    title='pawFLIM-filtered phasor coordinates (sigma=2, levels=1)',
 )
 
 # %%
@@ -197,7 +197,7 @@ plot_phasor(
     real_filtered[0],
     imag_filtered[0],
     frequency=frequency,
-    title='pawFLIM-filtered phasor coordinates for first harmonic',
+    title='pawFLIM-filtered phasor coordinates (sigma=5, levels=3)',
 )
 
 # %%

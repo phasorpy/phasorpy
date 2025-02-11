@@ -3358,6 +3358,13 @@ def test_phasor_filter_pawflim_errors():
     # shape mismatch between real and imag
     with pytest.raises(ValueError):
         phasor_filter_pawflim([1], [[1], [1]], [[1]])
+    # shape mismatch between mean and real
+    with pytest.raises(ValueError):
+        phasor_filter_pawflim(
+            [[1, 1, 1], [1, 1, 1]],
+            [[[1, 1], [1, 1]], [[1, 1], [1, 1]]],
+            [[[1, 1], [1, 1]], [[1, 1], [1, 1]]],
+        )
     # levels < 1
     with pytest.raises(ValueError):
         phasor_filter_pawflim([1], [[1], [1]], [[1], [1]], levels=-1)
