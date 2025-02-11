@@ -3039,34 +3039,37 @@ def phasor_filter_pawflim(
     harmonic: Sequence[int] | None = None,
     skip_axis: int | Sequence[int] | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-    """Return wavelet-filtered phasor coordinates.
+    """Return pawFLIM wavelet-filtered phasor coordinates.
 
-    This function should only be used with calibrated, unprocessed phasor
-    coordinates obtained from FLIM data. The data should not be filtered,
+    This function must only be used with calibrated, unprocessed phasor
+    coordinates obtained from FLIM data. The coordinates must not be filtered,
     thresholded, or otherwise pre-processed.
+
+    The pawFLIM wavelet filter is described in [2]_.
 
     Parameters
     ----------
     mean : array_like
         Intensity of phasor coordinates.
     real : array_like
-        Real component of phasor coordinates to be filtered. Must have at least
-        two harmonics in the first axis.
+        Real component of phasor coordinates to be filtered.
+        Must have at least two harmonics in the first axis.
     imag : array_like
-        Imaginary component of phasor coordinates to be filtered. Must have at
-        least two harmonics in the first axis.
+        Imaginary component of phasor coordinates to be filtered.
+        Must have at least two harmonics in the first axis.
     sigma : float, optional
-        Significance level to test the difference between two phasors, given
-        in terms of the equivalent 1D standard deviations. sigma=2 corresponds
-        to ~95% (or 5%) significance.
+        Significance level to test difference between two phasors.
+        Given in terms of the equivalent 1D standard deviations.
+        sigma=2 corresponds to ~95% (or 5%) significance.
     levels : int, optional
-        Number of levels for the wavelet decomposition.
-        Controls the maximum averaging area, which has a length of :math:`2^level`.
+        Number of levels for wavelet decomposition.
+        Controls the maximum averaging area, which has a length of
+        :math:`2^level`.
     harmonic : sequence of int or None, optional
-        If a sequence, the harmonics included in the first axis of `real` and
-        `imag`.
+        Harmonics included in first axis of `real` and `imag`.
         If None (default), the first axis of `real` and `imag` contains lower
         harmonics starting at and increasing by one.
+        All harmonics must have a corresponding half or double harmonic.
     skip_axis : int or sequence of int, optional
         Axes in `mean` to exclude from filter.
         By default, all axes except harmonics are included.
@@ -3094,14 +3097,14 @@ def phasor_filter_pawflim(
     References
     ----------
 
-    .. [1] Silberberg M & Grecco H. `pawFLIM: reducing bias and uncertainty
-    to enable lower photon count in FLIM experiments
-    <https://doi.org/10.1088/2050-6120/aa72ab>`_.
+    .. [2] Silberberg M & Grecco H. `pawFLIM: reducing bias and uncertainty
+      to enable lower photon count in FLIM experiments
+      <https://doi.org/10.1088/2050-6120/aa72ab>`_.
       *Methods Appl Fluoresc*, 5(2): 024016 (2017)
 
     Examples
     --------
-    Apply a wavelet filter with four significance levels (sigma)
+    Apply a pawFLIM wavelet filter with four significance levels (sigma)
     and three decomposition levels:
 
     >>> mean, real, imag = phasor_filter_pawflim(
@@ -3145,18 +3148,18 @@ def phasor_filter_pawflim(
 
     has_harmonic_axis = mean.ndim + 1 == real.ndim
     if not has_harmonic_axis:
-        raise ValueError('No harmonic axis')
+        raise ValueError('no harmonic axis')
     if harmonic is None:
         harmonics, _ = parse_harmonic('all', real.shape[0])
     else:
         harmonics, _ = parse_harmonic(harmonic, None)
     if len(harmonics) < 2:
         raise ValueError(
-            'At least two harmonics required, ' f'got {len(harmonics)}'
+            'at least two harmonics required, ' f'got {len(harmonics)}'
         )
     if len(harmonics) != real.shape[0]:
         raise ValueError(
-            'Number of harmonics does not match first axis of real and imag'
+            'number of harmonics does not match first axis of real and imag'
         )
 
     mean = numpy.asarray(numpy.nan_to_num(mean), dtype=float)
@@ -3171,11 +3174,11 @@ def phasor_filter_pawflim(
     _, axes = _parse_skip_axis(skip_axis, mean.ndim, True)
 
     for index in numpy.ndindex(
-        *[
+        *(
             real.shape[ax]
             for ax in range(real.ndim)
             if ax not in axes and ax != 0
-        ]
+        )
     ):
         index_list: list[int | slice] = list(index)
         for ax in axes:
@@ -3191,7 +3194,7 @@ def phasor_filter_pawflim(
                 continue
             if h * 2 not in harmonics:
                 raise ValueError(
-                    f'Harmonic {h} does not have a corresponding half '
+                    f'harmonic {h} does not have a corresponding half '
                     f'or double harmonic in {harmonics}'
                 )
             n = harmonics.index(h)

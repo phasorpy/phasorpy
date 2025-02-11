@@ -25,7 +25,6 @@ dependencies = [
     # "pandas>=2.0.0",
     "xarray>=2023.4.0",
     "tifffile>=2024.8.30",
-    "pawflim",
 ]
 requires-python = ">=3.10"
 classifiers = [
@@ -79,6 +78,7 @@ all = [
     "sdtfile>=2024.5.24",
     "ptufile>=2024.9.14",
     "liffile>=2025.2.6",
+    "pawflim",
 ]
 
 [tool.setuptools]

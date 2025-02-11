@@ -2,7 +2,7 @@
 Filter phasor coordinates
 =========================
 
-Methods for filtering phasor coordinates.
+Functions for filtering phasor coordinates.
 
 Filtering phasor coordinates improves signal quality by reducing noise while
 preserving relevant features. Two of the most common methods for filtering
@@ -13,8 +13,6 @@ include the median and wavelet filtering.
 # %%
 # Import required modules and functions:
 
-import matplotlib.pyplot as plt
-
 from phasorpy.datasets import fetch
 from phasorpy.io import signal_from_imspector_tiff
 from phasorpy.phasor import (
@@ -24,15 +22,14 @@ from phasorpy.phasor import (
     phasor_from_signal,
     phasor_threshold,
 )
-from phasorpy.plot import PhasorPlot, plot_phasor_image, plot_signal_image
+from phasorpy.plot import plot_phasor
 
 # %%
-# Read signal and reference signal from files
-# -------------------------------------------
+# Get calibrated phasor coordinates
+# ---------------------------------
 #
-# Read a time-correlated single photon counting (TCSPC) histogram, acquired
-# at 80.11 MHz, from a file. A homogeneous solution of Fluorescein was imaged
-# as a reference for calibration:
+# Read a time-correlated single photon counting (TCSPC) histogram from a file.
+# A homogeneous solution of Fluorescein (4.2 ns) was imaged as a reference:
 
 signal = signal_from_imspector_tiff(fetch('Embryo.tif'))
 frequency = signal.attrs['frequency']
@@ -41,16 +38,7 @@ reference_signal = signal_from_imspector_tiff(fetch('Fluorescein_Embryo.tif'))
 assert reference_signal.attrs['frequency'] == frequency
 
 # %%
-# Plot the signal image:
-
-plot_signal_image(signal, title='Signal image')
-
-# %%
-# Calculate and calibrate phasor coordinates
-# ------------------------------------------
-#
-# Phasor coordinates for the signal and reference signal are calculated and
-# calibrated with the reference signal of known lifetime (4.2 ns):
+# Calculate and calibrate phasor coordinates:
 
 mean, real, imag = phasor_from_signal(signal, axis=0)
 reference_mean, reference_real, reference_imag = phasor_from_signal(
@@ -71,85 +59,93 @@ real, imag = phasor_calibrate(
 # Plot unfiltered phasor coordinates
 # ----------------------------------
 #
-# Plot the calibrated and unfiltered phasor coordinates after applying a
+# Plot the unfiltered, calibrated phasor coordinates after applying a
 # threshold based on the mean intensity to remove background values:
 
-plot = PhasorPlot(frequency=frequency, title='Unfiltered phasor coordinates')
-plot.hist2d(*phasor_threshold(mean, real, imag, 1)[1:], bins=300, cmap='turbo')
-
-# %%
-# Plot the unfiltered phasor images:
-
-plot_phasor_image(
-    *phasor_threshold(mean, real, imag, 1), title='Unfiltered phasor image'
+plot_phasor(
+    *phasor_threshold(mean, real, imag, mean_min=1)[1:],
+    frequency=frequency,
+    title='Unfiltered phasor coordinates',
 )
 
 # %%
-# Median filtering
-# ----------------
+# Median filter
+# -------------
 #
 # Median filtering replaces each pixel value with the median of its
-# neighboring values, reducing noise while preserving edges. The function
-# :py:func:`phasorpy.phasor.phasor_filter_median` applies a median filter to
-# phasor coordinates. Typically, using a 3×3 kernel applied 1 to 3 times is
-# sufficient to remove noise while maintaining important features.
+# neighboring values, reducing noise while preserving edges.
+# The function :py:func:`phasorpy.phasor.phasor_filter_median` applies a
+# median filter to phasor coordinates. Typically, applying a 3×3 kernel
+# one to three times is sufficient to remove noise while maintaining
+# important features:
 
 mean_filtered, real_filtered, imag_filtered = phasor_filter_median(
     mean, real, imag, repeat=3, size=3
 )
 
 # %%
-# When filtering phasor coordinates, all thresholds should be applied after
-# filtering:
+# Thresholds should be applied after filtering:
 mean_filtered, real_filtered, imag_filtered = phasor_threshold(
-    mean_filtered, real_filtered, imag_filtered, 1
+    mean_filtered, real_filtered, imag_filtered, mean_min=1
 )
 
 # %%
-# Plot the median filtered and thresholded phasor coordinates:
-plot = PhasorPlot(
-    frequency=frequency, title='Median filtered phasor coordinates'
-)
-plot.hist2d(real_filtered, imag_filtered, bins=300, cmap='turbo')
+# Plot the median-filtered and thresholded phasor coordinates:
 
-# %%
-# The smoothing of phasor coordinates can also be visualized by plotting the
-# filtered phasor image and comparing it with the original:
-
-plot_phasor_image(
-    mean_filtered,
+plot_phasor(
     real_filtered,
     imag_filtered,
-    title='Median filtered phasor image',
+    frequency=frequency,
+    title='Median-filtered phasor coordinates (3x3 kernel, 3 repetitions)',
 )
 
 # %%
-# Increasing the number of repetitions or the kernel size can further reduce
-# noise, but may also remove relevant features:
-mean_filtered, real_filtered, imag_filtered = phasor_filter_median(
-    mean, real, imag, repeat=6, size=5
-)
+# Increasing the number of repetitions or the filter kernel size can further
+# reduce noise, but may also remove relevant features:
 
 mean_filtered, real_filtered, imag_filtered = phasor_threshold(
-    mean_filtered, real_filtered, imag_filtered, 1
+    *phasor_filter_median(mean, real, imag, repeat=6, size=5), mean_min=1
 )
 
-plot = PhasorPlot(
-    frequency=frequency, title='Median filtered phasor coordinates'
+plot_phasor(
+    real_filtered,
+    imag_filtered,
+    frequency=frequency,
+    title='Median-filtered phasor coordinates (5x5 kernel, 6 repetitions)',
 )
-plot.hist2d(real_filtered, imag_filtered, bins=300, cmap='turbo')
 
 # %%
-# Wavelet filtering
-# -----------------
+# The smoothing effect of median-filtering is demonstrated by plotting the
+# real components of the filtered and unfiltered phasor coordinates as images:
+
+
+def plot_images(im0, im1):
+    # TODO: replace with future phasorpy.plot.plot_images
+    from matplotlib import pyplot
+
+    fig, (ax0, ax1) = pyplot.subplots(
+        1, 2, figsize=(6.4, 3.4), subplot_kw={'xticks': [], 'yticks': []}
+    )
+    fig.suptitle('Real component of phasor coordinates')
+    ax0.imshow(im0, vmin=0.4, vmax=0.9)
+    ax0.set_title('Unfiltered')
+    ax1.imshow(im1, vmin=0.4, vmax=0.9)
+    ax1.set_title('Median-filtered')
+    pyplot.tight_layout()
+
+
+plot_images(phasor_threshold(mean, real, imag, mean_min=1)[1], real_filtered)
+
+# %%
+# pawFLIM wavelet filter
+# ----------------------
 #
-# Wavelet filtering is another method that can be applied to reduce noise based
-# on the wavelet decomposition. The function
-# :py:func:`phasorpy.phasor.phasor_filter_pawflim` can be used to apply wavelet
-# filtering to phasor coordinates. This method is based on the
-# `pawFLIM <https://github.com/maurosilber/pawflim>`_ library. This
-# implementation requires the information of at least one harmonic and it's
-# corresponding double:
+# Filtering based on wavelet decomposition is another method to reduce noise.
+# The function :py:func:`phasorpy.phasor.phasor_filter_pawflim` is based
+# on the `pawFLIM <https://github.com/maurosilber/pawflim>`_ library.
+# While the median filter is applicable to any type of phasor coordinates,
+# the pawFLIM filter requires calibrated phasor coordinates from FLIM
+# measurements and at least one harmonic and its corresponding double:
 
 harmonic = [1, 2]
 
@@ -170,20 +166,21 @@ real, imag = phasor_calibrate(
 )
 
 # %%
-# Apply wavelet filtering to phasor coordinates and plot the results:
+# Apply the pawFLIM wavelet filter to the calibrated phasor coordinates:
 
-mean_filtered, real_filtered, imag_filtered = phasor_filter_pawflim(
-    mean, real, imag, harmonic=harmonic
-)
 mean_filtered, real_filtered, imag_filtered = phasor_threshold(
-    mean_filtered, real_filtered, imag_filtered, 1
+    *phasor_filter_pawflim(mean, real, imag, harmonic=harmonic), mean_min=1
 )
 
-plot = PhasorPlot(
+# %%
+# Plot the pawFLIM-filtered and thresholded phasor coordinates:
+
+plot_phasor(
+    real_filtered[0],
+    imag_filtered[0],
     frequency=frequency,
-    title='Wavelet filtered phasor coordinates for first harmonic',
+    title='pawFLIM-filtered phasor coordinates for first harmonic',
 )
-plot.hist2d(real_filtered[0], imag_filtered[0], bins=300, cmap='turbo')
 
 # %%
 # Increasing the significance level of the comparison between phasor
@@ -196,11 +193,12 @@ mean_filtered, real_filtered, imag_filtered = phasor_threshold(
     mean_filtered, real_filtered, imag_filtered, 1
 )
 
-plot = PhasorPlot(
+plot_phasor(
+    real_filtered[0],
+    imag_filtered[0],
     frequency=frequency,
-    title='Wavelet filtered phasor coordinates for first harmonic',
+    title='pawFLIM-filtered phasor coordinates for first harmonic',
 )
-plot.hist2d(real_filtered[0], imag_filtered[0], bins=300, cmap='turbo')
 
 # %%
 # sphinx_gallery_thumbnail_number = -1
