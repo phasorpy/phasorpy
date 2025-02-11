@@ -1050,9 +1050,7 @@ def phasor_normalize(
     else:
         real = numpy.array(real_unnormalized, dtype, copy=True)
     imag = numpy.array(imag_unnormalized, real.dtype, copy=True)
-    mean = numpy.array(
-        mean_unnormalized, real.dtype, copy=None if samples == 1 else True
-    )
+    mean = numpy.array(mean_unnormalized, real.dtype, copy=True)
 
     with numpy.errstate(divide='ignore', invalid='ignore'):
         numpy.divide(real, mean, out=real)
