@@ -24,6 +24,8 @@ from phasorpy.phasor import (
     phasor_filter_median,
     phasor_from_lifetime,
     phasor_from_signal,
+    phasor_threshold,
+    phasor_center,
 )
 from phasorpy.plot import PhasorPlot
 
@@ -271,38 +273,74 @@ plt.show()
 import tifffile
 
 # TODO add the data from https://zenodo.org/records/
+
+components = ['Hoechst', 'Lyso Tracker', 'Golgi', 'Mito Tracker', 'CellMask']
+
+
+# # # Prueba de componentes puro ###################################
+path = '/Users/schutyb/Documents/Projects/phasorpy_in_use/data/spectral unmixing data/'
+
+# List of image filenames
+image_files = [
+    "spectral hoehst.lsm",
+    "spectral lyso tracker green.lsm",
+    "spectral golgi.lsm",
+    "spectral mito tracker.lsm",
+    "spectral cell mask.lsm"
+]
+
+# Load the images
+images = [tifffile.imread(path + img) for img in image_files]
+
+# Initialize the results array
+results = numpy.zeros((5, 4))
+
+# Initialize PhasorPlot for first harmonic
+plot1 = PhasorPlot(allquadrants=True, title="First Harmonic Phasor Plot")
+
+# Initialize PhasorPlot for second harmonic
+plot2 = PhasorPlot(allquadrants=True, title="Second Harmonic Phasor Plot")
+
+# Process each image and plot the phasor and each center
+for i, img in enumerate(images):
+    avg, real, imag = phasor_from_signal(img, axis=0, harmonic=[1, 2])
+    avg, real, imag = phasor_filter_median(avg, real, imag, size=5, repeat=3)
+    avg, real, imag = phasor_threshold(avg, real, imag, mean_min=3)
+
+    # Compute phasor centers for both harmonics
+    _, real_center_h1, imag_center_h1 = phasor_center(avg, real[0], imag[0])
+    _, real_center_h2, imag_center_h2 = phasor_center(avg, real[1], imag[1])
+
+    # Add first harmonic to plot1
+    plot1.hist2d(real[0], imag[0], cmap='RdYlBu_r', bins=300)
+    plot1.plot(real_center_h1, imag_center_h1, marker="o", markersize=8, 
+               label=components[i])
+
+    # Add second harmonic to plot2
+    plot2.hist2d(real[1], imag[1], cmap='RdYlBu_r', bins=300)
+    plot2.plot(real_center_h2, imag_center_h2, marker="o", markersize=8, 
+               label=components[i])
+
+    # Store in results array
+    results[i] = [real_center_h1, imag_center_h1, 
+                  real_center_h2, imag_center_h2]
+
+# Print results
+print("Phasor Centers for each component:")
+print(results)
+
+# test with example data
 image = tifffile.imread(
     '/Users/schutyb/Documents/Projects/phasorpy_in_use/data/'
     '38_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm'
 )
 
-components = ['Hoechst', 'Lyso Tracker', 'Golgi', 'Mito Tracker', 'CellMask']
-
 avg, real, imag = phasor_from_signal(image, axis=0, harmonic=[1, 2])
-
 avg, real, imag = phasor_filter_median(avg, real, imag, size=5, repeat=3)
 
-# pure components positions obtained experimentally for each component
-# computing the center of mass of the phasor plot
-first_h = numpy.asarray(
-    [
-        [0.1599, 0.5899],
-        [-0.6015, 0.5807],
-        [-0.6611, 0.151],
-        [-0.6188, -0.5963],
-        [0.7233, -0.6268],
-    ]
-)
-
-second_h = numpy.asarray(
-    [
-        [-0.0586, 0.2162],
-        [-0.1255, -0.6531],
-        [0.1321, -0.2347],
-        [0.1578, 0.6098],
-        [0.1225, -0.8306],
-    ]
-)
+# Reshape results into two separate matrices
+first_h = results[:, :2]
+second_h = results[:, 2:]
 
 plt.figure()
 plt.imshow(avg, cmap='gray')
@@ -317,15 +355,14 @@ plot = PhasorPlot(allquadrants=True, title='Second harmonic phasor')
 plot.hist2d(real[1], imag[1], cmap='RdYlBu_r', bins=300)
 plot.plot(second_h.T[0], second_h.T[1])
 
-matrixA = numpy.asarray(
-    [
-        [0.1599, -0.6015, -0.6611, -0.6188, 0.7233],  # real1
-        [-0.0586, -0.1255, 0.1321, 0.1578, 0.1225],  # real2
-        [0.5899, 0.5807, 0.151, -0.5963, -0.6268,],  # imag1
-        [0.2162, -0.6531, -0.2347, 0.6098, -0.8306],  # imag2
-        [1, 1, 1, 1, 1],
-    ]
-)
+# Create the matrix A with pure components positions
+matrixA = numpy.vstack([
+    results[:, 0],  # First harmonic real
+    results[:, 2],  # Second harmonic real
+    results[:, 1],  # First harmonic imaginary
+    results[:, 3],  # Second harmonic imaginary
+    numpy.ones(5)   # Row of ones
+])
 
 fractions = numpy.asarray(phasor_based_unmixing(real, imag, matrixA))
 
@@ -340,12 +377,11 @@ cmap = plt.cm.inferno
 
 # Plot the fractions of the components
 for i, fraction in enumerate(fractions[:5], start=4):
-    plt.figure(i)
+    plt.figure()
     plt.imshow(fraction, cmap=cmap, vmin=0, vmax=1)
     plt.title(f'Fraction of component {components[i - 4]}')
     plt.colorbar()
     plt.tight_layout()
-
 plt.show()
 
 # %%
