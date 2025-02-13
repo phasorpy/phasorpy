@@ -323,7 +323,11 @@ def phasor_based_unmixing(
     coeff_matrix: ArrayLike,
     /,
     *,
-    use_scipy: bool | None = None,
+    lapack_driver: str = 'gelsd',
+    cond: float | None = None,
+    check_finite: bool = True,
+    overwrite_a : bool = False,
+    overwrite_b : bool = False,
 ) -> tuple[NDArray[Any], ...]:
     """
     Returns the fractions of each component in each pixel.
@@ -339,12 +343,30 @@ def phasor_based_unmixing(
         MAtrix is like [real1, imag1, ..., realN, imagN, [1...1]]
         with real and imag component of phasor coordinates for the
         pure components.
-    use_scipy : (bool, optional) - default: True. If True, use scipy.lstsq
-        to solve the system. If False, use numpy.lstsq.
+        lapack_driver : str, optional (default: 'gelsd')
+        - Specifies the LAPACK algorithm to use. Available options are:
+            - 'gelsd' (default): Uses SVD decomposition, more stable for 
+            ill-conditioned matrices.
+            - 'gelss': Similar to 'gelsd' but faster in some cases.
+            - 'gelsy': Uses QR decomposition with pivoting, faster but 
+            less stable for ill-conditioned matrices.
+    cond : float, optional (default: None)
+        - Threshold to filter out small singular values.
+        - If None, the default threshold of the corresponding LAPACK 
+        function is used.
+    check_finite : bool, optional (default: True)
+        - If True, checks that the values of A and b are finite 
+        (i.e., not NaN or Inf).
+        - If False, it may improve performance at the cost of potential 
+        numerical errors.
+    overwrite_a : bool, optional (default: False)
+        - If True, overwrites A internally to save memory.
+    overwrite_b : bool, optional (default: False)
+        - If True, overwrites b internally to save memory.
 
     Returns
     -------
-    counts : ndarray
+    fractions : ndarray
         Array with the fractions values of each pure component in each pixel.
 
     Raises
@@ -365,12 +387,12 @@ def phasor_based_unmixing(
     -------
     >>> real = numpy.array([0.5, 0.3])
     >>> imag = numpy.array([0.2, 0.7])
-    >>> coeff_matrix = numpy.array([[0.5, 0.3], [0.2, 0.7], [1.0, 1.0]])
+    >>> coeff_matrix = numpy.array([[0.1, 0.3], [0.2, 0.8], [1.0, 1.0]])
 
     >>> phasor_based_unmixing(
     ...     real, imag, coeff_matrix, use_scipy=True
     ... )  # doctest: +SKIP
-    (0.9999999999999994, 4.229244120114301e-16)
+    (0.8161838161838166, 0.19580419580419536)
 
     """
 
@@ -391,10 +413,7 @@ def phasor_based_unmixing(
     # If real and imag are 1D
     if real.ndim == 1:
         vecB = numpy.hstack([real[:1], imag[:1], 1])
-        if use_scipy:
-            return tuple(scipy.linalg.lstsq(coeff_matrix, vecB)[0])
-        else:
-            return tuple(numpy.linalg.lstsq(coeff_matrix, vecB)[0])
+        return tuple(scipy.linalg.lstsq(coeff_matrix, vecB)[0])
 
     # If real and imag are multidimensional
     nh, N, M = real.shape
@@ -410,11 +429,9 @@ def phasor_based_unmixing(
     )
 
     # Solve the system
-    if use_scipy:
-        fractions, _, _, _ = scipy.linalg.lstsq(
-            coeff_matrix, vecB, lapack_driver='gelsy'
-        )
-    else:
-        fractions, _, _, _ = numpy.linalg.lstsq(coeff_matrix, vecB, rcond=None)
-
+    fractions, _, _, _ = scipy.linalg.lstsq(
+        coeff_matrix, vecB, cond=cond, 
+        overwrite_a=overwrite_a, overwrite_b=overwrite_b, 
+        check_finite=check_finite,  lapack_driver=lapack_driver)
+    
     return tuple(fractions)

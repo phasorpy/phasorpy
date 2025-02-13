@@ -384,7 +384,7 @@ matrixA = numpy.vstack(
 
 # Perform unmixing
 fractions = numpy.asarray(
-    phasor_based_unmixing(real, imag, matrixA, use_scipy=True)
+    phasor_based_unmixing(real, imag, matrixA)
 )
 fractions = fractions.reshape(5, real.shape[1], real.shape[2])
 
