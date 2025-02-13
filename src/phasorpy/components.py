@@ -375,7 +375,7 @@ def phasor_based_unmixing(
 
     if coeff_matrix.size == 0:
         raise ValueError('The coefficient matrix is empty.')
-    
+
     # Replace NaNs or infinite values in real, imag, and coeff_matrix with 0
     real = numpy.nan_to_num(real, nan=0.0, posinf=0.0, neginf=0.0)
     imag = numpy.nan_to_num(imag, nan=0.0, posinf=0.0, neginf=0.0)
