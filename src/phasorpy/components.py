@@ -362,14 +362,11 @@ def phasor_based_unmixing(
     -------
     >>> real = numpy.array([0.5, 0.3])
     >>> imag = numpy.array([0.2, 0.7])
-    >>> coeff_matrix = numpy.array([
-    ...     [0.5, 0.3],
-    ...     [0.2, 0.7],
-    ...     [1.0, 1.0]
-    ... ])
+    >>> coeff_matrix = numpy.array([[0.5, 0.3], [0.2, 0.7], [1.0, 1.0]])
 
-    >>> phasor_based_unmixing(real, imag, coeff_matrix,
-    ... use_scipy=True) # doctest: +NUMBER
+    >>> phasor_based_unmixing(
+    ...     real, imag, coeff_matrix, use_scipy=True
+    ... )  # doctest: +NUMBER
     (0.9999999999999992, 2.0429158395448103e-16)
 
     """
