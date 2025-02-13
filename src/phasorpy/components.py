@@ -353,6 +353,14 @@ def phasor_based_unmixing(
         The array shapes of `real` and `imag`
         The coefficient matrix is empty
 
+    References
+    ----------
+
+    .. [1] Vallmitjana A, Lepanto P, Irigoin F, Malacrida L.
+    Phasor-based multi-harmonic unmixing for in-vivohyperspectral imaging.
+    <https://doi.org/10.1088/2050-6120/ac9ae9>`_.
+    *Methods Appl Fluoresc.*, (2022)
+
     Example
     -------
     >>> real = numpy.array([0.5, 0.3])
