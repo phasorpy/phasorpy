@@ -411,7 +411,6 @@ def phasor_based_unmixing(
             coeff_matrix, vecB, lapack_driver='gelsy'
         )
     else:
-        fractions, _, _, _ = numpy.linalg.lstsq(
-            coeff_matrix, vecB, rcond=None)
+        fractions, _, _, _ = numpy.linalg.lstsq(coeff_matrix, vecB, rcond=None)
 
     return tuple(fractions)
