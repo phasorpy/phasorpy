@@ -6,6 +6,7 @@ from numpy.testing import assert_allclose
 from phasorpy.components import (
     graphical_component_analysis,
     two_fractions_from_phasor,
+    phasor_based_unmixing,
 )
 
 
@@ -256,6 +257,23 @@ def test_errors_graphical_component_analysis(
             real, imag, components_real, components_imag, fractions=fractions
         )
 
+def phasor_based_unmixing():
+    """Test phasor_based_unmixing function."""
+    assert_allclose(
+        phasor_based_unmixing(
+            [0.5, 0.3],
+            [0.2, 0.7],
+            [[0.5, 0.3], [0.2, 0.7], [1.0, 1.0]],
+        ),
+        (0.9999999999999992, 2.0429158395448103e-16)
+    )
 
+    with pytest.raises(ValueError):
+        phasor_based_unmixing(
+            [0.5, 0.3], [0.2], [[0.5, 0.3], [0.2, 0.7], [1.0, 1.0]])
+    with pytest.raises(ValueError):
+        phasor_based_unmixing(
+            [0.5, 0.3], [0.2, 0.7], [])
+        
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"

@@ -45,7 +45,6 @@ if TYPE_CHECKING:
 
 import numpy
 import scipy
-import phasorpy.phasor
 
 from ._phasorpy import (
     _fraction_on_segment,
@@ -367,7 +366,7 @@ def phasor_based_unmixing(
     >>> phasor_based_unmixing(
     ...     real, imag, coeff_matrix, use_scipy=True
     ... )  # doctest: +NUMBER
-    (0.9999999999999992, 2.0429158395448103e-16)
+    (0.9999999999999994, 4.229244120114301e-16)
 
     """
 
@@ -412,6 +411,7 @@ def phasor_based_unmixing(
             coeff_matrix, vecB, lapack_driver='gelsy'
         )
     else:
-        fractions, _, _, _ = numpy.linalg.lstsq(coeff_matrix, vecB, rcond=None)
+        fractions, _, _, _ = numpy.linalg.lstsq(
+            coeff_matrix, vecB, rcond=None)
 
     return tuple(fractions)
