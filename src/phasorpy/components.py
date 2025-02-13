@@ -37,10 +37,15 @@ import numbers
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, ArrayLike, NDArray
+    from ._typing import (
+        Any,
+        NDArray,
+        ArrayLike,
+    )
 
 import numpy
-from numpy.linalg import lstsq
+import scipy
+import phasorpy.phasor
 
 from ._phasorpy import (
     _fraction_on_segment,
@@ -322,6 +327,8 @@ def phasor_based_unmixing(
     imag: ArrayLike,
     coeff_matrix: ArrayLike,
     /,
+    *,
+    use_scipy: bool | None = None,
 ) -> tuple[NDArray[Any], ...]:
     """
     Returns the fractions of each component in each pixel.
@@ -337,6 +344,8 @@ def phasor_based_unmixing(
         MAtrix is like [real1, imag1, ..., realN, imagN, [1...1]]
         with real and imag component of phasor coordinates for the
         pure components.
+    use_scipy : (bool, optional) - default: True. If True, use scipy.lstsq
+        to solve the system. If False, use numpy.lstsq.
 
     Returns
     -------
@@ -351,6 +360,17 @@ def phasor_based_unmixing(
 
     Example
     -------
+    >>> real = numpy.array([0.5, 0.3])
+    >>> imag = numpy.array([0.2, 0.7])
+    >>> coeff_matrix = numpy.array([
+    ...     [0.5, 0.3],
+    ...     [0.2, 0.7],
+    ...     [1.0, 1.0]
+    ... ])
+
+    >>> phasor_based_unmixing(real, imag, coeff_matrix, 
+    ... use_scipy=True) # doctest: +NUMBER
+    (0.9999999999999992, 2.0429158395448103e-16)
 
     """
 
@@ -371,7 +391,10 @@ def phasor_based_unmixing(
     # If real and imag are 1D
     if real.ndim == 1:
         vecB = numpy.hstack([real[:1], imag[:1], 1])
-        return tuple(lstsq(coeff_matrix, vecB)[0])
+        if use_scipy:
+            return tuple(scipy.linalg.lstsq(coeff_matrix, vecB)[0])
+        else:
+           return tuple(numpy.linalg.lstsq(coeff_matrix, vecB)[0])
 
     # If real and imag are multidimensional
     nh, N, M = real.shape
@@ -382,11 +405,16 @@ def phasor_based_unmixing(
     ones_array = numpy.ones((1, N * M))
 
     # Concatenate real, imag, and ones
-    vecB = numpy.concatenate([real_reshaped, imag_reshaped, ones_array],
-                             axis=0)
+    vecB = numpy.concatenate(
+        [real_reshaped, imag_reshaped, ones_array], axis=0
+    )
 
     # Solve the system
-    fractions, _, _, _ = lstsq(coeff_matrix, vecB, rcond=None)
+    if use_scipy:
+        fractions, _, _, _ = scipy.linalg.lstsq(
+            coeff_matrix, vecB, lapack_driver='gelsy'
+        )
+    else:
+        fractions, _, _, _ = numpy.linalg.lstsq(coeff_matrix, vecB, rcond=None)
 
     return tuple(fractions)
-    
