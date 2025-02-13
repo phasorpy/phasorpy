@@ -37,11 +37,7 @@ import numbers
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import (
-        Any,
-        NDArray,
-        ArrayLike,
-    )
+    from ._typing import Any, ArrayLike, NDArray
 
 import numpy
 import scipy
@@ -374,15 +370,15 @@ def phasor_based_unmixing(
     imag = numpy.asarray(imag)
     coeff_matrix = numpy.asarray(coeff_matrix)
 
-    # Replace NaNs or infinite values in real, imag, and coeff_matrix with 0
-    real = numpy.nan_to_num(real, nan=0.0, posinf=0.0, neginf=0.0)
-    imag = numpy.nan_to_num(imag, nan=0.0, posinf=0.0, neginf=0.0)
-
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
 
     if coeff_matrix.size == 0:
         raise ValueError('The coefficient matrix is empty.')
+    
+    # Replace NaNs or infinite values in real, imag, and coeff_matrix with 0
+    real = numpy.nan_to_num(real, nan=0.0, posinf=0.0, neginf=0.0)
+    imag = numpy.nan_to_num(imag, nan=0.0, posinf=0.0, neginf=0.0)
 
     # If real and imag are 1D
     if real.ndim == 1:
