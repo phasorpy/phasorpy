@@ -326,8 +326,8 @@ def phasor_based_unmixing(
     lapack_driver: str = 'gelsd',
     cond: float | None = None,
     check_finite: bool = True,
-    overwrite_a : bool = False,
-    overwrite_b : bool = False,
+    overwrite_a: bool = False,
+    overwrite_b: bool = False,
 ) -> tuple[NDArray[Any], ...]:
     """
     Returns the fractions of each component in each pixel.
@@ -345,19 +345,19 @@ def phasor_based_unmixing(
         pure components.
         lapack_driver : str, optional (default: 'gelsd')
         - Specifies the LAPACK algorithm to use. Available options are:
-            - 'gelsd' (default): Uses SVD decomposition, more stable for 
+            - 'gelsd' (default): Uses SVD decomposition, more stable for
             ill-conditioned matrices.
             - 'gelss': Similar to 'gelsd' but faster in some cases.
-            - 'gelsy': Uses QR decomposition with pivoting, faster but 
+            - 'gelsy': Uses QR decomposition with pivoting, faster but
             less stable for ill-conditioned matrices.
     cond : float, optional (default: None)
         - Threshold to filter out small singular values.
-        - If None, the default threshold of the corresponding LAPACK 
+        - If None, the default threshold of the corresponding LAPACK
         function is used.
     check_finite : bool, optional (default: True)
-        - If True, checks that the values of A and b are finite 
+        - If True, checks that the values of A and b are finite
         (i.e., not NaN or Inf).
-        - If False, it may improve performance at the cost of potential 
+        - If False, it may improve performance at the cost of potential
         numerical errors.
     overwrite_a : bool, optional (default: False)
         - If True, overwrites A internally to save memory.
@@ -430,8 +430,13 @@ def phasor_based_unmixing(
 
     # Solve the system
     fractions, _, _, _ = scipy.linalg.lstsq(
-        coeff_matrix, vecB, cond=cond, 
-        overwrite_a=overwrite_a, overwrite_b=overwrite_b, 
-        check_finite=check_finite,  lapack_driver=lapack_driver)
-    
+        coeff_matrix,
+        vecB,
+        cond=cond,
+        overwrite_a=overwrite_a,
+        overwrite_b=overwrite_b,
+        check_finite=check_finite,
+        lapack_driver=lapack_driver,
+    )
+
     return tuple(fractions)
