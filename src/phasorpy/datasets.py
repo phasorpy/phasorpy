@@ -14,6 +14,7 @@ Datasets from the following repositories are available:
   <https://github.com/zoccoler/napari-flim-phasor-plotter/tree/0.0.6/src/napari_flim_phasor_plotter/data>`_
 - `Phasor-based multi-harmonic unmixing for in-vivo hyperspectral imaging
   <https://zenodo.org/records/13625087>`_
+  (`second record <https://zenodo.org/records/14860228>`_)
 - `Convallaria slice acquired with time-resolved 2-photon microscope
   <https://zenodo.org/records/14026720>`_
 
@@ -266,14 +267,15 @@ ZENODO_13625087 = pooch.create(
     base_url=(
         'https://github.com/phasorpy/phasorpy-data/raw/main/zenodo_13625087'
         # if DATA_ON_GITHUB
-        # else 'doi:10.1088/2050-6120/ac9ae9'
+        # else 'doi:10.1088/2050-6120/ac9ae9'  # TODO: not working with Pooch
     ),
     env=ENV,
     registry={
-        '33_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm': (
-            'sha256:'
-            '68fcefcad4e750e9ec7068820e455258c986f6a9b724e66744a28bbbb689f986'
-        ),
+        # part of ZENODO_14860228
+        # '33_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm': (
+        #    'sha256:'
+        #    '68fcefcad4e750e9ec7068820e455258c986f6a9b724e66744a28bbbb689f986'
+        # ),
         '34_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm': (
             'sha256:'
             '5c0b7d76c274fd64891fca2507013b7c8c9979d8131ce282fac55fd24fbb38bd'
@@ -285,6 +287,42 @@ ZENODO_13625087 = pooch.create(
         '38_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm': (
             'sha256:'
             '092ac050edf55e26dcda8cba10122408c6f1b81d19accf07214385d6eebfcf3e'
+        ),
+    },
+)
+
+ZENODO_14860228 = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/zenodo_14860228'
+        if DATA_ON_GITHUB
+        else 'doi:10.5281/zenodo.14860228'
+    ),
+    env=ENV,
+    registry={
+        '38_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm': (
+            'sha256:'
+            '092ac050edf55e26dcda8cba10122408c6f1b81d19accf07214385d6eebfcf3e'
+        ),
+        'spectral cell mask.lsm': (
+            'sha256:'
+            'c4c2c567bd99ef4930d7278794d4e3daebaad0375c0852a5ab86a2ea056f4fe3'
+        ),
+        'spectral golgi.lsm': (
+            'sha256:'
+            'd0a5079d9ed18b1248434f3f6d4b2b240fb034891121262cfe9dfec64d8429cd'
+        ),
+        'spectral hoehst.lsm': (
+            'sha256:'
+            '3ee44a7f9f125698bb5e34746d9723669f67c520ffbf21244757d7fc25dbbb88'
+        ),
+        'spectral lyso tracker green.lsm': (
+            'sha256:'
+            '0964448649e2c73a57f5ca0c705c86511fb4625c0a2af0d7850dfa39698fcbb9'
+        ),
+        'spectral mito tracker.lsm': (
+            'sha256:'
+            '99b9892b247256ebf8a9917c662bc7bb66a8daf3b5db950fbbb191de0cd35b37'
         ),
     },
 )
@@ -391,6 +429,7 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'flute': FLUTE,
     'napari-flim-phasor-plotter': NAPARI_FLIM_PHASOR_PLOTTER,
     'zenodo-13625087': ZENODO_13625087,
+    'zenodo-14860228': ZENODO_14860228,
     'convallaria-fbd': CONVALLARIA_FBD,
     'flimlabs': FLIMLABS,
     'figshare_22336594': FIGSHARE_22336594,
