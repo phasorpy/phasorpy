@@ -368,7 +368,7 @@ def phasor_based_unmixing(
     ...     [1.0, 1.0]
     ... ])
 
-    >>> phasor_based_unmixing(real, imag, coeff_matrix, 
+    >>> phasor_based_unmixing(real, imag, coeff_matrix,
     ... use_scipy=True) # doctest: +NUMBER
     (0.9999999999999992, 2.0429158395448103e-16)
 
@@ -394,7 +394,7 @@ def phasor_based_unmixing(
         if use_scipy:
             return tuple(scipy.linalg.lstsq(coeff_matrix, vecB)[0])
         else:
-           return tuple(numpy.linalg.lstsq(coeff_matrix, vecB)[0])
+            return tuple(numpy.linalg.lstsq(coeff_matrix, vecB)[0])
 
     # If real and imag are multidimensional
     nh, N, M = real.shape
