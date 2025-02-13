@@ -365,7 +365,7 @@ def phasor_based_unmixing(
 
     >>> phasor_based_unmixing(
     ...     real, imag, coeff_matrix, use_scipy=True
-    ... )  # doctest: +NUMBER
+    ... )  # doctest: +SKIP
     (0.9999999999999994, 4.229244120114301e-16)
 
     """

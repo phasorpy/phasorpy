@@ -270,10 +270,11 @@ def phasor_based_unmixing():
 
     with pytest.raises(ValueError):
         phasor_based_unmixing(
-            [0.5, 0.3], [0.2], [[0.5, 0.3], [0.2, 0.7], [1.0, 1.0]])
+            [0.5, 0.3], [0.2], [[0.5, 0.3], [0.2, 0.7], [1.0, 1.0]]
+            )
     with pytest.raises(ValueError):
-        phasor_based_unmixing(
-            [0.5, 0.3], [0.2, 0.7], [])
+        phasor_based_unmixing([0.5, 0.3], [0.2, 0.7], []
+                              )
         
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
