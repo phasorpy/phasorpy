@@ -66,6 +66,7 @@ The ``phasorpy.phasor`` module provides functions to:
 - filter phasor coordinates:
 
   - :py:func:`phasor_filter_median`
+  - :py:func:`phasor_filter_pawflim`
   - :py:func:`phasor_threshold`
 
 """
@@ -83,6 +84,7 @@ __all__ = [
     'phasor_center',
     'phasor_divide',
     'phasor_filter_median',
+    'phasor_filter_pawflim',
     'phasor_from_apparent_lifetime',
     'phasor_from_fret_acceptor',
     'phasor_from_fret_donor',
@@ -1050,9 +1052,7 @@ def phasor_normalize(
     else:
         real = numpy.array(real_unnormalized, dtype, copy=True)
     imag = numpy.array(imag_unnormalized, real.dtype, copy=True)
-    mean = numpy.array(
-        mean_unnormalized, real.dtype, copy=None if samples == 1 else True
-    )
+    mean = numpy.array(mean_unnormalized, real.dtype, copy=True)
 
     with numpy.errstate(divide='ignore', invalid='ignore'):
         numpy.divide(real, mean, out=real)
@@ -1158,7 +1158,8 @@ def phasor_calibrate(
     ValueError
         The array shapes of `real` and `imag`, or `reference_real` and
         `reference_imag` do not match.
-        Number of harmonics does not match the first axis of `real` and `imag`.
+        Number of harmonics or frequencies does not match the first axis
+        of `real` and `imag`.
 
     See Also
     --------
@@ -1257,13 +1258,22 @@ def phasor_calibrate(
         ),
     )
 
+    frequency = numpy.asarray(frequency)
+    frequency = frequency * harmonic
+
     if has_harmonic_axis:
         if real.ndim == 0:
-            raise ValueError(f'{real.shape=} != {len(harmonic)=}')
-        if real.shape[0] != len(harmonic):
-            raise ValueError(f'{real.shape[0]=} != {len(harmonic)=}')
-        if reference_real.shape[0] != len(harmonic):
-            raise ValueError(f'{reference_real.shape[0]=} != {len(harmonic)=}')
+            raise ValueError(
+                f'{real.shape=} != {len(frequency)} frequencies or harmonics'
+            )
+        if real.shape[0] != len(frequency):
+            raise ValueError(
+                f'{real.shape[0]=} != {len(frequency)} frequencies or harmonics'
+            )
+        if reference_real.shape[0] != len(frequency):
+            raise ValueError(
+                f'{reference_real.shape[0]=} != {len(frequency)} frequencies or harmonics'
+            )
         if reference_mean.shape != reference_real.shape[1:]:
             raise ValueError(
                 f'{reference_mean.shape=} != {reference_real.shape[1:]=}'
@@ -1274,9 +1284,6 @@ def phasor_calibrate(
         raise ValueError(
             f'{reference_mean.shape=} does not have harmonic axis'
         )
-
-    frequency = numpy.asarray(frequency)
-    frequency = frequency * harmonic
 
     _, measured_re, measured_im = phasor_center(
         reference_mean,
@@ -1295,6 +1302,24 @@ def phasor_calibrate(
         unit_conversion=unit_conversion,
     )
 
+    skip_axis, axis = _parse_skip_axis(
+        skip_axis, real.ndim - int(has_harmonic_axis), has_harmonic_axis
+    )
+
+    if has_harmonic_axis and any(skip_axis):
+        known_re = numpy.expand_dims(
+            known_re, tuple(range(1, measured_re.ndim))
+        )
+        known_re = numpy.broadcast_to(
+            known_re, (len(frequency), *measured_re.shape[1:])
+        )
+        known_im = numpy.expand_dims(
+            known_im, tuple(range(1, measured_im.ndim))
+        )
+        known_im = numpy.broadcast_to(
+            known_im, (len(frequency), *measured_im.shape[1:])
+        )
+
     phi_zero, mod_zero = polar_from_reference_phasor(
         measured_re, measured_im, known_re, known_im
     )
@@ -1303,9 +1328,6 @@ def phasor_calibrate(
         if reverse:
             numpy.negative(phi_zero, out=phi_zero)
             numpy.reciprocal(mod_zero, out=mod_zero)
-        _, axis = _parse_skip_axis(
-            skip_axis, real.ndim - int(has_harmonic_axis), has_harmonic_axis
-        )
         if axis is not None:
             phi_zero = numpy.expand_dims(phi_zero, axis=axis)
             mod_zero = numpy.expand_dims(mod_zero, axis=axis)
@@ -3002,6 +3024,209 @@ def phasor_filter_median(
 
         _median_filter_2d(real[full_index], buffer, size, repeat, num_threads)
         _median_filter_2d(imag[full_index], buffer, size, repeat, num_threads)
+
+    return mean, real, imag
+
+
+def phasor_filter_pawflim(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    *,
+    sigma: float = 2.0,
+    levels: int = 1,
+    harmonic: Sequence[int] | None = None,
+    skip_axis: int | Sequence[int] | None = None,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """Return pawFLIM wavelet-filtered phasor coordinates.
+
+    This function must only be used with calibrated, unprocessed phasor
+    coordinates obtained from FLIM data. The coordinates must not be filtered,
+    thresholded, or otherwise pre-processed.
+
+    The pawFLIM wavelet filter is described in [2]_.
+
+    Parameters
+    ----------
+    mean : array_like
+        Intensity of phasor coordinates.
+    real : array_like
+        Real component of phasor coordinates to be filtered.
+        Must have at least two harmonics in the first axis.
+    imag : array_like
+        Imaginary component of phasor coordinates to be filtered.
+        Must have at least two harmonics in the first axis.
+    sigma : float, optional
+        Significance level to test difference between two phasors.
+        Given in terms of the equivalent 1D standard deviations.
+        sigma=2 corresponds to ~95% (or 5%) significance.
+    levels : int, optional
+        Number of levels for wavelet decomposition.
+        Controls the maximum averaging area, which has a length of
+        :math:`2^level`.
+    harmonic : sequence of int or None, optional
+        Harmonics included in first axis of `real` and `imag`.
+        If None (default), the first axis of `real` and `imag` contains lower
+        harmonics starting at and increasing by one.
+        All harmonics must have a corresponding half or double harmonic.
+    skip_axis : int or sequence of int, optional
+        Axes in `mean` to exclude from filter.
+        By default, all axes except harmonics are included.
+
+    Returns
+    -------
+    mean : ndarray
+        Unchanged intensity of phasor coordinates.
+    real : ndarray
+        Filtered real component of phasor coordinates.
+    imag : ndarray
+        Filtered imaginary component of phasor coordinates.
+
+    Raises
+    ------
+    ValueError
+        If `level` is less than 0.
+        The array shapes of `mean`, `real`, and `imag` do not match.
+        If `real` and `imag` have no harmonic axis.
+        Number of harmonics in `harmonic` is less than 2 or does not match
+        the first axis of `real` and `imag`.
+        Not all harmonics in `harmonic` have a corresponding half
+        or double harmonic.
+
+    References
+    ----------
+
+    .. [2] Silberberg M & Grecco H. `pawFLIM: reducing bias and uncertainty
+      to enable lower photon count in FLIM experiments
+      <https://doi.org/10.1088/2050-6120/aa72ab>`_.
+      *Methods Appl Fluoresc*, 5(2): 024016 (2017)
+
+    Examples
+    --------
+    Apply a pawFLIM wavelet filter with four significance levels (sigma)
+    and three decomposition levels:
+
+    >>> mean, real, imag = phasor_filter_pawflim(
+    ...     [[1, 1], [1, 1]],
+    ...     [[[0.5, 0.8], [0.5, 0.8]], [[0.2, 0.4], [0.2, 0.4]]],
+    ...     [[[0.5, 0.4], [0.5, 0.4]], [[0.4, 0.5], [0.4, 0.5]]],
+    ...     sigma=4,
+    ...     levels=3,
+    ...     harmonic=[1, 2],
+    ... )
+    >>> mean
+    array([[1, 1],
+           [1, 1]])
+    >>> real
+    array([[[0.65, 0.65],
+            [0.65, 0.65]],
+           [[0.3, 0.3],
+            [0.3, 0.3]]])
+    >>> imag
+    array([[[0.45, 0.45],
+            [0.45, 0.45]],
+           [[0.45, 0.45],
+            [0.45, 0.45]]])
+
+    """
+    from pawflim import pawflim  # type: ignore[import-untyped]
+
+    mean = numpy.asarray(mean)
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+
+    if levels < 0:
+        raise ValueError(f'{levels=} < 0')
+    if levels == 0:
+        return mean, real, imag
+
+    if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
+        raise ValueError(f'{mean.shape=} != {real.shape=}')
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+
+    has_harmonic_axis = mean.ndim + 1 == real.ndim
+    if not has_harmonic_axis:
+        raise ValueError('no harmonic axis')
+    if harmonic is None:
+        harmonics, _ = parse_harmonic('all', real.shape[0])
+    else:
+        harmonics, _ = parse_harmonic(harmonic, None)
+    if len(harmonics) < 2:
+        raise ValueError(
+            'at least two harmonics required, ' f'got {len(harmonics)}'
+        )
+    if len(harmonics) != real.shape[0]:
+        raise ValueError(
+            'number of harmonics does not match first axis of real and imag'
+        )
+
+    mean = numpy.asarray(numpy.nan_to_num(mean), dtype=float)
+    real = numpy.asarray(numpy.nan_to_num(real * mean), dtype=float)
+    imag = numpy.asarray(numpy.nan_to_num(imag * mean), dtype=float)
+
+    mean_expanded = numpy.broadcast_to(mean, real.shape).copy()
+    original_mean_expanded = mean_expanded.copy()
+    real_filtered = real.copy()
+    imag_filtered = imag.copy()
+
+    _, axes = _parse_skip_axis(skip_axis, mean.ndim, True)
+
+    for index in numpy.ndindex(
+        *(
+            real.shape[ax]
+            for ax in range(real.ndim)
+            if ax not in axes and ax != 0
+        )
+    ):
+        index_list: list[int | slice] = list(index)
+        for ax in axes:
+            index_list = index_list[:ax] + [slice(None)] + index_list[ax:]
+        full_index = tuple(index_list)
+
+        processed_harmonics = set()
+
+        for h in harmonics:
+            if h in processed_harmonics and (
+                h * 4 in harmonics or h * 2 not in harmonics
+            ):
+                continue
+            if h * 2 not in harmonics:
+                raise ValueError(
+                    f'harmonic {h} does not have a corresponding half '
+                    f'or double harmonic in {harmonics}'
+                )
+            n = harmonics.index(h)
+            n2 = harmonics.index(h * 2)
+
+            complex_phasor = numpy.empty(
+                (3, *original_mean_expanded[n][full_index].shape),
+                dtype=complex,
+            )
+            complex_phasor[0] = original_mean_expanded[n][full_index]
+            complex_phasor[1] = real[n][full_index] + 1j * imag[n][full_index]
+            complex_phasor[2] = (
+                real[n2][full_index] + 1j * imag[n2][full_index]
+            )
+
+            complex_phasor = pawflim(
+                complex_phasor, n_sigmas=sigma, levels=levels
+            )
+
+            for i, idx in enumerate([n, n2]):
+                if harmonics[idx] in processed_harmonics:
+                    continue
+                mean_expanded[idx][full_index] = complex_phasor[0].real
+                real_filtered[idx][full_index] = complex_phasor[i + 1].real
+                imag_filtered[idx][full_index] = complex_phasor[i + 1].imag
+
+            processed_harmonics.add(h)
+            processed_harmonics.add(h * 2)
+
+    with numpy.errstate(divide='ignore', invalid='ignore'):
+        real = numpy.asarray(numpy.divide(real_filtered, mean_expanded))
+        imag = numpy.asarray(numpy.divide(imag_filtered, mean_expanded))
 
     return mean, real, imag
 

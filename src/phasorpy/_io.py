@@ -968,7 +968,7 @@ def phasor_from_ifli(
 def phasor_from_lif(
     filename: str | PathLike[Any],
     /,
-    series: str | None = None,
+    image: str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
     """Return phasor coordinates and metadata from Leica LIF file.
 
@@ -979,7 +979,7 @@ def phasor_from_lif(
     ----------
     filename : str or Path
         Name of Leica LIF file to read.
-    series : str, optional
+    image : str, optional
         Name of image containing phasor coordinates.
 
     Returns
@@ -1024,28 +1024,28 @@ def phasor_from_lif(
     #   phasor plot images
     import liffile
 
-    if series is None:
-        series = ''
+    if image is None:
+        image = ''
     else:
-        series = f'.*{series}.*/'
+        image = f'.*{image}.*/'
 
     with liffile.LifFile(filename) as lif:
         try:
-            image = lif.series[series + 'Phasor Intensity$']
-            dims = image.dims
-            coords = image.coords
+            im = lif.images[image + 'Phasor Intensity$']
+            dims = im.dims
+            coords = im.coords
             # meta = image.attrs
-            mean = image.asarray()
-            real = lif.series[series + 'Phasor Real$'].asarray()
-            imag = lif.series[series + 'Phasor Imaginary$'].asarray()
-            # mask = lif.series[series + 'Phasor Mask$'].asarray()
+            mean = im.asarray()
+            real = lif.images[image + 'Phasor Real$'].asarray()
+            imag = lif.images[image + 'Phasor Imaginary$'].asarray()
+            # mask = lif.images[image + 'Phasor Mask$'].asarray()
         except Exception as exc:
             raise ValueError(
                 f'{lif.filename} does not contain Phasor images'
             ) from exc
 
         attrs: dict[str, Any] = {'dims': dims}
-        xml = image.xml_element_smd
+        xml = im.xml_element_smd
         if xml is not None:
             frequency = xml.find('.//Dataset/RawData/LaserPulseFrequency')
             if frequency is not None and frequency.text is not None:
@@ -1390,7 +1390,7 @@ def signal_from_lif(
     filename: str | PathLike[Any],
     /,
     *,
-    series: int | str | None = None,
+    image: int | str | None = None,
     dim: Literal['λ', 'Λ'] | str = 'λ',
 ) -> DataArray:
     """Return hyperspectral image and metadata from Leica LIF file.
@@ -1404,9 +1404,9 @@ def signal_from_lif(
     ----------
     filename : str or Path
         Name of Leica LIF file to read.
-    series : str or int, optional
-        Index or regex pattern of image series to return.
-        By default, return the first series containing hyperspectral data.
+    image : str or int, optional
+        Index or regex pattern of image to return.
+        By default, return the first image containing hyperspectral data.
     dim : str or None
         Character code of hyperspectral dimension.
         Either ``'λ'`` for emission (default) or ``'Λ'`` for excitation.
@@ -1442,33 +1442,33 @@ def signal_from_lif(
     import liffile
 
     with liffile.LifFile(filename) as lif:
-        if series is None:
-            # find series with excitation or emission dimension
-            for image in lif.series:
-                if dim in image.dims:
+        if image is None:
+            # find image with excitation or emission dimension
+            for im in lif.images:
+                if dim in im.dims:
                     break
             else:
                 raise ValueError(
                     f'{lif!r} does not contain hyperspectral image'
                 )
         else:
-            image = lif.series[series]
+            im = lif.images[image]
 
-        if dim not in image.dims or image.sizes[dim] < 4:
-            raise ValueError(f'{image!r} does not contain spectral dimension')
-        if 'C' in image.dims:
+        if dim not in im.dims or im.sizes[dim] < 4:
+            raise ValueError(f'{im!r} does not contain spectral dimension')
+        if 'C' in im.dims:
             raise ValueError(
                 'hyperspectral image must not contain channel axis'
             )
 
-        data = image.asarray()
+        data = im.asarray()
         coords: dict[str, Any] = {
             ('C' if k == dim else k): (v * 1e9 if k == dim else v)
-            for (k, v) in image.coords.items()
+            for (k, v) in im.coords.items()
         }
-        dims = tuple(('C' if d == dim else d) for d in image.dims)
+        dims = tuple(('C' if d == dim else d) for d in im.dims)
 
-        metadata = _metadata(dims, image.shape, filename, **coords)
+        metadata = _metadata(dims, im.shape, filename, **coords)
 
     from xarray import DataArray
 
