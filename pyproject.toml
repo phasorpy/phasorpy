@@ -77,7 +77,7 @@ all = [
     "lfdfiles>=2024.5.24",
     "sdtfile>=2024.5.24",
     "ptufile>=2024.9.14",
-    "liffile>=2025.2.6",
+    "liffile>=2025.2.10",
     "pawflim",
 ]
 
