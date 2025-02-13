@@ -292,7 +292,7 @@ plot_histograms(
 # --------------------
 #
 # .. todo::
-#   Read phasor cordinates from ISS VistaVision IFLI file.
+#   Read phasor coordinates from ISS VistaVision IFLI file.
 
 # %%
 # SimFCS REF and R64
