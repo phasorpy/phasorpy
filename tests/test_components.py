@@ -257,7 +257,7 @@ def test_errors_graphical_component_analysis(
             real, imag, components_real, components_imag, fractions=fractions
         )
 
-def phasor_based_unmixing():
+def test_phasor_based_unmixing():
     """Test phasor_based_unmixing function."""
     assert_allclose(
         phasor_based_unmixing(
