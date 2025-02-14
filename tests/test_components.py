@@ -2,6 +2,7 @@
 
 import pytest
 from numpy.testing import assert_allclose
+import numpy
 
 from phasorpy.components import (
     graphical_component_analysis,
@@ -276,5 +277,57 @@ def test_phasor_based_unmixing():
         phasor_based_unmixing([0.5, 0.3], [0.2, 0.7], []
                               )
         
+
+def test_phasor_based_unmixing_nan_inf_handling():
+    """Test NaN and Inf handling in phasor_based_unmixing function."""
+    real = numpy.array([[numpy.nan, numpy.inf, -numpy.inf], [0.5, 0.3, 0.1]])
+    imag = numpy.array([[0.2, 0.7, -0.5], [numpy.nan, numpy.inf, -numpy.inf]])
+    coeff_matrix = numpy.random.rand(7, 4)  # Example coefficient matrix
+    result = phasor_based_unmixing(real, imag, coeff_matrix)
+
+    assert not numpy.any(numpy.isnan(result))  # No NaN values
+    assert not numpy.any(numpy.isinf(result))  # No Inf values
+        
+
+def test_phasor_based_unmixing_mismatched_shapes():
+    real = numpy.array([[0.5, 0.3]])
+    imag = numpy.array([[0.5]])
+    coeff_matrix = numpy.random.rand(3, 2)
+
+    with pytest.raises(ValueError, match="real.shape=.* != imag.shape=.*"):
+        phasor_based_unmixing(real, imag, coeff_matrix)
+
+
+def test_phasor_based_unmixing_empty_coeff_matrix():
+    real = numpy.array([[0.5, 0.3]])
+    imag = numpy.array([[0.5, 0.3]])
+    coeff_matrix = numpy.array([])  # Empty matrix
+
+    with pytest.raises(ValueError, match="The coefficient matrix is empty"):
+        phasor_based_unmixing(real, imag, coeff_matrix)
+
+
+def test_phasor_based_unmixing_1d_input():
+    real = numpy.array([0.5, 0.3])
+    imag = numpy.array([0.2, 0.7])
+    coeff_matrix = numpy.random.rand(5, 3)  # Example coefficient matrix
+    result = phasor_based_unmixing(real, imag, coeff_matrix)
+
+    assert isinstance(result, tuple)  # Ensure the function returns a tuple
+
+
+@pytest.mark.parametrize("lapack_driver", ["gelsd", "gelss", "gelsy"])
+def test_lapack_driver_options(lapack_driver):
+    real = numpy.random.rand(10, 10)
+    imag = numpy.random.rand(10, 10)
+    coeff_matrix = numpy.random.rand(21, 11)  # Example matrix
+
+    result = phasor_based_unmixing(
+        real, imag, coeff_matrix, lapack_driver=lapack_driver
+    )
+
+    assert isinstance(result, tuple)  # Ensure function output is a tuple
+    
+
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
