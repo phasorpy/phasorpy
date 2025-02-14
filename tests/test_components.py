@@ -1,10 +1,12 @@
 """Tests for the phasorpy.components module."""
 
+import numpy
 import pytest
 from numpy.testing import assert_allclose
 
 from phasorpy.components import (
     graphical_component_analysis,
+    n_fractions_from_phasor,
     two_fractions_from_phasor,
 )
 
@@ -255,6 +257,70 @@ def test_errors_graphical_component_analysis(
         graphical_component_analysis(
             real, imag, components_real, components_imag, fractions=fractions
         )
+
+
+def test_n_fractions_from_phasorg():
+    """Test phasor_based_unmixing function."""
+    assert_allclose(
+        n_fractions_from_phasor(
+            [0.5, 0.3],
+            [0.2, 0.7],
+            [[0.1, 0.3], [0.2, 0.8], [1.0, 1.0]],
+        ),
+        (0.8161838161838166, 0.19580419580419536),
+    )
+
+    with pytest.raises(ValueError):
+        n_fractions_from_phasor(
+            [0.5, 0.3], [0.2], [[0.5, 0.3], [0.2, 0.7], [1.0, 1.0]]
+        )
+    with pytest.raises(ValueError):
+        n_fractions_from_phasor([0.5, 0.3], [0.2, 0.7], [])
+
+
+def test_n_fractions_from_phasor_nan_inf_handling():
+    result = n_fractions_from_phasor(
+        [[numpy.nan, numpy.inf, -numpy.inf], [0.5, 0.3, 0.1]],
+        [[0.2, 0.7, -0.5], [numpy.nan, numpy.inf, -numpy.inf]],
+        numpy.random.rand(3, 3),
+    )
+
+    assert isinstance(result, tuple)
+    assert all(isinstance(arr, numpy.ndarray) for arr in result)
+    assert not numpy.any([numpy.isnan(arr).any() for arr in result])
+    assert not numpy.any([numpy.isinf(arr).any() for arr in result])
+
+
+def test_n_fractions_from_phasor_mismatched_shapes():
+    with pytest.raises(ValueError, match='real.shape=.* != imag.shape=.*'):
+        n_fractions_from_phasor([[0.5, 0.3]], [[0.5]], numpy.random.rand(3, 2))
+
+
+def test_n_fractions_from_phasor_empty_coeff_matrix():
+    with pytest.raises(ValueError):
+        n_fractions_from_phasor([[0.5, 0.3]], [[0.5, 0.3]], [])
+
+
+def test_n_fractions_from_phasor_1d_input():
+    # ensure coeff_matrix has rows equal to the length of vecB
+    result = n_fractions_from_phasor(
+        [0.5, 0.3], [0.2, 0.7], numpy.random.rand(3, 2)
+    )
+    assert isinstance(result, (tuple))
+    assert all(isinstance(arr, numpy.ndarray) for arr in result)
+
+
+@pytest.mark.parametrize('lapack_driver', ['gelsd', 'gelss', 'gelsy'])
+def test_lapack_driver_options(lapack_driver):
+    # ensure M > N for residuals
+    result = n_fractions_from_phasor(
+        numpy.random.rand(3, 10, 10),
+        numpy.random.rand(3, 10, 10),
+        numpy.random.rand(7, 7),
+        lapack_driver=lapack_driver,
+    )
+    assert isinstance(result, tuple)
+    assert all(isinstance(arr, numpy.ndarray) for arr in result)
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls
