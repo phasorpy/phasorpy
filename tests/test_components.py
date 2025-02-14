@@ -1,13 +1,13 @@
 """Tests for the phasorpy.components module."""
 
+import numpy
 import pytest
 from numpy.testing import assert_allclose
-import numpy
 
 from phasorpy.components import (
     graphical_component_analysis,
+    n_fractions_from_phasor,
     two_fractions_from_phasor,
-    phasor_based_unmixing,
 )
 
 
@@ -258,88 +258,68 @@ def test_errors_graphical_component_analysis(
             real, imag, components_real, components_imag, fractions=fractions
         )
 
-def test_phasor_based_unmixing():
+
+def test_n_fractions_from_phasorg():
     """Test phasor_based_unmixing function."""
     assert_allclose(
-        phasor_based_unmixing(
+        n_fractions_from_phasor(
             [0.5, 0.3],
             [0.2, 0.7],
             [[0.1, 0.3], [0.2, 0.8], [1.0, 1.0]],
         ),
-        (0.8161838161838166, 0.19580419580419536)
+        (0.8161838161838166, 0.19580419580419536),
     )
 
     with pytest.raises(ValueError):
-        phasor_based_unmixing(
+        n_fractions_from_phasor(
             [0.5, 0.3], [0.2], [[0.5, 0.3], [0.2, 0.7], [1.0, 1.0]]
-            )
+        )
     with pytest.raises(ValueError):
-        phasor_based_unmixing([0.5, 0.3], [0.2, 0.7], []
-                              )
-        
+        n_fractions_from_phasor([0.5, 0.3], [0.2, 0.7], [])
 
-def test_phasor_based_unmixing_nan_inf_handling():
-    real = numpy.array([[numpy.nan, numpy.inf, -numpy.inf], [0.5, 0.3, 0.1]])
-    imag = numpy.array([[0.2, 0.7, -0.5], [numpy.nan, numpy.inf, -numpy.inf]])
-    coeff_matrix = numpy.random.rand(3, 3)  # Example coefficient matrix
 
-    result = phasor_based_unmixing(real, imag, coeff_matrix)
+def test_n_fractions_from_phasor_nan_inf_handling():
+    result = n_fractions_from_phasor(
+        [[numpy.nan, numpy.inf, -numpy.inf], [0.5, 0.3, 0.1]],
+        [[0.2, 0.7, -0.5], [numpy.nan, numpy.inf, -numpy.inf]],
+        numpy.random.rand(3, 3),
+    )
 
-    # Ensure it is a tuple
     assert isinstance(result, tuple)
-    # Check all elements
     assert all(isinstance(arr, numpy.ndarray) for arr in result)
-    # Ensure no NaNs
     assert not numpy.any([numpy.isnan(arr).any() for arr in result])
-    # Ensure no Infs
     assert not numpy.any([numpy.isinf(arr).any() for arr in result])
-    
-
-def test_phasor_based_unmixing_mismatched_shapes():
-    real = numpy.array([[0.5, 0.3]])
-    imag = numpy.array([[0.5]])
-    coeff_matrix = numpy.random.rand(3, 2)
-
-    with pytest.raises(ValueError, match="real.shape=.* != imag.shape=.*"):
-        phasor_based_unmixing(real, imag, coeff_matrix)
 
 
-def test_phasor_based_unmixing_empty_coeff_matrix():
-    real = numpy.array([[0.5, 0.3]])
-    imag = numpy.array([[0.5, 0.3]])
-    coeff_matrix = numpy.array([])  # Empty matrix
-
-    with pytest.raises(ValueError, match="The coefficient matrix is empty"):
-        phasor_based_unmixing(real, imag, coeff_matrix)
+def test_n_fractions_from_phasor_mismatched_shapes():
+    with pytest.raises(ValueError, match='real.shape=.* != imag.shape=.*'):
+        n_fractions_from_phasor([[0.5, 0.3]], [[0.5]], numpy.random.rand(3, 2))
 
 
-def test_phasor_based_unmixing_1d_input():
-    real = numpy.array([0.5, 0.3])  # 1D array
-    imag = numpy.array([0.2, 0.7])  # 1D array
-    
-    # Ensure coeff_matrix has rows equal to the length of vecB
-    coeff_matrix = numpy.random.rand(3, 2)  # (3 rows, matching vecB size)
+def test_n_fractions_from_phasor_empty_coeff_matrix():
+    with pytest.raises(ValueError):
+        n_fractions_from_phasor([[0.5, 0.3]], [[0.5, 0.3]], [])
 
-    result = phasor_based_unmixing(real, imag, coeff_matrix)
 
-    # Ensure it is a tuple
-    assert isinstance(result, (tuple, numpy.ndarray))
-     # Check all elements
+def test_n_fractions_from_phasor_1d_input():
+    # ensure coeff_matrix has rows equal to the length of vecB
+    result = n_fractions_from_phasor(
+        [0.5, 0.3], [0.2, 0.7], numpy.random.rand(3, 2)
+    )
+    assert isinstance(result, (tuple))
     assert all(isinstance(arr, numpy.ndarray) for arr in result)
 
 
-
-@pytest.mark.parametrize("lapack_driver", ["gelsd", "gelss", "gelsy"])
+@pytest.mark.parametrize('lapack_driver', ['gelsd', 'gelss', 'gelsy'])
 def test_lapack_driver_options(lapack_driver):
-    real = numpy.random.rand(3, 10, 10)
-    imag = numpy.random.rand(3, 10, 10)
-    coeff_matrix = numpy.random.rand(7, 7)  # Ensure M > N for residuals
-
-    result = phasor_based_unmixing(real, imag, coeff_matrix, 
-                                   lapack_driver=lapack_driver)
-
-    assert isinstance(result, tuple)  # Ensure function returns a tuple
-    # Ensure all elements are arrays
+    # ensure M > N for residuals
+    result = n_fractions_from_phasor(
+        numpy.random.rand(3, 10, 10),
+        numpy.random.rand(3, 10, 10),
+        numpy.random.rand(7, 7),
+        lapack_driver=lapack_driver,
+    )
+    assert isinstance(result, tuple)
     assert all(isinstance(arr, numpy.ndarray) for arr in result)
 
 

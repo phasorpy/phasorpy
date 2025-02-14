@@ -21,7 +21,7 @@ The ``phasorpy.components`` module provides functions to:
 - phasor-based resolve fractions of `n` components by using harmonic
   information
 
-  - :py:func: `phasor_based_unmixing`
+  - :py:func: `n_fractions_from_phasor`
 
 """
 
@@ -30,7 +30,7 @@ from __future__ import annotations
 __all__ = [
     'two_fractions_from_phasor',
     'graphical_component_analysis',
-    'phasor_based_unmixing',
+    'n_fractions_from_phasor',
 ]
 
 import numbers
@@ -317,17 +317,12 @@ def graphical_component_analysis(
     return tuple(counts)
 
 
-def phasor_based_unmixing(
+def n_fractions_from_phasor(
     real: ArrayLike,
     imag: ArrayLike,
     coeff_matrix: ArrayLike,
     /,
-    *,
-    lapack_driver: str = 'gelsd',
-    cond: float | None = None,
-    check_finite: bool = True,
-    overwrite_a: bool = False,
-    overwrite_b: bool = False,
+    **kwargs: Any,
 ) -> tuple[NDArray[Any], ...]:
     """
     Returns the fractions of each component in each pixel.
@@ -340,59 +335,41 @@ def phasor_based_unmixing(
         Real component of phasor coordinates.
     coeff_matrix : array_like
         Pure components coefficients to compute unmixing.
-        MAtrix is like [real1, imag1, ..., realN, imagN, [1...1]]
-        with real and imag component of phasor coordinates for the
+        Matrix is like ``[real1, imag1, ..., realN, imagN, [1...1]]``
+        with real and imaginary component of phasor coordinates for the
         pure components.
-        lapack_driver : str, optional (default: 'gelsd')
-        - Specifies the LAPACK algorithm to use. Available options are:
-            - 'gelsd' (default): Uses SVD decomposition, more stable for
-            ill-conditioned matrices.
-            - 'gelss': Similar to 'gelsd' but faster in some cases.
-            - 'gelsy': Uses QR decomposition with pivoting, faster but
-            less stable for ill-conditioned matrices.
-    cond : float, optional (default: None)
-        - Threshold to filter out small singular values.
-        - If None, the default threshold of the corresponding LAPACK
-        function is used.
-    check_finite : bool, optional (default: True)
-        - If True, checks that the values of A and b are finite
-        (i.e., not NaN or Inf).
-        - If False, it may improve performance at the cost of potential
-        numerical errors.
-    overwrite_a : bool, optional (default: False)
-        - If True, overwrites A internally to save memory.
-    overwrite_b : bool, optional (default: False)
-        - If True, overwrites b internally to save memory.
+    **kwargs : optional
+        Additional arguments passed to ``scipy.linalg.lstsq()``.
 
     Returns
     -------
     fractions : ndarray
-        Array with the fractions values of each pure component in each pixel.
+        fractions : tuple of ndarray
+        Fractions of pure components.
 
     Raises
     ------
     ValueError
-        The array shapes of `real` and `imag`
-        The coefficient matrix is empty
+        The array shapes of `real` and `imag` do not match.
+        The coefficient matrix is empty.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_components.py`
 
     References
     ----------
-
-    .. [1] Vallmitjana A, Lepanto P, Irigoin F, Malacrida L.
-    Phasor-based multi-harmonic unmixing for in-vivohyperspectral imaging.
+    [2] Vallmitjana A, Lepanto P, Irigoin F, Malacrida L.
+    `Phasor-based multi-harmonic unmixing for in-vivohyperspectral imaging
     <https://doi.org/10.1088/2050-6120/ac9ae9>`_.
     *Methods Appl Fluoresc.*, (2022)
 
     Example
     -------
-    >>> real = numpy.array([0.5, 0.3])
-    >>> imag = numpy.array([0.2, 0.7])
-    >>> coeff_matrix = numpy.array([[0.1, 0.3], [0.2, 0.8], [1.0, 1.0]])
-
-    >>> phasor_based_unmixing(
-    ...     real, imag, coeff_matrix, use_scipy=True
-    ... )  # doctest: +SKIP
-    (0.8161838161838166, 0.19580419580419536)
+    >>> n_fractions_from_phasor(
+    ...     [0.5, 0.3], [0.2, 0.7], [[0.1, 0.3], [0.2, 0.8], [1.0, 1.0]]
+    ... )  # doctest: +NUMBER
+    (array(0.8162), array(0.1958))
 
     """
 
@@ -404,54 +381,39 @@ def phasor_based_unmixing(
         raise ValueError(f'{real.shape=} != {imag.shape=}')
 
     if coeff_matrix.size == 0:
-        raise ValueError('The coefficient matrix is empty.')
+        raise ValueError('the coefficient matrix is empty.')
 
-    # Replace NaNs or infinite values in real, imag, and coeff_matrix with 0
     real = numpy.nan_to_num(real, nan=0.0, posinf=0.0, neginf=0.0)
     imag = numpy.nan_to_num(imag, nan=0.0, posinf=0.0, neginf=0.0)
 
-    # If real and imag are 1D
     if real.ndim == 1:
-        vecB = numpy.hstack([real[:1], imag[:1], 1])
+        vec_b = numpy.hstack([real[:1], imag[:1], 1])
         return tuple(
-            map(numpy.asarray, scipy.linalg.lstsq(coeff_matrix, vecB)[0])
+            map(numpy.asarray, scipy.linalg.lstsq(coeff_matrix, vec_b)[0])
         )
 
     else:
         if real.ndim == 2:
-            N, M = real.shape
-            nh = 1  # Number of harmonics
-            real = real.reshape(nh, N, M)
-            imag = imag.reshape(nh, N, M)
+            n, m = real.shape
+            nh = 1  # number of harmonics
+            real = real.reshape(nh, n, m)
+            imag = imag.reshape(nh, n, m)
         elif real.ndim == 3:
-            nh, N, M = real.shape
+            nh, n, m = real.shape
         else:
             raise ValueError(
-                f"Unexpected shape {real.shape}, expected (nh, N, M) or (N, M)"
+                f'invalid shape {real.shape}, expected (nh, n, m) or (n, m)'
             )
 
         real_reshaped = real.reshape(nh, -1)
         imag_reshaped = imag.reshape(nh, -1)
 
-        # Create an array of ones with shape (1, N*M)
-        ones_array = numpy.ones((1, N * M))
+        ones_array = numpy.ones((1, n * m))
 
-        # Concatenate real, imag, and ones
-        vecB = numpy.concatenate(
+        vec_b = numpy.concatenate(
             [real_reshaped, imag_reshaped, ones_array], axis=0
         )
 
-        # Solve the system
-        result = scipy.linalg.lstsq(
-            coeff_matrix,
-            vecB,
-            cond=cond,
-            overwrite_a=overwrite_a,
-            overwrite_b=overwrite_b,
-            check_finite=check_finite,
-            lapack_driver=lapack_driver,
-        )
-
-        fractions = result[0]
+        fractions = scipy.linalg.lstsq(coeff_matrix, vec_b, **kwargs)[0]
 
         return tuple(map(numpy.asarray, fractions))

@@ -17,7 +17,7 @@ import numpy
 
 from phasorpy.components import (
     graphical_component_analysis,
-    phasor_based_unmixing,
+    n_fractions_from_phasor,
     two_fractions_from_phasor,
 )
 from phasorpy.datasets import fetch
@@ -362,7 +362,7 @@ plt.axis('off')
 
 # Plot first and second harmonic phasors
 for title, real_data, imag_data, centers in zip(
-    ["First Harmonic Phasor", "Second Harmonic Phasor"],
+    ['First Harmonic Phasor', 'Second Harmonic Phasor'],
     [real[0], real[1]],
     [imag[0], imag[1]],
     [first_h, second_h],
@@ -383,7 +383,7 @@ matrixA = numpy.vstack(
 )
 
 # Perform unmixing
-fractions = numpy.asarray(phasor_based_unmixing(real, imag, matrixA))
+fractions = numpy.asarray(n_fractions_from_phasor(real, imag, matrixA))
 fractions = fractions.reshape(5, real.shape[1], real.shape[2])
 
 # Normalize fractions (clip negatives and scale to 0-1)
