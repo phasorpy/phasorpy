@@ -5,11 +5,6 @@ This document describes changes to the PhasorPy library that are specific to
 a release. It includes descriptions of bug fixes, feature enhancements,
 documentation and maintenance changes.
 
-.. note::
-    The PhasorPy library is in its early stages of development.
-    It is not nearly feature complete.
-    Large, backwards-incompatible changes may occur between revisions.
-
 0.4 (2025.1.30)
 ---------------
 
