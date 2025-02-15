@@ -2,23 +2,10 @@
 
 The ``phasorpy.io`` module provides functions to:
 
-- write phasor coordinate images to OME-TIFF and SimFCS file formats:
-
-  - :py:func:`phasor_to_ometiff`
-  - :py:func:`phasor_to_simfcs_referenced`
-
-- read phasor coordinates and metadata from specialized file formats:
-
-  - :py:func:`phasor_from_ometiff` - PhasorPy OME-TIFF
-  - :py:func:`phasor_from_ifli` - ISS IFLI
-  - :py:func:`phasor_from_lif` - Leica LIF
-  - :py:func:`phasor_from_flimlabs_json` - FLIM LABS JSON
-  - :py:func:`phasor_from_simfcs_referenced` - SimFCS REF and R64
-
 - read time-resolved and hyperspectral signals, as well as metadata from
   many file formats used in bio-imaging:
 
-  - :py:func:`signal_from_lif` - Leica LIF
+  - :py:func:`signal_from_lif` - Leica LIF and XLEF
   - :py:func:`signal_from_lsm` - Zeiss LSM
   - :py:func:`signal_from_ptu` - PicoQuant PTU
   - :py:func:`signal_from_sdt` - Becker & Hickl SDT
@@ -30,6 +17,21 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`signal_from_z64` - SimFCS Z64
   - :py:func:`signal_from_bhz` - SimFCS BHZ
   - :py:func:`signal_from_bh` - SimFCS B&H
+
+- read phasor coordinates and lifetime images, as well as metadata from
+  specialized file formats:
+
+  - :py:func:`phasor_from_ometiff` - PhasorPy OME-TIFF
+  - :py:func:`phasor_from_ifli` - ISS IFLI
+  - :py:func:`phasor_from_lif` - Leica LIF and XLEF
+  - :py:func:`phasor_from_flimlabs_json` - FLIM LABS JSON
+  - :py:func:`phasor_from_simfcs_referenced` - SimFCS REF and R64
+  - :py:func:`lifetime_from_lif` - Leica LIF and XLEF
+
+- write phasor coordinate images to OME-TIFF and SimFCS file formats:
+
+  - :py:func:`phasor_to_ometiff`
+  - :py:func:`phasor_to_simfcs_referenced`
 
   Support for other file formats is being considered:
 
@@ -116,6 +118,7 @@ Axes character codes from the OME model and tifffile library are used as
 from __future__ import annotations
 
 __all__ = [
+    'lifetime_from_lif',
     'phasor_from_flimlabs_json',
     'phasor_from_ifli',
     'phasor_from_lif',
@@ -970,17 +973,17 @@ def phasor_from_lif(
     /,
     image: str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
-    """Return phasor coordinates and metadata from Leica LIF file.
+    """Return phasor coordinates and metadata from Leica image file.
 
-    LIF files may contain uncalibrated phasor coordinate images and metadata
-    from the analysis of fluorescence lifetime imaging measurements.
+    Leica image files may contain uncalibrated phasor coordinate images and
+    metadata from the analysis of FLIM measurements.
 
     Parameters
     ----------
     filename : str or Path
-        Name of Leica LIF file to read.
+        Name of Leica image file to read.
     image : str, optional
-        Name of image containing phasor coordinates.
+        Name of parent image containing phasor coordinates.
 
     Returns
     -------
@@ -997,16 +1000,19 @@ def phasor_from_lif(
           :ref:`Axes codes <axes>` for `mean` image dimensions.
         - ``'frequency'`` (float):
           Fundamental frequency of time-resolved phasor coordinates in MHz.
-          May not be present in all LIF files.
+          May not be present in all files.
         - ``'flim_rawdata'`` (dict):
-          Settings from LIF SingleMoleculeDetection/RawData XML element.
+          Settings from SingleMoleculeDetection/RawData XML element.
+        - ``'flim_phasor_channels'`` (list of dict):
+          Settings from SingleMoleculeDetection/.../PhasorData/Channels XML
+          elements.
 
     Raises
     ------
     liffile.LifFileError
-        File is not a Leica LIF file.
+        File is not a Leica image file.
     ValueError
-        File does not contain FLIM phasor images and metadata.
+        File or `image` do not contain phasor coordinates and metadata.
 
     Examples
     --------
@@ -1024,10 +1030,8 @@ def phasor_from_lif(
     #   phasor plot images
     import liffile
 
-    if image is None:
-        image = ''
-    else:
-        image = f'.*{image}.*/'
+    image = '' if image is None else f'.*{image}.*/'
+    samples = 1
 
     with liffile.LifFile(filename) as lif:
         try:
@@ -1035,27 +1039,141 @@ def phasor_from_lif(
             dims = im.dims
             coords = im.coords
             # meta = image.attrs
-            mean = im.asarray()
+            mean = im.asarray().astype(numpy.float32)
             real = lif.images[image + 'Phasor Real$'].asarray()
             imag = lif.images[image + 'Phasor Imaginary$'].asarray()
             # mask = lif.images[image + 'Phasor Mask$'].asarray()
         except Exception as exc:
             raise ValueError(
-                f'{lif.filename} does not contain Phasor images'
+                f'{lif.filename!r} does not contain Phasor images'
             ) from exc
 
-        attrs: dict[str, Any] = {'dims': dims}
-        xml = im.xml_element_smd
-        if xml is not None:
+        attrs: dict[str, Any] = {'dims': dims, 'coords': coords}
+        flim = im.parent_image
+        if flim is not None and isinstance(flim, liffile.LifFlimImage):
+            xml = flim.parent.xml_element
             frequency = xml.find('.//Dataset/RawData/LaserPulseFrequency')
             if frequency is not None and frequency.text is not None:
                 attrs['frequency'] = float(frequency.text) * 1e-6
-        attrs['coords'] = coords
+                clock_period = xml.find('.//Dataset/RawData/ClockPeriod')
+                if clock_period is not None and clock_period.text is not None:
+                    tmp = float(clock_period.text) * float(frequency.text)
+                    samples = int(round(1.0 / tmp))
+                    attrs['samples'] = samples
+            channels = []
+            for channel in xml.findall(
+                './/Dataset/FlimData/PhasorData/Channels'
+            ):
+                ch = liffile.xml2dict(channel)['Channels']
+                ch.pop('PhasorPlotShapes', None)
+                channels.append(ch)
+            attrs['flim_phasor_channels'] = channels
+            attrs['flim_rawdata'] = flim.attrs.get('RawData', {})
 
+    if samples > 1:
+        mean /= samples
     return (
-        mean.astype(numpy.float32),
+        mean,
         real.astype(numpy.float32),
         imag.astype(numpy.float32),
+        attrs,
+    )
+
+
+def lifetime_from_lif(
+    filename: str | PathLike[Any],
+    /,
+    image: str | None = None,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
+    """Return fluorescence lifetime image and metadata from Leica image file.
+
+    Leica image files may contain fluorescence lifetime images and metadata
+    from the analysis of FLIM measurements.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of Leica image file to read.
+    image : str, optional
+        Name of parent image containing lifetime image.
+
+    Returns
+    -------
+    lifetime : ndarray
+        Fluorescence lifetime image in ns.
+    intensity : ndarray
+        Fluorescence intensity image.
+    stddev : ndarray
+        Standard deviation of fluorescence lifetimes in ns.
+    attrs : dict
+        Select metadata:
+
+        - ``'dims'`` (tuple of str):
+          :ref:`Axes codes <axes>` for `intensity` image dimensions.
+        - ``'frequency'`` (float):
+          Fundamental frequency of lifetimes in MHz.
+          May not be present in all files.
+        - ``'samples'`` (int):
+          Number of bins in TCSPC histogram. May not be present in all files.
+        - ``'flim_rawdata'`` (dict):
+          Settings from SingleMoleculeDetection/RawData XML element.
+
+    Raises
+    ------
+    liffile.LifFileError
+        File is not a Leica image file.
+    ValueError
+        File or `image` does not contain lifetime coordinates and metadata.
+
+    Examples
+    --------
+    >>> lifetime, intensity, stddev, attrs = lifetime_from_lif(
+    ...     fetch('FLIM_testdata.lif')
+    ... )
+    >>> lifetime.shape
+    (1024, 1024)
+    >>> attrs['dims']
+    ('Y', 'X')
+    >>> attrs['frequency']
+    19.505
+
+    """
+    import liffile
+
+    image = '' if image is None else f'.*{image}.*/'
+
+    with liffile.LifFile(filename) as lif:
+        try:
+            im = lif.images[image + 'Intensity$']
+            dims = im.dims
+            coords = im.coords
+            # meta = im.attrs
+            intensity = im.asarray()
+            lifetime = lif.images[image + 'Fast Flim$'].asarray()
+            stddev = lif.images[image + 'Standard Deviation$'].asarray()
+        except Exception as exc:
+            raise ValueError(
+                f'{lif.filename!r} does not contain lifetime images'
+            ) from exc
+
+        attrs: dict[str, Any] = {'dims': dims, 'coords': coords}
+        flim = im.parent_image
+        if flim is not None and isinstance(flim, liffile.LifFlimImage):
+            xml = flim.parent.xml_element
+            frequency = xml.find('.//Dataset/RawData/LaserPulseFrequency')
+            if frequency is not None and frequency.text is not None:
+                attrs['frequency'] = float(frequency.text) * 1e-6
+                clock_period = xml.find('.//Dataset/RawData/ClockPeriod')
+                if clock_period is not None and clock_period.text is not None:
+                    tmp = float(clock_period.text) * float(frequency.text)
+                    samples = int(round(1.0 / tmp))
+                    attrs['samples'] = samples
+            attrs['flim_rawdata'] = flim.attrs.get('RawData', {})
+
+    return (
+        lifetime.astype(numpy.float32),
+        intensity.astype(numpy.float32),
+        stddev.astype(numpy.float32),
         attrs,
     )
 
@@ -1393,9 +1511,9 @@ def signal_from_lif(
     image: int | str | None = None,
     dim: Literal['λ', 'Λ'] | str = 'λ',
 ) -> DataArray:
-    """Return hyperspectral image and metadata from Leica LIF file.
+    """Return hyperspectral image and metadata from Leica image file.
 
-    LIF files may contain hyperspectral images and metadata from laser
+    Leica image files may contain hyperspectral images and metadata from laser
     scanning microscopy measurements.
     Reading of TCSPC histograms from FLIM measurements is not supported
     because the compression scheme is patent-pending.
@@ -1403,7 +1521,7 @@ def signal_from_lif(
     Parameters
     ----------
     filename : str or Path
-        Name of Leica LIF file to read.
+        Name of Leica image file to read.
     image : str or int, optional
         Index or regex pattern of image to return.
         By default, return the first image containing hyperspectral data.
@@ -1422,9 +1540,9 @@ def signal_from_lif(
     Raises
     ------
     liffile.LifFileError
-        File is not a Leica LIF file.
+        File is not a Leica image file.
     ValueError
-        File is not an LSM file or does not contain hyperspectral image.
+        File is not a Leica image file or does not contain hyperspectral image.
 
     Examples
     --------
@@ -1449,7 +1567,7 @@ def signal_from_lif(
                     break
             else:
                 raise ValueError(
-                    f'{lif!r} does not contain hyperspectral image'
+                    f'{lif.filename!r} does not contain hyperspectral image'
                 )
         else:
             im = lif.images[image]
@@ -1524,7 +1642,7 @@ def signal_from_lsm(
 
     with tifffile.TiffFile(filename) as tif:
         if not tif.is_lsm:
-            raise ValueError(f'{tif.filename} is not an LSM file')
+            raise ValueError(f'{tif.filename!r} is not an LSM file')
 
         page = tif.pages.first
         lsminfo = tif.lsm_metadata
@@ -1532,7 +1650,7 @@ def signal_from_lsm(
 
         if channels < 4 or lsminfo is None or lsminfo['SpectralScan'] != 1:
             raise ValueError(
-                f'{tif.filename} does not contain hyperspectral image'
+                f'{tif.filename!r} does not contain hyperspectral image'
             )
 
         # TODO: contribute this to tifffile
@@ -1545,14 +1663,14 @@ def signal_from_lsm(
         wavelengths = lsminfo['ChannelWavelength'].mean(axis=1)
         if wavelengths.size != data.shape[axis]:
             raise ValueError(
-                f'{tif.filename} wavelengths do not match channel axis'
+                f'{tif.filename!r} wavelengths do not match channel axis'
             )
         # stack may contain non-wavelength frame
         indices = wavelengths > 0
         wavelengths = wavelengths[indices]
         if wavelengths.size < 3:
             raise ValueError(
-                f'{tif.filename} does not contain hyperspectral image'
+                f'{tif.filename!r} does not contain hyperspectral image'
             )
         wavelengths *= 1e9
         data = data.take(indices.nonzero()[0], axis=axis)
@@ -1562,7 +1680,7 @@ def signal_from_lsm(
             coords['T'] = lsminfo['TimeStamps'] - lsminfo['TimeStamps'][0]
             if coords['T'].size != data.shape[dims.index('T')]:
                 raise ValueError(
-                    f'{tif.filename} timestamps do not match time axis'
+                    f'{tif.filename!r} timestamps do not match time axis'
                 )
         # spatial coordinates
         for ax in 'ZYX':
@@ -1641,7 +1759,7 @@ def signal_from_imspector_tiff(
             or len(tif.series) != 1
             or not tif.is_ome
         ):
-            raise ValueError(f'{tif.filename} is not an ImSpector TIFF file')
+            raise ValueError(f'{tif.filename!r} is not an ImSpector TIFF file')
 
         series = tif.series[0]
         ndim = series.ndim
@@ -1650,7 +1768,7 @@ def signal_from_imspector_tiff(
 
         if ndim < 3 or not axes.endswith('YX'):
             raise ValueError(
-                f'{tif.filename} is not an ImSpector FLIM TIFF file'
+                f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
             )
 
         data = series.asarray()
@@ -1697,7 +1815,9 @@ def signal_from_imspector_tiff(
         or 'FirstAxis' not in axes_labels.attrib
         or 'SecondAxis' not in axes_labels.attrib
     ):
-        raise ValueError(f'{tif.filename} is not an ImSpector FLIM TIFF file')
+        raise ValueError(
+            f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
+        )
 
     if axes_labels.attrib['FirstAxis'] == 'lifetime' or axes_labels.attrib[
         'FirstAxis'
@@ -1711,7 +1831,9 @@ def signal_from_imspector_tiff(
         ax = axes[-4]
         assert axes_labels.attrib['SecondAxis-Unit'] == 'ns'
     else:
-        raise ValueError(f'{tif.filename} is not an ImSpector FLIM TIFF file')
+        raise ValueError(
+            f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
+        )
     axes = axes.replace(ax, 'H')
     coords['H'] = coords[ax]
     del coords[ax]
@@ -1745,7 +1867,7 @@ def signal_from_sdt(
     Returns
     -------
     xarray.DataArray
-        Time correlated single photon counting image data with
+        Time-correlated single-photon counting image data with
         :ref:`axes codes <axes>` ``'YXH'`` and type ``uint16``, ``uint32``,
         or ``float32``.
 
@@ -1815,7 +1937,7 @@ def signal_from_ptu(
 ) -> DataArray:
     """Return TCSPC histogram and metadata from PicoQuant PTU T3 mode file.
 
-    PTU files contain time-correlated single photon counting measurement data
+    PTU files contain time-correlated single-photon counting measurement data
     and instrumentation parameters.
 
     Parameters

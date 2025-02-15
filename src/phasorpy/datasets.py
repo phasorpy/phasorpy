@@ -423,6 +423,32 @@ FIGSHARE_22336594 = pooch.create(
     },
 )
 
+FIGSHARE_22336594_EXPORTED = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/figshare_22336594'
+    ),
+    env=ENV,
+    registry={
+        'FLIM_testdata.lif.ptu': (
+            'sha256:'
+            'c85792b25d0b274f1484e490c99aa19052ab8e48e4e5022aabb1f218cd1123b6'
+        ),
+        'FLIM_testdata.lif.ptu.zip': (
+            'sha256:'
+            'c5134c470f6a3e5cb21eabd538cbd5061d9911dad96d58e3a4040cfddadaef33'
+        ),
+        'FLIM_testdata.xlef': (
+            'sha256:'
+            '7860ef0847dc9f5534895a9c11b979bb446f67382b577fe63fb166e281e5dc5e'
+        ),
+        'FLIM_testdata.xlef.zip': (
+            'sha256:'
+            'ad0ad6389f38dcba6f9809b54934ef3f19da975d9dabeb4c3a248692b959b9cf'
+        ),
+    },
+)
+
 REPOSITORIES: dict[str, pooch.Pooch] = {
     'tests': TESTS,
     'lfd-workshop': LFD_WORKSHOP,
@@ -433,6 +459,7 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'convallaria-fbd': CONVALLARIA_FBD,
     'flimlabs': FLIMLABS,
     'figshare_22336594': FIGSHARE_22336594,
+    'figshare_22336594_exported': FIGSHARE_22336594_EXPORTED,
 }
 """Pooch repositories."""
 

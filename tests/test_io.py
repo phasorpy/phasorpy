@@ -17,6 +17,7 @@ from numpy.testing import (
 
 from phasorpy.datasets import fetch
 from phasorpy.io import (
+    lifetime_from_lif,
     phasor_from_flimlabs_json,
     phasor_from_ifli,
     phasor_from_lif,
@@ -1104,15 +1105,23 @@ def test_phasor_to_simfcs_referenced_multiharmonic():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_phasor_from_lif():
+@pytest.mark.parametrize('format', ('lif', 'xlef'))
+def test_phasor_from_lif(format):
     """Test read phasor coordinates from Leica LIF file."""
-    filename = fetch('FLIM_testdata.lif')
+    filename = fetch(f'FLIM_testdata.{format}')
     mean, real, imag, attrs = phasor_from_lif(filename)
     for data in (mean, real, imag):
         assert data.shape == (1024, 1024)
         assert data.dtype == numpy.float32
+    assert (mean * 529).sum() == 9602774.0
     assert attrs['frequency'] == 19.505
+    assert attrs['samples'] == 529
     assert 'harmonic' not in attrs
+    assert attrs['flim_rawdata']['ClockPeriod'] == 9.696969697e-11
+    assert (
+        attrs['flim_phasor_channels'][0]['AutomaticReferencePhase']
+        == 7.017962169
+    )
 
     # select image
     mean1, real1, imag1, attrs = phasor_from_lif(
@@ -1130,6 +1139,34 @@ def test_phasor_from_lif():
         filename = private_file('ScanModesExamples.lif')
         with pytest.raises(ValueError):
             phasor_from_lif(filename)
+
+
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
+@pytest.mark.parametrize('format', ('lif', 'xlef'))
+def test_lifetime_from_lif(format):
+    """Test read lifetime image from Leica LIF file."""
+    filename = fetch(f'FLIM_testdata.{format}')
+    lifetime, intensity, stddev, attrs = lifetime_from_lif(filename)
+    for data in (intensity, lifetime, stddev):
+        assert data.shape == (1024, 1024)
+        assert data.dtype == numpy.float32
+    assert intensity.sum() == 19278548.0
+    assert attrs['frequency'] == 19.505
+    assert attrs['samples'] == 529
+    assert 'harmonic' not in attrs
+
+    # select series
+    lifetime1, intensity1, stddev1, attrs = lifetime_from_lif(
+        filename, image='FLIM Compressed'
+    )
+    assert_array_equal(intensity1, intensity)
+    assert_array_equal(lifetime1, lifetime)
+
+    # file does not contain FLIM data
+    if not SKIP_PRIVATE:
+        filename = private_file('ScanModesExamples.lif')
+        with pytest.raises(ValueError):
+            lifetime_from_lif(filename)
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
