@@ -7,11 +7,6 @@ Welcome to the documentation of PhasorPy version |version|.
 PhasorPy is an open-source Python library for the analysis of fluorescence
 lifetime and hyperspectral images using the :doc:`phasor_approach`.
 
-.. note::
-    The PhasorPy library is in its early stages of development.
-    It is not nearly feature complete.
-    Large, backwards-incompatible changes may occur between revisions.
-
 Quickstart
 ==========
 
