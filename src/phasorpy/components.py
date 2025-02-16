@@ -18,8 +18,10 @@ The ``phasorpy.components`` module provides functions to:
 
   - :py:func:`graphical_component_analysis`
 
-- blindly resolve fractions of `n` components by using harmonic
-  information (not implemented)
+- phasor-based resolve fractions of `n` components by using harmonic
+  information
+
+  - :py:func: `n_fractions_from_phasor`
 
 """
 
@@ -28,6 +30,7 @@ from __future__ import annotations
 __all__ = [
     'two_fractions_from_phasor',
     'graphical_component_analysis',
+    'n_fractions_from_phasor',
 ]
 
 import numbers
@@ -37,6 +40,7 @@ if TYPE_CHECKING:
     from ._typing import Any, ArrayLike, NDArray
 
 import numpy
+import scipy
 
 from ._phasorpy import (
     _fraction_on_segment,
@@ -311,3 +315,105 @@ def graphical_component_analysis(
             counts.append(numpy.asarray(component_counts))
 
     return tuple(counts)
+
+
+def n_fractions_from_phasor(
+    real: ArrayLike,
+    imag: ArrayLike,
+    coeff_matrix: ArrayLike,
+    /,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], ...]:
+    """
+    Returns the fractions of each component in each pixel.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Real component of phasor coordinates.
+    coeff_matrix : array_like
+        Pure components coefficients to compute unmixing.
+        Matrix is like ``[real1, imag1, ..., realN, imagN, [1...1]]``
+        with real and imaginary component of phasor coordinates for the
+        pure components.
+    **kwargs : optional
+        Additional arguments passed to ``scipy.linalg.lstsq()``.
+
+    Returns
+    -------
+    fractions : ndarray
+        fractions : tuple of ndarray
+        Fractions of pure components.
+
+    Raises
+    ------
+    ValueError
+        The array shapes of `real` and `imag` do not match.
+        The coefficient matrix is empty.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_components.py`
+
+    References
+    ----------
+    [2] Vallmitjana A, Lepanto P, Irigoin F, Malacrida L.
+    `Phasor-based multi-harmonic unmixing for in-vivohyperspectral imaging
+    <https://doi.org/10.1088/2050-6120/ac9ae9>`_.
+    *Methods Appl Fluoresc.*, (2022)
+
+    Example
+    -------
+    >>> n_fractions_from_phasor(
+    ...     [0.5, 0.3], [0.2, 0.7], [[0.1, 0.3], [0.2, 0.8], [1.0, 1.0]]
+    ... )  # doctest: +NUMBER
+    (array(0.8162), array(0.1958))
+
+    """
+
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    coeff_matrix = numpy.asarray(coeff_matrix)
+
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+
+    if coeff_matrix.size == 0:
+        raise ValueError('the coefficient matrix is empty.')
+
+    real = numpy.nan_to_num(real, nan=0.0, posinf=0.0, neginf=0.0)
+    imag = numpy.nan_to_num(imag, nan=0.0, posinf=0.0, neginf=0.0)
+
+    if real.ndim == 1:
+        vec_b = numpy.hstack([real[:1], imag[:1], 1])
+        return tuple(
+            map(numpy.asarray, scipy.linalg.lstsq(coeff_matrix, vec_b)[0])
+        )
+
+    else:
+        if real.ndim == 2:
+            n, m = real.shape
+            nh = 1  # number of harmonics
+            real = real.reshape(nh, n, m)
+            imag = imag.reshape(nh, n, m)
+        elif real.ndim == 3:
+            nh, n, m = real.shape
+        else:
+            raise ValueError(
+                f'invalid shape {real.shape}, expected (nh, n, m) or (n, m)'
+            )
+
+        real_reshaped = real.reshape(nh, -1)
+        imag_reshaped = imag.reshape(nh, -1)
+
+        ones_array = numpy.ones((1, n * m))
+
+        vec_b = numpy.concatenate(
+            [real_reshaped, imag_reshaped, ones_array], axis=0
+        )
+
+        fractions = scipy.linalg.lstsq(coeff_matrix, vec_b, **kwargs)[0]
+
+        return tuple(map(numpy.asarray, fractions))
