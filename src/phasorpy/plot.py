@@ -15,6 +15,7 @@ __all__ = [
     'plot_phasor_image',
     'plot_signal_image',
     'plot_polar_frequency',
+    'plot_histograms',
 ]
 
 import math
@@ -2014,6 +2015,58 @@ def plot_polar_frequency(
     ax.set_yticks([0.0, 25.0, 50.0, 75.0, 100.0])
     for mod in modulation.T:
         ax.plot(frequency, mod * 100, color='tab:red', **kwargs)
+    if show:
+        pyplot.show()
+
+
+def plot_histograms(
+    *data: ArrayLike,
+    title: str | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    labels: Sequence[str] | None = None,
+    show: bool = True,
+    **kwargs: Any,
+) -> None:
+    """Plot histograms of flattened data arrays.
+
+    Parameters
+    ----------
+    data: array_like
+        Data arrays to be plotted as histograms.
+    title : str, optional
+        Figure title.
+    xlabel: str, optional
+        Label for x-axis.
+    ylabel: str, optional
+        Label for y-axis.
+    labels: sequence of str, optional
+        Labels for each data array.
+    show : bool, optional, default: True
+        Display figure.
+    **kwargs
+        Additional arguments passed to :func:`matplotlib.pyplot.hist`.
+
+    """
+    ax = pyplot.subplots()[1]
+    if kwargs.get('alpha') is None:
+        ax.hist(
+            [numpy.asarray(d).flatten() for d in data], label=labels, **kwargs
+        )
+    else:
+        for d, label in zip(
+            data, [None] * len(data) if labels is None else labels
+        ):
+            ax.hist(numpy.asarray(d).flatten(), label=label, **kwargs)
+    if title is not None:
+        ax.set_title(title)
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+    if labels is not None:
+        ax.legend()
+    pyplot.tight_layout()
     if show:
         pyplot.show()
 
