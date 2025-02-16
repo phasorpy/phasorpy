@@ -11,6 +11,7 @@ from xarray import DataArray
 from phasorpy.plot import (
     PhasorPlot,
     PhasorPlotFret,
+    plot_histograms,
     plot_phasor,
     plot_phasor_image,
     plot_polar_frequency,
@@ -528,6 +529,18 @@ def test_plot_phasor_image():
         # percentile out of range
         plot_phasor_image(d, d, d, percentile=50, show=False)
     pyplot.close()
+
+
+def test_plot_plot_histograms():
+    """Test plot_histograms function."""
+    data = (numpy.random.normal(0, 1, 1000), numpy.random.normal(4, 2, 1000))
+    plot_histograms(data[0], show=INTERACTIVE)
+    plot_histograms(*data, show=INTERACTIVE)
+    plot_histograms(*data, alpha=0.66, bins=50, show=INTERACTIVE)
+    plot_histograms(*data, alpha=0.66, title='Histograms', show=INTERACTIVE)
+    plot_histograms(*data, alpha=0.66, xlabel='X axis', show=INTERACTIVE)
+    plot_histograms(*data, alpha=0.66, ylabel='Y axis', show=INTERACTIVE)
+    plot_histograms(*data, alpha=0.66, labels=['A', 'B'], show=INTERACTIVE)
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

@@ -24,7 +24,6 @@ and SimFCS referenced files.
 import math
 
 import numpy
-from matplotlib import pyplot
 
 from phasorpy.phasor import (
     phasor_from_signal,
@@ -32,25 +31,12 @@ from phasorpy.phasor import (
     phasor_to_apparent_lifetime,
     phasor_transform,
 )
-from phasorpy.plot import plot_phasor, plot_phasor_image, plot_signal_image
-
-
-def plot_histograms(
-    *images, title=None, xlabel=None, ylabel=None, labels=None, **kwargs
-):
-    # TODO: replace by future phasorpy.plot.plot_histograms
-    if labels is None:
-        labels = [None] * len(images)
-    fig, ax = pyplot.subplots()
-    for image, label in zip(images, labels):
-        ax.hist(image.flatten(), label=label, **kwargs)
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.legend()
-    pyplot.tight_layout()
-    pyplot.show()
-
+from phasorpy.plot import (
+    plot_histograms,
+    plot_phasor,
+    plot_phasor_image,
+    plot_signal_image,
+)
 
 # %%
 # Sample files
@@ -63,7 +49,7 @@ def plot_histograms(
 # files if they were not already downloaded before. The function returns
 # the path to the downloaded file:
 
-from phasorpy.datasets import fetch
+from phasorpy.datasets import fetch  # isort: skip
 
 filename = fetch('FLIM_testdata.lif')
 print(filename)

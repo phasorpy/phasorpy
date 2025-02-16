@@ -20,7 +20,7 @@ from phasorpy.components import (
     two_fractions_from_phasor,
 )
 from phasorpy.phasor import phasor_from_lifetime
-from phasorpy.plot import PhasorPlot
+from phasorpy.plot import PhasorPlot, plot_histograms
 
 numpy.random.seed(42)
 component_style = {
@@ -103,27 +103,17 @@ fraction_of_first_component = two_fractions_from_phasor(
     real, imag, components_real, components_imag
 )
 
-fig, ax = plt.subplots()
-ax.hist(
-    fraction_of_first_component.flatten(),
+plot_histograms(
+    fraction_of_first_component,
+    1.0 - fraction_of_first_component,
     range=(0, 1),
     bins=100,
-    alpha=0.75,
-    label='A',
+    alpha=0.66,
+    title='Histograms of fractions of two components',
+    xlabel='Fraction',
+    ylabel='Counts',
+    labels=['A', 'B'],
 )
-ax.hist(
-    1.0 - fraction_of_first_component.flatten(),
-    range=(0, 1),
-    bins=100,
-    alpha=0.75,
-    label='B',
-)
-ax.set_title('Histograms of fractions of two components')
-ax.set_xlabel('Fraction')
-ax.set_ylabel('Counts')
-ax.legend()
-plt.tight_layout()
-plt.show()
 
 # %%
 # Graphical solution for contributions of two components
