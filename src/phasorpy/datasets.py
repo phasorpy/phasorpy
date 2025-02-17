@@ -330,7 +330,7 @@ ZENODO_14860228 = pooch.create(
 CONVALLARIA_FBD = pooch.create(
     path=pooch.os_cache('phasorpy'),
     base_url=(
-        'https://github.com/phasorpy/phasorpy-data/raw/main/zenodo_14026719'
+        'https://github.com/phasorpy/phasorpy-data/raw/main/zenodo_14026720'
         if DATA_ON_GITHUB
         else 'doi:10.5281/zenodo.14026719'
     ),
