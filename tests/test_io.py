@@ -1115,7 +1115,7 @@ def test_phasor_to_simfcs_referenced_nanpad():
         phasor_to_simfcs_referenced(
             filename, data[0], data, data[::-1], size=80
         )
-        filename = os.path.join(tempdir, os.listdir(tempdir)[-1])
+        filename = os.path.join(tempdir, 'nanpad_0_80_80.r64')
         mean, real, imag, attrs = phasor_from_simfcs_referenced(
             filename, harmonic='all'
         )
