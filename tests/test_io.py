@@ -3,6 +3,7 @@
 import os
 import tempfile
 from glob import glob
+from tempfile import TemporaryDirectory
 
 import lfdfiles
 import numpy
@@ -1102,6 +1103,40 @@ def test_phasor_to_simfcs_referenced_multiharmonic():
             assert mean.shape == (32, 32)
             assert real.shape == (2, 32, 32)
             assert imag.shape == (2, 32, 32)
+
+
+def test_phasor_to_simfcs_referenced_nanpad():
+    """Test phasor_to_simfcs_referenced with NaN padding."""
+    data = numpy.random.random_sample((2, 95, 97))
+    with TemporaryDirectory(delete=True) as tempdir:
+        filename = os.path.join(tempdir, 'nanpad.r64')
+        phasor_to_simfcs_referenced(
+            filename, data[0], data, data[::-1], size=80
+        )
+        print(os.listdir(tempdir))
+        filename = os.path.join(tempdir, os.listdir(tempdir)[-1])
+        mean, real, imag, attrs = phasor_from_simfcs_referenced(
+            filename, harmonic='all'
+        )
+        assert_allclose(
+            mean,
+            numpy.pad(
+                data[0, 80:, 80:],
+                [(0, 65), (0, 63)],
+                constant_values=numpy.nan,
+            ),
+            equal_nan=True,
+        )
+        assert_allclose(
+            real[1],
+            numpy.pad(
+                data[1, 80:, 80:],
+                [(0, 65), (0, 63)],
+                constant_values=numpy.nan,
+            ),
+            atol=1e-3,
+            equal_nan=True,
+        )
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
