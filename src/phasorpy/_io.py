@@ -693,7 +693,8 @@ def phasor_to_simfcs_referenced(
                 rawdata.append(a.tobytes())
             elif sizey <= size and sizex <= size:
                 chunk[:sizey, :sizex] = a[..., :sizey, :sizex]
-                chunk[sizey:, sizex:] = numpy.nan
+                chunk[:sizey, sizex:] = numpy.nan
+                chunk[sizey:, :] = numpy.nan
                 rawdata.append(chunk.tobytes())
             else:
                 raise RuntimeError  # should not be reached
