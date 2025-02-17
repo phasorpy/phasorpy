@@ -53,6 +53,8 @@ PRIVATE_DIR = os.path.join(DATA_DIR, 'private')
 SKIP_PRIVATE = not os.path.exists(PRIVATE_DIR)
 SKIP_FETCH = os.environ.get('SKIP_FETCH', False)
 
+numpy.random.seed(42)
+
 
 class TempFileName:
     """Temporary file name context manager."""
