@@ -2305,7 +2305,7 @@ def signal_from_fbd(
                 data = data[0]
                 axes = axes[1:]
         else:
-            if frame < 0 or frame > data.shape[0]:
+            if frame < 0 or frame >= data.shape[0]:
                 raise IndexError(f'{frame=} out of bounds')
             if keepdims:
                 data = data[frame : frame + 1]

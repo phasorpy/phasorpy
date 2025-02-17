@@ -591,6 +591,12 @@ def test_signal_from_fbd():
     assert signal.shape == (1, 1, 256, 256, 64)
     assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
 
+    with pytest.raises(IndexError):
+        signal_from_fbd(filename, frame=9)
+
+    with pytest.raises(IndexError):
+        signal_from_fbd(filename, channel=2)
+
     filename = fetch('simfcs.r64')
     with pytest.raises(lfdfiles.LfdFileError):
         signal_from_fbd(filename)
