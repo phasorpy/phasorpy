@@ -1108,12 +1108,11 @@ def test_phasor_to_simfcs_referenced_multiharmonic():
 def test_phasor_to_simfcs_referenced_nanpad():
     """Test phasor_to_simfcs_referenced with NaN padding."""
     data = numpy.random.random_sample((2, 95, 97))
-    with TemporaryDirectory(delete=True) as tempdir:
+    with TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, 'nanpad.r64')
         phasor_to_simfcs_referenced(
             filename, data[0], data, data[::-1], size=80
         )
-        print(os.listdir(tempdir))
         filename = os.path.join(tempdir, os.listdir(tempdir)[-1])
         mean, real, imag, attrs = phasor_from_simfcs_referenced(
             filename, harmonic='all'
