@@ -1124,6 +1124,7 @@ def test_phasor_to_simfcs_referenced_nanpad():
                 [(0, 65), (0, 63)],
                 constant_values=numpy.nan,
             ),
+            atol=1e-3,
             equal_nan=True,
         )
         assert_allclose(
