@@ -404,6 +404,7 @@ def test_phasor_from_ifli():
     assert attr['dims'] == ('Y', 'X')
     assert attr['frequency'] == 80.332416
     assert attr['harmonic'] == [1, 2, 3, 5]
+    assert attr['samples'] == 64
 
     mean, real1, imag1, attr = phasor_from_ifli(
         filename, harmonic='any', memmap=True
@@ -562,6 +563,13 @@ def test_signal_from_fbd():
         signal.coords['H'].data[[1, -1]], [0.0981748, 6.1850105]
     )
     assert_almost_equal(signal.attrs['frequency'], 40.0)
+
+    attrs = signal.attrs
+    assert attrs['frequency'] == 40.0
+    assert attrs['harmonic'] == 2
+    assert attrs['flimbox_firmware']['secondharmonic'] == 1
+    assert attrs['flimbox_header'] is not None
+    assert 'flimbox_settings' not in attrs
 
     signal = signal_from_fbd(filename, frame=-1, channel=0)
     assert signal.values.sum(dtype=numpy.uint64) == 9310275
