@@ -404,6 +404,7 @@ def test_phasor_from_ifli():
     assert attr['dims'] == ('Y', 'X')
     assert attr['frequency'] == 80.332416
     assert attr['harmonic'] == [1, 2, 3, 5]
+    assert attr['samples'] == 64
 
     mean, real1, imag1, attr = phasor_from_ifli(
         filename, harmonic='any', memmap=True
@@ -547,12 +548,12 @@ def test_signal_from_ptu_irf():
     )
 
 
-@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_signal_from_fbd():
     """Test read FLIMbox FBD file."""
     # TODO: test files with different firmwares
     # TODO: gather public FBD files and upload to Zenodo
-    filename = private_file('convallaria_000$EI0S.fbd')
+    filename = fetch('Convallaria_$EI0S.fbd')
     signal = signal_from_fbd(filename)
     assert signal.values.sum(dtype=numpy.uint64) == 9310275
     assert signal.dtype == numpy.uint16
@@ -562,6 +563,13 @@ def test_signal_from_fbd():
         signal.coords['H'].data[[1, -1]], [0.0981748, 6.1850105]
     )
     assert_almost_equal(signal.attrs['frequency'], 40.0)
+
+    attrs = signal.attrs
+    assert attrs['frequency'] == 40.0
+    assert attrs['harmonic'] == 2
+    assert attrs['flimbox_firmware']['secondharmonic'] == 1
+    assert attrs['flimbox_header'] is not None
+    assert 'flimbox_settings' not in attrs
 
     signal = signal_from_fbd(filename, frame=-1, channel=0)
     assert signal.values.sum(dtype=numpy.uint64) == 9310275
@@ -582,6 +590,12 @@ def test_signal_from_fbd():
     assert signal.values.sum(dtype=numpy.uint64) == 1033137
     assert signal.shape == (1, 1, 256, 256, 64)
     assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
+
+    with pytest.raises(IndexError):
+        signal_from_fbd(filename, frame=9)
+
+    with pytest.raises(IndexError):
+        signal_from_fbd(filename, channel=2)
 
     filename = fetch('simfcs.r64')
     with pytest.raises(lfdfiles.LfdFileError):

@@ -260,6 +260,9 @@ def phasor_to_ometiff(
     extension is used to store multi-harmonic phasor coordinates.
     The modulo type for the first, harmonic dimension is "other".
 
+    The implementation is based on the
+    `tifffile <https://github.com/cgohlke/tifffile/>`__ library.
+
     Examples
     --------
     >>> mean, real, imag = numpy.random.rand(3, 32, 32, 32)
@@ -438,6 +441,9 @@ def phasor_from_ometiff(
     Scalar or one-dimensional phasor coordinates stored in the file are
     returned as two-dimensional images (three-dimensional if multiple
     harmonics are present).
+
+    The implementation is based on the
+    `tifffile <https://github.com/cgohlke/tifffile/>`__ library.
 
     Examples
     --------
@@ -764,6 +770,11 @@ def phasor_from_simfcs_referenced(
     --------
     phasorpy.io.phasor_to_simfcs_referenced
 
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
+
     Examples
     --------
     >>> phasor_to_simfcs_referenced(
@@ -863,6 +874,8 @@ def phasor_from_ifli(
           first axis.
         - ``'frequency'`` (float):
           Fundamental frequency of time-resolved phasor coordinates in MHz.
+        - ``'samples'`` (int):
+            Number of samples per frequency.
         - ``'ifli_header'`` (dict):
           Metadata from IFLI file header.
 
@@ -872,6 +885,11 @@ def phasor_from_ifli(
         File is not an ISS IFLI file.
     IndexError
         Harmonic is not found in file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -888,6 +906,8 @@ def phasor_from_ifli(
     [1, 2, 3, 5]
     >>> attr['frequency']  # doctest: +NUMBER
     80.33
+    >>> attr['samples']
+    64
     >>> attr['ifli_header']
     {'Version': 16, ... 'ModFrequency': (...), 'RefLifetime': (2.5,), ...}
 
@@ -913,6 +933,7 @@ def phasor_from_ifli(
     dims = dims[:-2]
     del data
 
+    samples = header['HistogramResolution']
     frequencies = header['ModFrequency']
     frequency = frequencies[0]
     harmonic_stored = [
@@ -963,6 +984,7 @@ def phasor_from_ifli(
         'dims': tuple(dims),
         'harmonic': harmonic,
         'frequency': frequency * 1e-6,
+        'samples': samples,
         'ifli_header': header,
     }
 
@@ -1014,6 +1036,11 @@ def phasor_from_lif(
         File is not a Leica image file.
     ValueError
         File or `image` do not contain phasor coordinates and metadata.
+
+    Notes
+    -----
+    The implementation is based on the
+    `liffile <https://github.com/cgohlke/liffile/>`__ library.
 
     Examples
     --------
@@ -1125,6 +1152,11 @@ def lifetime_from_lif(
         File is not a Leica image file.
     ValueError
         File or `image` does not contain lifetime coordinates and metadata.
+
+    Notes
+    -----
+    The implementation is based on the
+    `liffile <https://github.com/cgohlke/liffile/>`__ library.
 
     Examples
     --------
@@ -1545,6 +1577,11 @@ def signal_from_lif(
     ValueError
         File is not a Leica image file or does not contain hyperspectral image.
 
+    Notes
+    -----
+    The implementation is based on the
+    `liffile <https://github.com/cgohlke/liffile/>`__ library.
+
     Examples
     --------
     >>> signal = signal_from_lif('ScanModesExamples.lif')  # doctest: +SKIP
@@ -1623,6 +1660,11 @@ def signal_from_lsm(
         File is not a TIFF file.
     ValueError
         File is not an LSM file or does not contain hyperspectral image.
+
+    Notes
+    -----
+    The implementation is based on the
+    `tifffile <https://github.com/cgohlke/tifffile/>`__ library.
 
     Examples
     --------
@@ -1727,6 +1769,11 @@ def signal_from_imspector_tiff(
         File is not a TIFF file.
     ValueError
         File is not an ImSpector FLIM TIFF file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `tifffile <https://github.com/cgohlke/tifffile/>`__ library.
 
     Examples
     --------
@@ -1880,6 +1927,11 @@ def signal_from_sdt(
     ValueError
         File is not a SDT file containing TCSPC histogram.
 
+    Notes
+    -----
+    The implementation is based on the
+    `sdtfile <https://github.com/cgohlke/sdtfile/>`__ library.
+
     Examples
     --------
     >>> signal = signal_from_sdt(fetch('tcspc.sdt'))
@@ -1996,6 +2048,11 @@ def signal_from_ptu(
     ValueError
         File is not a PicoQuant PTU T3 mode file containing TCSPC data.
 
+    Notes
+    -----
+    The implementation is based on the
+    `ptufile <https://github.com/cgohlke/ptufile/>`__ library.
+
     Examples
     --------
     >>> signal = signal_from_ptu(fetch('hazelnut_FLIM_single_image.ptu'))
@@ -2091,6 +2148,11 @@ def signal_from_flif(
     lfdfiles.LfdFileError
         File is not a FlimFast FLIF file.
 
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
+
     Examples
     --------
     >>> signal = signal_from_flif(fetch('flimfast.flif'))
@@ -2181,11 +2243,20 @@ def signal_from_fbd(
 
         - ``coords['H']``: phases in radians.
         - ``attrs['frequency']``: repetition frequency in MHz.
+        - ``attrs['harmonic']``: harmonic contained in histogram.
+        - ``attrs['flimbox_header']``: FBD binary header, if any.
+        - ``attrs['flimbox_firmware']``: FLIMbox firmware settings, if any.
+        - ``attrs['flimbox_settings']``: Settings from FBS XML, if any.
 
     Raises
     ------
     lfdfiles.LfdFileError
         File is not a FLIMbox FBD file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -2234,7 +2305,7 @@ def signal_from_fbd(
                 data = data[0]
                 axes = axes[1:]
         else:
-            if frame < 0 or frame > data.shape[0]:
+            if frame < 0 or frame >= data.shape[0]:
                 raise IndexError(f'{frame=} out of bounds')
             if keepdims:
                 data = data[frame : frame + 1]
@@ -2251,6 +2322,13 @@ def signal_from_fbd(
         metadata = _metadata(axes, data.shape, H=phases)
         attrs = metadata['attrs']
         attrs['frequency'] = fbd.laser_frequency * 1e-6
+        attrs['harmonic'] = fbd.harmonics
+        if fbd.header is not None:
+            attrs['flimbox_header'] = fbd.header
+        if fbd.fbf is not None:
+            attrs['flimbox_firmware'] = fbd.fbf
+        if fbd.fbs is not None:
+            attrs['flimbox_settings'] = fbd.fbs
 
     from xarray import DataArray
 
@@ -2282,6 +2360,11 @@ def signal_from_b64(
         File is not a SimFCS B64 file.
     ValueError
         File does not contain an image stack.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -2339,6 +2422,11 @@ def signal_from_z64(
     lfdfiles.LfdFileError
         File is not a SimFCS Z64 file.
 
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
+
     Examples
     --------
     >>> signal = signal_from_z64(fetch('simfcs.z64'))
@@ -2388,6 +2476,11 @@ def signal_from_bh(
     ------
     lfdfiles.LfdFileError
         File is not a SimFCS B&H file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -2439,6 +2532,11 @@ def signal_from_bhz(
     ------
     lfdfiles.LfdFileError
         File is not a SimFCS BHZ file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
