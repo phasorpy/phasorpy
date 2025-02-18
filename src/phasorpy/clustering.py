@@ -48,41 +48,42 @@ def gaussian_mixture_model(
         Rotation angles of semi-major axes of ellipses in radians.
 
 
-    #TODO: Raises, See Also (if there's some), and Examples
+    # TODO: See Also (I would need the link). 
     Raises
     ------
     ValueError
         The array shapes of `real` and `imag` do not match.
-        The array shapes of `center*`, `radius*`, or `angle` have more than
-        one dimension.
+        n_components is not an integer.
 
     See Also
     --------
     :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
 
-
-
     Examples
     --------
-    Create a :
+    Create a phasor from lifetimes, set the component fractions, and frequency:
 
     >>> component_lifetimes = [1.0, 8.0]
     >>> component_fractions = [0.7, 0.3]
+    >>> frequency = 80.0 #MHz
 
+    >>> real, imag = phasor_from_lifetime(frequency, 
+    component_lifetimes, component_fractions)
 
-    Create masks for two elliptic cursors with different radii:
+    Create synthetic data from phasor coordinates:
 
-    >>> mask_from_elliptic_cursor(
-    ...     [0.2, 0.5],
-    ...     [0.4, 0.5],
-    ...     [0.2, 0.5],
-    ...     [0.4, 0.5],
-    ...     radius=[0.1, 0.05],
-    ...     radius_minor=[0.15, 0.1],
-    ...     angle=[math.pi, math.pi / 2],
-    ... )
-    array([[ True, False],
-           [False,  True]])
+    >>> real, imag = numpy.random.multivariate_normal(
+    (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)).T
+
+    Set the number of clusters and get the coordinates for the center
+    and radii of the ellipses.
+
+    >>> n_components = 2
+    >>> centers_real, centers_imag, radio, radius_minor, angles = gaussian_mixture_model(
+    ...     real,
+    ...     imag,
+    ...     n_components = n_components,
+    )
 
     """
 
@@ -93,6 +94,13 @@ def gaussian_mixture_model(
     imag_reshaped = [ i for fil in imag for i in fil] #flattens the list
 
     nan_found = 0
+
+    if (real.shape != imag.shape):
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if (not isinstance(n_components, int) or not isinstance(n_components, numpy.int)):
+        raise ValueError(
+        f"n_components is expected to be an integer, but got {n_components=} of type {type(n_components)}"
+        )
 
     # Checks if there is a nan in any of the input arrays.
     if (any(numpy.isnan(real_reshaped)) or any(numpy.isnan(imag_reshaped))):
@@ -107,6 +115,10 @@ def gaussian_mixture_model(
         # and it creates another cluster on zero
         # in order to solve that problem.
         n_components = n_components + 1
+
+    if (real_reshaped.shape != imag_reshaped.shape):
+        raise ValueError("Mismatch in the number of NaN values: real has {} NaNs, while imag has {} NaNs.".format(
+        np.isnan(real).sum(), np.isnan(imag).sum()))
 
     X = numpy.column_stack([real_reshaped,imag_reshaped])
 

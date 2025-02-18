@@ -21,8 +21,9 @@ from phasorpy.cursors import (
     # mask_from_polar_cursor,
     pseudo_color,
 )
+from phasorpy import clustering
 
-import ../src/clustering # To be solved!!!
+# import clustering # To be solved!!!
 from clustering import gaussian_mixture_model
 frequency = 80.0  # MHz
 
