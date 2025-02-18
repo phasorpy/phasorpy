@@ -453,6 +453,18 @@ FIGSHARE_22336594_EXPORTED = pooch.create(
     },
 )
 
+MISC = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url='https://github.com/phasorpy/phasorpy-data/raw/main/misc',
+    env=ENV,
+    registry={
+        'NADHandSHG.ifli': (
+            'sha256:'
+            'dfa65952850b8a222258776a8a14eb1ab7e70ff5f62b58aa2214797c5921b4a3'
+        ),
+    },
+)
+
 REPOSITORIES: dict[str, pooch.Pooch] = {
     'tests': TESTS,
     'lfd-workshop': LFD_WORKSHOP,
@@ -464,6 +476,7 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'flimlabs': FLIMLABS,
     'figshare_22336594': FIGSHARE_22336594,
     'figshare_22336594_exported': FIGSHARE_22336594_EXPORTED,
+    'misc': MISC,
 }
 """Pooch repositories."""
 

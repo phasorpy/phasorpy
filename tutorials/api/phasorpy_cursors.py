@@ -9,7 +9,7 @@ An introduction to selecting phasor coordinates using cursors.
 # %%
 # Import required modules, functions, and classes:
 
-import matplotlib.pyplot as plt
+from matplotlib import pyplot
 
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursors import (
@@ -67,10 +67,10 @@ plot.show()
 
 pseudo_color_image = pseudo_color(*circular_mask)
 
-fig, ax = plt.subplots()
+fig, ax = pyplot.subplots()
 ax.set_title('Pseudo-color image from circular cursors')
 ax.imshow(pseudo_color_image)
-plt.show()
+pyplot.show()
 
 # %%
 # Elliptic cursors
@@ -114,10 +114,10 @@ plot.show()
 
 pseudo_color_image = pseudo_color(*elliptic_mask, intensity=mean)
 
-fig, ax = plt.subplots()
+fig, ax = pyplot.subplots()
 ax.set_title('Pseudo-color image from elliptic cursors and intensity')
 ax.imshow(pseudo_color_image)
-plt.show()
+pyplot.show()
 
 # %%
 # Polar cursors
@@ -159,12 +159,12 @@ pseudo_color_image = pseudo_color(
     *polar_mask, intensity=mean_thresholded, colors=CATEGORICAL[2:]
 )
 
-fig, ax = plt.subplots()
+fig, ax = pyplot.subplots()
 ax.set_title(
     'Pseudo-color image from\npolar cursors and thresholded intensity'
 )
 ax.imshow(pseudo_color_image)
-plt.show()
+pyplot.show()
 
 # %%
 # sphinx_gallery_thumbnail_number = 1
