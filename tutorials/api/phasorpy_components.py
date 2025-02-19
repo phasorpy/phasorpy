@@ -12,8 +12,8 @@ An introduction to component analysis in phasor space.
 import math
 
 import matplotlib.animation as animation
-import matplotlib.pyplot as plt
 import numpy
+from matplotlib import pyplot
 
 from phasorpy.components import (
     graphical_component_analysis,
@@ -137,13 +137,13 @@ counts = graphical_component_analysis(
     radius=radius,
 )
 
-fig, ax = plt.subplots()
+fig, ax = pyplot.subplots()
 ax.plot(fractions, counts[0], '-', label='A vs B')
 ax.set_title('Graphical solution for contributions of two components')
 ax.set_xlabel('Fraction')
 ax.set_ylabel('Counts')
 ax.legend()
-plt.show()
+pyplot.show()
 
 # %%
 # Graphical solution for contributions of three components
@@ -180,7 +180,7 @@ counts = graphical_component_analysis(
     radius=radius,
 )
 
-fig, ax = plt.subplots()
+fig, ax = pyplot.subplots()
 ax.plot(fractions, counts[0], '-', label='A vs B')
 ax.plot(fractions, counts[1], '-', label='A vs C')
 ax.plot(fractions, counts[2], '-', label='B vs C')
@@ -188,7 +188,7 @@ ax.set_title('Graphical solution for contributions of three components')
 ax.set_xlabel('Fraction')
 ax.set_ylabel('Counts')
 ax.legend()
-plt.show()
+pyplot.show()
 
 # %%
 # The graphical method for resolving the contribution of three components
@@ -198,7 +198,7 @@ plt.show()
 # For the full analysis, the process is repeated for the other combinations
 # of components, A vs C and B vs C:
 
-fig, (ax, hist) = plt.subplots(nrows=2, ncols=1, figsize=(5.5, 8))
+fig, (ax, hist) = pyplot.subplots(nrows=2, ncols=1, figsize=(5.5, 8))
 
 plot = PhasorPlot(
     frequency=frequency,
@@ -236,14 +236,14 @@ for i in range(fractions.size):
         color='red',
         alpha=0.5,
     )
-    hist_artists = plt.plot(
+    hist_artists = pyplot.plot(
         fractions[: i + 1], counts[0][: i + 1], linestyle='-', color='tab:blue'
     )
     plots.append(plot_lines + hist_artists)
 
 _ = animation.ArtistAnimation(fig, plots, interval=100, blit=True)
-plt.tight_layout()
-plt.show()
+pyplot.tight_layout()
+pyplot.show()
 
 # %%
 # sphinx_gallery_thumbnail_number = 5
