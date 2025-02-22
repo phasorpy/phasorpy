@@ -12,6 +12,7 @@ __all__: list[str] = [
     'phasor_from_polar_scalar',
     'phasor_to_polar_scalar',
     'scale_matrix',
+    'set_module',
     'sort_coordinates',
     'update_kwargs',
 ]
@@ -517,3 +518,23 @@ def chunk_iter(
                 for i in range(ndim)
             ),
         )
+
+
+def set_module(globs: dict[str, Any], /) -> None:
+    """Set ``__module__`` attribute for objects in ``__all__``.
+
+    Parameters
+    ----------
+    globs : dict
+        Module namespace to modify.
+
+    Examples
+    --------
+    >>> set_module(globals())
+
+    """
+    name = globs['__name__']
+    for item in globs['__all__']:
+        obj = globs[item]
+        if hasattr(obj, '__module__'):
+            obj.__module__ = name
