@@ -62,12 +62,10 @@ import phasorpy
 print(phasorpy.__version__)
 
 # %%
-# Besides the PhasorPy library, the `numpy <https://numpy.org/>`_ and
-# `matplotlib <https://matplotlib.org/>`_ libraries are used for
-# array computing and plotting throughout this tutorial:
+# Besides the PhasorPy library, the `numpy <https://numpy.org/>`_ library
+# is used for array computing throughout this tutorial:
 
 import numpy
-from matplotlib import pyplot
 
 # %%
 # Read signal from file
@@ -374,13 +372,13 @@ phasorplot.show()
 # pseudo-colored image:
 
 from phasorpy.cursors import pseudo_color
+from phasorpy.plot import plot_image
 
 pseudo_color_image = pseudo_color(*cursors_masks, intensity=mean)
 
-fig, ax = pyplot.subplots()
-ax.set_title('Pseudo-color image from circular cursors')
-ax.imshow(pseudo_color_image)
-pyplot.show()
+plot_image(
+    pseudo_color_image, title='Pseudo-color image from circular cursors'
+)
 
 # %%
 # Component analysis
@@ -454,10 +452,9 @@ elliptic_masks = mask_from_elliptic_cursor(
 
 pseudo_color_image = pseudo_color(*elliptic_masks, intensity=mean)
 
-fig, ax = pyplot.subplots()
-ax.set_title('Pseudo-color image from elliptic cursors')
-ax.imshow(pseudo_color_image)
-pyplot.show()
+plot_image(
+    pseudo_color_image, title='Pseudo-color image from elliptic cursors'
+)
 
 # %%
 # Appendix

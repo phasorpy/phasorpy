@@ -269,7 +269,7 @@ def parse_signal_axis(
     -------
     axis : int
         Axis over which phasor coordinates are computed.
-    axis_label: str
+    axis_label : str
         Axis label from `signal.dims` if any.
 
     Raises
