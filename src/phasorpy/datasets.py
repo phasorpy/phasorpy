@@ -494,14 +494,14 @@ def fetch(
 
     Parameters
     ----------
-    *args: str or iterable of str, optional
+    *args : str or iterable of str, optional
         Name(s) of file(s) or repositories to fetch from local storage.
         If omitted, return files in all repositories.
     extract_dir : str or None, optional
         Path, relative to cache location, where ZIP files will be unpacked.
     return_scalar : bool, optional
         If true (default), return single path as string, else tuple of string.
-    **kwargs : optional
+    **kwargs
         Additional arguments passed to ``pooch.fetch()``.
         For example, ``progressbar=True``.
 

@@ -11,15 +11,17 @@ from __future__ import annotations
 __all__ = [
     'PhasorPlot',
     'PhasorPlotFret',
+    'plot_histograms',
+    'plot_image',
     'plot_phasor',
     'plot_phasor_image',
-    'plot_signal_image',
     'plot_polar_frequency',
-    'plot_histograms',
+    'plot_signal_image',
 ]
 
 import math
 import os
+import warnings
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -1957,6 +1959,157 @@ def plot_signal_image(
         pyplot.show()
 
 
+def plot_image(
+    *images: ArrayLike,
+    percentile: float | None = None,
+    columns: int | None = None,
+    title: str | None = None,
+    labels: Sequence[str | None] | None = None,
+    show: bool = True,
+    **kwargs: Any,
+) -> None:
+    """Plot images.
+
+    Parameters
+    ----------
+    *images : array_like
+        Images to be plotted. Must be two or more dimensional.
+        The last two axes are assumed to be the image axes.
+        Other axes are averaged for display.
+        Three-dimensional images with last axis size of three or four
+        are plotted as RGB(A) images.
+    percentile : float, optional
+        The (q, 100-q) percentiles of image data are covered by colormaps.
+        By default, the complete value range is covered.
+        Does not apply to RGB images.
+    columns : int, optional
+        Number of columns in figure.
+        By default, up to four columns are used.
+    title : str, optional
+        Figure title.
+    labels : sequence of str, optional
+        Labels for each image.
+    show : bool, optional, default: True
+        Display figure.
+    **kwargs
+        Additional arguments passed to :func:`matplotlib.pyplot.imshow`.
+
+    Raises
+    ------
+    ValueError
+        Percentile is out of range.
+
+    """
+    update_kwargs(
+        kwargs, interpolation='nearest', location='right', shrink=0.5
+    )
+    cmap = kwargs.pop('cmap', None)
+    figsize = kwargs.pop('figsize', None)
+    subplot_kw = kwargs.pop('subplot_kw', {})
+    location = kwargs['location']
+    allrgb = True
+
+    arrays = []
+    shape = [1, 1]
+    for image in images:
+        image = numpy.asarray(image)
+        if image.ndim < 2:
+            raise ValueError(f'not an image {image.ndim=} < 2')
+        if image.ndim == 3 and image.shape[2] in {3, 4}:
+            # RGB(A)
+            pass
+        else:
+            allrgb = False
+            image = image.reshape(-1, *image.shape[-2:])
+            if image.shape[0] == 1:
+                image = image[0]
+            else:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', category=RuntimeWarning)
+                    image = numpy.nanmean(image, axis=0)
+            assert isinstance(image, numpy.ndarray)
+            for i in (-1, -2):
+                if image.shape[i] > shape[i]:
+                    shape[i] = image.shape[i]
+        arrays.append(image)
+
+    if columns is None:
+        n = len(arrays)
+        if n < 3:
+            columns = n
+        elif n < 5:
+            columns = 2
+        elif n < 7:
+            columns = 3
+        else:
+            columns = 4
+    rows = int(numpy.ceil(len(arrays) / columns))
+
+    vmin = None
+    vmax = None
+    if percentile is None:
+        vmin = kwargs.pop('vmin', None)
+        vmax = kwargs.pop('vmax', None)
+        if vmin is None:
+            vmin = numpy.inf
+            for image in images:
+                vmin = min(vmin, numpy.nanmin(image))
+            if vmin == numpy.inf:
+                vmin = None
+        if vmax is None:
+            vmax = -numpy.inf
+            for image in images:
+                vmax = max(vmax, numpy.nanmax(image))
+            if vmax == -numpy.inf:
+                vmax = None
+
+    # create figure with size depending on image aspect
+    fig = pyplot.figure(layout='constrained', figsize=figsize)
+    if figsize is None:
+        # TODO: find optimal figure height as a function of
+        # number of rows and columns, image shapes, labels, and colorbar
+        # presence and placements.
+        if allrgb:
+            hadd = 0.0
+        elif location == 'right':
+            hadd = 0.5
+        else:
+            hadd = 1.2
+        if labels is not None:
+            hadd += 0.3 * rows
+        w, h = fig.get_size_inches()
+        aspect = min(1.0, max(0.5, shape[0] / shape[1]))
+        fig.set_size_inches(
+            w, h * 0.9 / columns * aspect * rows + h * 0.1 * aspect + hadd
+        )
+    gs = GridSpec(rows, columns, figure=fig)
+    if title:
+        fig.suptitle(title)
+
+    axs = []
+    for i, image in enumerate(arrays):
+        ax = fig.add_subplot(gs[i // columns, i % columns], **subplot_kw)
+        ax.set_anchor('C')
+        axs.append(ax)
+        pos = _imshow(
+            ax,
+            image,
+            percentile=percentile,
+            vmin=vmin,
+            vmax=vmax,
+            cmap=cmap,
+            colorbar=percentile is not None,
+            axis=i == 0 and not subplot_kw,
+            title=None if labels is None else labels[i],
+            **kwargs,
+        )
+    if not allrgb and percentile is None:
+        fig.colorbar(pos, ax=axs, shrink=kwargs['shrink'], location=location)
+
+    if show:
+        pyplot.show()
+
+
 def plot_polar_frequency(
     frequency: ArrayLike,
     phase: ArrayLike,
@@ -2036,9 +2189,9 @@ def plot_histograms(
         Data arrays to be plotted as histograms.
     title : str, optional
         Figure title.
-    xlabel: str, optional
+    xlabel : str, optional
         Label for x-axis.
-    ylabel: str, optional
+    ylabel : str, optional
         Label for y-axis.
     labels: sequence of str, optional
         Labels for each data array.
@@ -2091,6 +2244,13 @@ def _imshow(
 
     """
     update_kwargs(kwargs, interpolation='none')
+    location = kwargs.pop('location', 'bottom')
+    if image.ndim == 3 and image.shape[2] in {3, 4}:
+        # RGB(A)
+        vmin = None
+        vmax = None
+        percentile = None
+        colorbar = False
     if percentile is not None:
         if isinstance(percentile, Sequence):
             percentile = percentile[0], percentile[1]
@@ -2103,7 +2263,7 @@ def _imshow(
             or percentile[1] > 100
         ):
             raise ValueError(f'{percentile=} out of range')
-        vmin, vmax = numpy.percentile(image, percentile)
+        vmin, vmax = numpy.nanpercentile(image, percentile)
     pos = ax.imshow(image, vmin=vmin, vmax=vmax, **kwargs)
     if colorbar:
         if percentile is not None and vmin is not None and vmax is not None:
@@ -2114,7 +2274,7 @@ def _imshow(
         if fig is not None:
             if shrink is None:
                 shrink = 0.8
-            fig.colorbar(pos, shrink=shrink, location='bottom', ticks=ticks)
+            fig.colorbar(pos, shrink=shrink, location=location, ticks=ticks)
     if title:
         ax.set_title(title)
     if not axis:

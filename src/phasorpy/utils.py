@@ -201,7 +201,7 @@ def anscombe_transformation(
 
     Parameters
     ----------
-    data: array_like
+    data : array_like
         Noisy Poisson-distributed data to be transformed.
     **kwargs
         Optional `arguments passed to numpy universal functions
@@ -250,9 +250,9 @@ def anscombe_transformation_inverse(
 
     Parameters
     ----------
-    data: array_like
+    data : array_like
         Anscombe-transformed data.
-    approx: bool, default: False
+    approx : bool, default: False
         If true, return approximation of exact unbiased inverse.
     **kwargs
         Optional `arguments passed to numpy universal functions
