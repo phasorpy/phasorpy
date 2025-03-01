@@ -270,7 +270,7 @@ signal = signal_from_lsm(fetch('paramecium.lsm'))
 plot_signal_image(signal, title=filename)
 
 # %%
-# Note that the signal is not well sampled and shows a discontinuity.
+# Note that the signal is not well sampled and shows discontinuity.
 # It may not be accurately represented by the phasor coordinates calculated
 # via DFT.
 #
@@ -583,6 +583,43 @@ with TemporaryDirectory() as tmpdir:
     assert attrs['frequency'] == frequency
     assert attrs['harmonic'] == [1, 2]
     assert attrs['description'] == 'Written by PhasorPy'
+
+# %%
+# Other means
+# -----------
+#
+# While PhasorPy provides many functions to read phasor related data and
+# metadata from file formats commonly used in the field, it is by no means
+# required to use those functions.
+# Instead, any other means that yields image stacks in numpy-array compatible
+# form can be used (for example) for advanced use cases, or when a file
+# format is not supported by PhasorPy.
+#
+# For example, most imaging software can export image data to generic
+# TIFF files.
+# The `tifffile <https://github.com/cgohlke/tifffile/>`_ library is used to
+# read a TCSPC histogram exported to a TIFF file by ImSpector software:
+
+from tifffile import imread
+
+filename = 'Embryo.tif'
+
+image_stack = imread(fetch(filename))
+
+# %%
+# Since the image stack array contains no domain-specific metadata, the
+# fundamental frequency and the axis over which to calculate phasor
+# coordinates must be known. In this case, the TCSPC histogram bins are in
+# the first array dimension:
+
+plot_signal_image(image_stack, axis=0, title=filename)
+
+mean, real, imag = phasor_from_signal(image_stack, axis=0)
+
+# %%
+# Plot the uncalibrated phasor coordinates:
+
+plot_phasor(real, imag, frequency=80.0, allquadrants=True, title=filename)
 
 # %%
 # sphinx_gallery_thumbnail_number = 3
