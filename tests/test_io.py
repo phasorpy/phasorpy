@@ -1220,8 +1220,25 @@ def test_lifetime_from_lif(format):
             lifetime_from_lif(filename)
 
 
-@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_signal_from_lif():
+    """Test read hyperspectral signal from Leica LIF file."""
+    filename = fetch('Convalaria_LambdaScan.lif')
+    signal = signal_from_lif(filename)
+    assert signal.dims == ('C', 'Y', 'X')
+    assert signal.shape == (29, 512, 512)
+    assert signal.dtype == numpy.uint16
+    assert numpy.round(signal.mean(), 2) == 62.59
+    assert_allclose(signal.coords['C'].data[[0, -1]], [420.0, 700.0])
+
+    # file does not contain hyperspectral signal
+    filename = fetch('FLIM_testdata.lif')
+    with pytest.raises(ValueError):
+        signal_from_lif(filename)
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_signal_from_lif_private():
     """Test read hyperspectral signal from Leica LIF file."""
     filename = private_file('ScanModesExamples.lif')
     signal = signal_from_lif(filename)
@@ -1245,15 +1262,6 @@ def test_signal_from_lif():
     assert signal.dims == ('C', 'Y', 'X')
     assert signal.shape == (10, 128, 128)
     assert_allclose(signal.coords['C'].data[[0, 1]], [470.0, 492.0])
-
-    # image does not contain dim
-    with pytest.raises(ValueError):
-        signal_from_lif(filename, image='XYZLambdaT', dim='Λ')
-
-    # file does not contain hyperspectral signal
-    filename = fetch('FLIM_testdata.lif')
-    with pytest.raises(ValueError):
-        signal_from_lif(filename)
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

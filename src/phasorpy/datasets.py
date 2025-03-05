@@ -327,6 +327,22 @@ ZENODO_14860228 = pooch.create(
     },
 )
 
+ZENODO_14976703 = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/zenodo_14976703'
+        if DATA_ON_GITHUB
+        else 'doi:10.5281/zenodo.14976703'
+    ),
+    env=ENV,
+    registry={
+        'Convalaria_LambdaScan.lif': (
+            'sha256:'
+            '27f1282cf02f87e11f8c7d3064066a4517ad4c9c769c796b32e459774f18c62a'
+        ),
+    },
+)
+
 CONVALLARIA_FBD = pooch.create(
     path=pooch.os_cache('phasorpy'),
     base_url=(
@@ -472,6 +488,7 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'napari-flim-phasor-plotter': NAPARI_FLIM_PHASOR_PLOTTER,
     'zenodo-13625087': ZENODO_13625087,
     'zenodo-14860228': ZENODO_14860228,
+    'zenodo-14976703': ZENODO_14976703,
     'convallaria-fbd': CONVALLARIA_FBD,
     'flimlabs': FLIMLABS,
     'figshare_22336594': FIGSHARE_22336594,

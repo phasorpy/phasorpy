@@ -5,8 +5,9 @@ File input/output
 Read and write phasor-related data from and to various file formats.
 
 The :py:mod:`phasorpy.io` module provides functions to read phasor
-coordinates, FLIM/TCSPC histograms, hyperspectral image stacks, lifetime
-images, and relevant metadata from various file formats used in bio-imaging.
+coordinates, TCSPC time-delay histograms, cross-correlation phase histograms,
+hyperspectral image stacks, lifetime images, and relevant metadata from
+various file formats used in bio-imaging.
 The module also includes functions to write phasor coordinates to OME-TIFF
 and SimFCS Referenced files.
 
@@ -68,6 +69,9 @@ print(filename)
 # PhasorPy currently supports reading hyperspectral images,
 # phasor coordinates, and lifetime images from Leica image files via the
 # `liffile <https://github.com/cgohlke/liffile/>`_ library.
+#
+# FLIM
+# ....
 #
 # LIF-FLIM files that were analyzed with the LAS X software contain
 # calculated phasor coordinates, lifetime images, and relevant metadata.
@@ -154,9 +158,37 @@ plot_histograms(
 #   files to PicoQuant PTU format by the LAS X software.
 
 # %%
-# .. todo::
-#   No public, hyperspectral dataset in LIF format is currently available
-#   for demonstrating the :py:func:`phasorpy.io.signal_from_lif` function.
+# Hyperspectral
+# .............
+#
+# The :py:func:`phasorpy.io.signal_from_lif` function is used to read a
+# hyperspectral image stack from the `Convalaria_LambdaScan.lif
+# <https://zenodo.org/records/14976703>`_ dataset containing images acquired
+# at 29 emission wavelengths:
+
+from phasorpy.io import signal_from_lif
+
+filename = 'Convalaria_LambdaScan.lif'
+signal = signal_from_lif(fetch(filename))
+
+plot_signal_image(signal, title=filename, vmin=0, xlabel='wavelength (nm)')
+
+# %%
+# Emission wavelengths (in nm) are available in the coordinates of the
+# channel axis:
+
+print(signal.coords['C'].values.astype(int))
+
+# %%
+# Plot the first harmonic phasor coordinates after applying a median filter:
+
+plot_phasor(
+    *phasor_threshold(
+        *phasor_filter_median(*phasor_from_signal(signal)), mean_min=1
+    )[1:],
+    allquadrants=True,
+    title=filename,
+)
 
 # %%
 # PicoQuant PTU
@@ -182,7 +214,7 @@ from phasorpy.io import signal_from_ptu
 filename = 'FLIM_testdata.lif.ptu'
 signal = signal_from_ptu(fetch(filename), channel=0, frame=0, keepdims=False)
 
-plot_signal_image(signal, title=filename)
+plot_signal_image(signal, title=filename, xlabel='delay-time (ns)')
 
 # %%
 # The TCSPC histogram contains more photons than the phasor intensity image
@@ -267,7 +299,7 @@ from phasorpy.io import signal_from_lsm
 filename = 'paramecium.lsm'
 signal = signal_from_lsm(fetch('paramecium.lsm'))
 
-plot_signal_image(signal, title=filename)
+plot_signal_image(signal, title=filename, xlabel='wavelength (nm)')
 
 # %%
 # Note that the signal is not well sampled and shows discontinuity.
@@ -280,7 +312,7 @@ plot_signal_image(signal, title=filename)
 print(signal.coords['C'].values.astype(int))
 
 # %%
-# Plot the first harmonic phasor coordinates after applying a median filter.
+# Plot the first harmonic phasor coordinates after applying a median filter:
 
 plot_phasor(
     *phasor_threshold(
@@ -309,7 +341,7 @@ from phasorpy.io import signal_from_sdt
 filename = 'tcspc.sdt'
 signal = signal_from_sdt(fetch(filename))
 
-plot_signal_image(signal, title=filename)
+plot_signal_image(signal, title=filename, xlabel='delay-time (ns)')
 
 # %%
 # Plot the uncalibrated phasor coordinates:
@@ -333,17 +365,19 @@ plot_phasor(
 # -----------
 #
 # FLIMbox data files, FBD, are written by SimFCS and ISS software.
-# They contain encoded TCSPC lifetime histograms from digital frequency-domain
-# measurements acquired with the FLIMbox device. Newer file versions
-# contain metadata. The file format is undocumented, not standardized,
-# and files are frequently found corrupted. It is recommended to export
-# FLIMbox data to another format from the software used to acquire the data.
+# They contain encoded cross-correlation phase histograms from digital
+# frequency-domain measurements acquired with a FLIMbox device.
+# Newer file versions also contain metadata.
+#
+# The FBD file format is undocumented, not standardized, and files are
+# frequently found corrupted. It is recommended to export FLIMbox data to
+# another format from the software used to acquire the data.
 #
 # PhasorPy supports reading some FLIMbox FBD files via the
 # `lfdfiles <https://github.com/cgohlke/lfdfiles/>`_ library.
 #
 # The :py:func:`phasorpy.io.signal_from_fbd` function is used to read
-# a TCSPC lifetime histograms from the
+# a phase histograms from the
 # `Convallaria <https://zenodo.org/records/14026720>`_ dataset, which was
 # acquired at the second harmonic. The dataset is a time series of two
 # channels. Since the photon count is low and the second channel empty,
@@ -357,7 +391,9 @@ signal = signal_from_fbd(fetch(filename), frame=-1, channel=0)
 frequency = signal.attrs['frequency'] * signal.attrs['harmonic']
 print(signal.sizes)
 
-plot_signal_image(signal, title=filename)
+plot_signal_image(
+    signal, title=filename, xlabel='cross-correlation phase (rad)'
+)
 
 # %%
 # The measurement of a solution of Rhodamine 110 with known lifetime of 4 ns
@@ -369,7 +405,11 @@ reference_signal = signal_from_fbd(
 )
 reference_lifetime = 4.0
 
-plot_signal_image(reference_signal, title=reference_filename)
+plot_signal_image(
+    reference_signal,
+    title=reference_filename,
+    xlabel='cross-correlation phase (rad)',
+)
 
 # %%
 # Phasor coordinates are calculated from the signal and calibrated with
@@ -612,7 +652,7 @@ image_stack = imread(fetch(filename))
 # coordinates must be known. In this case, the TCSPC histogram bins are in
 # the first array dimension:
 
-plot_signal_image(image_stack, axis=0, title=filename)
+plot_signal_image(image_stack, axis=0, title=filename, xlabel='index')
 
 mean, real, imag = phasor_from_signal(image_stack, axis=0)
 

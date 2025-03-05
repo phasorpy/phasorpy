@@ -1865,6 +1865,7 @@ def plot_signal_image(
     axis: int | str | None = None,
     percentile: float | Sequence[float] | None = None,
     title: str | None = None,
+    xlabel: str | None = None,
     show: bool = True,
     **kwargs: Any,
 ) -> None:
@@ -1890,6 +1891,8 @@ def plot_signal_image(
         for `real` and `imag` the range [-1..1].
     title : str, optional
         Figure title.
+    xlabel : str, optional
+        Label of axis over which phasor coordinates would be computed.
     show : bool, optional, default: True
         Display figure.
     **kwargs
@@ -1944,6 +1947,11 @@ def plot_signal_image(
         ax.set_title(f'{axis=}')
         ax.plot(numpy.nanmean(signal, axis=tuple(axes)))
 
+    ax.set_ylim(kwargs.get('vmin', None), kwargs.get('vmax', None))
+
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+
     # image
     axes = list(sorted(axes[:-2] + [axis]))
     ax = fig.add_subplot(gs[0, 0])
@@ -1953,6 +1961,7 @@ def plot_signal_image(
         percentile=percentile,
         shrink=0.5,
         title='mean',
+        **kwargs,
     )
 
     if show:
