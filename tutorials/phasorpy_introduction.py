@@ -100,7 +100,7 @@ print(signal.shape, signal.dtype)
 
 from phasorpy.plot import plot_signal_image
 
-plot_signal_image(signal, axis='H')
+plot_signal_image(signal, axis='H', xlabel='delay-time (ns)')
 
 # %%
 # Calculate phasor coordinates
@@ -401,7 +401,12 @@ from phasorpy.io import signal_from_lsm
 
 hyperspectral_signal = signal_from_lsm(fetch('paramecium.lsm'))
 
-plot_signal_image(hyperspectral_signal, axis=0, title='Hyperspectral image')
+plot_signal_image(
+    hyperspectral_signal,
+    axis=0,
+    title='Hyperspectral image',
+    xlabel='wavelength (nm)',
+)
 
 # %%
 # Calculate phasor coordinates at the first harmonic and filter out

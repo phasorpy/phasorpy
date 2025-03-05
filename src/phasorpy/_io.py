@@ -98,7 +98,7 @@ Axes character codes from the OME model and tifffile library are used as
 - ``'Z'`` : depth (OME)
 - ``'S'`` : sample (color components or phasor coordinates)
 - ``'I'`` : sequence (of images, frames, or planes)
-- ``'T'`` : time  (OME)
+- ``'T'`` : time (OME)
 - ``'C'`` : channel (OME. Acquisition path or emission wavelength)
 - ``'A'`` : angle (OME)
 - ``'P'`` : phase (OME. In LSM, ``'P'`` maps to position)
@@ -1113,7 +1113,7 @@ def lifetime_from_lif(
     /,
     image: str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
-    """Return fluorescence lifetime image and metadata from Leica image file.
+    """Return lifetime image and metadata from Leica image file.
 
     Leica image files may contain fluorescence lifetime images and metadata
     from the analysis of FLIM measurements.
@@ -1406,7 +1406,7 @@ def signal_from_flimlabs_json(
     """Return TCSPC histogram and metadata from FLIM LABS JSON imaging file.
 
     FLIM LABS JSON imaging files contain encoded, multi-channel TCSPC
-    histogram images and metadata from digital frequency-domain measurements.
+    histograms and metadata from digital frequency-domain measurements.
 
     Parameters
     ----------
@@ -1416,17 +1416,16 @@ def signal_from_flimlabs_json(
     channel : int, optional
         If None (default), return all channels, else return specified channel.
     dtype : dtype-like, optional, default: uint16
-        Unsigned integer type of image histogram array.
+        Unsigned integer type of TCSPC histogram.
         Increase the bit-depth for high photon counts.
 
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram image stack.
-        A 3 or 4-dimensional array of type `dtype` in dimension order
-        ``'CYXH'``.
+        TCSPC histogram with :ref:`axes codes <axes>` ``'CYXH'`` and
+        type specified in ``dtype``:
 
-        - ``coords['H']``: times of histogram bins in ns.
+        - ``coords['H']``: delay-times of histogram bins in ns.
         - ``attrs['frequency']``: laser repetition frequency in MHz.
         - ``attrs['flimlabs_header']``: FLIM LABS file header.
 
@@ -1548,8 +1547,6 @@ def signal_from_lif(
 
     Leica image files may contain hyperspectral images and metadata from laser
     scanning microscopy measurements.
-    Reading of TCSPC histograms from FLIM measurements is not supported
-    because the compression scheme is patent-pending.
 
     Parameters
     ----------
@@ -1581,6 +1578,9 @@ def signal_from_lif(
     -----
     The implementation is based on the
     `liffile <https://github.com/cgohlke/liffile/>`__ library.
+
+    Reading of TCSPC histograms from FLIM measurements is not supported
+    because the compression scheme is patent-pending.
 
     Examples
     --------
@@ -1747,7 +1747,7 @@ def signal_from_imspector_tiff(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
-    """Return FLIM image stack and metadata from ImSpector TIFF file.
+    """Return TCSPC histogram and metadata from ImSpector TIFF file.
 
     Parameters
     ----------
@@ -1757,10 +1757,10 @@ def signal_from_imspector_tiff(
     Returns
     -------
     xarray.DataArray
-        TCSPC image stack.
-        Usually, a 3-to-5-dimensional array of type ``uint16``.
+        TCSPC histogram with :ref:`axes codes <axes>` ``'HTZYX'`` and
+        type ``uint16``.
 
-        - ``coords['H']``: times of histogram bins in ns.
+        - ``coords['H']``: delay-times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
 
     Raises
@@ -1901,7 +1901,7 @@ def signal_from_sdt(
     *,
     index: int = 0,
 ) -> DataArray:
-    """Return time-resolved image and metadata from Becker & Hickl SDT file.
+    """Return TCSPC histogram and metadata from Becker & Hickl SDT file.
 
     SDT files contain TCSPC measurement data and instrumentation parameters.
 
@@ -1915,11 +1915,10 @@ def signal_from_sdt(
     Returns
     -------
     xarray.DataArray
-        Time-correlated single-photon counting image data with
-        :ref:`axes codes <axes>` ``'YXH'`` and type ``uint16``, ``uint32``,
-        or ``float32``.
+        TCSPC histogram with :ref:`axes codes <axes>` ``'YXH'`` and
+        type ``uint16``, ``uint32``, or ``float32``.
 
-        - ``coords['H']``: times of histogram bins in ns.
+        - ``coords['H']``: delay-times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
 
     Raises
@@ -1990,8 +1989,8 @@ def signal_from_ptu(
 ) -> DataArray:
     """Return TCSPC histogram and metadata from PicoQuant PTU T3 mode file.
 
-    PTU files contain time-correlated single-photon counting measurement data
-    and instrumentation parameters.
+    PTU files contain TCSPC measurement data and instrumentation parameters,
+    which are decoded to a multi-dimensional TCSPC histogram.
 
     Parameters
     ----------
@@ -2010,7 +2009,7 @@ def signal_from_ptu(
     trimdims : str, optional, default: 'TCH'
         Axes to trim.
     dtype : dtype-like, optional, default: uint16
-        Unsigned integer type of image histogram array.
+        Unsigned integer type of TCSPC histogram.
         Increase the bit depth to avoid overflows when integrating.
     frame : int, optional
         If < 0, integrate time axis, else return specified frame.
@@ -2019,9 +2018,9 @@ def signal_from_ptu(
         If < 0, integrate channel axis, else return specified channel.
         Overrides `selection` for axis ``C``.
     dtime : int, optional, default: 0
-        Specifies number of bins in image histogram.
+        Specifies number of bins in TCSPC histogram.
         If 0 (default), return the number of bins in one period.
-        If < 0, integrate delay time axis (image mode only).
+        If < 0, integrate delay-time axis (image mode only).
         If > 0, return up to specified bin.
         Overrides `selection` for axis ``H``.
     keepdims : bool, optional, default: True
@@ -2030,11 +2029,10 @@ def signal_from_ptu(
     Returns
     -------
     xarray.DataArray
-        Decoded TTTR T3 records as up to 5-dimensional image array
-        with :ref:`axes codes <axes>` ``'TYXCH'`` and type specified
-        in ``dtype``:
+        TCSPC histogram with :ref:`axes codes <axes>` ``'TYXCH'`` and
+        type specified in ``dtype``:
 
-        - ``coords['H']``: times of histogram bins in ns.
+        - ``coords['H']``: delay-times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
         - ``attrs['ptu_tags']``: metadata read from PTU file.
 
@@ -2120,9 +2118,9 @@ def signal_from_flif(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
-    """Return frequency-domain image and metadata from FlimFast FLIF file.
+    """Return phase images and metadata from FlimFast FLIF file.
 
-    FlimFast FLIF files contain camera images and metadata from
+    FlimFast FLIF files contain phase images and metadata from full-field,
     frequency-domain fluorescence lifetime measurements.
 
     Parameters
@@ -2133,8 +2131,8 @@ def signal_from_flif(
     Returns
     -------
     xarray.DataArray
-        Frequency-domain phase images with :ref:`axes codes <axes>` ``'THYX'``
-        and type ``uint16``:
+        Phase images with :ref:`axes codes <axes>` ``'THYX'`` and
+        type ``uint16``:
 
         - ``coords['H']``: phases in radians.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -2209,10 +2207,10 @@ def signal_from_fbd(
     keepdims: bool = True,
     laser_factor: float = -1.0,
 ) -> DataArray:
-    """Return frequency-domain image and metadata from FLIMbox FBD file.
+    """Return phase histogram and metadata from FLIMbox FBD file.
 
-    FDB files contain encoded data from the FLIMbox device, which can be
-    decoded to photon arrival windows, channels, and global times.
+    FDB files contain encoded cross-correlation phase histograms from
+    digital frequency-domain measurements using a FLIMbox device.
     The encoding scheme depends on the FLIMbox device's firmware.
     The FBD file format is undocumented.
 
@@ -2238,12 +2236,12 @@ def signal_from_fbd(
     Returns
     -------
     xarray.DataArray
-        Frequency-domain image histogram with :ref:`axes codes <axes>`
-        ``'TCYXH'`` and type ``uint16``:
+        Phase histogram with :ref:`axes codes <axes>` ``'TCYXH'`` and
+        type ``uint16``:
 
-        - ``coords['H']``: phases in radians.
+        - ``coords['H']``: cross-correlation phases in radians.
         - ``attrs['frequency']``: repetition frequency in MHz.
-        - ``attrs['harmonic']``: harmonic contained in histogram.
+        - ``attrs['harmonic']``: harmonic contained in phase histogram.
         - ``attrs['flimbox_header']``: FBD binary header, if any.
         - ``attrs['flimbox_firmware']``: FLIMbox firmware settings, if any.
         - ``attrs['flimbox_settings']``: Settings from FBS XML, if any.
@@ -2352,7 +2350,7 @@ def signal_from_b64(
     Returns
     -------
     xarray.DataArray
-        Stack of square-sized intensity images of type ``int16``.
+        Intensity image of type ``int16``.
 
     Raises
     ------
@@ -2401,11 +2399,10 @@ def signal_from_z64(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
-    """Return image and metadata from SimFCS Z64 file.
+    """Return image stack and metadata from SimFCS Z64 file.
 
-    Z64 files contain stacks of square images such as intensity volumes
-    or time-domain fluorescence lifetime histograms acquired from
-    Becker & Hickl(r) TCSPC cards. Z64 files contain no metadata.
+    Z64 files commonly contain stacks of square images, such as intensity
+    volumes or TCSPC histograms. Z64 files contain no metadata.
 
     Parameters
     ----------
@@ -2415,7 +2412,7 @@ def signal_from_z64(
     Returns
     -------
     xarray.DataArray
-        Single or stack of square-sized images of type ``float32``.
+        Image stack of type ``float32``.
 
     Raises
     ------
@@ -2455,11 +2452,10 @@ def signal_from_bh(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
-    """Return image and metadata from SimFCS B&H file.
+    """Return TCSPC histogram and metadata from SimFCS B&H file.
 
-    B&H files contain time-domain fluorescence lifetime histogram data,
-    acquired from Becker & Hickl(r) TCSPC cards, or converted from other
-    data sources. B&H files contain no metadata.
+    B&H files contain TCSPC histograms acquired from Becker & Hickl
+    cards, or converted from other data sources. B&H files contain no metadata.
 
     Parameters
     ----------
@@ -2469,7 +2465,7 @@ def signal_from_bh(
     Returns
     -------
     xarray.DataArray
-        Time-domain fluorescence lifetime histogram with axes ``'HYX'``,
+        TCSPC histogram with ref:`axes codes <axes>` ``'HYX'``,
         shape ``(256, 256, 256)``, and type ``float32``.
 
     Raises
@@ -2511,11 +2507,10 @@ def signal_from_bhz(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
-    """Return image and metadata from SimFCS BHZ file.
+    """Return TCSPC histogram and metadata from SimFCS BHZ file.
 
-    BHZ files contain time-domain fluorescence lifetime histogram data,
-    acquired from Becker & Hickl(r) TCSPC cards, or converted from other
-    data sources. BHZ files contain no metadata.
+    BHZ files contain TCSPC histograms acquired from Becker & Hickl
+    cards, or converted from other data sources. BHZ files contain no metadata.
 
     Parameters
     ----------
@@ -2525,7 +2520,7 @@ def signal_from_bhz(
     Returns
     -------
     xarray.DataArray
-        Time-domain fluorescence lifetime histogram with axes ``'HYX'``,
+        TCSPC histogram with ref:`axes codes <axes>` ``'HYX'``,
         shape ``(256, 256, 256)``, and type ``float32``.
 
     Raises
