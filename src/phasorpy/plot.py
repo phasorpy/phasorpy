@@ -1947,6 +1947,8 @@ def plot_signal_image(
         ax.set_title(f'{axis=}')
         ax.plot(numpy.nanmean(signal, axis=tuple(axes)))
 
+    ax.set_ylim(kwargs.get('vmin', None), kwargs.get('vmax', None))
+
     if xlabel is not None:
         ax.set_xlabel(xlabel)
 

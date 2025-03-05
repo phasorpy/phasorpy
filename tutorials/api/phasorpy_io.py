@@ -70,6 +70,9 @@ print(filename)
 # phasor coordinates, and lifetime images from Leica image files via the
 # `liffile <https://github.com/cgohlke/liffile/>`_ library.
 #
+# FLIM
+# ....
+#
 # LIF-FLIM files that were analyzed with the LAS X software contain
 # calculated phasor coordinates, lifetime images, and relevant metadata.
 # The :py:func:`phasorpy.io.phasor_from_lif` and
@@ -155,9 +158,37 @@ plot_histograms(
 #   files to PicoQuant PTU format by the LAS X software.
 
 # %%
-# .. todo::
-#   No public, hyperspectral dataset in LIF format is currently available
-#   for demonstrating the :py:func:`phasorpy.io.signal_from_lif` function.
+# Hyperspectral
+# .............
+#
+# The :py:func:`phasorpy.io.signal_from_lif` function is used to read a
+# hyperspectral image stack from the `Convalaria_LambdaScan.lif
+# <https://zenodo.org/records/14976703>`_ dataset containing images acquired
+# at 29 emission wavelengths:
+
+from phasorpy.io import signal_from_lif
+
+filename = 'Convalaria_LambdaScan.lif'
+signal = signal_from_lif(fetch(filename))
+
+plot_signal_image(signal, title=filename, vmin=0, xlabel='wavelength (nm)')
+
+# %%
+# Emission wavelengths (in nm) are available in the coordinates of the
+# channel axis:
+
+print(signal.coords['C'].values.astype(int))
+
+# %%
+# Plot the first harmonic phasor coordinates after applying a median filter:
+
+plot_phasor(
+    *phasor_threshold(
+        *phasor_filter_median(*phasor_from_signal(signal)), mean_min=1
+    )[1:],
+    allquadrants=True,
+    title=filename,
+)
 
 # %%
 # PicoQuant PTU
@@ -281,7 +312,7 @@ plot_signal_image(signal, title=filename, xlabel='wavelength (nm)')
 print(signal.coords['C'].values.astype(int))
 
 # %%
-# Plot the first harmonic phasor coordinates after applying a median filter.
+# Plot the first harmonic phasor coordinates after applying a median filter:
 
 plot_phasor(
     *phasor_threshold(

@@ -420,7 +420,14 @@ def test_plot_signal_image():
     data_ %= math.prod(shape[-2:])
     data = data_ / math.prod(shape[-2:])
 
-    plot_signal_image(data, title='default', xlabel='xlabel', show=INTERACTIVE)
+    plot_signal_image(
+        data,
+        vmin=0,
+        vmax=1,
+        title='default',
+        xlabel='xlabel',
+        show=INTERACTIVE,
+    )
     pyplot.close()
     plot_signal_image(data, axis=0, title='axis 0', show=INTERACTIVE)
     pyplot.close()
