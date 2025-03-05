@@ -329,7 +329,11 @@ ZENODO_14860228 = pooch.create(
 
 CONVALLARIA_FBD = pooch.create(
     path=pooch.os_cache('phasorpy'),
-    base_url='doi:10.5281/zenodo.14026719',
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/zenodo_14026720'
+        if DATA_ON_GITHUB
+        else 'doi:10.5281/zenodo.14026719'
+    ),
     env=ENV,
     registry={
         'Convallaria_$EI0S.fbd': (
@@ -449,6 +453,18 @@ FIGSHARE_22336594_EXPORTED = pooch.create(
     },
 )
 
+MISC = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url='https://github.com/phasorpy/phasorpy-data/raw/main/misc',
+    env=ENV,
+    registry={
+        'NADHandSHG.ifli': (
+            'sha256:'
+            'dfa65952850b8a222258776a8a14eb1ab7e70ff5f62b58aa2214797c5921b4a3'
+        ),
+    },
+)
+
 REPOSITORIES: dict[str, pooch.Pooch] = {
     'tests': TESTS,
     'lfd-workshop': LFD_WORKSHOP,
@@ -460,6 +476,7 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'flimlabs': FLIMLABS,
     'figshare_22336594': FIGSHARE_22336594,
     'figshare_22336594_exported': FIGSHARE_22336594_EXPORTED,
+    'misc': MISC,
 }
 """Pooch repositories."""
 
@@ -477,14 +494,14 @@ def fetch(
 
     Parameters
     ----------
-    *args: str or iterable of str, optional
+    *args : str or iterable of str, optional
         Name(s) of file(s) or repositories to fetch from local storage.
         If omitted, return files in all repositories.
     extract_dir : str or None, optional
         Path, relative to cache location, where ZIP files will be unpacked.
     return_scalar : bool, optional
         If true (default), return single path as string, else tuple of string.
-    **kwargs : optional
+    **kwargs
         Additional arguments passed to ``pooch.fetch()``.
         For example, ``progressbar=True``.
 
