@@ -12,7 +12,7 @@ An introduction to clustering phasor points to be used with cursors.
 import matplotlib.pyplot as plt
 import numpy
 
-from phasorpy.clustering import gaussian_mixture_model
+from phasorpy.cluster import phasor_cluster_gmm
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursors import (
     mask_from_circular_cursor,
@@ -72,12 +72,10 @@ mean_filtered, real_filtered, imag_filtered = phasor_threshold(
 
 n_components = 2
 
-centers_real, centers_imag, radio, radius_minor, angles = (
-    gaussian_mixture_model(
-        real_filtered,
-        imag_filtered,
-        n_components=n_components,
-    )
+centers_real, centers_imag, radio, radius_minor, angles = phasor_cluster_gmm(
+    real_filtered,
+    imag_filtered,
+    n_components=n_components,
 )
 
 # ====================================================
@@ -120,12 +118,10 @@ plt.show()
 # =============================================================================
 n_components = 1  # This is a test, to try and improve the results from GMM.
 
-centers_real, centers_imag, radio, radius_minor, angles = (
-    gaussian_mixture_model(
-        real_filtered,
-        imag_filtered,
-        n_components=n_components,
-    )
+centers_real, centers_imag, radio, radius_minor, angles = phasor_cluster_gmm(
+    real_filtered,
+    imag_filtered,
+    n_components=n_components,
 )
 modulation_center = []
 phase_center = []

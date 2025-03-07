@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__ = ['gaussian_mixture_model']
+__all__ = ['phasor_cluster_gmm']
 
 from typing import TYPE_CHECKING
 
@@ -16,7 +16,7 @@ import numpy
 from sklearn.mixture import GaussianMixture
 
 
-def gaussian_mixture_model(
+def phasor_cluster_gmm(
     real: ArrayLike,
     imag: ArrayLike,
     n_components: int,
@@ -85,7 +85,7 @@ def gaussian_mixture_model(
 
     >>> n_components = 2
     >>> centers_real, centers_imag, radio, radius_minor, angles = (
-    ...     gaussian_mixture_model(real, imag, n_components=n_components)
+    ...     phasor_cluster_gmm(real, imag, n_components=n_components)
     ... )
 
     """
@@ -118,13 +118,13 @@ def gaussian_mixture_model(
         nan_found = 1
 
         real_reshaped = numpy.nan_to_num(
-            real_reshaped
+            real_reshaped, nan=2
         )  # sklearn does not like nan's at all.
-        imag_reshaped = numpy.nan_to_num(imag_reshaped)
+        imag_reshaped = numpy.nan_to_num(imag_reshaped, nan=2)
 
         # It has to be number of components + one,
         # I could not make it work around the nan's,
-        # and it creates another cluster on zero
+        # and it creates another cluster on (2,2)
         # in order to solve that problem.
         n_components = n_components + 1
 
@@ -164,7 +164,7 @@ def gaussian_mixture_model(
         magnitude = numpy.linalg.norm(gm.means_[n, :])
 
         if nan_found:
-            if magnitude == 0:
+            if magnitude == numpy.sqrt(8):
                 index_del = n
                 # Variable only defined if there was a nan.
 

@@ -21,7 +21,7 @@ dependencies = [
     "pooch",
     "tqdm",
     # "scikit-image>=0.20.0",
-    # "scikit-learn>=1.2.2",
+    "scikit-learn>=1.2.2",
     # "pandas>=2.0.0",
     "xarray>=2023.4.0",
     "tifffile>=2024.8.30",
@@ -189,5 +189,5 @@ norecursedirs = [
 
 [tool.cibuildwheel]
 skip = "pp* cp37* cp38* cp39* *musllinux* *i686 *ppc64le *s390x cp39*win*arm64 cp310*win*arm64"
-test-requires = ["lfdfiles", "sdtfile", "ptufile", "liffile", "pawflim", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage"]
+test-requires = ["lfdfiles", "sdtfile", "ptufile", "liffile", "pawflim", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage", "scikit-learn"]
 test-command = "pytest {project}/tests"

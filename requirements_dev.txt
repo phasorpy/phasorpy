@@ -55,7 +55,7 @@ pre-commit-hooks
 #
 # optional requirements
 # scikit-image
-# scikit-learn
+scikit-learn
 # pandas
 # zarr
 # fsspec
