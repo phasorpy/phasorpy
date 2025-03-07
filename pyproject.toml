@@ -144,7 +144,7 @@ strict = true
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = ["phasorpy._phasorpy", "pooch.*", "scipy.*", "mkl_fft.*"]
+module = ["phasorpy._phasorpy", "pooch.*", "scipy.*", "mkl_fft.*", "sklearn.*"]
 ignore_missing_imports = true
 
 [tool.coverage.run]

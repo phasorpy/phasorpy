@@ -1,6 +1,6 @@
 """
 Clustering
-=======
+==========
 
 An introduction to clustering phasor points to be used with cursors.
 
@@ -12,9 +12,7 @@ An introduction to clustering phasor points to be used with cursors.
 import matplotlib.pyplot as plt
 import numpy
 
-# import clustering # To be solved!!!
-from clustering import gaussian_mixture_model
-
+from phasorpy.clustering import gaussian_mixture_model
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursors import (
     mask_from_circular_cursor,
@@ -71,9 +69,6 @@ mean_filtered, real_filtered, imag_filtered = phasor_threshold(
 # ====================================================
 # ====================clustering======================
 # ====================================================
-
-import clustering
-from clustering import gaussian_mixture_model
 
 n_components = 2
 

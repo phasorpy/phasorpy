@@ -68,6 +68,8 @@ def gaussian_mixture_model(
     >>> component_fractions = [0.7, 0.3]
     >>> frequency = 80.0  # MHz
 
+    >>> from phasorpy.phasor import phasor_from_lifetime
+
     >>> real, imag = phasor_from_lifetime(
     ...     frequency, component_lifetimes, component_fractions
     ... )
