@@ -18,7 +18,7 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`signal_from_bhz` - SimFCS BHZ
   - :py:func:`signal_from_bh` - SimFCS B&H
 
-- read phasor coordinates and lifetime images, as well as metadata from
+- read phasor coordinates, lifetime images, and metadata from
   specialized file formats:
 
   - :py:func:`phasor_from_ometiff` - PhasorPy OME-TIFF
@@ -62,7 +62,7 @@ where ``ext`` indicates the file format and ``kwargs`` are optional arguments
 passed to the underlying file reader library or used to select which data is
 returned. The returned `xarray.DataArray
 <https://docs.xarray.dev/en/stable/user-guide/data-structures.html>`_
-contains an n-dimensional array with labeled coordinates, dimensions, and
+contains an N-dimensional array with labeled coordinates, dimensions, and
 attributes:
 
 - ``data`` or ``values`` (*array_like*)
@@ -195,8 +195,9 @@ def phasor_to_ometiff(
 
     By default, write phasor coordinates as single precision floating point
     values to separate image series.
-    Write images larger than (1024, 1024) as (256, 256) tiles, datasets
-    larger than 2 GB as BigTIFF, and datasets larger than 8 KB zlib-compressed.
+    Write images larger than (1024, 1024) pixels as (256, 256) tiles, datasets
+    larger than 2 GB as BigTIFF, and datasets larger than 8 KB using
+    zlib compression.
 
     This file format is experimental and might be incompatible with future
     versions of this library. It is intended for temporarily exchanging
@@ -383,7 +384,10 @@ def phasor_from_ometiff(
     *,
     harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
-    """Return phasor coordinates and metadata from PhasorPy OME-TIFF.
+    """Return phasor coordinates and metadata from PhasorPy OME-TIFF file.
+
+    PhasorPy OME-TIFF files contain phasor mean intensity, real and imaginary
+    components, along with frequency and harmonic information.
 
     Parameters
     ----------
@@ -673,7 +677,7 @@ def phasor_to_simfcs_referenced(
     if size is None:
         size = min(256, max(4, sizey, sizex))
     elif not 4 <= size <= 65535:
-        raise ValueError(f'{size=} out of range [4..65535]')
+        raise ValueError(f'{size=} out of range [4, 65535]')
 
     harmonics_per_file = 2  # TODO: make this a parameter?
     chunk_shape = tuple(
@@ -1491,7 +1495,7 @@ def signal_from_flimlabs_json(
 
     if channel is not None:
         if channel >= nchannels or channel < 0:
-            raise IndexError(f'{channel=} not in range(0, {nchannels=})')
+            raise IndexError(f'{channel=} out of range[0, {nchannels=}]')
         nchannels = 1
 
     if 'data' in data:
@@ -2595,7 +2599,8 @@ def _squeeze_dims(
 ) -> tuple[tuple[int, ...], tuple[str, ...], tuple[bool, ...]]:
     """Return shape and axes with length-1 dimensions removed.
 
-    Remove unused dimensions unless their axes are listed in `skip`.
+    Remove unused dimensions unless their axes are listed in the `skip`
+    parameter.
 
     Adapted from the tifffile library.
 

@@ -42,12 +42,11 @@ from phasorpy.plot import (
 # Sample files
 # ------------
 #
-# PhasorPy provides access to sample files in various formats shared publicly
-# on Zenodo, Figshare, or GitHub.
-# The files in these repositories are accessed using the
-# :py:func:`phasorpy.datasets.fetch` function, which transparently downloads
-# files if they were not already downloaded before. The function returns
-# the path to the downloaded file:
+# PhasorPy provides access to curated sample files in various formats
+# that are shared publicly on Zenodo, Figshare, and GitHub repositories.
+# The files can be accessed using the :py:func:`phasorpy.datasets.fetch`
+# function, which transparently downloads files and caches them locally.
+# The function returns the path to the downloaded file:
 
 from phasorpy.datasets import fetch  # isort: skip
 
@@ -55,7 +54,7 @@ filename = fetch('FLIM_testdata.lif')
 print(filename)
 
 # %%
-# Consider sharing datasets with the `PhasorPy community on Zenodo
+# Consider contributing datasets to the `PhasorPy Community on Zenodo
 # <https://zenodo.org/communities/phasorpy/>`_.
 
 # %%
@@ -73,12 +72,12 @@ print(filename)
 # FLIM
 # ....
 #
-# LIF-FLIM files that were analyzed with the LAS X software contain
-# calculated phasor coordinates, lifetime images, and relevant metadata.
-# The :py:func:`phasorpy.io.phasor_from_lif` and
+# Leica image files, acquired on a FALCON microscope and analyzed with LAS X
+# software, contain calculated phasor coordinates, lifetime images, and
+# relevant metadata. The :py:func:`phasorpy.io.phasor_from_lif` and
 # :py:func:`phasorpy.io.lifetime_from_lif` functions are used to read those
-# data from the `FLIM_testdata
-# <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_ dataset:
+# data from the `FLIM_testdata dataset
+# <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_:
 
 from phasorpy.io import lifetime_from_lif, phasor_from_lif
 
@@ -136,7 +135,7 @@ plot_histograms(
     alpha=0.66,
     title='Lifetime histograms',
     xlabel='Lifetime (ns)',
-    ylabel='Counts',
+    ylabel='Count',
     labels=[
         'Phase lifetime',
         'Modulation lifetime',
@@ -152,18 +151,17 @@ plot_histograms(
 
 # %%
 # .. note::
-#   FLIM/TCSPC histograms cannot currently be read directly from
-#   LIF-FLIM files since the storage scheme for those data is undocumented
-#   or patent-pending. However, TTTR records can be exported from LIF-FLIM
-#   files to PicoQuant PTU format by the LAS X software.
+#   Reading of FLIM/TCSPC histograms from LIF-FLIM files is currently not
+#   supported because the storage scheme is undocumented or patent-pending.
+#   However, TTTR records can be exported to PTU format using LAS X software.
 
 # %%
 # Hyperspectral
 # .............
 #
 # The :py:func:`phasorpy.io.signal_from_lif` function is used to read a
-# hyperspectral image stack from the `Convalaria_LambdaScan.lif
-# <https://zenodo.org/records/14976703>`_ dataset containing images acquired
+# hyperspectral image stack from the `Convalaria_LambdaScan dataset
+# <https://zenodo.org/records/14976703>`_ containing images acquired
 # at 29 emission wavelengths:
 
 from phasorpy.io import signal_from_lif
@@ -203,10 +201,10 @@ plot_phasor(
 # library.
 #
 # The :py:func:`phasorpy.io.signal_from_ptu` function is used to read
-# the TCSPC histogram from a PTU file exported from the `FLIM_testdata
-# <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_ dataset with the
+# the TCSPC histogram from a PTU file exported from the `FLIM_testdata dataset
+# <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_ with the
 # Leica LAS X software.
-# The function by default returns a 5-dimensional image with dimension order
+# By default, the function returns a 5-dimensional image with dimension order
 # TYXCH. Channel and frames are specified to reduce the dimensionality:
 
 from phasorpy.io import signal_from_ptu
@@ -262,7 +260,7 @@ plot_histograms(
     alpha=0.66,
     title='Lifetime histograms',
     xlabel='Lifetime (ns)',
-    ylabel='Counts',
+    ylabel='Count',
     labels=['Phase lifetime from PTU', 'Phase lifetime from LIF'],
 )
 
@@ -302,10 +300,6 @@ signal = signal_from_lsm(fetch('paramecium.lsm'))
 plot_signal_image(signal, title=filename, xlabel='wavelength (nm)')
 
 # %%
-# Note that the signal is not well sampled and shows discontinuity.
-# It may not be accurately represented by the phasor coordinates calculated
-# via DFT.
-#
 # Emission wavelengths (in nm) are available in the coordinates of the
 # channel axis:
 
@@ -378,7 +372,7 @@ plot_phasor(
 #
 # The :py:func:`phasorpy.io.signal_from_fbd` function is used to read
 # a phase histograms from the
-# `Convallaria <https://zenodo.org/records/14026720>`_ dataset, which was
+# `Convallaria dataset <https://zenodo.org/records/14026720>`_, which was
 # acquired at the second harmonic. The dataset is a time series of two
 # channels. Since the photon count is low and the second channel empty,
 # only the first channel is read and the time-axis integrated:
@@ -462,14 +456,15 @@ plot_phasor(
 #
 # The :py:func:`phasorpy.io.phasor_from_ifli` function is used to read
 # calibrated phasor coordinates from a measurement of mouse liver fed with
-# Western diet. The second channel and the first three harmonics are
-# selected:
+# Western diet. Select the second channel and first three harmonics:
 
 from phasorpy.io import phasor_from_ifli
 
 filename = 'NADHandSHG.ifli'
 mean, real, imag, attrs = phasor_from_ifli(
-    fetch(filename), channel=1, harmonic='all'
+    fetch(filename),
+    channel=1,  # NADH channel
+    harmonic='all',
 )
 
 plot_phasor_image(mean, real, imag, title=filename)
@@ -479,7 +474,9 @@ plot_phasor_image(mean, real, imag, title=filename)
 # about zero:
 
 assert (
-    phasor_from_ifli(fetch(filename), channel=0, harmonic='all')[1].mean()
+    phasor_from_ifli(
+        fetch(filename), channel=0, harmonic='all'  # SHG channel
+    )[1].mean()
     < 1e-2
 )
 
@@ -522,7 +519,7 @@ plot_phasor(
 #
 # The :py:func:`phasorpy.io.phasor_from_simfcs_referenced` function is used
 # to read calibrated phasor coordinates from a REF file
-# from the `LFD workshop <https://zenodo.org/records/8411056>`_ dataset:
+# from the `LFD workshop dataset <https://zenodo.org/records/8411056>`_:
 
 from phasorpy.io import phasor_from_simfcs_referenced
 
@@ -535,8 +532,8 @@ plot_phasor_image(mean, real, imag, title=filename)
 
 # %%
 # Plot the first harmonic phasor coordinates after applying a median filter.
-# SimFCS Referenced files do not contain metadata. The frequency and harmonics
-# must be known by the user:
+# Since SimFCS Referenced files do not contain metadata, the frequency and
+# harmonics must be known by the user:
 
 frequency = 80.0  # MHz
 harmonic = [1, 2]
@@ -564,13 +561,13 @@ from phasorpy.io import phasor_to_simfcs_referenced
 
 with TemporaryDirectory() as tmpdir:
 
-    fname = os.path.join(tmpdir, 'capillaries1001.r64')
-    phasor_to_simfcs_referenced(fname, mean, real, imag, size=160)
+    filename = os.path.join(tmpdir, 'capillaries1001.r64')
+    phasor_to_simfcs_referenced(filename, mean, real, imag, size=160)
 
     # print file names
     filenames = sorted(os.listdir(tmpdir))
-    for fname in filenames:
-        print(fname)
+    for filename in filenames:
+        print(filename)
 
     # verify the first harmonic phasor coordinates in the last file
     assert_allclose(
@@ -596,7 +593,7 @@ with TemporaryDirectory() as tmpdir:
 #
 # PhasorPy OME-TIFF files are intended for temporarily exchanging phasor
 # coordinates with other software, not as a long-term storage solution.
-# It is best practice to archive the original data files in the native format.
+# Always preserve original data files in their native formats.
 #
 # The :py:func:`phasorpy.io.phasor_to_ometiff` and
 # :py:func:`phasorpy.io.phasor_from_ometiff` functions are used to write and
@@ -625,13 +622,13 @@ with TemporaryDirectory() as tmpdir:
     assert attrs['description'] == 'Written by PhasorPy'
 
 # %%
-# Other means
-# -----------
+# Alternative import methods
+# --------------------------
 #
-# While PhasorPy provides many functions to read phasor related data and
+# While PhasorPy provides many functions to read phasor-related data and
 # metadata from file formats commonly used in the field, it is by no means
 # required to use those functions.
-# Instead, any other means that yields image stacks in numpy-array compatible
+# Instead, any other means that yields image stacks in NumPy array compatible
 # form can be used (for example) for advanced use cases, or when a file
 # format is not supported by PhasorPy.
 #
