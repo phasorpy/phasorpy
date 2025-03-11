@@ -1223,12 +1223,9 @@ def phasor_from_flimlabs_json(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
     """Return phasor coordinates and metadata from FLIM LABS JSON phasor file.
 
-    Some FLIM LABS JSON files contain uncalibrated phasor coordinates
+    FLIM LABS JSON files may contain calibrated phasor coordinates
     (possibly for multiple channels and harmonics) and metadata from
     digital frequency-domain measurements.
-
-    The real and imaginary parts of the phasor coordinates are zero (not NaN)
-    if the intensity is zero.
 
     Parameters
     ----------
@@ -1281,16 +1278,16 @@ def phasor_from_flimlabs_json(
     Examples
     --------
     >>> mean, real, imag, attrs = phasor_from_flimlabs_json(
-    ...     fetch('convallaria_2_1737113097_phasor_ch1.json'), harmonic='all'
+    ...     fetch('Convallaria_m2_1740751781_phasor_ch1.json'), harmonic='all'
     ... )
     >>> real.shape
-    (4, 256, 256)
+    (3, 256, 256)
     >>> attrs['dims']
     ('Y', 'X')
     >>> attrs['harmonic']
-    [1, 2, 3, 4]
+    [1, 2, 3]
     >>> attrs['frequency']  # doctest: +NUMBER
-    79.51
+    40.00
 
     """
     import json
@@ -1378,6 +1375,11 @@ def phasor_from_flimlabs_json(
             -1 if channel is None else channel,
         )
         mean.shape = shape[1:]
+        # JSON cannot store NaN values
+        nan_mask = mean == 0
+        real[:, nan_mask] = numpy.nan
+        imag[:, nan_mask] = numpy.nan
+        del nan_mask
 
     if nchannels == 1:
         axes = axes[1:]
@@ -1448,7 +1450,7 @@ def signal_from_flimlabs_json(
     Examples
     --------
     >>> signal = signal_from_flimlabs_json(
-    ...     fetch('convallaria_2_1737113097_phasor_ch1.json')
+    ...     fetch('Convallaria_m2_1740751781_phasor_ch1.json')
     ... )
     >>> signal.values
     array(...)
@@ -1459,7 +1461,7 @@ def signal_from_flimlabs_json(
     >>> signal.coords['H'].data
     array(...)
     >>> signal.attrs['frequency']  # doctest: +NUMBER
-    79.51
+    40.00
 
     """
     import json

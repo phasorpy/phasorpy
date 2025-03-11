@@ -2217,7 +2217,7 @@ def _flimlabs_mean(
                 sum = 0.0
                 for h, count in pixels:
                     sum += <double> count
-                mean[c, i] = <float_t> (sum / 255.0)
+                mean[c, i] = <float_t> (sum / 256.0)
                 i += 1
             c += 1
     else:
@@ -2226,5 +2226,5 @@ def _flimlabs_mean(
             sum = 0.0
             for h, count in pixels:
                 sum += <double> count
-            mean[0, i] = <float_t> (sum / 255.0)
+            mean[0, i] = <float_t> (sum / 256.0)
             i += 1

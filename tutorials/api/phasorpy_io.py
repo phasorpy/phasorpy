@@ -69,8 +69,8 @@ print(filename)
 # phasor coordinates, and lifetime images from Leica image files via the
 # `liffile <https://github.com/cgohlke/liffile/>`_ library.
 #
-# FLIM
-# ....
+# LIF FLIM
+# ........
 #
 # Leica image files, acquired on a FALCON microscope and analyzed with LAS X
 # software, contain calculated phasor coordinates, lifetime images, and
@@ -82,6 +82,7 @@ print(filename)
 from phasorpy.io import lifetime_from_lif, phasor_from_lif
 
 filename = 'FLIM_testdata.lif'
+
 mean, real, imag, attrs = phasor_from_lif(fetch(filename))
 
 plot_phasor_image(mean, real, imag, title=filename)
@@ -156,17 +157,17 @@ plot_histograms(
 #   However, TTTR records can be exported to PTU format using LAS X software.
 
 # %%
-# Hyperspectral
-# .............
+# LIF hyperspectral
+# .................
 #
-# The :py:func:`phasorpy.io.signal_from_lif` function is used to read a
-# hyperspectral image stack from the `Convalaria_LambdaScan dataset
-# <https://zenodo.org/records/14976703>`_ containing images acquired
-# at 29 emission wavelengths:
+# The :py:func:`phasorpy.io.signal_from_lif` function is used to read an
+# image stack from the `Convallaria hyperspectral dataset
+# <https://zenodo.org/records/14976703>`_ acquired at 29 emission wavelengths:
 
 from phasorpy.io import signal_from_lif
 
 filename = 'Convalaria_LambdaScan.lif'
+
 signal = signal_from_lif(fetch(filename))
 
 plot_signal_image(signal, title=filename, vmin=0, xlabel='wavelength (nm)')
@@ -210,6 +211,7 @@ plot_phasor(
 from phasorpy.io import signal_from_ptu
 
 filename = 'FLIM_testdata.lif.ptu'
+
 signal = signal_from_ptu(fetch(filename), channel=0, frame=0, keepdims=False)
 
 plot_signal_image(signal, title=filename, xlabel='delay-time (ns)')
@@ -295,6 +297,7 @@ plot_histograms(
 from phasorpy.io import signal_from_lsm
 
 filename = 'paramecium.lsm'
+
 signal = signal_from_lsm(fetch('paramecium.lsm'))
 
 plot_signal_image(signal, title=filename, xlabel='wavelength (nm)')
@@ -333,6 +336,7 @@ plot_phasor(
 from phasorpy.io import signal_from_sdt
 
 filename = 'tcspc.sdt'
+
 signal = signal_from_sdt(fetch(filename))
 
 plot_signal_image(signal, title=filename, xlabel='delay-time (ns)')
@@ -372,7 +376,7 @@ plot_phasor(
 #
 # The :py:func:`phasorpy.io.signal_from_fbd` function is used to read
 # a phase histograms from the
-# `Convallaria dataset <https://zenodo.org/records/14026720>`_, which was
+# `Convallaria FBD dataset <https://zenodo.org/records/14026720>`_, which was
 # acquired at the second harmonic. The dataset is a time series of two
 # channels. Since the photon count is low and the second channel empty,
 # only the first channel is read and the time-axis integrated:
@@ -380,6 +384,7 @@ plot_phasor(
 from phasorpy.io import signal_from_fbd
 
 filename = 'Convallaria_$EI0S.fbd'
+
 signal = signal_from_fbd(fetch(filename), frame=-1, channel=0)
 
 frequency = signal.attrs['frequency'] * signal.attrs['harmonic']
@@ -394,6 +399,7 @@ plot_signal_image(
 # is used as a calibration reference:
 
 reference_filename = 'Calibration_Rhodamine110_$EI0S.fbd'
+
 reference_signal = signal_from_fbd(
     fetch(reference_filename), frame=-1, channel=0
 )
@@ -432,14 +438,98 @@ plot_phasor(
 # --------------
 #
 # FLIM LABS JSON files are written by FLIM Studio software.
-# They contain multi-channel TCSPC histogram images, optional multi-harmonic
-# calibrated phasor coordinates, and metadata from digital frequency-domain
+# They contain multi-channel TCSPC histogram images, optional calibrated
+# multi-harmonic phasor coordinates, and metadata from digital frequency-domain
 # measurements.
 #
-# .. todo::
-#   The FLIM LABS JSON datasets currently available are not suitable to
-#   demonstrate the :py:func:`phasorpy.io.signal_from_flimlabs_json` and
-#   :py:func:`phasorpy.io.phasor_from_flimlabs_json` functions.
+# The :py:func:`phasorpy.io.signal_from_flimlabs_json` function is used to
+# read a TCSPC histogram from a measurement of Convallaria majalis acquired
+# at 40 MHz. The dataset contains a single channel:
+
+from phasorpy.io import signal_from_flimlabs_json
+
+channel = 0
+filename = 'Convallaria_m2_1740751781_phasor_ch1.json'
+
+signal = signal_from_flimlabs_json(fetch(filename), channel=channel)
+
+plot_signal_image(signal, title=filename, xlabel='delay-time (ns)')
+
+# %%
+# Phasor coordinates are calculated from the TCSPC histogram at three
+# harmonics and calibrated using the metadata in ``signal.attrs`` and the
+# TCSPC histogram from the measurement of a Fluorescein solution of known
+# lifetime:
+
+harmonic = [1, 2, 3]
+frequency = signal.attrs['frequency']
+reference_lifetime = signal.attrs['flimlabs_header']['tau_ns']
+
+mean, real, imag = phasor_from_signal(signal, harmonic=harmonic)
+
+reference_mean, reference_real, reference_imag = phasor_from_signal(
+    signal_from_flimlabs_json(
+        fetch('Fluorescein_Calibration_m2_1740751189_imaging.json'),
+        channel=channel,
+    ),
+    harmonic=harmonic,
+)
+
+real, imag = phasor_calibrate(
+    real,
+    imag,
+    reference_mean,
+    reference_real,
+    reference_imag,
+    frequency,
+    reference_lifetime,
+    harmonic=harmonic,
+)
+
+# %%
+# Plot the second harmonic phasor coordinates:
+
+plot_phasor(
+    real[1],
+    imag[1],
+    frequency=frequency * 2,
+    title=f'{filename} ({frequency * 2:.1f} MHz)',
+    cmin=10,
+)
+
+# %%
+# Newer versions of the FLIM LABS JSON files may also contain calibrated
+# phasor coordinates, possibly at multiple harmonics, which can be read
+# using the :py:func:`phasorpy.io.phasor_from_flimlabs_json` function:
+
+from phasorpy.io import phasor_from_flimlabs_json
+
+mean_fromfile, real_fromfile, imag_fromfile, attrs = phasor_from_flimlabs_json(
+    fetch(filename), channel=channel, harmonic='all'
+)
+
+assert attrs['harmonic'] == [1, 2, 3]
+assert_allclose(mean, mean_fromfile, atol=1e-3)
+assert_allclose(real, real_fromfile, atol=1e-3, equal_nan=True)
+assert_allclose(imag, imag_fromfile, atol=1e-3, equal_nan=True)
+
+# %%
+# The reference phase, modulation, and lifetime used to calibrate the phasor
+# coordinates may also be found in an accompanying JSON file:
+
+import json
+
+with open(
+    fetch('Fluorescein_Calibration_m2_1740751189_imaging_calibration.json'),
+    'rb',
+) as fh:
+    attrs = json.load(fh)
+
+calibration = numpy.asarray(attrs['calibrations'][channel])
+reference_phase = -calibration[:, 0, None, None]
+reference_modulation = 1 / calibration[:, 1, None, None]
+reference_lifetime = attrs['tau_ns']
+frequency = attrs['frequency_mhz']
 
 # %%
 # ISS IFLI
@@ -461,10 +551,11 @@ plot_phasor(
 from phasorpy.io import phasor_from_ifli
 
 filename = 'NADHandSHG.ifli'
+
 mean, real, imag, attrs = phasor_from_ifli(
     fetch(filename),
-    channel=1,  # NADH channel
     harmonic='all',
+    channel=1,  # NADH channel
 )
 
 plot_phasor_image(mean, real, imag, title=filename)
@@ -475,7 +566,7 @@ plot_phasor_image(mean, real, imag, title=filename)
 
 assert (
     phasor_from_ifli(
-        fetch(filename), channel=0, harmonic='all'  # SHG channel
+        fetch(filename), harmonic='all', channel=0  # SHG channel
     )[1].mean()
     < 1e-2
 )
@@ -524,6 +615,7 @@ plot_phasor(
 from phasorpy.io import phasor_from_simfcs_referenced
 
 filename = 'capillaries1001.ref'
+
 mean, real, imag, attrs = phasor_from_simfcs_referenced(
     fetch(filename), harmonic='all'
 )
