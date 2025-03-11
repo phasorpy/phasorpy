@@ -37,7 +37,7 @@ def phasor_cluster_gmm(
         that will be present, or are thought to be present.
     **kwargs : dict, optional
         Additional keyword arguments passed to
-        py:class:`sklearn.mixture.GaussianMixture`.
+        :py:class:`sklearn.mixture.GaussianMixture`.
 
     Returns
     -------
