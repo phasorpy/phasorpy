@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ._typing import Any, ArrayLike, NDArray
 
-import math
 from typing import List, Tuple  # Needed to correct some mypy issues
 
 import numpy
@@ -19,11 +18,13 @@ from sklearn.mixture import GaussianMixture
 def phasor_cluster_gmm(
     real: ArrayLike,
     imag: ArrayLike,
-    n_components: int,
+    clusters: int,
     **kwargs: Any,
 ) -> tuple[list[Any], list[Any], list[float], list[float], list[Any]]:
-    """Returns centers, radii and angles of clusters from
-     the application of GMM.
+    """Return clusters from phasor coordinates using Gaussian Mixture Model.
+
+    This function is implemented given the results shown in [1]_,
+    which shows the power of GMM applied in these cases.
 
     Parameters
     ----------
@@ -31,34 +32,42 @@ def phasor_cluster_gmm(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    n_components : int, optional
-        The numbers of components present in a sample, i.e. fluorophores
+    clusters : int, optional
+        The numbers of clusters present in a sample, i.e. fluorophores
         that will be present, or are thought to be present.
+    **kwargs : dict, optional
+        Additional keyword arguments passed to
+        py:class:`sklearn.mixture.GaussianMixture`.
 
     Returns
     -------
-    centers_real : array_like, shape (n_components,)
+    centers_real : array_like, shape (clusters,)
         Real coordinates of ellipses centers.
-    centers_imag : array_like, shape (n_components,)
+    centers_imag : array_like, shape (clusters,)
         Imaginary coordinates of ellipses centers.
-    radio : array_like, shape (n_components,)
+    radius : array_like, shape (clusters,)
         Radii of ellipses along semi-major axis.
-    radius_minor : array_like, shape (n_components,)
+    radius_minor : array_like, shape (clusters,)
         Radii of ellipses along semi-minor axis.
-    angle : array_like, optional, shape (n_components,)
+    angle : array_like, optional, shape (clusters,)
         Rotation angles of semi-major axes of ellipses in radians.
 
-
-    # TODO: See Also (I would need the link).
     Raises
     ------
     ValueError
         The array shapes of `real` and `imag` do not match.
-        n_components is not an integer.
+        clusters is not an integer.
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_cluster.py`
+
+    References
+    ----------
+    .. [1] Vallmitjana A, Torrado B & Gratton E. `Phasor-based image segmentation:
+      machine learning clustering techniques
+      <https://doi.org/10.1364/BOE.422766>`_.
+      *Biomed. Opt. Express 12(6), 3410–3422 (2021).
 
     Examples
     --------
@@ -83,106 +92,70 @@ def phasor_cluster_gmm(
     Set the number of clusters and get the coordinates for the center
     and radii of the ellipses.
 
-    >>> n_components = 2
-    >>> centers_real, centers_imag, radio, radius_minor, angles = (
-    ...     phasor_cluster_gmm(real, imag, n_components=n_components)
+    >>> clusters = 2
+    >>> centers_real, centers_imag, radius, radius_minor, angles = (
+    ...     phasor_cluster_gmm(real, imag, clusters=clusters)
     ... )
 
     """
 
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
-    # real_reshaped = numpy.asarray([i for fil in real for i in fil])
-    # imag_reshaped = numpy.asarray([i for fil in imag for i in fil])
-
-    # Flatten the arrays and convert back to numpy.ndarray
-    real_reshaped: NDArray[numpy.float64] = numpy.asarray(
-        [i for fil in real for i in fil]
-    )
-    imag_reshaped: NDArray[numpy.float64] = numpy.asarray(
-        [i for fil in imag for i in fil]
-    )
-
-    nan_found = 0
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
-    if not isinstance(n_components, int):
+    if not isinstance(clusters, int):
         raise ValueError(
-            f"n_components is expected to be an integer, but got {n_components=} of type {type(n_components)}"
+            f"clusters is expected to be an integer, but got {clusters=} of type {type(clusters)}"
         )
 
-    # Checks if there is a nan in any of the input arrays.
-    if any(numpy.isnan(real_reshaped)) or any(numpy.isnan(imag_reshaped)):
+    # Reshape and stack the coordinate
+    X = numpy.column_stack((real.ravel(), imag.ravel()))
 
-        nan_found = 1
-
-        real_reshaped = numpy.nan_to_num(
-            real_reshaped, nan=2
-        )  # sklearn does not like nan's at all.
-        imag_reshaped = numpy.nan_to_num(imag_reshaped, nan=2)
-
-        # It has to be number of components + one,
-        # I could not make it work around the nan's,
-        # and it creates another cluster on (2,2)
-        # in order to solve that problem.
-        n_components = n_components + 1
-
-    if real_reshaped.shape != imag_reshaped.shape:
-        raise ValueError(
-            'Mismatch in the number of NaN values: real has {} NaNs, while imag has {} NaNs.'.format(
-                numpy.isnan(real).sum(), numpy.isnan(imag).sum()
-            )
-        )
-
-    X = numpy.column_stack([real_reshaped, imag_reshaped])
+    # Remove any NaN values if present
+    X = X[~numpy.isnan(X).any(axis=1)]
 
     # Fit Gaussian Mixture Model
-    gm = GaussianMixture(n_components=n_components, n_init=10, **kwargs)
+    gm = GaussianMixture(n_components=clusters, n_init=10)
     gm.fit(X)
 
     # Generate the empty arrays
     angles = numpy.array([]).reshape(0, 1)
-    radius = numpy.array([]).reshape(0, 2)
+    radio = numpy.array([]).reshape(0, 2)
 
-    for n in range(n_components):
+    for n in range(clusters):
         cov = gm.covariances_[n][:2, :2]
         eigenvalues, eigenvectors = numpy.linalg.eigh(cov)
 
-        u = eigenvectors[0] / numpy.linalg.norm(eigenvectors[0])
+        # Get the index of the largest eigenvalue (major axis)
+        idx = numpy.argmax(eigenvalues)
 
-        angle = numpy.arctan2(u[1], u[0])
-        angle = 180 * angle / numpy.pi  # convert to degrees
+        # Use the eigenvector corresponding to the largest eigenvalue
+        major_axis = eigenvectors[:, idx]
+
+        # Calculate angle using arctan2
+        angle = numpy.arctan2(major_axis[1], major_axis[0])
+
+        # Ensure the angle is in the range [0, π]
+        if angle < 0:
+            angle += numpy.pi
+
+        # Scale eigenvalues for confidence ellipse
         eigenvalues = 2.0 * numpy.sqrt(2.0) * numpy.sqrt(eigenvalues)
-        angle = math.radians(angle)  # convert to radians
 
         angles = numpy.vstack([angles, [angle]])
-        radius = numpy.vstack([radius, eigenvalues])
-
-    # Undoing what was done to avoid working with nan's
-    for n in range(n_components):
-        magnitude = numpy.linalg.norm(gm.means_[n, :])
-
-        if nan_found:
-            if magnitude == numpy.sqrt(8):
-                index_del = n
-                # Variable only defined if there was a nan.
+        radio = numpy.vstack([radio, eigenvalues])
 
     # Generate the empty arrays
     centers_real = numpy.array([]).reshape(0, 1)
     centers_imag = numpy.array([]).reshape(0, 1)
 
-    for n in range(n_components):
-
-        if (not nan_found) or (nan_found and n != index_del):
-            centers_real = numpy.vstack([centers_real, [gm.means_[n, 0]]])
-            centers_imag = numpy.vstack([centers_imag, [gm.means_[n, 1]]])
+    for n in range(clusters):
+        centers_real = numpy.vstack([centers_real, [gm.means_[n, 0]]])
+        centers_imag = numpy.vstack([centers_imag, [gm.means_[n, 1]]])
 
     centers_real = centers_real.T
     centers_imag = centers_imag.T
-
-    if nan_found:
-        angles = numpy.delete(angles, index_del, axis=0)  # Deletes row
 
     angles_list = [i for fil in angles for i in fil]  # flattens the list
     centers_real_list = [
@@ -192,18 +165,17 @@ def phasor_cluster_gmm(
         i for fil in centers_imag for i in fil
     ]  # flattens the list
 
-    radio = []
+    radius = []
     radius_minor = []
 
-    for n in range(len(radius)):
-        if (not nan_found) or (nan_found and n != index_del):
-            radio.append(float(radius[n, 1]))
-            radius_minor.append(float(radius[n, 0]))
+    for n in range(len(radio)):
+        radius.append(float(radio[n, 1]))
+        radius_minor.append(float(radio[n, 0]))
 
     return (
         centers_real_list,
         centers_imag_list,
-        radio,
+        radius,
         radius_minor,
         angles_list,
     )

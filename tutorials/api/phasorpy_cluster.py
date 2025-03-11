@@ -70,12 +70,12 @@ mean_filtered, real_filtered, imag_filtered = phasor_threshold(
 # ====================clustering======================
 # ====================================================
 
-n_components = 2
+clusters = 2
 
 centers_real, centers_imag, radio, radius_minor, angles = phasor_cluster_gmm(
     real_filtered,
     imag_filtered,
-    n_components=n_components,
+    clusters=clusters,
 )
 
 # ====================================================
@@ -116,12 +116,12 @@ plt.show()
 # =============================================================================
 # ============================Polar cursors=====================================
 # =============================================================================
-n_components = 1  # This is a test, to try and improve the results from GMM.
+clusters = 1  # This is a test, to try and improve the results from GMM.
 
 centers_real, centers_imag, radio, radius_minor, angles = phasor_cluster_gmm(
     real_filtered,
     imag_filtered,
-    n_components=n_components,
+    clusters=clusters,
 )
 modulation_center = []
 phase_center = []
