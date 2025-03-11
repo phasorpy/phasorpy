@@ -443,8 +443,8 @@ plot_phasor(
 # measurements.
 #
 # The :py:func:`phasorpy.io.signal_from_flimlabs_json` function is used to
-# read a TCSPC histogram from a measurement of Convallaria majalis acquired
-# at 40 MHz. The dataset contains a single channel:
+# read a TCSPC histogram from the `Convallaria FLIM LABS dataset
+# <https://zenodo.org/records/15007900>`_, which contains a single channel:
 
 from phasorpy.io import signal_from_flimlabs_json
 

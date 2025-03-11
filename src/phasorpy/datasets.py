@@ -17,6 +17,8 @@ Datasets from the following repositories are available:
   (`second record <https://zenodo.org/records/14860228>`_)
 - `Convallaria slice acquired with time-resolved 2-photon microscope
   <https://zenodo.org/records/14026720>`_
+- `Convallaria FLIM dataset in FLIM LABS JSON format
+  <https://zenodo.org/records/15007900>`_
 
 The implementation is based on the `Pooch <https://www.fatiando.org/pooch>`_
 library.
@@ -365,7 +367,11 @@ CONVALLARIA_FBD = pooch.create(
 
 FLIMLABS = pooch.create(
     path=pooch.os_cache('phasorpy'),
-    base_url='https://github.com/phasorpy/phasorpy-data/raw/main/flimlabs',
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/flimlabs'
+        if DATA_ON_GITHUB
+        else 'doi:10.5281/zenodo.15007900'
+    ),
     env=ENV,
     registry={
         'Convallaria_m2_1740751781_phasor_ch1.json': (
