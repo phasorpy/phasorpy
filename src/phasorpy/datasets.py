@@ -17,6 +17,8 @@ Datasets from the following repositories are available:
   (`second record <https://zenodo.org/records/14860228>`_)
 - `Convallaria slice acquired with time-resolved 2-photon microscope
   <https://zenodo.org/records/14026720>`_
+- `Convallaria FLIM dataset in FLIM LABS JSON format
+  <https://zenodo.org/records/15007900>`_
 
 The implementation is based on the `Pooch <https://www.fatiando.org/pooch>`_
 library.
@@ -327,6 +329,22 @@ ZENODO_14860228 = pooch.create(
     },
 )
 
+ZENODO_14976703 = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/zenodo_14976703'
+        if DATA_ON_GITHUB
+        else 'doi:10.5281/zenodo.14976703'
+    ),
+    env=ENV,
+    registry={
+        'Convalaria_LambdaScan.lif': (
+            'sha256:'
+            '27f1282cf02f87e11f8c7d3064066a4517ad4c9c769c796b32e459774f18c62a'
+        ),
+    },
+)
+
 CONVALLARIA_FBD = pooch.create(
     path=pooch.os_cache('phasorpy'),
     base_url=(
@@ -349,64 +367,32 @@ CONVALLARIA_FBD = pooch.create(
 
 FLIMLABS = pooch.create(
     path=pooch.os_cache('phasorpy'),
-    base_url='https://github.com/phasorpy/phasorpy-data/raw/main/flimlabs',
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/flimlabs'
+        if DATA_ON_GITHUB
+        else 'doi:10.5281/zenodo.15007900'
+    ),
     env=ENV,
     registry={
-        'calibrator_2_5_1737112045_imaging.json': (
+        'Convallaria_m2_1740751781_phasor_ch1.json': (
             'sha256:'
-            'a34c7077e88d1e7272953a46b2bb4e3ab8adf5a2f61c824dfc27032d952b920e'
+            'a8bf0179f352ab2c6c78d0bd399545ab1fb6d5537f23dc06e5f12a7ef5af6615'
         ),
-        'calibrator_2_5_1737112045_imaging.json.zip': (
+        'Convallaria_m2_1740751781_phasor_ch1.json.zip': (
             'sha256:'
-            'fea791b28afd8365152018810cbbaaac1177cb72827578073587a1050d1af329'
+            '9c5691f55e85778717ace13607d573bcd00c29e357e063c8db4f173340f72984'
         ),
-        'calibrator_2_5_1737112045_imaging_calibration.json': (
+        'Fluorescein_Calibration_m2_1740751189_imaging.json': (
             'sha256:'
-            '8f2ebe9b544fae9524dc13221c1a5ab1b57d9dfd40ec2eb06a7b1475fcd63057'
+            'aeebb074dbea6bff7578f409c7622b2f7f173bb23e5475d1436adedca7fc2eed'
         ),
-        'calibrator_2_5_bis_1737112494_imaging.json': (
+        'Fluorescein_Calibration_m2_1740751189_imaging.json.zip': (
             'sha256:'
-            '0509c5aba066419b03f83264eba58acbf4aae470aa1057c52f45e60225e033a4'
+            '32960bc1dec85fd16ffc7dd74a3cd63041fb3b69054ee6582f913129b0847086'
         ),
-        'calibrator_2_5_bis_1737112494_imaging.json.zip': (
+        'Fluorescein_Calibration_m2_1740751189_imaging_calibration.json': (
             'sha256:'
-            'bdc5df2a3f08a64ec7b7bb57b36e21546de142e67c59c052318252dbb66d8abf'
-        ),
-        'calibrator_2_5_bis_1737112494_imaging_calibration.json': (
-            'sha256:'
-            '9bb0e21b1e7c04add672aa8a78048b09908c860fcaf907ca33c0c87d161f6ebf'
-        ),
-        'convallaria_1_1737112980_phasor_ch1.json': (
-            'sha256:'
-            '4a296a0d7898dc660a388e1bba5cf98b43c35fe12d94b7aba48d00245e37242d'
-        ),
-        'convallaria_1_1737112980_phasor_ch1.json.zip': (
-            'sha256:'
-            '79c416b9099c9f58d2092fe5b26ea6d0f695977b877784cf564d3ead896d9354'
-        ),
-        'convallaria_2_1737113097_phasor_ch1.json': (
-            'sha256:'
-            'da549645ffd898238c26f7a1eac3aca4ffccec86653c0d241a6ece674dfce90d'
-        ),
-        'convallaria_2_1737113097_phasor_ch1.json.zip': (
-            'sha256:'
-            '8801bb14b457dceaef42e8b3bf6af770a2e14264cd2b282ba7e3d70b91ea954c'
-        ),
-        'data_2_calibrator_2_5_1737112409_phasor_ch1.json': (
-            'sha256:'
-            'ea8683892eb76f52231e5d6ceab64a3737454aa95fe73185366de8f758fd9b70'
-        ),
-        'data_2_calibrator_2_5_1737112409_phasor_ch1.json.zip': (
-            'sha256:'
-            '40d2aa90b95fd8864a2392337c83a1a4f4931d7359cb30a486f65173f208de0a'
-        ),
-        'data_calibrator_2_5_1737112133_phasor_ch1.json': (
-            'sha256:'
-            '6a8790212bc62014d597402ec5feb0e50ec6ae2aa62d63fae8cb62c6c5656268'
-        ),
-        'data_calibrator_2_5_1737112133_phasor_ch1.json.zip': (
-            'sha256:'
-            'c9ef343bdbd7a51d23fdf4082e379dcdb1ce9f3e2ba065289bf2925d68ef55ba'
+            '7fd1b9749789bd139c132602a771a127ea0c76f403d1750e9636cd657cce017a'
         ),
     },
 )
@@ -472,6 +458,7 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'napari-flim-phasor-plotter': NAPARI_FLIM_PHASOR_PLOTTER,
     'zenodo-13625087': ZENODO_13625087,
     'zenodo-14860228': ZENODO_14860228,
+    'zenodo-14976703': ZENODO_14976703,
     'convallaria-fbd': CONVALLARIA_FBD,
     'flimlabs': FLIMLABS,
     'figshare_22336594': FIGSHARE_22336594,
