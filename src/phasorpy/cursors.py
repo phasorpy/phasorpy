@@ -282,7 +282,7 @@ def mask_from_polar_cursor(
     modulation_max: ArrayLike,
     /,
 ) -> NDArray[numpy.bool_]:
-    r"""Return mask for polar cursor of polar coordinates.
+    """Return mask for polar cursor of polar coordinates.
 
     Parameters
     ----------

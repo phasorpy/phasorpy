@@ -1290,7 +1290,7 @@ class PhasorPlotFret(PhasorPlot):
 
         self._donor_fretting_slider = Slider(
             ax=axes[6],
-            label='Donors FRETting ',
+            label='Donors fretting ',
             valfmt=' %.2f',
             valmin=0.0,
             valmax=1.0,

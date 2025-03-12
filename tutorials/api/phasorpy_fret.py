@@ -65,7 +65,7 @@ PhasorPlotFret(
 
 
 # %%
-# Fractions not FRETting
+# Fractions not fretting
 # ----------------------
 #
 # Adding fractions of donors not participating in FRET and fractions
@@ -77,7 +77,7 @@ PhasorPlotFret(
     **settings,
     donor_fretting=0.9,  # 90%
     acceptor_bleedthrough=0.1,  # 10%
-    title='FRET efficiency trajectories with fractions not FRETting',
+    title='FRET efficiency trajectories with fractions not fretting',
 ).show()
 
 

@@ -357,12 +357,12 @@ plot.show()
 # Rationalize the results in terms of the quenching simulations done above
 # and the two state experiments we did earlier.
 
-plot = PhasorPlot(frequency=frequency, title='Donors FRETting')
+plot = PhasorPlot(frequency=frequency, title='Donors fretting')
 plot.plot(*phasor_from_lifetime(frequency, lifetime=4.0), label='no FRET')
 plot.plot(*phasor_from_lifetime(frequency, lifetime=2.0), label='50% FRET')
 plot.plot(
     *phasor_from_lifetime(frequency, lifetime=[4.0, 2.0], fraction=[0.5, 0.5]),
-    label='50% FRET, 50% FRETting',
+    label='50% FRET, 50% fretting',
 )
 plot.show()
 
@@ -492,7 +492,7 @@ plot.show()
 
 # %%
 # Calculate two trajectories, one for the quenching due to FRET and the other
-# for the superposition of the FRETting population with the background.
+# for the superposition of the fretting population with the background.
 #
 # The FRET efficiency for the file with very little background is about 0.23.
 # Instead, the best agreement for the file with large background is obtained
@@ -541,7 +541,7 @@ plot.plot(*fret2_phasor, color='tab:grey')
 plot.show()
 
 # %%
-# For this sample, it seems that all the cells are FRETting and that
+# For this sample, it seems that all the cells are fretting and that
 # the change of lifetime between the cells is due to combination with
 # the background fluorescence.
 
@@ -565,7 +565,7 @@ plot.show()
 # cell level, not internal to a cell since in these samples either a cell
 # expresses one protein of the other.
 #
-# - What percentage of the species is FRETting in the CFP-YFP image?
+# - What percentage of the species is fretting in the CFP-YFP image?
 # - Is the FRET efficiency high or low?
 
 # %%
