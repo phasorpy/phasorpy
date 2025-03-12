@@ -151,7 +151,7 @@ from ._phasorpy import (
     _polar_from_single_lifetime,
     _polar_to_apparent_lifetime,
 )
-from ._utils import parse_harmonic, parse_signal_axis
+from ._utils import parse_harmonic, parse_signal_axis, parse_skip_axis
 from .utils import number_threads
 
 
@@ -1304,7 +1304,7 @@ def phasor_calibrate(
         unit_conversion=unit_conversion,
     )
 
-    skip_axis, axis = _parse_skip_axis(
+    skip_axis, axis = parse_skip_axis(
         skip_axis, real.ndim - int(has_harmonic_axis), has_harmonic_axis
     )
 
@@ -2956,7 +2956,7 @@ def phasor_filter_median(
         raise ValueError(f'{real.shape=} != {imag.shape=}')
 
     prepend_axis = mean.ndim + 1 == real.ndim
-    _, axes = _parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
+    _, axes = parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
 
     # in case mean is also filtered
     # if prepend_axis:
@@ -3173,7 +3173,7 @@ def phasor_filter_pawflim(
     real_filtered = real.copy()
     imag_filtered = imag.copy()
 
-    _, axes = _parse_skip_axis(skip_axis, mean.ndim, True)
+    _, axes = parse_skip_axis(skip_axis, mean.ndim, True)
 
     for index in numpy.ndindex(
         *(
@@ -3541,7 +3541,7 @@ def phasor_center(
         raise ValueError(f'{mean.shape=} != {real.shape=}')
 
     prepend_axis = mean.ndim + 1 == real.ndim
-    _, axis = _parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
+    _, axis = parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
     if prepend_axis:
         mean = numpy.expand_dims(mean, axis=0)
 
@@ -3585,62 +3585,3 @@ def _median(
         numpy.nanmedian(real, **kwargs),
         numpy.nanmedian(imag, **kwargs),
     )
-
-
-def _parse_skip_axis(
-    skip_axis: int | Sequence[int] | None,
-    /,
-    ndim: int,
-    prepend_axis: bool = False,
-) -> tuple[tuple[int, ...], tuple[int, ...]]:
-    """Return axes to skip and not to skip.
-
-    This helper function is used to validate and parse `skip_axis`
-    parameters.
-
-    Parameters
-    ----------
-    skip_axis : int or sequence of int, optional
-        Axes to skip. If None, no axes are skipped.
-    ndim : int
-        Dimensionality of array in which to skip axes.
-    prepend_axis : bool, optional
-        Prepend one dimension and include in `skip_axis`.
-
-    Returns
-    -------
-    skip_axis
-        Ordered, positive values of `skip_axis`.
-    other_axis
-        Axes indices not included in `skip_axis`.
-
-    Raises
-    ------
-    IndexError
-        If any `skip_axis` value is out of bounds of `ndim`.
-
-    Examples
-    --------
-    >>> _parse_skip_axis((1, -2), 5)
-    ((1, 3), (0, 2, 4))
-
-    >>> _parse_skip_axis((1, -2), 5, True)
-    ((0, 2, 4), (1, 3, 5))
-
-    """
-    if ndim < 0:
-        raise ValueError(f'invalid {ndim=}')
-    if skip_axis is None:
-        if prepend_axis:
-            return (0,), tuple(range(1, ndim + 1))
-        return (), tuple(range(ndim))
-    if not isinstance(skip_axis, Sequence):
-        skip_axis = (skip_axis,)
-    if any(i >= ndim or i < -ndim for i in skip_axis):
-        raise IndexError(f'skip_axis={skip_axis} out of range for {ndim=}')
-    skip_axis = sorted(int(i % ndim) for i in skip_axis)
-    if prepend_axis:
-        skip_axis = [0] + [i + 1 for i in skip_axis]
-        ndim += 1
-    other_axis = tuple(i for i in range(ndim) if i not in skip_axis)
-    return tuple(skip_axis), other_axis
