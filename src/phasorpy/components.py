@@ -66,9 +66,9 @@ def two_fractions_from_phasor(
     imag : array_like
         Imaginary component of phasor coordinates.
     components_real : array_like, shape (2,)
-        Real coordinates of the first and second components.
+        Real coordinates of first and second components.
     components_imag : array_like, shape (2,)
-        Imaginary coordinates of the first and second components.
+        Imaginary coordinates of first and second components.
 
     Returns
     -------
@@ -78,7 +78,7 @@ def two_fractions_from_phasor(
     Raises
     ------
     ValueError
-        If the real and/or imaginary coordinates of the known components are
+        If the real or imaginary coordinates of the known components are
         not of size 2.
 
     See Also
@@ -150,7 +150,7 @@ def graphical_component_analysis(
     components_imag : array_like, shape (2,) or (3,)
         Imaginary coordinates for two or three components.
     radius : float, optional, default: 0.05
-        Radius of the cursor in phasor coordinates.
+        Radius of cursor.
     fractions : array_like or int, optional
         Number of equidistant fractions, or 1D array of fraction values.
         Fraction values must be in range [0.0, 1.0].
@@ -163,8 +163,8 @@ def graphical_component_analysis(
     Returns
     -------
     counts : tuple of ndarray
-        Counts along each line segment connecting the components, ordered
-        0-1 (2 components) or 0-1, 0-2, 1-2 (3 components).
+        Counts along each line segment connecting components.
+        Ordered 0-1 (2 components) or 0-1, 0-2, 1-2 (3 components).
 
     Raises
     ------
@@ -172,7 +172,7 @@ def graphical_component_analysis(
         The array shapes of `real` and `imag`, or `components_real` and
         `components_imag` do not match.
         The number of components is not 2 or 3.
-        Fraction values are not in range [0.0, 1.0].
+        Fraction values are out of range [0.0, 1.0].
 
     See Also
     --------

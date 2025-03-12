@@ -282,7 +282,7 @@ def mask_from_polar_cursor(
     modulation_max: ArrayLike,
     /,
 ) -> NDArray[numpy.bool_]:
-    """Return mask for polar cursor of polar coordinates.
+    r"""Return mask for polar cursor of polar coordinates.
 
     Parameters
     ----------
@@ -291,15 +291,15 @@ def mask_from_polar_cursor(
     imag : array_like
         Imaginary component of phasor coordinates.
     phase_min : array_like, shape (n,)
-        Minimum of angular range of cursors in radians.
-        Values should be between -pi and pi.
+        Lower bound of angular range of cursors in radians.
+        Values should be in range [-pi, pi].
     phase_max : array_like, shape (n,)
-        Maximum of angular range of cursors in radians.
-        Values should be between -pi and pi.
+        Upper bound of angular range of cursors in radians.
+        Values should be in range [-pi, pi].
     modulation_min : array_like, shape (n,)
-        Minimum of radial range of cursors.
+        Lower bound of radial range of cursors.
     modulation_max : array_like, shape (n,)
-        Maximum of radial range of cursors.
+        Upper bound of radial range of cursors.
 
     Returns
     -------
@@ -362,7 +362,7 @@ def mask_from_polar_cursor(
             f'{phase_min.ndim=}, {phase_max.ndim=}, '
             f'{modulation_min.ndim=}, or {modulation_max.ndim=} > 1'
         )
-    # TODO: check if angles are between -pi and pi
+    # TODO: check if angles are in range [-pi and pi]
 
     moveaxis = False
     if real.ndim > 0 and (
@@ -406,7 +406,7 @@ def pseudo_color(
         Maximum value to normalize `intensity`.
         If None, the maximum value of `intensity` is used.
     colors : array_like, optional, shape (N, 3)
-        Colors assigned to each cursor.
+        RGB colors assigned to each cursor.
         The last dimension contains the normalized RGB floating point values.
         The default is :py:data:`phasorpy.color.CATEGORICAL`.
 
@@ -463,7 +463,7 @@ def pseudo_color(
     shape = numpy.asarray(masks[0]).shape
 
     if intensity is not None:
-        # normalize intensity to range 0..1
+        # normalize intensity to range [0, 1]
         intensity = numpy.array(
             intensity, dtype=numpy.float32, ndmin=1, copy=True
         )

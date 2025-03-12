@@ -309,7 +309,7 @@ assert attrs['description'].startswith('Phasor coordinates of')
 # plotting phasor and polar coordinates.
 #
 # Large number of phasor coordinates, such as obtained from imaging,
-# are commonly visualized as 2D histograms:
+# are commonly visualized as two-dimensional histograms:
 
 from phasorpy.plot import PhasorPlot
 

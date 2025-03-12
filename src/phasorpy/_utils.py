@@ -344,7 +344,7 @@ def parse_harmonic(
     Raises
     ------
     IndexError
-        Any element is out of range `[1..harmonic_max]`.
+        Any element is out of range `[1, harmonic_max]`.
     ValueError
         Elements are not unique.
         Harmonic is empty.
@@ -365,7 +365,7 @@ def parse_harmonic(
         if harmonic < 1 or (
             harmonic_max is not None and harmonic > harmonic_max
         ):
-            raise IndexError(f'{harmonic=} out of range [1..{harmonic_max}]')
+            raise IndexError(f'{harmonic=} out of range [1, {harmonic_max}]')
         return [int(harmonic)], False
 
     if isinstance(harmonic, str):

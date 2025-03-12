@@ -2180,10 +2180,10 @@ def test_phasor_from_fret_donor():
         phasor_from_lifetime([40, 80], 4.2 * 0.7),
         atol=1e-3,
     )
-    # donor_freting
+    # donor_fretting
     assert_allclose(
         phasor_from_fret_donor(
-            80, 4.2, fret_efficiency=[0.0, 0.3, 1.0], donor_freting=0.9
+            80, 4.2, fret_efficiency=[0.0, 0.3, 1.0], donor_fretting=0.9
         ),
         [[re, 0.296158, re], [im, 0.453563, im]],
         atol=1e-3,
@@ -2207,7 +2207,7 @@ def test_phasor_from_fret_donor():
             80,
             4.2,
             fret_efficiency=[0.0, 0.3, 1.0],
-            donor_freting=0.9,
+            donor_fretting=0.9,
             donor_background=0.1,
             background_real=0.11,
             background_imag=0.12,
@@ -2273,7 +2273,7 @@ def test_phasor_from_fret_acceptor():
             3.0,
             fret_efficiency=[0.0, 0.3, 1.0],
             donor_bleedthrough=0.1,
-            donor_freting=0.9,
+            donor_fretting=0.9,
         ),
         [[dre, -0.02974, 0.3041], [dim, 0.322, 0.4598]],
         atol=1e-3,
@@ -2299,7 +2299,7 @@ def test_phasor_from_fret_acceptor():
             4.2,
             3.0,
             fret_efficiency=[0.0, 0.3, 1.0],
-            donor_freting=0.9,
+            donor_fretting=0.9,
             donor_bleedthrough=0.1,
             acceptor_bleedthrough=0.1,
             acceptor_background=0.1,
