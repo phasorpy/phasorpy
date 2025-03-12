@@ -23,7 +23,6 @@ except ImportError:
     mkl_fft = None
 
 from phasorpy.phasor import (
-    _parse_skip_axis,
     lifetime_fraction_from_amplitude,
     lifetime_fraction_to_amplitude,
     lifetime_from_frequency,
@@ -2500,25 +2499,6 @@ def test_phasor_to_principal_plane():
     # exception
     with pytest.raises(ValueError):
         phasor_to_principal_plane([0.0, 1.0], [0.0])
-
-
-def test_parse_skip_axis():
-    """Test _parse_skip_axis function."""
-    assert _parse_skip_axis(None, 0) == ((), ())
-    assert _parse_skip_axis(None, 1) == ((), (0,))
-    assert _parse_skip_axis((), 1) == ((), (0,))
-    assert _parse_skip_axis(0, 1) == ((0,), ())
-    assert _parse_skip_axis(0, 2) == ((0,), (1,))
-    assert _parse_skip_axis(-1, 2) == ((1,), (0,))
-    assert _parse_skip_axis((1, -2), 5) == ((1, 3), (0, 2, 4))
-    with pytest.raises(ValueError):
-        _parse_skip_axis(0, -1)
-    with pytest.raises(IndexError):
-        _parse_skip_axis(0, 0)
-    with pytest.raises(IndexError):
-        _parse_skip_axis(1, 1)
-    with pytest.raises(IndexError):
-        _parse_skip_axis(-2, 1)
 
 
 @pytest.mark.parametrize(
