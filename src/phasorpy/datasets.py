@@ -476,8 +476,8 @@ def fetch(
 ) -> Any:  # str | tuple[str, ...]
     """Return absolute path(s) to sample file(s) in local storage.
 
-    The files are downloaded from a remote repository if they do not already
-    exist in the local storage.
+    The files are downloaded from a remote repository if not present in local
+    storage.
 
     Parameters
     ----------

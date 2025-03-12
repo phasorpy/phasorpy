@@ -1058,7 +1058,7 @@ def phasor_from_lif(
 
     """
     # TODO: read harmonic from XML if possible
-    # TODO: get calibration settings from XML metadata or lifetime and/or
+    # TODO: get calibration settings from XML metadata, lifetime, or
     #   phasor plot images
     import liffile
 

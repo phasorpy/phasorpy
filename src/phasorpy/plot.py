@@ -78,7 +78,7 @@ class PhasorPlot:
     Parameters
     ----------
     allquadrants : bool, optional
-        Show all quandrants of phasor space.
+        Show all quadrants of phasor space.
         By default, only the first quadrant with universal semicircle is shown.
     ax : matplotlib axes, optional
         Matplotlib axes used for plotting.
@@ -86,7 +86,7 @@ class PhasorPlot:
     frequency : float, optional
         Laser pulse or modulation frequency in MHz.
     grid : bool, optional, default: True
-        Display polar grid or semicircle.
+        Display polar grid or universal semicircle.
     **kwargs
         Additional properties to set on `ax`.
 
@@ -224,7 +224,7 @@ class PhasorPlot:
         label: Sequence[str] | None = None,
         **kwargs: Any,
     ) -> list[Line2D]:
-        """Plot imag versus real coordinates as markers and/or lines.
+        """Plot imaginary versus real coordinates as markers or lines.
 
         Parameters
         ----------
@@ -289,7 +289,7 @@ class PhasorPlot:
         /,
         **kwargs: Any,
     ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-        """Return 2D histogram of imag versus real coordinates."""
+        """Return two-dimensional histogram of imag versus real coordinates."""
         update_kwargs(kwargs, range=self._limits)
         (xmin, xmax), (ymin, ymax) = kwargs['range']
         assert xmax > xmin and ymax > ymin
@@ -322,7 +322,7 @@ class PhasorPlot:
         /,
         **kwargs: Any,
     ) -> None:
-        """Plot 2D histogram of imag versus real coordinates.
+        """Plot two-dimensional histogram of imag versus real coordinates.
 
         Parameters
         ----------
@@ -972,9 +972,9 @@ class PhasorPlotFret(PhasorPlot):
     acceptor_lifetime : array_like
         Lifetime of acceptor in ns.
     fret_efficiency : array_like, optional, default 0
-        FRET efficiency in range [0..1].
-    donor_freting : array_like, optional, default 1
-        Fraction of donors participating in FRET. Range [0..1].
+        FRET efficiency in range [0, 1].
+    donor_fretting : array_like, optional, default 1
+        Fraction of donors participating in FRET. Range [0, 1].
     donor_bleedthrough : array_like, optional, default 0
         Weight of donor fluorescence in acceptor channel
         relative to fluorescence of fully sensitized acceptor.
@@ -1025,7 +1025,7 @@ class PhasorPlotFret(PhasorPlot):
     _donor_lifetime_slider: Slider
     _acceptor_lifetime_slider: Slider
     _fret_efficiency_slider: Slider
-    _donor_freting_slider: Slider
+    _donor_fretting_slider: Slider
     _donor_bleedthrough_slider: Slider
     _acceptor_bleedthrough_slider: Slider
     _acceptor_background_slider: Slider
@@ -1056,7 +1056,7 @@ class PhasorPlotFret(PhasorPlot):
         donor_lifetime: float = 4.2,
         acceptor_lifetime: float = 3.0,
         fret_efficiency: float = 0.5,
-        donor_freting: float = 1.0,
+        donor_fretting: float = 1.0,
         donor_bleedthrough: float = 0.0,
         acceptor_bleedthrough: float = 0.0,
         acceptor_background: float = 0.0,
@@ -1106,7 +1106,7 @@ class PhasorPlotFret(PhasorPlot):
             frequency,
             donor_lifetime,
             fret_efficiency=self._fret_efficiencies,
-            donor_freting=donor_freting,
+            donor_fretting=donor_fretting,
             donor_background=donor_background,
             background_real=background_real,
             background_imag=background_imag,
@@ -1119,7 +1119,7 @@ class PhasorPlotFret(PhasorPlot):
             donor_lifetime,
             acceptor_lifetime,
             fret_efficiency=self._fret_efficiencies,
-            donor_freting=donor_freting,
+            donor_fretting=donor_fretting,
             donor_bleedthrough=donor_bleedthrough,
             acceptor_bleedthrough=acceptor_bleedthrough,
             acceptor_background=acceptor_background,
@@ -1138,7 +1138,7 @@ class PhasorPlotFret(PhasorPlot):
         )
         self._acceptor_semicircle_line = lines[0]
 
-        if donor_freting < 1.0 and donor_background == 0.0:
+        if donor_fretting < 1.0 and donor_background == 0.0:
             lines = self.line(
                 [donor_real, donor_fret_real],
                 [donor_imag, donor_fret_imag],
@@ -1288,18 +1288,18 @@ class PhasorPlotFret(PhasorPlot):
         )
         self._fret_efficiency_slider.on_changed(self._on_changed)
 
-        self._donor_freting_slider = Slider(
+        self._donor_fretting_slider = Slider(
             ax=axes[6],
-            label='Donors FRETing ',
+            label='Donors fretting ',
             valfmt=' %.2f',
             valmin=0.0,
             valmax=1.0,
             valstep=0.01,
-            valinit=donor_freting,
+            valinit=donor_fretting,
             # facecolor='tab:green',
             handle_style={'edgecolor': 'tab:green'},
         )
-        self._donor_freting_slider.on_changed(self._on_changed)
+        self._donor_fretting_slider.on_changed(self._on_changed)
 
         self._donor_bleedthrough_slider = Slider(
             ax=axes[5],
@@ -1401,7 +1401,7 @@ class PhasorPlotFret(PhasorPlot):
         donor_lifetime = self._donor_lifetime_slider.val
         acceptor_lifetime = self._acceptor_lifetime_slider.val
         fret_efficiency = self._fret_efficiency_slider.val
-        donor_freting = self._donor_freting_slider.val
+        donor_fretting = self._donor_fretting_slider.val
         donor_bleedthrough = self._donor_bleedthrough_slider.val
         acceptor_bleedthrough = self._acceptor_bleedthrough_slider.val
         acceptor_background = self._acceptor_background_slider.val
@@ -1423,7 +1423,7 @@ class PhasorPlotFret(PhasorPlot):
             frequency,
             donor_lifetime,
             fret_efficiency=self._fret_efficiencies,
-            donor_freting=donor_freting,
+            donor_fretting=donor_fretting,
             donor_background=donor_background,
             background_real=background_real,
             background_imag=background_imag,
@@ -1436,7 +1436,7 @@ class PhasorPlotFret(PhasorPlot):
             donor_lifetime,
             acceptor_lifetime,
             fret_efficiency=self._fret_efficiencies,
-            donor_freting=donor_freting,
+            donor_fretting=donor_fretting,
             donor_bleedthrough=donor_bleedthrough,
             acceptor_bleedthrough=acceptor_bleedthrough,
             acceptor_background=acceptor_background,
@@ -1452,7 +1452,7 @@ class PhasorPlotFret(PhasorPlot):
         else:
             self._donor_background_line.set_data([0.0, 0.0], [0.0, 0.0])
 
-        if donor_freting < 1.0 and donor_background == 0.0:
+        if donor_fretting < 1.0 and donor_background == 0.0:
             self._donor_donor_line.set_data(
                 [donor_real, donor_fret_real],
                 [donor_imag, donor_fret_imag],
@@ -1722,7 +1722,7 @@ def plot_phasor_image(
     percentile : float, optional
         The (q, 100-q) percentiles of image data are covered by colormaps.
         By default, the complete value range of `mean` is covered,
-        for `real` and `imag` the range [-1..1].
+        for `real` and `imag` the range [-1, 1].
     title : str, optional
         Figure title.
     show : bool, optional, default: True
@@ -1888,7 +1888,7 @@ def plot_signal_image(
     percentile : float or [float, float], optional
         The [q, 100-q] percentiles of image data are covered by colormaps.
         By default, the complete value range of `mean` is covered,
-        for `real` and `imag` the range [-1..1].
+        for `real` and `imag` the range [-1, 1].
     title : str, optional
         Figure title.
     xlabel : str, optional

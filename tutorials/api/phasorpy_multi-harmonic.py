@@ -188,8 +188,8 @@ assert attrs['description'].startswith(
 # Plot phasor coordinates
 # -----------------------
 #
-# Visualize the 2D histogram of the calibrated and filtered phasor coordinates
-# at the second harmonic:
+# Visualize the two-dimensional histogram of the calibrated and filtered
+# phasor coordinates at the second harmonic:
 
 plot_phasor(
     real[1],

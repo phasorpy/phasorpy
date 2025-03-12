@@ -1,4 +1,4 @@
-"""Version information."""
+"""Version information for PhasorPy and dependencies."""
 
 from __future__ import annotations
 
@@ -8,16 +8,22 @@ __version__ = '0.5.dev'
 def versions(
     *, sep: str = '\n', dash: str = '-', verbose: bool = False
 ) -> str:
-    """Return versions of installed packages that phasorpy depends on.
+    """Return version information for PhasorPy and its dependencies.
 
     Parameters
     ----------
     sep : str, optional
-        Separator between version items. The default is a newline character.
+        Separator between version items. Defaults to newline.
     dash : str, optional
-        Separator between module name and version.
+        Separator between module name and version. Defaults to dash.
     verbose : bool, optional
         Include paths to Python interpreter and modules.
+
+    Returns
+    -------
+    str
+        Formatted string containing version information.
+        Format: "<package><dash><version>[<space>(<path>)]<sep>"
 
     Example
     -------

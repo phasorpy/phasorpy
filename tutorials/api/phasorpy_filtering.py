@@ -178,7 +178,7 @@ plot_phasor(
 
 # %%
 # Increasing the significance level of the comparison between phasor
-# coordinates and/or the maximum averaging area can further reduce noise:
+# coordinates or the maximum averaging area can further reduce noise:
 
 mean_filtered, real_filtered, imag_filtered = phasor_filter_pawflim(
     mean, real, imag, harmonic=harmonic, sigma=5, levels=3
