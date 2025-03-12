@@ -62,12 +62,16 @@ def phasor_cluster_gmm(
         Axes to skip in the data (useful for multi-dimensional arrays).
     **kwargs
         Additional keyword arguments passed to
+<<<<<<< HEAD
         `sklearn.mixture.GaussianMixture`.
         Common options include:
 
         - covariance_type : {'full', 'tied', 'diag', 'spherical'}
         - max_iter : int, maximum number of EM iterations
         - random_state : int, for reproducible results
+=======
+        :py:class:`sklearn.mixture.GaussianMixture`.
+>>>>>>> 473d5da594f091661132a072c5cf886f666862a3
 
     Returns
     -------
