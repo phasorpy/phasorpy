@@ -11,6 +11,7 @@ from phasorpy._utils import (
     parse_harmonic,
     parse_kwargs,
     parse_signal_axis,
+    parse_skip_axis,
     phasor_from_polar_scalar,
     phasor_to_polar_scalar,
     scale_matrix,
@@ -191,6 +192,25 @@ def test_parse_signal_axis():
 
     with pytest.raises(ValueError):
         parse_signal_axis(DataArray(), 'not found')
+
+
+def test_parse_skip_axis():
+    """Test parse_skip_axis function."""
+    assert parse_skip_axis(None, 0) == ((), ())
+    assert parse_skip_axis(None, 1) == ((), (0,))
+    assert parse_skip_axis((), 1) == ((), (0,))
+    assert parse_skip_axis(0, 1) == ((0,), ())
+    assert parse_skip_axis(0, 2) == ((0,), (1,))
+    assert parse_skip_axis(-1, 2) == ((1,), (0,))
+    assert parse_skip_axis((1, -2), 5) == ((1, 3), (0, 2, 4))
+    with pytest.raises(ValueError):
+        parse_skip_axis(0, -1)
+    with pytest.raises(IndexError):
+        parse_skip_axis(0, 0)
+    with pytest.raises(IndexError):
+        parse_skip_axis(1, 1)
+    with pytest.raises(IndexError):
+        parse_skip_axis(-2, 1)
 
 
 def test_chunk_iter():

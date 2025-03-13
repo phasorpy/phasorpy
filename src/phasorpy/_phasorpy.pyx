@@ -451,7 +451,7 @@ cdef (double, double) _phasor_from_fret_donor(
     double omega,
     double donor_lifetime,
     double fret_efficiency,
-    double donor_freting,
+    double donor_fretting,
     double donor_background,
     double background_real,
     double background_imag,
@@ -471,16 +471,16 @@ cdef (double, double) _phasor_from_fret_donor(
     elif fret_efficiency > 1.0:
         fret_efficiency = 1.0
 
-    if donor_freting < 0.0:
-        donor_freting = 0.0
-    elif donor_freting > 1.0:
-        donor_freting = 1.0
+    if donor_fretting < 0.0:
+        donor_fretting = 0.0
+    elif donor_fretting > 1.0:
+        donor_fretting = 1.0
 
     if donor_background < 0.0:
         donor_background = 0.0
 
-    f_pure = 1.0 - donor_freting
-    f_quenched = (1.0 - fret_efficiency) * donor_freting
+    f_pure = 1.0 - donor_fretting
+    f_quenched = (1.0 - fret_efficiency) * donor_fretting
     sum = f_pure + f_quenched + donor_background
     if sum < 1e-9:
         # no signal in donor channel
@@ -516,7 +516,7 @@ cdef (double, double) _phasor_from_fret_acceptor(
     double donor_lifetime,
     double acceptor_lifetime,
     double fret_efficiency,
-    double donor_freting,
+    double donor_fretting,
     double donor_bleedthrough,
     double acceptor_bleedthrough,
     double acceptor_background,
@@ -541,10 +541,10 @@ cdef (double, double) _phasor_from_fret_acceptor(
     elif fret_efficiency > 1.0:
         fret_efficiency = 1.0
 
-    if donor_freting < 0.0:
-        donor_freting = 0.0
-    elif donor_freting > 1.0:
-        donor_freting = 1.0
+    if donor_fretting < 0.0:
+        donor_fretting = 0.0
+    elif donor_fretting > 1.0:
+        donor_fretting = 1.0
 
     if donor_bleedthrough < 0.0:
         donor_bleedthrough = 0.0
@@ -575,7 +575,7 @@ cdef (double, double) _phasor_from_fret_acceptor(
             quenched_imag,
             1.0,
             1.0 - fret_efficiency,
-            1.0 - donor_freting
+            1.0 - donor_fretting
         )
 
     # phasor of acceptor at frequency
@@ -597,8 +597,8 @@ cdef (double, double) _phasor_from_fret_acceptor(
     sensitized_imag = mod * sin(phi)
 
     # weighted average
-    f_donor = donor_bleedthrough * (1.0 - donor_freting * fret_efficiency)
-    f_acceptor = donor_freting * fret_efficiency
+    f_donor = donor_bleedthrough * (1.0 - donor_fretting * fret_efficiency)
+    f_acceptor = donor_fretting * fret_efficiency
     sum = f_donor + f_acceptor + acceptor_bleedthrough + acceptor_background
     if sum < 1e-9:
         # no signal in acceptor channel
@@ -919,7 +919,7 @@ cdef (float_t, float_t) _phasor_at_harmonic(
     int harmonic,
     int other_harmonic,
 ) noexcept nogil:
-    """Return phasor coordinates on semicircle at other harmonic."""
+    """Return phasor coordinates on universal semicircle at other harmonic."""
     if isnan(real):
         return <float_t> NAN, <float_t> NAN
 
@@ -1054,7 +1054,7 @@ cdef short _is_inside_polar_rectangle(
 ) noexcept nogil:
     """Return whether point is inside polar rectangle.
 
-    Angles should be in range -pi to pi, else performance is degraded.
+    Angles should be in range [-pi, pi], else performance is degraded.
 
     """
     cdef:
@@ -2217,7 +2217,7 @@ def _flimlabs_mean(
                 sum = 0.0
                 for h, count in pixels:
                     sum += <double> count
-                mean[c, i] = <float_t> (sum / 255.0)
+                mean[c, i] = <float_t> (sum / 256.0)
                 i += 1
             c += 1
     else:
@@ -2226,5 +2226,5 @@ def _flimlabs_mean(
             sum = 0.0
             for h, count in pixels:
                 sum += <double> count
-            mean[0, i] = <float_t> (sum / 255.0)
+            mean[0, i] = <float_t> (sum / 256.0)
             i += 1

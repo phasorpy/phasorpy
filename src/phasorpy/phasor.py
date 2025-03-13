@@ -59,7 +59,7 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`lifetime_fraction_from_amplitude`
   - :py:func:`lifetime_fraction_to_amplitude`
 
-- calculate phasor coordinates on semicircle at other harmonics:
+- calculate phasor coordinates on universal semicircle at other harmonics:
 
   - :py:func:`phasor_at_harmonic`
 
@@ -151,7 +151,7 @@ from ._phasorpy import (
     _polar_from_single_lifetime,
     _polar_to_apparent_lifetime,
 )
-from ._utils import parse_harmonic, parse_signal_axis
+from ._utils import parse_harmonic, parse_signal_axis, parse_skip_axis
 from .utils import number_threads
 
 
@@ -597,7 +597,7 @@ def lifetime_to_signal(
         or `1` to synthesize a homodyne signal.
     zero_phase : float, optional
         Position of instrument response function in radians.
-        Must be in range 0.0 to :math:`\pi`. The default is the 8th sample.
+        Must be in range [0, pi]. The default is the 8th sample.
     zero_stdev : float, optional
         Standard deviation of instrument response function in radians.
         Must be at least 1.5 samples and no more than one tenth of samples
@@ -685,7 +685,7 @@ def lifetime_to_signal(
     stdev = zero_stdev * scale  # in sample units
 
     if zero_phase < 0 or zero_phase > 2.0 * math.pi:
-        raise ValueError(f'{zero_phase=} out of range [0 .. 2 pi]')
+        raise ValueError(f'{zero_phase=} out of range [0, 2 pi]')
     if stdev < 1.5:
         raise ValueError(
             f'{zero_stdev=} < {1.5 / scale} cannot be sampled sufficiently'
@@ -751,9 +751,9 @@ def phasor_semicircle(
     Returns
     -------
     real : ndarray
-        Real component of semicircle phasor coordinates.
+        Real component of phasor coordinates on universal semicircle.
     imag : ndarray
-        Imaginary component of semicircle phasor coordinates.
+        Imaginary component of phasor coordinates on universal semicircle.
 
     Raises
     ------
@@ -1268,11 +1268,13 @@ def phasor_calibrate(
             )
         if real.shape[0] != len(frequency):
             raise ValueError(
-                f'{real.shape[0]=} != {len(frequency)} frequencies or harmonics'
+                f'{real.shape[0]=} != {len(frequency)} '
+                'frequencies or harmonics'
             )
         if reference_real.shape[0] != len(frequency):
             raise ValueError(
-                f'{reference_real.shape[0]=} != {len(frequency)} frequencies or harmonics'
+                f'{reference_real.shape[0]=} != {len(frequency)} '
+                'frequencies or harmonics'
             )
         if reference_mean.shape != reference_real.shape[1:]:
             raise ValueError(
@@ -1302,7 +1304,7 @@ def phasor_calibrate(
         unit_conversion=unit_conversion,
     )
 
-    skip_axis, axis = _parse_skip_axis(
+    skip_axis, axis = parse_skip_axis(
         skip_axis, real.ndim - int(has_harmonic_axis), has_harmonic_axis
     )
 
@@ -2455,7 +2457,7 @@ def phasor_from_fret_donor(
     donor_lifetime: ArrayLike,
     *,
     fret_efficiency: ArrayLike = 0.0,
-    donor_freting: ArrayLike = 1.0,
+    donor_fretting: ArrayLike = 1.0,
     donor_background: ArrayLike = 0.0,
     background_real: ArrayLike = 0.0,
     background_imag: ArrayLike = 0.0,
@@ -2481,9 +2483,9 @@ def phasor_from_fret_donor(
     donor_lifetime : array_like
         Lifetime of donor without FRET in ns.
     fret_efficiency : array_like, optional, default 0
-        FRET efficiency in range [0..1].
-    donor_freting : array_like, optional, default 1
-        Fraction of donors participating in FRET. Range [0..1].
+        FRET efficiency in range [0, 1].
+    donor_fretting : array_like, optional, default 1
+        Fraction of donors participating in FRET. Range [0, 1].
     donor_background : array_like, optional, default 0
         Weight of background fluorescence in donor channel
         relative to fluorescence of donor without FRET.
@@ -2524,7 +2526,7 @@ def phasor_from_fret_donor(
     ...     frequency=80,
     ...     donor_lifetime=4.2,
     ...     fret_efficiency=[0.0, 0.3, 1.0],
-    ...     donor_freting=0.9,
+    ...     donor_fretting=0.9,
     ...     donor_background=0.1,
     ...     background_real=0.11,
     ...     background_imag=0.12,
@@ -2538,7 +2540,7 @@ def phasor_from_fret_donor(
         omega,
         donor_lifetime,
         fret_efficiency,
-        donor_freting,
+        donor_fretting,
         donor_background,
         background_real,
         background_imag,
@@ -2552,7 +2554,7 @@ def phasor_from_fret_acceptor(
     acceptor_lifetime: ArrayLike,
     *,
     fret_efficiency: ArrayLike = 0.0,
-    donor_freting: ArrayLike = 1.0,
+    donor_fretting: ArrayLike = 1.0,
     donor_bleedthrough: ArrayLike = 0.0,
     acceptor_bleedthrough: ArrayLike = 0.0,
     acceptor_background: ArrayLike = 0.0,
@@ -2585,9 +2587,9 @@ def phasor_from_fret_acceptor(
     acceptor_lifetime : array_like
         Lifetime of acceptor in ns.
     fret_efficiency : array_like, optional, default 0
-        FRET efficiency in range [0..1].
-    donor_freting : array_like, optional, default 1
-        Fraction of donors participating in FRET. Range [0..1].
+        FRET efficiency in range [0, 1].
+    donor_fretting : array_like, optional, default 1
+        Fraction of donors participating in FRET. Range [0, 1].
     donor_bleedthrough : array_like, optional, default 0
         Weight of donor fluorescence in acceptor channel
         relative to fluorescence of fully sensitized acceptor.
@@ -2640,7 +2642,7 @@ def phasor_from_fret_acceptor(
     ...     donor_lifetime=4.2,
     ...     acceptor_lifetime=3.0,
     ...     fret_efficiency=[0.0, 0.3, 1.0],
-    ...     donor_freting=0.9,
+    ...     donor_fretting=0.9,
     ...     donor_bleedthrough=0.1,
     ...     acceptor_bleedthrough=0.1,
     ...     acceptor_background=0.1,
@@ -2657,7 +2659,7 @@ def phasor_from_fret_acceptor(
         donor_lifetime,
         acceptor_lifetime,
         fret_efficiency,
-        donor_freting,
+        donor_fretting,
         donor_bleedthrough,
         acceptor_bleedthrough,
         acceptor_background,
@@ -2742,7 +2744,7 @@ def phasor_to_principal_plane(
     References
     ----------
 
-    .. [1] Franssen WMJ, Vergeldt FJ, Bader AN, van Amerongen H, & Terenzi C.
+    .. [1] Franssen WMJ, Vergeldt FJ, Bader AN, van Amerongen H, and Terenzi C.
       `Full-harmonics phasor analysis: unravelling multiexponential trends
       in magnetic resonance imaging data
       <https://doi.org/10.1021/acs.jpclett.0c02319>`_.
@@ -2954,7 +2956,7 @@ def phasor_filter_median(
         raise ValueError(f'{real.shape=} != {imag.shape=}')
 
     prepend_axis = mean.ndim + 1 == real.ndim
-    _, axes = _parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
+    _, axes = parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
 
     # in case mean is also filtered
     # if prepend_axis:
@@ -3097,8 +3099,8 @@ def phasor_filter_pawflim(
     References
     ----------
 
-    .. [2] Silberberg M & Grecco H. `pawFLIM: reducing bias and uncertainty
-      to enable lower photon count in FLIM experiments
+    .. [2] Silberberg M, and Grecco H. `pawFLIM: reducing bias and
+      uncertainty to enable lower photon count in FLIM experiments
       <https://doi.org/10.1088/2050-6120/aa72ab>`_.
       *Methods Appl Fluoresc*, 5(2): 024016 (2017)
 
@@ -3171,7 +3173,7 @@ def phasor_filter_pawflim(
     real_filtered = real.copy()
     imag_filtered = imag.copy()
 
-    _, axes = _parse_skip_axis(skip_axis, mean.ndim, True)
+    _, axes = parse_skip_axis(skip_axis, mean.ndim, True)
 
     for index in numpy.ndindex(
         *(
@@ -3539,7 +3541,7 @@ def phasor_center(
         raise ValueError(f'{mean.shape=} != {real.shape=}')
 
     prepend_axis = mean.ndim + 1 == real.ndim
-    _, axis = _parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
+    _, axis = parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
     if prepend_axis:
         mean = numpy.expand_dims(mean, axis=0)
 
@@ -3583,62 +3585,3 @@ def _median(
         numpy.nanmedian(real, **kwargs),
         numpy.nanmedian(imag, **kwargs),
     )
-
-
-def _parse_skip_axis(
-    skip_axis: int | Sequence[int] | None,
-    /,
-    ndim: int,
-    prepend_axis: bool = False,
-) -> tuple[tuple[int, ...], tuple[int, ...]]:
-    """Return axes to skip and not to skip.
-
-    This helper function is used to validate and parse `skip_axis`
-    parameters.
-
-    Parameters
-    ----------
-    skip_axis : int or sequence of int, optional
-        Axes to skip. If None, no axes are skipped.
-    ndim : int
-        Dimensionality of array in which to skip axes.
-    prepend_axis : bool, optional
-        Prepend one dimension and include in `skip_axis`.
-
-    Returns
-    -------
-    skip_axis
-        Ordered, positive values of `skip_axis`.
-    other_axis
-        Axes indices not included in `skip_axis`.
-
-    Raises
-    ------
-    IndexError
-        If any `skip_axis` value is out of bounds of `ndim`.
-
-    Examples
-    --------
-    >>> _parse_skip_axis((1, -2), 5)
-    ((1, 3), (0, 2, 4))
-
-    >>> _parse_skip_axis((1, -2), 5, True)
-    ((0, 2, 4), (1, 3, 5))
-
-    """
-    if ndim < 0:
-        raise ValueError(f'invalid {ndim=}')
-    if skip_axis is None:
-        if prepend_axis:
-            return (0,), tuple(range(1, ndim + 1))
-        return (), tuple(range(ndim))
-    if not isinstance(skip_axis, Sequence):
-        skip_axis = (skip_axis,)
-    if any(i >= ndim or i < -ndim for i in skip_axis):
-        raise IndexError(f'skip_axis={skip_axis} out of range for {ndim=}')
-    skip_axis = sorted(int(i % ndim) for i in skip_axis)
-    if prepend_axis:
-        skip_axis = [0] + [i + 1 for i in skip_axis]
-        ndim += 1
-    other_axis = tuple(i for i in range(ndim) if i not in skip_axis)
-    return tuple(skip_axis), other_axis

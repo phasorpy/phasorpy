@@ -19,13 +19,13 @@ def wavelength2rgb(
 ) -> tuple[float, float, float] | NDArray[Any]:
     """Return approximate sRGB color components of visible wavelength(s).
 
-    Wavelength values are clipped to 360..750, rounded, and used to index
-    the :py:attr:`SRGB_SPECTRUM` palette.
+    Wavelengths are clipped to range [360, 750] nm, rounded, and used to
+    index the :py:attr:`SRGB_SPECTRUM` palette.
 
     Parameters
     ----------
     wavelength : array_like
-        Scalar or array of wavelength(s) to convert.
+        Scalar or array of wavelengths in nm.
     dtype : data-type, optional
         Data-type of return value. The default is ``float32``.
 
@@ -33,8 +33,8 @@ def wavelength2rgb(
     -------
     ndarray or tuple
         Approximate sRGB color components of visible wavelength.
-        Floating-point types are in range 0.0 to 1.0.
-        Integer types are scaled to the dtype's maximum value.
+        Floating-point values are in range [0.0, 1.0].
+        Integer values are scaled to the dtype's maximum value.
 
     Examples
     --------
@@ -68,7 +68,7 @@ def float2int(
     /,
     dtype: DTypeLike = numpy.uint8,
 ) -> NDArray[Any]:
-    """Return normalized color components as integer type.
+    """Return normalized color components as integers.
 
     Parameters
     ----------
@@ -76,6 +76,11 @@ def float2int(
         Scalar or array of normalized floating-point color components.
     dtype : data-type, optional
         Data type of return value. The default is ``uint8``.
+
+    Returns
+    -------
+    ndarray
+        Color components as integers scaled to dtype's range.
 
     Examples
     --------
@@ -162,11 +167,11 @@ CATEGORICAL: NDArray[numpy.float32] = numpy.array([
     [0.523809, 0.888889, 0.460317],
     [0.285714, 0.0, 0.238095],
 ], dtype=numpy.float32)
-"""Categorical sRGB color palette inspired by C Glasbey.
+"""Categorical sRGB color palette inspired by C. Glasbey.
 
-The palette contains 64 maximally distinct colours.
+Contains 64 maximally distinct colours for visualization.
 
-Generated with the `glasbey <https://glasbey.readthedocs.io>`_ package::
+Generated using the `glasbey <https://glasbey.readthedocs.io>`_ package::
 
     import glasbey; numpy.array(glasbey.create_palette(64, as_hex=False))
 
@@ -568,11 +573,11 @@ SRGB_SPECTRUM: NDArray[numpy.float32] = numpy.array([
     [0.005006, 0.0, 0.0],
     [0.004664, 0.0, 0.0],
 ], dtype=numpy.float32)
-"""sRGB color components for visible light wavelengths 360-750 nm.
+"""sRGB color components for wavelengths of visible light (360-750 nm).
 
 Based on the CIE 1931 2° Standard Observer.
 
-Generated with the `colour <https://colour.readthedocs.io>`_ package::
+Generated using the `colour <https://colour.readthedocs.io>`_ package::
 
     import colour; colour.plotting.plot_visible_spectrum()
 

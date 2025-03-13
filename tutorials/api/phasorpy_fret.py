@@ -40,7 +40,7 @@ settings = {
 # of a FRET donor quenched by energy transfer of efficiency :math:`E` is given
 # by :math:`\tau_{DA} = \tau_{D} (1 - E)` and :math:`F_{DA} = F_{D} (1 - E)`,
 # where :math:`\tau_{D}` and :math:`F_{D}` are the donor lifetime and
-# intensity in absence of energy transfer.
+# intensity in the absence of energy transfer.
 #
 # Hence, in the absence of background fluorescence and donors not undergoing
 # energy transfer, the phasor coordinates of the donor channel at different
@@ -65,7 +65,7 @@ PhasorPlotFret(
 
 
 # %%
-# Fractions not FRETing
+# Fractions not fretting
 # ----------------------
 #
 # Adding fractions of donors not participating in FRET and fractions
@@ -75,9 +75,9 @@ PhasorPlotFret(
 
 PhasorPlotFret(
     **settings,
-    donor_freting=0.9,  # 90%
+    donor_fretting=0.9,  # 90%
     acceptor_bleedthrough=0.1,  # 10%
-    title='FRET efficiency trajectories with fractions not FRETing',
+    title='FRET efficiency trajectories with fractions not fretting',
 ).show()
 
 
@@ -85,9 +85,9 @@ PhasorPlotFret(
 # Donor bleedthrough
 # ------------------
 #
-# If the acceptor channel contains fractions of donor fluorescence
+# When the acceptor channel contains fractions of donor fluorescence
 # (donor bleedthrough), the FRET efficiency trajectory of the acceptor
-# channel is pulled towards the phasor coordinates of the donor channel:
+# channel shifts towards the phasor coordinates of the donor channel:
 
 PhasorPlotFret(
     **settings,
@@ -109,7 +109,7 @@ PhasorPlotFret(
 
 PhasorPlotFret(
     **settings,
-    donor_freting=1.0,
+    donor_fretting=1.0,
     acceptor_background=0.1,  # 10%
     donor_background=0.1,  # 10%
     background_real=0.5,
@@ -137,7 +137,7 @@ PhasorPlotFret(
 
 PhasorPlotFret(
     **settings,
-    donor_freting=0.9,
+    donor_fretting=0.9,
     donor_bleedthrough=0.1,
     acceptor_bleedthrough=0.1,
     acceptor_background=0.1,
@@ -160,7 +160,7 @@ PhasorPlotFret(
 
 PhasorPlotFret(
     **settings,
-    donor_freting=0.9,
+    donor_fretting=0.9,
     donor_bleedthrough=0.1,
     interactive=True,
     title='Interactive FRET phasor plot',
@@ -171,8 +171,8 @@ PhasorPlotFret(
 # Multi-frequency plot
 # --------------------
 #
-# Since the components of the FRET model have different frequency responses,
-# the multi-frequency plots of donor and acceptor channels may show
+# Since each component of the FRET model has a distinct frequency response,
+# the multi-frequency plots of donor and acceptor channels reveal
 # complex patterns.
 # Background fluorescence is omitted from this example to model an
 # in vitro experiment:
@@ -190,7 +190,7 @@ frequency = numpy.logspace(0, 4, 64).reshape(-1, 1)  # 1-10000 MHz
 fret_efficiency = numpy.array([0.05, 0.95]).reshape(1, -1)  # 5% and 95%
 donor_lifetime = 4.2
 acceptor_lifetime = 3.0
-donor_freting = 0.9
+donor_fretting = 0.9
 donor_bleedthrough = 0.1
 acceptor_bleedthrough = 0.1
 
@@ -198,7 +198,7 @@ donor_real, donor_imag = phasor_from_fret_donor(
     frequency,
     donor_lifetime,
     fret_efficiency=fret_efficiency,
-    donor_freting=donor_freting,
+    donor_fretting=donor_fretting,
 )
 
 # phasor of acceptor channel
@@ -207,7 +207,7 @@ acceptor_real, acceptor_imag = phasor_from_fret_acceptor(
     donor_lifetime,
     acceptor_lifetime,
     fret_efficiency=fret_efficiency,
-    donor_freting=donor_freting,
+    donor_fretting=donor_fretting,
     donor_bleedthrough=donor_bleedthrough,
     acceptor_bleedthrough=acceptor_bleedthrough,
 )
@@ -226,7 +226,6 @@ plot_polar_frequency(
     *phasor_to_polar(acceptor_real, acceptor_imag),
     title='Acceptor channel',
 )
-
 
 # %%
 # sphinx_gallery_thumbnail_number = 5

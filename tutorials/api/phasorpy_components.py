@@ -35,20 +35,20 @@ component_style = {
 # ---------------------------
 #
 # The phasor coordinates of combinations of two lifetime components lie on
-# the line between the two components. For example, a combination with
-# 60% contribution (fraction 0.6) of a component A with lifetime 1.0 ns and
-# 40% contribution (fraction 0.4) of a component B with lifetime 8.0 ns
-# at 80 MHz:
+# the line between the two components. For example, a mixture of:
+#
+# - Component A: 1.0 ns lifetime, 60% contribution
+# - Component B: 8.0 ns lifetime, 40% contribution
 
-frequency = 80.0
-component_lifetimes = [1.0, 8.0]
+frequency = 80.0  # MHz
+component_lifetimes = [1.0, 8.0]  # ns
 component_fractions = [0.6, 0.4]
 
 components_real, components_imag = phasor_from_lifetime(
     frequency, component_lifetimes
 )
 
-plot = PhasorPlot(frequency=frequency, title='Combination of two components')
+plot = PhasorPlot(frequency=frequency, title='Fractions of two components')
 plot.components(
     components_real,
     components_imag,
@@ -94,10 +94,10 @@ plot.components(
 plot.show()
 
 # %%
-# If the phasor coordinates of two components contributing to multiple
-# phasor coordinates are known, their fractional contributions to each phasor
-# coordinate can be calculated by projecting the phasor coordinate onto
-# the line between the components. The fractions are plotted as histograms:
+# When the phasor coordinates of two contributing components are known,
+# their fractional contributions to phasor coordinates can be calculated by
+# projecting the phasor coordinate onto the line connecting the components.
+# The fractions are plotted as histograms:
 
 fraction_of_first_component = two_fractions_from_phasor(
     real, imag, components_real, components_imag
@@ -111,13 +111,13 @@ plot_histograms(
     alpha=0.66,
     title='Histograms of fractions of two components',
     xlabel='Fraction',
-    ylabel='Counts',
+    ylabel='Count',
     labels=['A', 'B'],
 )
 
 # %%
-# Graphical solution for contributions of two components
-# ------------------------------------------------------
+# Graphical analysis of two components
+# ------------------------------------
 #
 # The :py:func:`phasorpy.components.graphical_component_analysis`
 # function for two components counts the number of phasor coordinates
@@ -139,18 +139,18 @@ counts = graphical_component_analysis(
 
 fig, ax = pyplot.subplots()
 ax.plot(fractions, counts[0], '-', label='A vs B')
-ax.set_title('Graphical solution for contributions of two components')
+ax.set_title('Graphical analysis of two components')
 ax.set_xlabel('Fraction')
-ax.set_ylabel('Counts')
+ax.set_ylabel('Count')
 ax.legend()
 pyplot.show()
 
 # %%
-# Graphical solution for contributions of three components
-# --------------------------------------------------------
+# Graphical analysis of three components
+# --------------------------------------
 #
-# The graphical solution can similarly be applied to the contributions of
-# three components.
+# The graphical method can similarly be applied to the contributions of
+# three components:
 
 component_lifetimes = [1.0, 4.0, 15.0]
 components_real, components_imag = phasor_from_lifetime(
@@ -158,8 +158,7 @@ components_real, components_imag = phasor_from_lifetime(
 )
 
 plot = PhasorPlot(
-    frequency=frequency,
-    title='Distribution of three known components',
+    frequency=frequency, title='Graphical analysis of three components'
 )
 plot.hist2d(real, imag, cmap='Greys')
 plot.components(
@@ -184,9 +183,9 @@ fig, ax = pyplot.subplots()
 ax.plot(fractions, counts[0], '-', label='A vs B')
 ax.plot(fractions, counts[1], '-', label='A vs C')
 ax.plot(fractions, counts[2], '-', label='B vs C')
-ax.set_title('Graphical solution for contributions of three components')
+ax.set_title('Graphical analysis of three components')
 ax.set_xlabel('Fraction')
-ax.set_ylabel('Counts')
+ax.set_ylabel('Count')
 ax.legend()
 pyplot.show()
 
@@ -203,7 +202,7 @@ fig, (ax, hist) = pyplot.subplots(nrows=2, ncols=1, figsize=(5.5, 8))
 plot = PhasorPlot(
     frequency=frequency,
     ax=ax,
-    title='Graphical solution for contribution of A vs B',
+    title='Graphical analysis of component A vs B',
 )
 plot.hist2d(real, imag, cmap='Greys')
 plot.components(
@@ -218,7 +217,7 @@ plot.components(
 
 hist.set_xlim(0, 1)
 hist.set_xlabel('Fraction')
-hist.set_ylabel('Counts')
+hist.set_ylabel('Count')
 
 direction_real = components_real[0] - components_real[1]
 direction_imag = components_imag[0] - components_imag[1]

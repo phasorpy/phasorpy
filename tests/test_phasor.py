@@ -23,7 +23,6 @@ except ImportError:
     mkl_fft = None
 
 from phasorpy.phasor import (
-    _parse_skip_axis,
     lifetime_fraction_from_amplitude,
     lifetime_fraction_to_amplitude,
     lifetime_from_frequency,
@@ -2180,10 +2179,10 @@ def test_phasor_from_fret_donor():
         phasor_from_lifetime([40, 80], 4.2 * 0.7),
         atol=1e-3,
     )
-    # donor_freting
+    # donor_fretting
     assert_allclose(
         phasor_from_fret_donor(
-            80, 4.2, fret_efficiency=[0.0, 0.3, 1.0], donor_freting=0.9
+            80, 4.2, fret_efficiency=[0.0, 0.3, 1.0], donor_fretting=0.9
         ),
         [[re, 0.296158, re], [im, 0.453563, im]],
         atol=1e-3,
@@ -2207,7 +2206,7 @@ def test_phasor_from_fret_donor():
             80,
             4.2,
             fret_efficiency=[0.0, 0.3, 1.0],
-            donor_freting=0.9,
+            donor_fretting=0.9,
             donor_background=0.1,
             background_real=0.11,
             background_imag=0.12,
@@ -2273,7 +2272,7 @@ def test_phasor_from_fret_acceptor():
             3.0,
             fret_efficiency=[0.0, 0.3, 1.0],
             donor_bleedthrough=0.1,
-            donor_freting=0.9,
+            donor_fretting=0.9,
         ),
         [[dre, -0.02974, 0.3041], [dim, 0.322, 0.4598]],
         atol=1e-3,
@@ -2299,7 +2298,7 @@ def test_phasor_from_fret_acceptor():
             4.2,
             3.0,
             fret_efficiency=[0.0, 0.3, 1.0],
-            donor_freting=0.9,
+            donor_fretting=0.9,
             donor_bleedthrough=0.1,
             acceptor_bleedthrough=0.1,
             acceptor_background=0.1,
@@ -2500,25 +2499,6 @@ def test_phasor_to_principal_plane():
     # exception
     with pytest.raises(ValueError):
         phasor_to_principal_plane([0.0, 1.0], [0.0])
-
-
-def test_parse_skip_axis():
-    """Test _parse_skip_axis function."""
-    assert _parse_skip_axis(None, 0) == ((), ())
-    assert _parse_skip_axis(None, 1) == ((), (0,))
-    assert _parse_skip_axis((), 1) == ((), (0,))
-    assert _parse_skip_axis(0, 1) == ((0,), ())
-    assert _parse_skip_axis(0, 2) == ((0,), (1,))
-    assert _parse_skip_axis(-1, 2) == ((1,), (0,))
-    assert _parse_skip_axis((1, -2), 5) == ((1, 3), (0, 2, 4))
-    with pytest.raises(ValueError):
-        _parse_skip_axis(0, -1)
-    with pytest.raises(IndexError):
-        _parse_skip_axis(0, 0)
-    with pytest.raises(IndexError):
-        _parse_skip_axis(1, 1)
-    with pytest.raises(IndexError):
-        _parse_skip_axis(-2, 1)
 
 
 @pytest.mark.parametrize(
