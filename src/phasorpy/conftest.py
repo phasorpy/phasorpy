@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 import math
 from typing import TYPE_CHECKING
 

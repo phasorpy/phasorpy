@@ -8,6 +8,8 @@ Invoke the command line application with::
 
 from __future__ import annotations
 
+__all__: list[str] = []
+
 import os
 from typing import TYPE_CHECKING
 
