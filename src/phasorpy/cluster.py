@@ -16,17 +16,20 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ._typing import Any, ArrayLike
 
+import math
 import numbers
 from collections.abc import Sequence
 
 import numpy
 from sklearn.mixture import GaussianMixture
 
+from ._utils import parse_skip_axis
+
 
 def phasor_cluster_gmm(
     real: ArrayLike,
     imag: ArrayLike,
-    scaling: float = 2 * numpy.sqrt(2),
+    sigma: float = 2.0,
     /,
     *,
     clusters: int = 1,
@@ -51,10 +54,10 @@ def phasor_cluster_gmm(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    scaling: float, default = 2*sqrt(2)
+    sigma: float, default = 2.0
         Scaling factor for the radii of major and minor axes. By default, it is set
-        to 2√2, which corresponds to the scaling of eigenvalues for a 95% confidence
-        ellipse (2σ).
+        to 2, which corresponds to the scaling of eigenvalues for a 95 per cent confidence
+        ellipse.
     clusters : int, optional
         Number of Gaussian distributions to fit to phasor coordinates.
         Defaults to 1.
@@ -62,16 +65,12 @@ def phasor_cluster_gmm(
         Axes to skip in the data (useful for multi-dimensional arrays).
     **kwargs
         Additional keyword arguments passed to
-<<<<<<< HEAD
-        `sklearn.mixture.GaussianMixture`.
-        Common options include:
+        :py:class:`sklearn.mixture.GaussianMixture`.
 
+        Common options include:
         - covariance_type : {'full', 'tied', 'diag', 'spherical'}
         - max_iter : int, maximum number of EM iterations
         - random_state : int, for reproducible results
-=======
-        :py:class:`sklearn.mixture.GaussianMixture`.
->>>>>>> 473d5da594f091661132a072c5cf886f666862a3
 
     Returns
     -------
@@ -84,7 +83,7 @@ def phasor_cluster_gmm(
     radius_minor : tuple of float
         Minor radii of ellipses.
     angle : tuple of float
-        Rotation angles of major axes in radians, within range [0, π].
+        Rotation angles of major axes in radians, within range [0, pi].
 
     Raises
     ------
@@ -94,7 +93,7 @@ def phasor_cluster_gmm(
 
     Notes
     -----
-    The radii represent the 95% confidence intervals of the Gaussian
+    The radii represent the 95 per cent confidence intervals of the Gaussian
     distributions, scaled by 2.0 * sqrt(2.0) * sqrt(eigenvalues).
 
     See Also
@@ -132,11 +131,11 @@ def phasor_cluster_gmm(
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
-    if not isinstance(clusters, numbers.Integral) or clusters < 1:
+    if not isinstance(clusters, numbers.Integral) or clusters < 1:  # type: ignore[unreachable]
         raise ValueError(f"{clusters=} of type {type(clusters)}")
     clusters = int(clusters)
 
-    skip_axis, _ = _parse_skip_axis(skip_axis, real.ndim)
+    skip_axis, _ = parse_skip_axis(skip_axis, real.ndim)
 
     if skip_axis:
         real = numpy.mean(real, axis=skip_axis, keepdims=True)
@@ -147,9 +146,10 @@ def phasor_cluster_gmm(
     valid_data = ~numpy.isnan(coords).any(axis=1)
     coords = coords[valid_data]
 
-    if coords.shape[0] < clusters:
+    # GaussianMixture requires at least 2 data points.
+    if coords.shape[0] < max(2, clusters):
         raise ValueError(
-            f'Not enough points ({coords.shape[0]}) for requested components ({clusters})'
+            f'Not enough points ({coords.shape[0]}) for components ({clusters})'
         )
 
     kwargs.pop('n_components', None)
@@ -183,15 +183,15 @@ def phasor_cluster_gmm(
         eigenvectors = eigenvectors[:, idx]
 
         major_vector = eigenvectors[:, 0]
-        current_angle = numpy.arctan2(major_vector[1], major_vector[0])
+        current_angle = math.atan2(major_vector[1], major_vector[0])
 
         if current_angle < 0:
-            current_angle += numpy.pi
+            current_angle += math.pi
 
         angle.append(float(current_angle))
 
-        radius_major.append(scaling * numpy.sqrt(eigenvalues[0]))
-        radius_minor.append(scaling * numpy.sqrt(eigenvalues[1]))
+        radius_major.append(sigma * math.sqrt(2 * eigenvalues[0]))
+        radius_minor.append(sigma * math.sqrt(2 * eigenvalues[1]))
 
     return (
         tuple(center_real),
@@ -200,64 +200,3 @@ def phasor_cluster_gmm(
         tuple(radius_minor),
         tuple(angle),
     )
-
-
-# Added here, or should it be imported from phasor.py where
-# there's an exact copy of the function?
-def _parse_skip_axis(
-    skip_axis: int | Sequence[int] | None,
-    /,
-    ndim: int,
-    prepend_axis: bool = False,
-) -> tuple[tuple[int, ...], tuple[int, ...]]:
-    """Return axes to skip and not to skip.
-
-    This helper function is used to validate and parse `skip_axis`
-    parameters.
-
-    Parameters
-    ----------
-    skip_axis : int or sequence of int, optional
-        Axes to skip. If None, no axes are skipped.
-    ndim : int
-        Dimensionality of array in which to skip axes.
-    prepend_axis : bool, optional
-        Prepend one dimension and include in `skip_axis`.
-
-    Returns
-    -------
-    skip_axis
-        Ordered, positive values of `skip_axis`.
-    other_axis
-        Axes indices not included in `skip_axis`.
-
-    Raises
-    ------
-    IndexError
-        If any `skip_axis` value is out of bounds of `ndim`.
-
-    Examples
-    --------
-    >>> _parse_skip_axis((1, -2), 5)
-    ((1, 3), (0, 2, 4))
-
-    >>> _parse_skip_axis((1, -2), 5, True)
-    ((0, 2, 4), (1, 3, 5))
-
-    """
-    if ndim < 0:
-        raise ValueError(f'invalid {ndim=}')
-    if skip_axis is None:
-        if prepend_axis:
-            return (0,), tuple(range(1, ndim + 1))
-        return (), tuple(range(ndim))
-    if not isinstance(skip_axis, Sequence):
-        skip_axis = (skip_axis,)
-    if any(i >= ndim or i < -ndim for i in skip_axis):
-        raise IndexError(f'skip_axis={skip_axis} out of range for {ndim=}')
-    skip_axis = sorted(int(i % ndim) for i in skip_axis)
-    if prepend_axis:
-        skip_axis = [0] + [i + 1 for i in skip_axis]
-        ndim += 1
-    other_axis = tuple(i for i in range(ndim) if i not in skip_axis)
-    return tuple(skip_axis), other_axis

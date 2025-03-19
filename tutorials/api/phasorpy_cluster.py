@@ -1,18 +1,8 @@
-"""
-Clustering
-==========
-
-An introduction to clustering phasor points to be used with cursors.
-
-"""
-
-# %%
-# Import required modules, functions, and classes:
+import math
 
 import matplotlib.pyplot as plt
 import numpy
 
-from phasorpy.cluster import phasor_cluster_gmm
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursors import (
     mask_from_circular_cursor,
@@ -70,12 +60,17 @@ mean_filtered, real_filtered, imag_filtered = phasor_threshold(
 # ====================clustering======================
 # ====================================================
 
-clusters = 2
+import cluster
+from cluster import phasor_cluster_gmm
+
+n_components = 2
 
 centers_real, centers_imag, radio, radius_minor, angles = phasor_cluster_gmm(
     real_filtered,
     imag_filtered,
-    clusters=clusters,
+    clusters=n_components,
+    n_init=10,
+    covariance_type='full',
 )
 
 # ====================================================
@@ -106,68 +101,7 @@ for i in range(len(centers_real)):
     )
 plot.show()
 
-pseudo_color_image = pseudo_color(*elliptic_mask, intensity=mean_filtered)
-
-fig, ax = plt.subplots()
-ax.set_title('Pseudo-color image from elliptic cursors and intensity')
-ax.imshow(pseudo_color_image)
-plt.show()
-
-# =============================================================================
-# ============================Polar cursors=====================================
-# =============================================================================
-clusters = 1  # This is a test, to try and improve the results from GMM.
-
-centers_real, centers_imag, radio, radius_minor, angles = phasor_cluster_gmm(
-    real_filtered,
-    imag_filtered,
-    clusters=clusters,
-)
-modulation_center = []
-phase_center = []
-for i in range(len(centers_real)):
-    modulation_center.append(
-        numpy.sqrt(centers_real[i] ** 2 + centers_imag[i] ** 2)
-    )
-    phase_center.append(numpy.arctan2(centers_imag[i], centers_real[i]))
-
-epsilon = 0.1
-delta = 0.02
-
-phase_min = [phase_center[0], (phase_center[0] - 2 * epsilon)]
-phase_max = [(phase_center[0] + 2 * epsilon), phase_center[0]]
-modulation_min = [
-    (modulation_center[0] - delta),
-    (modulation_center[0] - delta),
-]
-modulation_max = [
-    (modulation_center[0] + delta),
-    (modulation_center[0] + delta),
-]
-
-polar_mask = mask_from_polar_cursor(
-    real,
-    imag,
-    phase_min,
-    phase_max,
-    modulation_min,
-    modulation_max,
-)
-
-plot = PhasorPlot(allquadrants=False, title='Polar cursors')
-plot.hist2d(real_filtered, imag_filtered, cmap='Greys')
-for i in range(len(phase_min)):
-    plot.polar_cursor(
-        phase=phase_min[i],
-        phase_limit=phase_max[i],
-        modulation=modulation_min[i],
-        modulation_limit=modulation_max[i],
-        color=CATEGORICAL[i],
-        linestyle='-',
-    )
-plot.show()
-
-pseudo_color_image = pseudo_color(*polar_mask, intensity=mean)
+pseudo_color_image = pseudo_color(*elliptic_mask, intensity=mean)
 
 fig, ax = plt.subplots()
 ax.set_title('Pseudo-color image from elliptic cursors and intensity')
@@ -177,11 +111,34 @@ plt.show()
 # =============================================================================
 # ==================Circular cursors (with separation)=========================
 # =============================================================================
-real_cf_1 = centers_real[0] + epsilon * numpy.sin(angles[0])
-imag_cf_1 = centers_imag[0] + epsilon * numpy.cos(angles[0])
+# The ellipse above is chosen, because there are more points in it.
+# The ellipse with a higher imaginary part should be selected for this case.
+epsilon = 0.05
+delta = 0.0003
+correction = -0.0175
 
-real_cf_2 = centers_real[0] - epsilon * numpy.sin(angles[0])
-imag_cf_2 = centers_imag[0] - epsilon * numpy.cos(angles[0])
+maximum = max(centers_imag)
+max_index = centers_imag.index(maximum)
+
+real_cf_1 = (
+    centers_real[max_index]
+    + epsilon * math.cos(angles[max_index])
+    - delta
+    + correction
+)
+imag_cf_1 = (
+    centers_imag[max_index] + epsilon * math.sin(angles[max_index]) - delta
+)
+
+real_cf_2 = (
+    centers_real[max_index]
+    - epsilon * math.cos(angles[max_index])
+    + delta
+    + correction
+)
+imag_cf_2 = (
+    centers_imag[max_index] - epsilon * math.sin(angles[max_index]) + delta
+)
 
 cursors_real = [real_cf_1, real_cf_2]
 cursors_imag = [imag_cf_1, imag_cf_2]
@@ -190,7 +147,7 @@ cursors_masks = mask_from_circular_cursor(
     real, imag, cursors_real, cursors_imag, radius=radius
 )
 
-phasorplot = PhasorPlot(frequency=frequency, title='Cursors')
+phasorplot = PhasorPlot(frequency=frequency, title='Circular Cursors')
 phasorplot.hist2d(real_filtered, imag_filtered)
 for i in range(len(cursors_real)):
     phasorplot.circle(
