@@ -66,8 +66,8 @@ mean_filtered, real_filtered, imag_filtered = phasor_threshold(
 # ====================clustering======================
 # ====================================================
 
-import cluster
-from cluster import phasor_cluster_gmm
+from phasorpy import cluster
+from phasorpy.cluster import phasor_cluster_gmm
 
 n_components = 2
 
