@@ -1,3 +1,9 @@
+"""
+Clustering
+==========
+An introduction to clustering phasor points to be used with cursors.
+"""
+
 import math
 
 import matplotlib.pyplot as plt
