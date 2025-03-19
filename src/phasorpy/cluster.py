@@ -14,10 +14,9 @@ __all__ = ['phasor_cluster_gmm']
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, ArrayLike
+    from ._typing import Any, ArrayLike, NDArray
 
 import math
-import numbers
 from collections.abc import Sequence
 
 import numpy
@@ -27,8 +26,8 @@ from ._utils import parse_skip_axis
 
 
 def phasor_cluster_gmm(
-    real: ArrayLike,
-    imag: ArrayLike,
+    real: NDArray[numpy.float64],
+    imag: NDArray[numpy.float64],
     sigma: float = 2.0,
     /,
     *,
@@ -125,15 +124,11 @@ def phasor_cluster_gmm(
     ... )
 
     """
-
-    real = numpy.asarray(real)
-    imag = numpy.asarray(imag)
+    real = numpy.asarray(real, dtype=numpy.float64)
+    imag = numpy.asarray(imag, dtype=numpy.float64)
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
-    if not isinstance(clusters, numbers.Integral) or clusters < 1:  # type: ignore[unreachable]
-        raise ValueError(f"{clusters=} of type {type(clusters)}")
-    clusters = int(clusters)
 
     skip_axis, _ = parse_skip_axis(skip_axis, real.ndim)
 
@@ -141,16 +136,12 @@ def phasor_cluster_gmm(
         real = numpy.mean(real, axis=skip_axis, keepdims=True)
         imag = numpy.mean(imag, axis=skip_axis, keepdims=True)
 
-    coords = numpy.column_stack((real.ravel(), imag.ravel()))
+    coords: NDArray[numpy.float64] = numpy.column_stack(
+        (real.ravel(), imag.ravel())
+    )
 
     valid_data = ~numpy.isnan(coords).any(axis=1)
     coords = coords[valid_data]
-
-    # GaussianMixture requires at least 2 data points.
-    if coords.shape[0] < max(2, clusters):
-        raise ValueError(
-            f'Not enough points ({coords.shape[0]}) for components ({clusters})'
-        )
 
     kwargs.pop('n_components', None)
 
