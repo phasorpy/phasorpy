@@ -16,12 +16,15 @@ image processing, array programming, and Python.
 # Install Python
 # --------------
 #
-# An installation of Python version 3.10 or higher is required to use the
+# An installation of Python version 3.11 or higher is required to use the
 # PhasorPy library.
 # Python is an easy to learn, powerful programming language.
 # Python installers can be obtained from, for example,
 # `Python.org <https://www.python.org/downloads/>`_ or
 # `Anaconda.com <https://www.anaconda.com/>`_.
+# Alternatively, Python can be used via
+# `Google Colab <https://colab.research.google.com/>`_,
+# a free, cloud-based service.
 # Refer to the `Python Tutorial <https://docs.python.org/3/tutorial/>`_
 # for an introduction to Python.
 #

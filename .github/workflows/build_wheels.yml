@@ -28,7 +28,7 @@ jobs:
       #   uses: docker/setup-qemu-action@v3
       #   with:
       #     platforms: all
-      - uses: pypa/cibuildwheel@v2.23.0
+      - uses: pypa/cibuildwheel@v2.23.1
         env:
           # Building and testing manylinux2014_aarch64 too is slow.
           # See https://github.com/phasorpy/phasorpy/pull/135
