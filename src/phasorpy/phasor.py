@@ -504,7 +504,8 @@ def phasor_to_signal(
     else:
         keepdims = mean.ndim > 0 or real.ndim > 0
 
-    mean, real = numpy.atleast_1d(mean, real)
+    mean = numpy.asarray(numpy.atleast_1d(mean))
+    real = numpy.asarray(numpy.atleast_1d(real))
 
     if real.dtype.kind != 'f' or imag.dtype.kind != 'f':
         raise ValueError(f'{real.dtype=} or {imag.dtype=} not floating point')

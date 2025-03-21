@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__all__: list[str] = [
+__all__ = [
     'chunk_iter',
     'dilate_coordinates',
     'kwargs_notnone',
@@ -438,7 +438,7 @@ def parse_harmonic(
             return list(range(1, harmonic_max + 1)), True
         raise ValueError(f'{harmonic=!r} is not a valid harmonic')
 
-    h = numpy.atleast_1d(numpy.asarray(harmonic))
+    h = numpy.atleast_1d(harmonic)
     if h.size == 0:
         raise ValueError(f'{harmonic=} is empty')
     if h.dtype.kind not in 'iu' or h.ndim != 1:
@@ -449,7 +449,7 @@ def parse_harmonic(
         raise IndexError(f'{harmonic=} element > {harmonic_max}]')
     if numpy.unique(h).size != h.size:
         raise ValueError(f'{harmonic=} elements must be unique')
-    return h.tolist(), True
+    return [int(i) for i in harmonic], True
 
 
 def chunk_iter(
