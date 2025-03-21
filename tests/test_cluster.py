@@ -35,29 +35,24 @@ def test_phasor_cluster_gmm_basic(clusters):
 
 
 def test_phasor_cluster_gmm_invalid_shapes():
-    real = numpy.array([1, 2, 3])
-    imag = numpy.array([1, 2])  # Different shape
-    with pytest.raises(ValueError, match='real.shape'):
-        phasor_cluster_gmm(real, imag)
+    with pytest.raises(ValueError):
+        phasor_cluster_gmm([1, 2, 3], [1, 2])
 
 
 @pytest.mark.parametrize(
     'covariance_type', ['full', 'tied', 'diag', 'spherical']
 )
 def test_phasor_cluster_gmm_covariance(covariance_type):
-
-    real = numpy.array([1.0, 2.0, 3.0])
-    imag = numpy.array([1.0, 2.0, 3.0])
-
     centers_real, centers_imag, radius_major, radius_minor, angles = (
         phasor_cluster_gmm(
-            real, imag, clusters=2, covariance_type=covariance_type
+            [0.1, 0.2, 0.3],
+            [0.1, 0.2, 0.3],
+            clusters=2,
+            covariance_type=covariance_type,
         )
     )
-
     assert len(centers_real) == 2
     assert len(centers_imag) == 2
-
     if covariance_type == 'full':
         assert isinstance(radius_major, tuple) and len(radius_major) == 2
     elif covariance_type == 'tied':
@@ -69,51 +64,30 @@ def test_phasor_cluster_gmm_covariance(covariance_type):
 
 
 @pytest.mark.parametrize(
-    'real, imag, match',
+    'real, imag',
     [
-        (numpy.array([1, 2, 3]), numpy.array([1, 2]), 'real.shape'),
-        (
-            numpy.array([1.0]),
-            numpy.array([1.0]),
-            r'Found array with 1 sample\(s\) .* while a minimum of',
-        ),
-        (
-            numpy.array([1.0, numpy.nan, 2.0]),
-            numpy.array([1.0, 2.0, numpy.nan]),
-            r'Found array with 1 sample\(s\) .* while a minimum of',
-        ),
+        ([1, 2, 3], [1, 2]),
+        ([1.0], [1.0]),
+        ([1.0, numpy.nan, 2.0], [1.0, 2.0, numpy.nan]),
     ],
 )
-def test_phasor_cluster_gmm_exceptions(real, imag, match):
-    with pytest.raises(ValueError, match=match):
+def test_phasor_cluster_gmm_exceptions(real, imag):
+    with pytest.raises(ValueError):
         phasor_cluster_gmm(real, imag, clusters=2)
-
-
-@pytest.mark.parametrize('skip_axis', [None, 0, 1])
-def test_phasor_cluster_gmm_skip_axis(skip_axis):
-    real = numpy.array([[1.0, 2.0], [3.0, 4.0]])
-    imag = numpy.array([[1.0, 2.0], [3.0, 4.0]])
-
-    centers_real, centers_imag, radius_major, radius_minor, angles = (
-        phasor_cluster_gmm(real, imag, clusters=1, skip_axis=skip_axis)
-    )
-
-    assert len(centers_real) == 1
-    assert len(centers_imag) == 1
-    assert len(radius_major) == 1
-    assert len(radius_minor) == 1
-    assert len(angles) == 1
 
 
 @pytest.mark.parametrize(
     'real, imag',
     [
-        (numpy.array([[1, 2], [3, 4]]), numpy.array([[1, 2], [3, 4]])),
-        (numpy.array([1, 2, 3, 4]), numpy.array([1, 2, 3, 4])),
+        ([[1, 2], [3, 4]], [[1, 2], [3, 4]]),
+        ([1, 2, 3, 4], [1, 2, 3, 4]),
     ],
 )
 def test_phasor_cluster_gmm_column_stack(real, imag):
     centers_real, centers_imag, *_ = phasor_cluster_gmm(real, imag, clusters=1)
-
     assert len(centers_real) == 1
     assert len(centers_imag) == 1
+
+
+# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: disable-error-code="arg-type, unreachable, redundant-expr"

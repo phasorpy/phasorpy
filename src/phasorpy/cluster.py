@@ -2,8 +2,9 @@
 
 The `phasorpy.cluster` module provides functions to:
 
-- cluster phasor coordinates using Gaussian Mixture Model (GMM):
-    - :py:func:`phasor_cluster_gmm`
+- fit elliptic clusters to phasor coordinates using
+  Gaussian Mixture Model (GMM):
+  - :py:func:`phasor_cluster_gmm`
 
 """
 
@@ -14,25 +15,21 @@ __all__ = ['phasor_cluster_gmm']
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, ArrayLike, NDArray
+    from ._typing import Any, ArrayLike
 
 import math
-from collections.abc import Sequence
 
 import numpy
 from sklearn.mixture import GaussianMixture
 
-from ._utils import parse_skip_axis
-
 
 def phasor_cluster_gmm(
-    real: NDArray[numpy.float64],
-    imag: NDArray[numpy.float64],
-    sigma: float = 2.0,
+    real: ArrayLike,
+    imag: ArrayLike,
     /,
     *,
+    sigma: float = 2.0,
     clusters: int = 1,
-    skip_axis: int | Sequence[int] | None = None,
     **kwargs: Any,
 ) -> tuple[
     tuple[float, ...],
@@ -54,19 +51,18 @@ def phasor_cluster_gmm(
     imag : array_like
         Imaginary component of phasor coordinates.
     sigma: float, default = 2.0
-        Scaling factor for the radii of major and minor axes. By default, it is set
-        to 2, which corresponds to the scaling of eigenvalues for a 95 per cent confidence
-        ellipse.
+        Scaling factor for the radii of major and minor axes.
+        Default to 2, which corresponds to the scaling of eigenvalues for a
+        95% confidence ellipse.
     clusters : int, optional
         Number of Gaussian distributions to fit to phasor coordinates.
         Defaults to 1.
-    skip_axis : int or sequence of int, optional
-        Axes to skip in the data (useful for multi-dimensional arrays).
     **kwargs
         Additional keyword arguments passed to
         :py:class:`sklearn.mixture.GaussianMixture`.
 
         Common options include:
+
         - covariance_type : {'full', 'tied', 'diag', 'spherical'}
         - max_iter : int, maximum number of EM iterations
         - random_state : int, for reproducible results
@@ -89,11 +85,6 @@ def phasor_cluster_gmm(
     ValueError
         If the array shapes of `real` and `imag` do not match.
         If `clusters` is not a positive integer.
-
-    Notes
-    -----
-    The radii represent the 95 per cent confidence intervals of the Gaussian
-    distributions, scaled by 2.0 * sqrt(2.0) * sqrt(eigenvalues).
 
     See Also
     --------
@@ -130,15 +121,11 @@ def phasor_cluster_gmm(
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
 
-    skip_axis, _ = parse_skip_axis(skip_axis, real.ndim)
+    coords = numpy.stack((real, imag), axis=-1).reshape(-1, 2)
 
-    if skip_axis:
-        real = numpy.mean(real, axis=skip_axis, keepdims=True)
-        imag = numpy.mean(imag, axis=skip_axis, keepdims=True)
-
-    coords: NDArray[numpy.float64] = numpy.column_stack(
-        (real.ravel(), imag.ravel())
-    )
+    # coords: NDArray[numpy.float64] = numpy.column_stack(
+    #     (real.ravel(), imag.ravel()) # type: ignore[union-attr]
+    # )
 
     valid_data = ~numpy.isnan(coords).any(axis=1)
     coords = coords[valid_data]
