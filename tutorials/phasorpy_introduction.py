@@ -106,7 +106,6 @@ from phasorpy.plot import plot_signal_image
 plot_signal_image(signal, axis='H', xlabel='delay-time (ns)')
 
 # %%
-# .. _calculate-phasor-coordinates:
 # Calculate phasor coordinates
 # ----------------------------
 #
@@ -159,7 +158,6 @@ numpy.testing.assert_allclose(
 )
 
 # %%
-# .. _calibrate-phasor-coordinates:
 # Calibrate phasor coordinates
 # ----------------------------
 #
@@ -238,7 +236,6 @@ numpy.testing.assert_allclose(
 )
 
 # %%
-# .. _filter-phasor-coordinates:
 # Filter phasor coordinates
 # -------------------------
 #
@@ -340,7 +337,6 @@ phasorplot.hist2d(uncalibrated_real, uncalibrated_imag)
 phasorplot.show()
 
 # %%
-# .. _select-phasor-coordinates:
 # Select phasor coordinates
 # -------------------------
 #
@@ -469,74 +465,26 @@ plot_image(
 )
 
 # %%
-# Clustering phasors
-# ------------------
+# Find clusters
+# -------------
 #
-# The :py:mod:`cluster` module provides the function
-# :py:func:`phasor_cluster_gmm` to automatically find
-# clusters in the phasor space.
-#
-# Phasor coordinates are calculated as in `Calculate phasor coordinates <calculate-phasor-coordinates_>`_,
-# then calibration is performed as is done in `Calibrate phasor coordinates  <calibrate-phasor-coordinates_>`_
-# and a median filter is applied as in  `Filter phasor coordinates <filter-phasor-coordinates_>`_:
+# Finding the clusters may be automatically done by using
+# :py:func:`phasorpy.cluster.phasor_cluster_gmm` function
+# with elliptical cursors and plot them in distinct colors:
 
-mean, real, imag = phasor_from_signal(signal, axis='H')
-
-real, imag = phasor_calibrate(
-    real,
-    imag,
-    reference_mean,
-    reference_real,
-    reference_imag,
-    frequency=frequency,
-    lifetime=4.2,
-)
-
-mean_filtered, real_filtered, imag_filtered = phasor_filter_median(
-    mean, real, imag, size=3, repeat=2
-)
-
-mean_filtered, real_filtered, imag_filtered = phasor_threshold(
-    mean_filtered, real_filtered, imag_filtered, mean_min=1
-)
-
-# %%
-# Two components are selected, and the number of initializations
-# ``n_init`` is set to 10 in the :py:func:`phasor_cluster_gmm` function:
-
-import matplotlib.pyplot as plt
-from phasorpy import cluster
 from phasorpy.cluster import phasor_cluster_gmm
 
-n_components = 2
-centers_real, centers_imag, radio, radius_minor, angles = phasor_cluster_gmm(
-    real_filtered,
-    imag_filtered,
-    clusters=n_components,
-    n_init=10,
-    covariance_type='full',
+center_real, center_imag, radius, radius_minor, angles = phasor_cluster_gmm(
+    real, imag, clusters=2
 )
 
-# %%
-# Use elliptic cursors and show in a phasor plot:
-
-elliptic_mask = mask_from_elliptic_cursor(
-    real,
-    imag,
-    centers_real,
-    centers_imag,
-    radius=radio,
-    radius_minor=radius_minor,
-    angle=angles,
-)
-
-plot = PhasorPlot(frequency=frequency, title='Elliptic cursors')
-plot.hist2d(real_filtered, imag_filtered, cmap='Greys', bins=500)
-for i in range(len(centers_real)):
+plot = PhasorPlot(allquadrants=True, title='Elliptic cursors')
+plot.hist2d(real, imag, cmap='Greys', bins=500)
+for i in range(len(center_real)):
     plot.cursor(
-        centers_real[i],
-        centers_imag[i],
-        radius=radio[i],
+        center_real[i],
+        center_imag[i],
+        radius=radius[i],
         radius_minor=radius_minor[i],
         angle=angles[i],
         color=CATEGORICAL[i],
@@ -544,85 +492,31 @@ for i in range(len(centers_real)):
     )
 plot.show()
 
+# %%
+# Use the elliptic clusters to mask regions of interest in the phasor space:
+
+from phasorpy.cursors import mask_from_elliptic_cursor
+
+elliptic_masks = mask_from_elliptic_cursor(
+    real,
+    imag,
+    center_real,
+    center_imag,
+    radius=radius,
+    radius_minor=radius_minor,
+    angle=angles,
+)
 
 # %%
-# Blend the cursor masks with the mean intensity
-# image to produce a pseudo-colored image:
+# Plot a pseudo-color image, composited from the elliptic cursor masks and
+# the mean intensity image:
 
-pseudo_color_image = pseudo_color(*elliptic_mask, intensity=mean)
+pseudo_color_image = pseudo_color(*elliptic_masks, intensity=mean)
 
-fig, ax = plt.subplots()
-ax.set_title('Pseudo-color image from elliptic cursors and intensity')
-ax.imshow(pseudo_color_image)
-plt.show()
-
-
-# %%
-# In order to replicate the results from
-# `Select phasor coordinates <select-phasor-coordinates>`_,
-# circular cursors are used, and the upper ellipse corresponding
-# to the higher imaginary component is selected.
-# Additionally, three factors are defined in order to modulate
-# the separation of the cursors and angles.
-
-import math
-
-epsilon = 0.05
-delta = 0.0003
-correction = -0.0175
-
-maximum = max(centers_imag)
-max_index = centers_imag.index(maximum)
-
-real_cf_1 = (
-    centers_real[max_index]
-    + epsilon * math.cos(angles[max_index])
-    - delta
-    + correction
-)
-imag_cf_1 = (
-    centers_imag[max_index] + epsilon * math.sin(angles[max_index]) - delta
+plot_image(
+    pseudo_color_image, title='Pseudo-color image from elliptic cursors'
 )
 
-real_cf_2 = (
-    centers_real[max_index]
-    - epsilon * math.cos(angles[max_index])
-    + delta
-    + correction
-)
-imag_cf_2 = (
-    centers_imag[max_index] - epsilon * math.sin(angles[max_index]) + delta
-)
-
-cursors_real = [real_cf_1, real_cf_2]
-cursors_imag = [imag_cf_1, imag_cf_2]
-radius = [epsilon, epsilon]
-cursors_masks = mask_from_circular_cursor(
-    real, imag, cursors_real, cursors_imag, radius=radius
-)
-
-phasorplot = PhasorPlot(frequency=frequency, title='Circular Cursors')
-phasorplot.hist2d(real_filtered, imag_filtered)
-for i in range(len(cursors_real)):
-    phasorplot.circle(
-        cursors_real[i],
-        cursors_imag[i],
-        radius=radius[i],
-        color=CATEGORICAL[i],
-        linestyle='-',
-    )
-phasorplot.show()
-
-# %%
-# Blend the cursor masks with the mean intensity
-# image to produce a pseudo-colored image:
-
-pseudo_color_image = pseudo_color(*cursors_masks, intensity=mean)
-
-fig, ax = plt.subplots()
-ax.set_title('Pseudo-color image from circular cursors')
-ax.imshow(pseudo_color_image)
-plt.show()
 
 # %%
 # Appendix

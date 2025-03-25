@@ -4,6 +4,7 @@ The `phasorpy.cluster` module provides functions to:
 
 - fit elliptic clusters to phasor coordinates using
   Gaussian Mixture Model (GMM):
+
   - :py:func:`phasor_cluster_gmm`
 
 """
@@ -52,7 +53,7 @@ def phasor_cluster_gmm(
         Imaginary component of phasor coordinates.
     sigma: float, default = 2.0
         Scaling factor for the radii of major and minor axes.
-        Default to 2, which corresponds to the scaling of eigenvalues for a
+        Defaults to 2, which corresponds to the scaling of eigenvalues for a
         95% confidence ellipse.
     clusters : int, optional
         Number of Gaussian distributions to fit to phasor coordinates.
@@ -115,17 +116,8 @@ def phasor_cluster_gmm(
     ... )
 
     """
-    real = numpy.asarray(real, dtype=numpy.float64)
-    imag = numpy.asarray(imag, dtype=numpy.float64)
-
-    if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
 
     coords = numpy.stack((real, imag), axis=-1).reshape(-1, 2)
-
-    # coords: NDArray[numpy.float64] = numpy.column_stack(
-    #     (real.ravel(), imag.ravel()) # type: ignore[union-attr]
-    # )
 
     valid_data = ~numpy.isnan(coords).any(axis=1)
     coords = coords[valid_data]
