@@ -87,9 +87,6 @@ def phasor_cluster_gmm(
         If the array shapes of `real` and `imag` do not match.
         If `clusters` is not a positive integer.
 
-    See Also
-    --------
-    :ref:`sphx_glr_tutorials_api_phasorpy_cluster.py`
 
     References
     ----------
