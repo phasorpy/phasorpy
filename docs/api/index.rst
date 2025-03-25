@@ -15,6 +15,7 @@ PhasorPy library version |version|.
     phasor
     cursors
     components
+    cluster
     plot
     io
     color

@@ -465,6 +465,60 @@ plot_image(
 )
 
 # %%
+# Find clusters
+# -------------
+#
+# Finding the clusters may be automatically done by using
+# :py:func:`phasorpy.cluster.phasor_cluster_gmm` function
+# with elliptical cursors and plot them in distinct colors:
+
+from phasorpy.cluster import phasor_cluster_gmm
+
+center_real, center_imag, radius, radius_minor, angles = phasor_cluster_gmm(
+    real, imag, clusters=2
+)
+
+plot = PhasorPlot(allquadrants=True, title='Elliptic cursors')
+plot.hist2d(real, imag, cmap='Greys', bins=500)
+for i in range(len(center_real)):
+    plot.cursor(
+        center_real[i],
+        center_imag[i],
+        radius=radius[i],
+        radius_minor=radius_minor[i],
+        angle=angles[i],
+        color=CATEGORICAL[i],
+        linestyle='-',
+    )
+plot.show()
+
+# %%
+# Use the elliptic clusters to mask regions of interest in the phasor space:
+
+from phasorpy.cursors import mask_from_elliptic_cursor
+
+elliptic_masks = mask_from_elliptic_cursor(
+    real,
+    imag,
+    center_real,
+    center_imag,
+    radius=radius,
+    radius_minor=radius_minor,
+    angle=angles,
+)
+
+# %%
+# Plot a pseudo-color image, composited from the elliptic cursor masks and
+# the mean intensity image:
+
+pseudo_color_image = pseudo_color(*elliptic_masks, intensity=mean)
+
+plot_image(
+    pseudo_color_image, title='Pseudo-color image from elliptic cursors'
+)
+
+
+# %%
 # Appendix
 # --------
 #
