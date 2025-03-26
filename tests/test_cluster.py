@@ -2,31 +2,37 @@
 
 import numpy
 import pytest
+from numpy.testing import assert_allclose
 
 from phasorpy.cluster import phasor_cluster_gmm
+
+numpy.random.seed(42)
 
 
 @pytest.mark.parametrize('clusters', [1, 2, 3])
 def test_phasor_cluster_gmm_basic(clusters):
-    numpy.random.seed(42)
     real1, imag1 = numpy.random.multivariate_normal(
-        [2, 3], [[0.3, 0.1], [0.1, 0.2]], 100
+        [0.2, 0.3], [[3e-3, 1e-3], [1e-3, 2e-3]], 2**15
     ).T
     real2, imag2 = numpy.random.multivariate_normal(
-        [5, 6], [[0.2, -0.1], [-0.1, 0.3]], 100
+        [0.4, 0.5], [[2e-3, -1e-3], [-1e-3, 3e-3]], 2**14
     ).T
     real = numpy.concatenate([real1, real2])
     imag = numpy.concatenate([imag1, imag2])
-
-    centers_real, centers_imag, radius_major, radius_minor, angles = (
+    centers_real, centers_imag, radius_major, radius_minor, angle = (
         phasor_cluster_gmm(real, imag, clusters=clusters)
     )
-
     assert len(centers_real) == clusters
     assert len(centers_imag) == clusters
     assert len(radius_major) == clusters
     assert len(radius_minor) == clusters
-    assert len(angles) == clusters
+    assert len(angle) == clusters
+    if clusters == 2:
+        assert_allclose(centers_real, [0.4, 0.2], atol=0.01)
+        assert_allclose(centers_imag, [0.5, 0.3], atol=0.01)
+        assert_allclose(radius_major, [0.17, 0.17], atol=0.01)
+        assert_allclose(radius_minor, [0.105, 0.105], atol=0.01)
+        assert_allclose(angle, [2.11, 0.54], atol=0.2)
 
 
 def test_phasor_cluster_gmm_invalid_shapes():
