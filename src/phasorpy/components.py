@@ -320,26 +320,35 @@ def graphical_component_analysis(
 def n_fractions_from_phasor(
     real: ArrayLike,
     imag: ArrayLike,
-    coeff_matrix: ArrayLike,
     /,
+    *,
+    components_real: ArrayLike | None = None,
+    components_imag: ArrayLike | None = None,
+    components_matrix: NDArray[Any] | None = None,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], ...]:
-    """
-    Returns the fractions of each component in each pixel.
+    """Return fractions of n components from phasor coordinates.
 
     Parameters
     ----------
     real : array_like
         Real component of phasor coordinates.
+        The harmonics must be in the first dimension.
     imag : array_like
-        Real component of phasor coordinates.
-    coeff_matrix : array_like
-        Pure components coefficients to compute unmixing.
-        Matrix is like ``[real1, imag1, ..., realN, imagN, [1...1]]``
-        with real and imaginary component of phasor coordinates for the
-        pure components.
+        Imaginary component of phasor coordinates.
+        The harmonics must be in the first dimension.
+    components_real: array_like, optional
+        Real coordinates of the components.
+        The harmonics must be in the first dimension.
+    components_imag: array_like, optional
+        Imaginary coordinates of the components.
+        The harmonics must be in the first dimension.
+    components_matrix : array_like, optional
+        Components coefficient matrix.
+        Can be generated from components coordinates using
+        :py:func:`components_matrix_from_phasor`.
     **kwargs : optional
-        Additional arguments passed to ``scipy.linalg.lstsq()``.
+        Additional arguments passed to :py:func:`scipy.linalg.lstsq()`.
 
     Returns
     -------
@@ -351,7 +360,10 @@ def n_fractions_from_phasor(
     ------
     ValueError
         The array shapes of `real` and `imag` do not match.
-        The coefficient matrix is empty.
+        Neither the components matrix nor the components phasor
+        coordinates are not provided.
+        The system is undetermined due to the components matrix
+        having more columns than rows.
 
     See Also
     --------
@@ -367,53 +379,136 @@ def n_fractions_from_phasor(
     Example
     -------
     >>> n_fractions_from_phasor(
-    ...     [0.5, 0.3], [0.2, 0.7], [[0.1, 0.3], [0.2, 0.8], [1.0, 1.0]]
+    ...     [0.5, 0.3],
+    ...     [0.2, 0.7], 
+    ...     components_real = [0.1, 0.3], 
+    ...     components_imag = [0.2, 0.8]
     ... )  # doctest: +NUMBER
-    (array(0.8162), array(0.1958))
+    (array([0.8162, 0.1513]), array([0.1958, 0.8497]))
 
     """
 
-    real = numpy.asarray(real)
-    imag = numpy.asarray(imag)
-    coeff_matrix = numpy.asarray(coeff_matrix)
+    real = numpy.atleast_1d(real)
+    imag = numpy.atleast_1d(imag)
+    components_real = numpy.atleast_1d(components_real)
+    components_imag = numpy.atleast_1d(components_imag)
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
 
-    if coeff_matrix.size == 0:
-        raise ValueError('the coefficient matrix is empty.')
-
-    real = numpy.nan_to_num(real, nan=0.0, posinf=0.0, neginf=0.0)
-    imag = numpy.nan_to_num(imag, nan=0.0, posinf=0.0, neginf=0.0)
-
-    if real.ndim == 1:
-        vec_b = numpy.hstack([real[:1], imag[:1], 1])
-        return tuple(
-            map(numpy.asarray, scipy.linalg.lstsq(coeff_matrix, vec_b)[0])
-        )
-
-    else:
-        if real.ndim == 2:
-            n, m = real.shape
-            nh = 1  # number of harmonics
-            real = real.reshape(nh, n, m)
-            imag = imag.reshape(nh, n, m)
-        elif real.ndim == 3:
-            nh, n, m = real.shape
-        else:
+    if components_matrix is None:
+        if components_real is None or components_imag is None:
             raise ValueError(
-                f'invalid shape {real.shape}, expected (nh, n, m) or (n, m)'
+                'either the components matrix or the components phasor '
+                'coordinates must be provided'
             )
-
-        real_reshaped = real.reshape(nh, -1)
-        imag_reshaped = imag.reshape(nh, -1)
-
-        ones_array = numpy.ones((1, n * m))
-
-        vec_b = numpy.concatenate(
-            [real_reshaped, imag_reshaped, ones_array], axis=0
+        components_matrix = components_matrix_from_phasor(
+            components_real, components_imag
         )
 
-        fractions = scipy.linalg.lstsq(coeff_matrix, vec_b, **kwargs)[0]
+    components_matrix = numpy.asarray(components_matrix)
 
-        return tuple(map(numpy.asarray, fractions))
+    if components_matrix.shape[0] < components_matrix.shape[1]:
+        raise ValueError(
+            f'{components_matrix.shape[0]=} < {components_matrix.shape[1]=}'
+        )
+
+    # TODO: get harmonic information from components_matrix and process real and imag accordingly
+
+
+    if real.ndim < 2:
+        real = numpy.expand_dims(real, axis=0)
+        imag = numpy.expand_dims(imag, axis=0)
+
+    real = numpy.nan_to_num(real, nan=0.0)
+    imag = numpy.nan_to_num(imag, nan=0.0)
+
+    # TODO: get NaN mask and restore mask at the end
+
+    ones_array = numpy.ones((1,) + real.shape[1:])
+
+    coords = numpy.concatenate([real, imag, ones_array], axis=0)
+
+    fractions = scipy.linalg.lstsq(
+        components_matrix, coords.reshape(coords.shape[0], -1), **kwargs
+    )[0]
+    fractions = fractions.reshape(
+        (components_matrix.shape[1],) + coords.shape[1:]
+    )
+
+    return tuple(map(numpy.asarray, fractions))
+
+
+def components_matrix_from_phasor(
+    components_real: ArrayLike,
+    components_imag: ArrayLike,
+) -> NDArray[Any]:
+    """Return components matrix from phasor coordinates."
+
+    Parameters
+    ----------
+    components_real : array_like
+        Real coordinates of the components.
+        Harmonics must be in the first dimension.
+    components_imag : array_like
+        Imaginary coordinates of the components.
+        Harmonics must be in the first dimension.
+
+    Returns
+    -------
+    components_matrix : ndarray
+        Components matrix to be used for component analysis by
+        :py:func:`n_fractions_from_phasor`.
+
+    Raises
+    ------
+    ValueError
+        The array shapes of `components_real` and `components_imag` do not match.
+
+    Example
+    -------
+    Matrix from phasor coordinates with one harmonic and two components:
+
+    >>> components_matrix_from_phasor(
+    ...     [0.1, 0.2], [0.3, 0.4]
+    ... )
+    array([[0.1, 0.2],
+           [0.3, 0.4],
+           [1, 1]])
+
+    Matrix from phasor coordinates with two harmonics and three components:
+
+    >>> components_matrix_from_phasor(
+    ...     [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
+    ...     [[0.7, 0.8, 0.9], [1.0, 1.1, 1.2]],
+    ... )
+    array([[0.1, 0.2, 0.3],
+           [0.4, 0.5, 0.6],
+           [0.7, 0.8, 0.9],
+           [1, 1.1, 1.2],
+           [1, 1, 1]])
+
+    """
+    components_real = numpy.atleast_1d(components_real)
+    components_imag = numpy.atleast_1d(components_imag)
+
+    if components_real.shape != components_imag.shape:
+        raise ValueError(
+            f'{components_real.shape=} != {components_imag.shape=}'
+        )
+
+    if components_real.ndim == 1:
+        components_real = components_real.reshape(1, -1)
+        components_imag = components_imag.reshape(1, -1)
+
+    matrix_rows = []
+
+    for h in range(components_real.shape[0]):
+        matrix_rows.append(components_real[h])
+
+    for h in range(components_real.shape[0]):
+        matrix_rows.append(components_imag[h])
+
+    matrix_rows.append(numpy.ones(components_real.shape[1]))
+
+    return numpy.vstack(matrix_rows)
