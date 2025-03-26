@@ -320,14 +320,14 @@ def graphical_component_analysis(
 def n_fractions_from_phasor(
     real: ArrayLike,
     imag: ArrayLike,
-    /,
-    *,
     components_real: ArrayLike | None = None,
     components_imag: ArrayLike | None = None,
+    /,
+    *,
     components_matrix: NDArray[Any] | None = None,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], ...]:
-    """Return fractions of `n` components from phasor coordinates.
+    """Return fractions of multiple components from phasor coordinates.
 
     Parameters
     ----------
@@ -374,27 +374,24 @@ def n_fractions_from_phasor(
 
     References
     ----------
-    [2] Vallmitjana A, Lepanto P, Irigoin F, Malacrida L.
-    `Phasor-based multi-harmonic unmixing for in-vivohyperspectral imaging
-    <https://doi.org/10.1088/2050-6120/ac9ae9>`_.
-    *Methods Appl Fluoresc.*, (2022)
+    .. [2] Vallmitjana A, Lepanto P, Irigoin F, Malacrida L.
+      `Phasor-based multi-harmonic unmixing for in-vivohyperspectral
+      imaging <https://doi.org/10.1088/2050-6120/ac9ae9>`_.
+      *Methods Appl. Fluoresc.*, (2022)
 
     Example
     -------
     >>> n_fractions_from_phasor(
     ...     [0.5, 0.3],
     ...     [0.2, 0.7],
-    ...     components_real=[0.1, 0.3],
-    ...     components_imag=[0.2, 0.8],
+    ...     [0.1, 0.3],
+    ...     [0.2, 0.8],
     ... )  # doctest: +NUMBER
     (array([0.8162, 0.1513]), array([0.1958, 0.8497]))
 
     """
-
     real = numpy.atleast_1d(real)
     imag = numpy.atleast_1d(imag)
-    components_real = numpy.atleast_1d(components_real)
-    components_imag = numpy.atleast_1d(components_imag)
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
@@ -453,6 +450,7 @@ def n_fractions_from_phasor(
 def components_matrix_from_phasor(
     components_real: ArrayLike,
     components_imag: ArrayLike,
+    /,
 ) -> NDArray[Any]:
     """Return components matrix from phasor coordinates."
 

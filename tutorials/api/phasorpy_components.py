@@ -23,13 +23,12 @@ from phasorpy.components import (
 from phasorpy.datasets import fetch
 from phasorpy.io import signal_from_lsm
 from phasorpy.phasor import (
-    phasor_center,
     phasor_filter_median,
     phasor_from_lifetime,
     phasor_from_signal,
     phasor_threshold,
 )
-from phasorpy.plot import PhasorPlot, plot_histograms
+from phasorpy.plot import PhasorPlot, plot_histograms, plot_signal_image
 
 numpy.random.seed(42)
 component_style = {
@@ -254,139 +253,139 @@ pyplot.tight_layout()
 pyplot.show()
 
 # %%
-# Theoretical solution for contributions of n components
-# ------------------------------------------------------
+# Solving Multi-Component Analysis Algebraically
+# ----------------------------------------------
 #
-# The theoretical solution can be applied to the contributions
-# of n components
+# Multiple components can be solved by a system of linear equations. This
+# algebraic approach uses the phasor coordinates from one or multiple harmonics
+# to determine the fractional contributions of n components simultaneously. The
+# method builds a matrix equation:
+#
+# .. math::
+#
+#    A\mathbf{x} = \mathbf{b}
+#
+# where :math:`A` consists of the components coorindates, :math:`\mathbf{x}`
+# are the unknown fractions, and :math:`\mathbf{b}` represents the measured
+# phasor coordinates.
+#
+# This analysis method will be demonstrated using spectral data from multiple
+# fluorescent markers as presented in Vallmitjana et al. (Methods Appl.
+# Fluoresc., 2022; https://doi.org/10.1088/2050-6120/ac9ae9). Spectral unmixing
+# will be performed using phasor coordinates from two harmonics.
+#
+# Read and plot the phasor coordinates of the components:
 
-# %%
-
-# List of components and corresponding image files
-components = ['Hoechst', 'Lyso Tracker', 'Golgi', 'Mito Tracker', 'CellMask']
-image_files = [
+components_names = [
+    'Hoechst',
+    'Lyso Tracker',
+    'Golgi',
+    'Mito Tracker',
+    'CellMask',
+]
+components_images = [
     'spectral hoehst.lsm',
     'spectral lyso tracker green.lsm',
     'spectral golgi.lsm',
     'spectral mito tracker.lsm',
     'spectral cell mask.lsm',
 ]
+components_real = [
+    [0.178, -0.598, -0.685, -0.656, 0.722],
+    [-0.054, -0.155, 0.152, 0.197, 0.117],
+]
+components_imag = [
+    [0.597, 0.626, 0.151, -0.581, -0.630],
+    [0.231, -0.683, -0.231, 0.636, -0.833],
+]
 
-# Load images efficiently
-images = [signal_from_lsm(fetch(img)) for img in image_files]
-
-# Initialize results array
-results = numpy.zeros((5, 4))
-
-# Create PhasorPlots for both harmonics
-plot1 = PhasorPlot(
-    allquadrants=True, title='Components: First Harmonic Phasor Plot'
+plot_h1 = PhasorPlot(
+    allquadrants=True, title='First Harmonic Phasor Plot of Components'
 )
-plot2 = PhasorPlot(
-    allquadrants=True, title='Components: Second Harmonic Phasor Plot'
+plot_h2 = PhasorPlot(
+    allquadrants=True, title='Second Harmonic Phasor Plot of Components'
 )
 
-
-# Function to process an image and extract phasor centers
-def process_image(img):
-    avg, real, imag = phasor_from_signal(img, axis=0, harmonic=[1, 2])
-    avg, real, imag = phasor_filter_median(avg, real, imag, size=5, repeat=3)
-    avg, real, imag = phasor_threshold(avg, real, imag, mean_min=3)
-
-    return avg, real, imag
-
-
-# Process each image and plot the phasor centers
-for i, img in enumerate(images):
-    avg, real, imag = process_image(img)
-
-    # Compute phasor centers for both harmonics
-    _, real_center_h1, imag_center_h1 = phasor_center(avg, real[0], imag[0])
-    _, real_center_h2, imag_center_h2 = phasor_center(avg, real[1], imag[1])
-
-    # Plot first harmonic
-    plot1.hist2d(real[0], imag[0], cmap='RdYlBu_r', bins=300)
-    plot1.plot(
-        real_center_h1,
-        imag_center_h1,
-        marker='o',
-        markersize=8,
-        label=components[i],
+for i, img in enumerate(components_images):
+    mean, real, imag = phasor_from_signal(
+        signal_from_lsm(fetch(img)), axis=0, harmonic=[1, 2]
+    )
+    mean, real, imag = phasor_threshold(
+        *phasor_filter_median(mean, real, imag, size=5, repeat=3), 3
     )
 
-    # Plot second harmonic
-    plot2.hist2d(real[1], imag[1], cmap='RdYlBu_r', bins=300)
-    plot2.plot(
-        real_center_h2,
-        imag_center_h2,
+    plot_h1.hist2d(real[0], imag[0], cmap='RdYlBu_r', bins=300)
+    plot_h1.plot(
+        components_real[0][i],
+        components_imag[0][i],
         marker='o',
         markersize=8,
-        label=components[i],
+        label=components_names[i],
     )
 
-    # Store results
-    results[i] = [
-        real_center_h1,
-        imag_center_h1,
-        real_center_h2,
-        imag_center_h2,
-    ]
+    plot_h2.hist2d(real[1], imag[1], cmap='RdYlBu_r', bins=300)
+    plot_h2.plot(
+        components_real[1][i],
+        components_imag[1][i],
+        marker='o',
+        markersize=8,
+        label=components_names[i],
+    )
 
-# Load test image and process it
-test_image = signal_from_lsm(
+# %%
+# Read and plot the sample image with mixture of components:
+
+signal = signal_from_lsm(
     fetch('38_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm')
 )
-avg, real, imag = phasor_from_signal(test_image, axis=0, harmonic=[1, 2])
-avg, real, imag = phasor_filter_median(avg, real, imag, size=5, repeat=3)
+mean, real, imag = phasor_from_signal(signal, axis=0, harmonic=[1, 2])
+mean, real, imag = phasor_filter_median(mean, real, imag, size=5, repeat=3)
 
-# Reshape results into matrices for plotting
-first_h, second_h = results[:, :2], results[:, 2:]
+plot_signal_image(signal, axis=0)
 
-# Plot the average image
-pyplot.figure()
-pyplot.imshow(avg, cmap='gray')
-pyplot.title('Average Image')
-pyplot.axis('off')
-
-# Plot first and second harmonic phasors
-for title, real_data, imag_data, centers in zip(
-    ['First Harmonic Phasor', 'Second Harmonic Phasor'],
-    [real[0], real[1]],
-    [imag[0], imag[1]],
-    [first_h, second_h],
-):
-    plot = PhasorPlot(allquadrants=True, title=title)
-    plot.hist2d(real_data, imag_data, cmap='RdYlBu_r', bins=300)
-    plot.plot(centers[:, 0], centers[:, 1])
-
-# Create the matrix A with pure component positions
-matrixA = numpy.vstack(
-    [
-        results[:, 0],  # First harmonic real
-        results[:, 2],  # Second harmonic real
-        results[:, 1],  # First harmonic imaginary
-        results[:, 3],  # Second harmonic imaginary
-        numpy.ones(5),  # Row of ones
-    ]
+# %%
+plot_h1 = PhasorPlot(
+    allquadrants=True, title='First Harmonic Phasor Plot of Sample'
+)
+plot_h2 = PhasorPlot(
+    allquadrants=True, title='Second Harmonic Phasor Plot of Sample'
 )
 
-# Perform unmixing
-fractions = numpy.asarray(n_fractions_from_phasor(real, imag, matrixA))
-fractions = fractions.reshape(5, real.shape[1], real.shape[2])
+for i, img in enumerate(components_images):
+    plot_h1.hist2d(real[0], imag[0], cmap='RdYlBu_r', bins=300)
+    plot_h1.plot(
+        components_real[0][i],
+        components_imag[0][i],
+        marker='o',
+        markersize=8,
+        label=components_names[i],
+    )
 
-# Normalize fractions (clip negatives and scale to 0-1)
-fractions = numpy.clip(fractions, 0, None)
-fractions /= numpy.max(fractions)
+    plot_h2.hist2d(real[1], imag[1], cmap='RdYlBu_r', bins=300)
+    plot_h2.plot(
+        components_real[1][i],
+        components_imag[1][i],
+        marker='o',
+        markersize=8,
+        label=components_names[i],
+    )
+
+# %%
+# Perform the five component analysis:
+
+fractions = numpy.asarray(
+    n_fractions_from_phasor(real, imag, components_real, components_imag)
+)
 
 # Plot the fractions of each component
 cmap = pyplot.cm.inferno
 for i, fraction in enumerate(fractions):
     pyplot.figure()
     pyplot.imshow(fraction, cmap=cmap, vmin=0, vmax=1)
-    pyplot.title(f'Fraction of component {components[i]}')
+    pyplot.title(f'Fractions of {components_names[i]}')
     pyplot.colorbar()
-    pyplot.tight_layout()
 
+pyplot.tight_layout()
 pyplot.show()
 
 # %%
