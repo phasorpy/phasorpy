@@ -52,7 +52,7 @@ def phasor_cluster_gmm(
     imag : array_like
         Imaginary component of phasor coordinates.
     sigma: float, default = 2.0
-        Scaling factor for the radii of major and minor axes.
+        Scaling factor for radii of major and minor axes.
         Defaults to 2, which corresponds to the scaling of eigenvalues for a
         95% confidence ellipse.
     clusters : int, optional
@@ -101,19 +101,20 @@ def phasor_cluster_gmm(
     with two clusters:
 
     >>> real1, imag1 = numpy.random.multivariate_normal(
-    ...     [2, 3], [[0.3, 0.1], [0.1, 0.2]], 100
+    ...     [0.2, 0.3], [[3e-3, 1e-3], [1e-3, 2e-3]], 100
     ... ).T
     >>> real2, imag2 = numpy.random.multivariate_normal(
-    ...     [5, 6], [[0.2, -0.1], [-0.1, 0.3]], 100
+    ...     [0.4, 0.5], [[2e-3, -1e-3], [-1e-3, 3e-3]], 100
     ... ).T
     >>> real = numpy.concatenate([real1, real2])
     >>> imag = numpy.concatenate([imag1, imag2])
-    >>> (center_real, center_imag, radius_major, radius_minor, angle) = (
+    >>> center_real, center_imag, radius_major, radius_minor, angle = (
     ...     phasor_cluster_gmm(real, imag, clusters=2)
     ... )
+    >>> centers_real  # doctest: +SKIP
+    (0.2, 0.4)
 
     """
-
     coords = numpy.stack((real, imag), axis=-1).reshape(-1, 2)
 
     valid_data = ~numpy.isnan(coords).any(axis=1)
