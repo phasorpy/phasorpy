@@ -1,5 +1,5 @@
 """
-LFD Workshop FLIM Tutorial
+LFD Workshop FLIM tutorial
 ==========================
 
 The LFD Workshop FLIM tutorial adapted to PhasorPy.
@@ -357,12 +357,12 @@ plot.show()
 # Rationalize the results in terms of the quenching simulations done above
 # and the two state experiments we did earlier.
 
-plot = PhasorPlot(frequency=frequency, title='Donors FRETing')
+plot = PhasorPlot(frequency=frequency, title='Donors fretting')
 plot.plot(*phasor_from_lifetime(frequency, lifetime=4.0), label='no FRET')
 plot.plot(*phasor_from_lifetime(frequency, lifetime=2.0), label='50% FRET')
 plot.plot(
     *phasor_from_lifetime(frequency, lifetime=[4.0, 2.0], fraction=[0.5, 0.5]),
-    label='50% FRET, 50% FRETing',
+    label='50% FRET, 50% fretting',
 )
 plot.show()
 
@@ -492,7 +492,7 @@ plot.show()
 
 # %%
 # Calculate two trajectories, one for the quenching due to FRET and the other
-# for the superposition of the FRETing population with the background.
+# for the superposition of the fretting population with the background.
 #
 # The FRET efficiency for the file with very little background is about 0.23.
 # Instead, the best agreement for the file with large background is obtained
@@ -501,7 +501,7 @@ plot.show()
 settings = {
     'frequency': frequency,
     'donor_lifetime': donor_lifetime,
-    'donor_freting': 1.0,
+    'donor_fretting': 1.0,
     'donor_background': 0.1,
     'background_real': background_phasor[0],
     'background_imag': background_phasor[1],
@@ -515,8 +515,8 @@ fret1_phasor = phasor_from_fret_donor(**settings, fret_efficiency=0.23)
 fret2_phasor = phasor_from_fret_donor(**settings, fret_efficiency=0.32)
 
 settings['donor_background'] = numpy.linspace(0.0, 100.0, 100)
-freting1_trajectory = phasor_from_fret_donor(**settings, fret_efficiency=0.23)
-freting2_trajectory = phasor_from_fret_donor(**settings, fret_efficiency=0.32)
+fretting1_trajectory = phasor_from_fret_donor(**settings, fret_efficiency=0.23)
+fretting2_trajectory = phasor_from_fret_donor(**settings, fret_efficiency=0.32)
 
 plot = PhasorPlot(
     frequency=frequency,
@@ -528,8 +528,8 @@ plot.hist2d(real, imag)
 plot.circle(*donor_phasor, radius=0.03, linestyle='-', color='tab:green')
 plot.circle(*background_phasor, radius=0.03, linestyle='-', color='dimgrey')
 plot.plot(*quenching_trajectory, fmt='-', color='tab:grey')
-plot.plot(*freting1_trajectory, fmt='-', color='tab:grey')
-plot.plot(*freting2_trajectory, fmt='-', color='tab:grey')
+plot.plot(*fretting1_trajectory, fmt='-', color='tab:grey')
+plot.plot(*fretting2_trajectory, fmt='-', color='tab:grey')
 plot.line(
     [background_phasor[0], donor_phasor[0]],
     [background_phasor[1], donor_phasor[1]],
@@ -541,7 +541,7 @@ plot.plot(*fret2_phasor, color='tab:grey')
 plot.show()
 
 # %%
-# For this sample, it seems that all the cells are FRETing and that
+# For this sample, it seems that all the cells are fretting and that
 # the change of lifetime between the cells is due to combination with
 # the background fluorescence.
 
@@ -565,7 +565,7 @@ plot.show()
 # cell level, not internal to a cell since in these samples either a cell
 # expresses one protein of the other.
 #
-# - What percentage of the species is FRETing in the CFP-YFP image?
+# - What percentage of the species is fretting in the CFP-YFP image?
 # - Is the FRET efficiency high or low?
 
 # %%

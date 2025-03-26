@@ -22,7 +22,7 @@ from phasorpy.phasor import (
     phasor_from_signal,
     phasor_threshold,
 )
-from phasorpy.plot import plot_phasor
+from phasorpy.plot import plot_image, plot_phasor
 
 # %%
 # Get calibrated phasor coordinates
@@ -41,6 +41,7 @@ assert reference_signal.attrs['frequency'] == frequency
 # Calculate and calibrate phasor coordinates:
 
 mean, real, imag = phasor_from_signal(signal, axis=0)
+
 reference_mean, reference_real, reference_imag = phasor_from_signal(
     reference_signal, axis=0
 )
@@ -85,6 +86,7 @@ mean_filtered, real_filtered, imag_filtered = phasor_filter_median(
 
 # %%
 # Thresholds should be applied after filtering:
+
 mean_filtered, real_filtered, imag_filtered = phasor_threshold(
     mean_filtered, real_filtered, imag_filtered, mean_min=1
 )
@@ -118,23 +120,14 @@ plot_phasor(
 # The smoothing effect of median-filtering is demonstrated by plotting the
 # real components of the filtered and unfiltered phasor coordinates as images:
 
-
-def plot_images(im0, im1):
-    # TODO: replace with future phasorpy.plot.plot_images
-    from matplotlib import pyplot
-
-    fig, (ax0, ax1) = pyplot.subplots(
-        1, 2, figsize=(6.4, 3.4), subplot_kw={'xticks': [], 'yticks': []}
-    )
-    fig.suptitle('Real component of phasor coordinates')
-    ax0.imshow(im0, vmin=0.4, vmax=0.9)
-    ax0.set_title('Unfiltered')
-    ax1.imshow(im1, vmin=0.4, vmax=0.9)
-    ax1.set_title('Median-filtered')
-    pyplot.tight_layout()
-
-
-plot_images(phasor_threshold(mean, real, imag, mean_min=1)[1], real_filtered)
+plot_image(
+    phasor_threshold(mean, real, imag, mean_min=1)[1],
+    real_filtered,
+    vmin=0.4,
+    vmax=0.9,
+    title='Real component of phasor coordinates',
+    labels=['Unfiltered', 'Median-filtered'],
+)
 
 # %%
 # pawFLIM wavelet filter
@@ -150,6 +143,7 @@ plot_images(phasor_threshold(mean, real, imag, mean_min=1)[1], real_filtered)
 harmonic = [1, 2]
 
 mean, real, imag = phasor_from_signal(signal, axis=0, harmonic=harmonic)
+
 reference_mean, reference_real, reference_imag = phasor_from_signal(
     reference_signal, axis=0, harmonic=harmonic
 )
@@ -184,11 +178,12 @@ plot_phasor(
 
 # %%
 # Increasing the significance level of the comparison between phasor
-# coordinates and/or the maximum averaging area can further reduce noise:
+# coordinates or the maximum averaging area can further reduce noise:
 
 mean_filtered, real_filtered, imag_filtered = phasor_filter_pawflim(
     mean, real, imag, harmonic=harmonic, sigma=5, levels=3
 )
+
 mean_filtered, real_filtered, imag_filtered = phasor_threshold(
     mean_filtered, real_filtered, imag_filtered, 1
 )
@@ -201,6 +196,19 @@ plot_phasor(
 )
 
 # %%
-# sphinx_gallery_thumbnail_number = -1
+# Plot the real components of the filtered and unfiltered phasor coordinates
+# as images:
+
+plot_image(
+    phasor_threshold(mean, real, imag, mean_min=1)[1],
+    real_filtered,
+    vmin=0.4,
+    vmax=0.9,
+    title='Real component of phasor coordinates',
+    labels=['Unfiltered', 'pawFLIM-filtered'],
+)
+
+# %%
+# sphinx_gallery_thumbnail_number = -2
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"

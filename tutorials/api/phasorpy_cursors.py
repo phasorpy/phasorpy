@@ -9,8 +9,6 @@ An introduction to selecting phasor coordinates using cursors.
 # %%
 # Import required modules, functions, and classes:
 
-import matplotlib.pyplot as plt
-
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursors import (
     mask_from_circular_cursor,
@@ -21,7 +19,7 @@ from phasorpy.cursors import (
 from phasorpy.datasets import fetch
 from phasorpy.io import signal_from_lsm
 from phasorpy.phasor import phasor_from_signal, phasor_threshold
-from phasorpy.plot import PhasorPlot
+from phasorpy.plot import PhasorPlot, plot_image
 
 # %%
 # Open a hyperspectral dataset used throughout this tutorial:
@@ -67,10 +65,9 @@ plot.show()
 
 pseudo_color_image = pseudo_color(*circular_mask)
 
-fig, ax = plt.subplots()
-ax.set_title('Pseudo-color image from circular cursors')
-ax.imshow(pseudo_color_image)
-plt.show()
+plot_image(
+    pseudo_color_image, title='Pseudo-color image from circular cursors'
+)
 
 # %%
 # Elliptic cursors
@@ -114,10 +111,10 @@ plot.show()
 
 pseudo_color_image = pseudo_color(*elliptic_mask, intensity=mean)
 
-fig, ax = plt.subplots()
-ax.set_title('Pseudo-color image from elliptic cursors and intensity')
-ax.imshow(pseudo_color_image)
-plt.show()
+plot_image(
+    pseudo_color_image,
+    title='Pseudo-color image from elliptic cursors and intensity',
+)
 
 # %%
 # Polar cursors
@@ -159,12 +156,10 @@ pseudo_color_image = pseudo_color(
     *polar_mask, intensity=mean_thresholded, colors=CATEGORICAL[2:]
 )
 
-fig, ax = plt.subplots()
-ax.set_title(
-    'Pseudo-color image from\npolar cursors and thresholded intensity'
+plot_image(
+    pseudo_color_image,
+    title='Pseudo-color image from\npolar cursors and thresholded intensity',
 )
-ax.imshow(pseudo_color_image)
-plt.show()
 
 # %%
 # sphinx_gallery_thumbnail_number = 1

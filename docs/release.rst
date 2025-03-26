@@ -6,15 +6,15 @@ a release. It includes descriptions of bug fixes, feature enhancements,
 documentation and maintenance changes.
 
 .. note::
-    The PhasorPy library is in its early stages of development.
-    It is not nearly feature complete.
-    Large, backwards-incompatible changes may occur between revisions.
+    The PhasorPy library is still under construction. Backwards-incompatible
+    changes may occur between revisions.
 
 0.4 (2025.1.30)
 ---------------
 
 This is the fourth alpha release of the PhasorPy library.
-It contains several bug fixes and many improvements, mostly to the ``phasorpy.io`` module.
+It contains several bug fixes and many improvements, mostly to the
+``phasorpy.io`` module.
 File reader functions are now named ``signal_from_*`` or ``phasor_from_*``
 and have a more consistent API.
 Point mode PTU files, LIF files containing phasor coordinates or hyperspectral

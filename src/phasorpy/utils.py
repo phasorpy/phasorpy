@@ -104,7 +104,7 @@ def spectral_vector_denoise(
     .. [4] Harman RC, Lang RT, Kercher EM, Leven P, and Spring BQ.
        `Denoising multiplexed microscopy images in n-dimensional spectral space
        <https://doi.org/10.1364/BOE.463979>`_.
-       *Biomedical Optics Express*, 13(8): 4298-4309 (2022)
+       *Biomed Opt Express*, 13(8): 4298-4309 (2022)
 
     Examples
     --------
@@ -201,7 +201,7 @@ def anscombe_transformation(
 
     Parameters
     ----------
-    data: array_like
+    data : array_like
         Noisy Poisson-distributed data to be transformed.
     **kwargs
         Optional `arguments passed to numpy universal functions
@@ -250,9 +250,9 @@ def anscombe_transformation_inverse(
 
     Parameters
     ----------
-    data: array_like
+    data : array_like
         Anscombe-transformed data.
-    approx: bool, default: False
+    approx : bool, default: False
         If true, return approximation of exact unbiased inverse.
     **kwargs
         Optional `arguments passed to numpy universal functions
@@ -288,13 +288,13 @@ def anscombe_transformation_inverse(
        `A closed-form approximation of the exact unbiased inverse of the
        Anscombe variance-stabilizing transformation
        <https://doi.org/10.1109/TIP.2011.2121085>`_.
-       IEEE Trans Image Process, 20(9): 2697-8 (2011).
+       *IEEE Trans Image Process*, 20(9): 2697-8 (2011).
 
     .. [3] Makitalo M, and Foi A
        `Optimal inversion of the generalized Anscombe transformation for
        Poisson-Gaussian noise
        <https://doi.org/10.1109/TIP.2012.2202675>`_,
-       IEEE Trans Image Process, 22(1): 91-103 (2013)
+       *IEEE Trans Image Process*, 22(1): 91-103 (2013)
 
     Examples
     --------
@@ -317,7 +317,7 @@ def number_threads(
     max_threads: int | None = None,
     /,
 ) -> int:
-    """Return number of threads for parallel computations on CPU cores.
+    """Return number of threads for parallel computations across CPU cores.
 
     This function is used to parse ``num_threads`` parameters.
 
@@ -331,6 +331,11 @@ def number_threads(
         variable if set, else half the CPU cores up to `max_threads` or 32.
     max_threads : int, optional
         Maximum number of threads to return.
+
+    Returns
+    -------
+    int
+        Number of threads for parallel computations.
 
     Examples
     --------

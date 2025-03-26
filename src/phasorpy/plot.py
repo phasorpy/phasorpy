@@ -11,14 +11,17 @@ from __future__ import annotations
 __all__ = [
     'PhasorPlot',
     'PhasorPlotFret',
+    'plot_histograms',
+    'plot_image',
     'plot_phasor',
     'plot_phasor_image',
-    'plot_signal_image',
     'plot_polar_frequency',
+    'plot_signal_image',
 ]
 
 import math
 import os
+import warnings
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -75,7 +78,7 @@ class PhasorPlot:
     Parameters
     ----------
     allquadrants : bool, optional
-        Show all quandrants of phasor space.
+        Show all quadrants of phasor space.
         By default, only the first quadrant with universal semicircle is shown.
     ax : matplotlib axes, optional
         Matplotlib axes used for plotting.
@@ -83,7 +86,7 @@ class PhasorPlot:
     frequency : float, optional
         Laser pulse or modulation frequency in MHz.
     grid : bool, optional, default: True
-        Display polar grid or semicircle.
+        Display polar grid or universal semicircle.
     **kwargs
         Additional properties to set on `ax`.
 
@@ -221,7 +224,7 @@ class PhasorPlot:
         label: Sequence[str] | None = None,
         **kwargs: Any,
     ) -> list[Line2D]:
-        """Plot imag versus real coordinates as markers and/or lines.
+        """Plot imaginary versus real coordinates as markers or lines.
 
         Parameters
         ----------
@@ -286,7 +289,7 @@ class PhasorPlot:
         /,
         **kwargs: Any,
     ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-        """Return 2D histogram of imag versus real coordinates."""
+        """Return two-dimensional histogram of imag versus real coordinates."""
         update_kwargs(kwargs, range=self._limits)
         (xmin, xmax), (ymin, ymax) = kwargs['range']
         assert xmax > xmin and ymax > ymin
@@ -319,7 +322,7 @@ class PhasorPlot:
         /,
         **kwargs: Any,
     ) -> None:
-        """Plot 2D histogram of imag versus real coordinates.
+        """Plot two-dimensional histogram of imag versus real coordinates.
 
         Parameters
         ----------
@@ -969,9 +972,9 @@ class PhasorPlotFret(PhasorPlot):
     acceptor_lifetime : array_like
         Lifetime of acceptor in ns.
     fret_efficiency : array_like, optional, default 0
-        FRET efficiency in range [0..1].
-    donor_freting : array_like, optional, default 1
-        Fraction of donors participating in FRET. Range [0..1].
+        FRET efficiency in range [0, 1].
+    donor_fretting : array_like, optional, default 1
+        Fraction of donors participating in FRET. Range [0, 1].
     donor_bleedthrough : array_like, optional, default 0
         Weight of donor fluorescence in acceptor channel
         relative to fluorescence of fully sensitized acceptor.
@@ -1022,7 +1025,7 @@ class PhasorPlotFret(PhasorPlot):
     _donor_lifetime_slider: Slider
     _acceptor_lifetime_slider: Slider
     _fret_efficiency_slider: Slider
-    _donor_freting_slider: Slider
+    _donor_fretting_slider: Slider
     _donor_bleedthrough_slider: Slider
     _acceptor_bleedthrough_slider: Slider
     _acceptor_background_slider: Slider
@@ -1053,7 +1056,7 @@ class PhasorPlotFret(PhasorPlot):
         donor_lifetime: float = 4.2,
         acceptor_lifetime: float = 3.0,
         fret_efficiency: float = 0.5,
-        donor_freting: float = 1.0,
+        donor_fretting: float = 1.0,
         donor_bleedthrough: float = 0.0,
         acceptor_bleedthrough: float = 0.0,
         acceptor_background: float = 0.0,
@@ -1103,7 +1106,7 @@ class PhasorPlotFret(PhasorPlot):
             frequency,
             donor_lifetime,
             fret_efficiency=self._fret_efficiencies,
-            donor_freting=donor_freting,
+            donor_fretting=donor_fretting,
             donor_background=donor_background,
             background_real=background_real,
             background_imag=background_imag,
@@ -1116,7 +1119,7 @@ class PhasorPlotFret(PhasorPlot):
             donor_lifetime,
             acceptor_lifetime,
             fret_efficiency=self._fret_efficiencies,
-            donor_freting=donor_freting,
+            donor_fretting=donor_fretting,
             donor_bleedthrough=donor_bleedthrough,
             acceptor_bleedthrough=acceptor_bleedthrough,
             acceptor_background=acceptor_background,
@@ -1135,7 +1138,7 @@ class PhasorPlotFret(PhasorPlot):
         )
         self._acceptor_semicircle_line = lines[0]
 
-        if donor_freting < 1.0 and donor_background == 0.0:
+        if donor_fretting < 1.0 and donor_background == 0.0:
             lines = self.line(
                 [donor_real, donor_fret_real],
                 [donor_imag, donor_fret_imag],
@@ -1285,18 +1288,18 @@ class PhasorPlotFret(PhasorPlot):
         )
         self._fret_efficiency_slider.on_changed(self._on_changed)
 
-        self._donor_freting_slider = Slider(
+        self._donor_fretting_slider = Slider(
             ax=axes[6],
-            label='Donors FRETing ',
+            label='Donors fretting ',
             valfmt=' %.2f',
             valmin=0.0,
             valmax=1.0,
             valstep=0.01,
-            valinit=donor_freting,
+            valinit=donor_fretting,
             # facecolor='tab:green',
             handle_style={'edgecolor': 'tab:green'},
         )
-        self._donor_freting_slider.on_changed(self._on_changed)
+        self._donor_fretting_slider.on_changed(self._on_changed)
 
         self._donor_bleedthrough_slider = Slider(
             ax=axes[5],
@@ -1398,7 +1401,7 @@ class PhasorPlotFret(PhasorPlot):
         donor_lifetime = self._donor_lifetime_slider.val
         acceptor_lifetime = self._acceptor_lifetime_slider.val
         fret_efficiency = self._fret_efficiency_slider.val
-        donor_freting = self._donor_freting_slider.val
+        donor_fretting = self._donor_fretting_slider.val
         donor_bleedthrough = self._donor_bleedthrough_slider.val
         acceptor_bleedthrough = self._acceptor_bleedthrough_slider.val
         acceptor_background = self._acceptor_background_slider.val
@@ -1420,7 +1423,7 @@ class PhasorPlotFret(PhasorPlot):
             frequency,
             donor_lifetime,
             fret_efficiency=self._fret_efficiencies,
-            donor_freting=donor_freting,
+            donor_fretting=donor_fretting,
             donor_background=donor_background,
             background_real=background_real,
             background_imag=background_imag,
@@ -1433,7 +1436,7 @@ class PhasorPlotFret(PhasorPlot):
             donor_lifetime,
             acceptor_lifetime,
             fret_efficiency=self._fret_efficiencies,
-            donor_freting=donor_freting,
+            donor_fretting=donor_fretting,
             donor_bleedthrough=donor_bleedthrough,
             acceptor_bleedthrough=acceptor_bleedthrough,
             acceptor_background=acceptor_background,
@@ -1449,7 +1452,7 @@ class PhasorPlotFret(PhasorPlot):
         else:
             self._donor_background_line.set_data([0.0, 0.0], [0.0, 0.0])
 
-        if donor_freting < 1.0 and donor_background == 0.0:
+        if donor_fretting < 1.0 and donor_background == 0.0:
             self._donor_donor_line.set_data(
                 [donor_real, donor_fret_real],
                 [donor_imag, donor_fret_imag],
@@ -1719,7 +1722,7 @@ def plot_phasor_image(
     percentile : float, optional
         The (q, 100-q) percentiles of image data are covered by colormaps.
         By default, the complete value range of `mean` is covered,
-        for `real` and `imag` the range [-1..1].
+        for `real` and `imag` the range [-1, 1].
     title : str, optional
         Figure title.
     show : bool, optional, default: True
@@ -1862,6 +1865,7 @@ def plot_signal_image(
     axis: int | str | None = None,
     percentile: float | Sequence[float] | None = None,
     title: str | None = None,
+    xlabel: str | None = None,
     show: bool = True,
     **kwargs: Any,
 ) -> None:
@@ -1884,9 +1888,11 @@ def plot_signal_image(
     percentile : float or [float, float], optional
         The [q, 100-q] percentiles of image data are covered by colormaps.
         By default, the complete value range of `mean` is covered,
-        for `real` and `imag` the range [-1..1].
+        for `real` and `imag` the range [-1, 1].
     title : str, optional
         Figure title.
+    xlabel : str, optional
+        Label of axis over which phasor coordinates would be computed.
     show : bool, optional, default: True
         Display figure.
     **kwargs
@@ -1941,6 +1947,11 @@ def plot_signal_image(
         ax.set_title(f'{axis=}')
         ax.plot(numpy.nanmean(signal, axis=tuple(axes)))
 
+    ax.set_ylim(kwargs.get('vmin', None), kwargs.get('vmax', None))
+
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+
     # image
     axes = list(sorted(axes[:-2] + [axis]))
     ax = fig.add_subplot(gs[0, 0])
@@ -1950,7 +1961,159 @@ def plot_signal_image(
         percentile=percentile,
         shrink=0.5,
         title='mean',
+        **kwargs,
     )
+
+    if show:
+        pyplot.show()
+
+
+def plot_image(
+    *images: ArrayLike,
+    percentile: float | None = None,
+    columns: int | None = None,
+    title: str | None = None,
+    labels: Sequence[str | None] | None = None,
+    show: bool = True,
+    **kwargs: Any,
+) -> None:
+    """Plot images.
+
+    Parameters
+    ----------
+    *images : array_like
+        Images to be plotted. Must be two or more dimensional.
+        The last two axes are assumed to be the image axes.
+        Other axes are averaged for display.
+        Three-dimensional images with last axis size of three or four
+        are plotted as RGB(A) images.
+    percentile : float, optional
+        The (q, 100-q) percentiles of image data are covered by colormaps.
+        By default, the complete value range is covered.
+        Does not apply to RGB images.
+    columns : int, optional
+        Number of columns in figure.
+        By default, up to four columns are used.
+    title : str, optional
+        Figure title.
+    labels : sequence of str, optional
+        Labels for each image.
+    show : bool, optional, default: True
+        Display figure.
+    **kwargs
+        Additional arguments passed to :func:`matplotlib.pyplot.imshow`.
+
+    Raises
+    ------
+    ValueError
+        Percentile is out of range.
+
+    """
+    update_kwargs(
+        kwargs, interpolation='nearest', location='right', shrink=0.5
+    )
+    cmap = kwargs.pop('cmap', None)
+    figsize = kwargs.pop('figsize', None)
+    subplot_kw = kwargs.pop('subplot_kw', {})
+    location = kwargs['location']
+    allrgb = True
+
+    arrays = []
+    shape = [1, 1]
+    for image in images:
+        image = numpy.asarray(image)
+        if image.ndim < 2:
+            raise ValueError(f'not an image {image.ndim=} < 2')
+        if image.ndim == 3 and image.shape[2] in {3, 4}:
+            # RGB(A)
+            pass
+        else:
+            allrgb = False
+            image = image.reshape(-1, *image.shape[-2:])
+            if image.shape[0] == 1:
+                image = image[0]
+            else:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', category=RuntimeWarning)
+                    image = numpy.nanmean(image, axis=0)
+            assert isinstance(image, numpy.ndarray)
+            for i in (-1, -2):
+                if image.shape[i] > shape[i]:
+                    shape[i] = image.shape[i]
+        arrays.append(image)
+
+    if columns is None:
+        n = len(arrays)
+        if n < 3:
+            columns = n
+        elif n < 5:
+            columns = 2
+        elif n < 7:
+            columns = 3
+        else:
+            columns = 4
+    rows = int(numpy.ceil(len(arrays) / columns))
+
+    vmin = None
+    vmax = None
+    if percentile is None:
+        vmin = kwargs.pop('vmin', None)
+        vmax = kwargs.pop('vmax', None)
+        if vmin is None:
+            vmin = numpy.inf
+            for image in images:
+                vmin = min(vmin, numpy.nanmin(image))
+            if vmin == numpy.inf:
+                vmin = None
+        if vmax is None:
+            vmax = -numpy.inf
+            for image in images:
+                vmax = max(vmax, numpy.nanmax(image))
+            if vmax == -numpy.inf:
+                vmax = None
+
+    # create figure with size depending on image aspect
+    fig = pyplot.figure(layout='constrained', figsize=figsize)
+    if figsize is None:
+        # TODO: find optimal figure height as a function of
+        # number of rows and columns, image shapes, labels, and colorbar
+        # presence and placements.
+        if allrgb:
+            hadd = 0.0
+        elif location == 'right':
+            hadd = 0.5
+        else:
+            hadd = 1.2
+        if labels is not None:
+            hadd += 0.3 * rows
+        w, h = fig.get_size_inches()
+        aspect = min(1.0, max(0.5, shape[0] / shape[1]))
+        fig.set_size_inches(
+            w, h * 0.9 / columns * aspect * rows + h * 0.1 * aspect + hadd
+        )
+    gs = GridSpec(rows, columns, figure=fig)
+    if title:
+        fig.suptitle(title)
+
+    axs = []
+    for i, image in enumerate(arrays):
+        ax = fig.add_subplot(gs[i // columns, i % columns], **subplot_kw)
+        ax.set_anchor('C')
+        axs.append(ax)
+        pos = _imshow(
+            ax,
+            image,
+            percentile=percentile,
+            vmin=vmin,
+            vmax=vmax,
+            cmap=cmap,
+            colorbar=percentile is not None,
+            axis=i == 0 and not subplot_kw,
+            title=None if labels is None else labels[i],
+            **kwargs,
+        )
+    if not allrgb and percentile is None:
+        fig.colorbar(pos, ax=axs, shrink=kwargs['shrink'], location=location)
 
     if show:
         pyplot.show()
@@ -2018,6 +2181,58 @@ def plot_polar_frequency(
         pyplot.show()
 
 
+def plot_histograms(
+    *data: ArrayLike,
+    title: str | None = None,
+    xlabel: str | None = None,
+    ylabel: str | None = None,
+    labels: Sequence[str] | None = None,
+    show: bool = True,
+    **kwargs: Any,
+) -> None:
+    """Plot histograms of flattened data arrays.
+
+    Parameters
+    ----------
+    data: array_like
+        Data arrays to be plotted as histograms.
+    title : str, optional
+        Figure title.
+    xlabel : str, optional
+        Label for x-axis.
+    ylabel : str, optional
+        Label for y-axis.
+    labels: sequence of str, optional
+        Labels for each data array.
+    show : bool, optional, default: True
+        Display figure.
+    **kwargs
+        Additional arguments passed to :func:`matplotlib.pyplot.hist`.
+
+    """
+    ax = pyplot.subplots()[1]
+    if kwargs.get('alpha') is None:
+        ax.hist(
+            [numpy.asarray(d).flatten() for d in data], label=labels, **kwargs
+        )
+    else:
+        for d, label in zip(
+            data, [None] * len(data) if labels is None else labels
+        ):
+            ax.hist(numpy.asarray(d).flatten(), label=label, **kwargs)
+    if title is not None:
+        ax.set_title(title)
+    if xlabel is not None:
+        ax.set_xlabel(xlabel)
+    if ylabel is not None:
+        ax.set_ylabel(ylabel)
+    if labels is not None:
+        ax.legend()
+    pyplot.tight_layout()
+    if show:
+        pyplot.show()
+
+
 def _imshow(
     ax: Axes,
     image: NDArray[Any],
@@ -2038,6 +2253,13 @@ def _imshow(
 
     """
     update_kwargs(kwargs, interpolation='none')
+    location = kwargs.pop('location', 'bottom')
+    if image.ndim == 3 and image.shape[2] in {3, 4}:
+        # RGB(A)
+        vmin = None
+        vmax = None
+        percentile = None
+        colorbar = False
     if percentile is not None:
         if isinstance(percentile, Sequence):
             percentile = percentile[0], percentile[1]
@@ -2050,7 +2272,7 @@ def _imshow(
             or percentile[1] > 100
         ):
             raise ValueError(f'{percentile=} out of range')
-        vmin, vmax = numpy.percentile(image, percentile)
+        vmin, vmax = numpy.nanpercentile(image, percentile)
     pos = ax.imshow(image, vmin=vmin, vmax=vmax, **kwargs)
     if colorbar:
         if percentile is not None and vmin is not None and vmax is not None:
@@ -2061,7 +2283,7 @@ def _imshow(
         if fig is not None:
             if shrink is None:
                 shrink = 0.8
-            fig.colorbar(pos, shrink=shrink, location='bottom', ticks=ticks)
+            fig.colorbar(pos, shrink=shrink, location=location, ticks=ticks)
     if title:
         ax.set_title(title)
     if not axis:

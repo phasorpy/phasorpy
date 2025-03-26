@@ -2,23 +2,10 @@
 
 The ``phasorpy.io`` module provides functions to:
 
-- write phasor coordinate images to OME-TIFF and SimFCS file formats:
-
-  - :py:func:`phasor_to_ometiff`
-  - :py:func:`phasor_to_simfcs_referenced`
-
-- read phasor coordinates and metadata from specialized file formats:
-
-  - :py:func:`phasor_from_ometiff` - PhasorPy OME-TIFF
-  - :py:func:`phasor_from_ifli` - ISS IFLI
-  - :py:func:`phasor_from_lif` - Leica LIF
-  - :py:func:`phasor_from_flimlabs_json` - FLIM LABS JSON
-  - :py:func:`phasor_from_simfcs_referenced` - SimFCS REF and R64
-
 - read time-resolved and hyperspectral signals, as well as metadata from
   many file formats used in bio-imaging:
 
-  - :py:func:`signal_from_lif` - Leica LIF
+  - :py:func:`signal_from_lif` - Leica LIF and XLEF
   - :py:func:`signal_from_lsm` - Zeiss LSM
   - :py:func:`signal_from_ptu` - PicoQuant PTU
   - :py:func:`signal_from_sdt` - Becker & Hickl SDT
@@ -30,6 +17,21 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`signal_from_z64` - SimFCS Z64
   - :py:func:`signal_from_bhz` - SimFCS BHZ
   - :py:func:`signal_from_bh` - SimFCS B&H
+
+- read phasor coordinates, lifetime images, and metadata from
+  specialized file formats:
+
+  - :py:func:`phasor_from_ometiff` - PhasorPy OME-TIFF
+  - :py:func:`phasor_from_ifli` - ISS IFLI
+  - :py:func:`phasor_from_lif` - Leica LIF and XLEF
+  - :py:func:`phasor_from_flimlabs_json` - FLIM LABS JSON
+  - :py:func:`phasor_from_simfcs_referenced` - SimFCS REF and R64
+  - :py:func:`lifetime_from_lif` - Leica LIF and XLEF
+
+- write phasor coordinate images to OME-TIFF and SimFCS file formats:
+
+  - :py:func:`phasor_to_ometiff`
+  - :py:func:`phasor_to_simfcs_referenced`
 
   Support for other file formats is being considered:
 
@@ -60,7 +62,7 @@ where ``ext`` indicates the file format and ``kwargs`` are optional arguments
 passed to the underlying file reader library or used to select which data is
 returned. The returned `xarray.DataArray
 <https://docs.xarray.dev/en/stable/user-guide/data-structures.html>`_
-contains an n-dimensional array with labeled coordinates, dimensions, and
+contains an N-dimensional array with labeled coordinates, dimensions, and
 attributes:
 
 - ``data`` or ``values`` (*array_like*)
@@ -96,7 +98,7 @@ Axes character codes from the OME model and tifffile library are used as
 - ``'Z'`` : depth (OME)
 - ``'S'`` : sample (color components or phasor coordinates)
 - ``'I'`` : sequence (of images, frames, or planes)
-- ``'T'`` : time  (OME)
+- ``'T'`` : time (OME)
 - ``'C'`` : channel (OME. Acquisition path or emission wavelength)
 - ``'A'`` : angle (OME)
 - ``'P'`` : phase (OME. In LSM, ``'P'`` maps to position)
@@ -116,6 +118,7 @@ Axes character codes from the OME model and tifffile library are used as
 from __future__ import annotations
 
 __all__ = [
+    'lifetime_from_lif',
     'phasor_from_flimlabs_json',
     'phasor_from_ifli',
     'phasor_from_lif',
@@ -192,8 +195,9 @@ def phasor_to_ometiff(
 
     By default, write phasor coordinates as single precision floating point
     values to separate image series.
-    Write images larger than (1024, 1024) as (256, 256) tiles, datasets
-    larger than 2 GB as BigTIFF, and datasets larger than 8 KB zlib-compressed.
+    Write images larger than (1024, 1024) pixels as (256, 256) tiles, datasets
+    larger than 2 GB as BigTIFF, and datasets larger than 8 KB using
+    zlib compression.
 
     This file format is experimental and might be incompatible with future
     versions of this library. It is intended for temporarily exchanging
@@ -256,6 +260,9 @@ def phasor_to_ometiff(
     <https://ome-model.readthedocs.io/en/latest/developers/6d-7d-and-8d-storage.html>`_
     extension is used to store multi-harmonic phasor coordinates.
     The modulo type for the first, harmonic dimension is "other".
+
+    The implementation is based on the
+    `tifffile <https://github.com/cgohlke/tifffile/>`__ library.
 
     Examples
     --------
@@ -377,7 +384,10 @@ def phasor_from_ometiff(
     *,
     harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
-    """Return phasor coordinates and metadata from PhasorPy OME-TIFF.
+    """Return phasor coordinates and metadata from PhasorPy OME-TIFF file.
+
+    PhasorPy OME-TIFF files contain phasor mean intensity, real and imaginary
+    components, along with frequency and harmonic information.
 
     Parameters
     ----------
@@ -435,6 +445,9 @@ def phasor_from_ometiff(
     Scalar or one-dimensional phasor coordinates stored in the file are
     returned as two-dimensional images (three-dimensional if multiple
     harmonics are present).
+
+    The implementation is based on the
+    `tifffile <https://github.com/cgohlke/tifffile/>`__ library.
 
     Examples
     --------
@@ -664,7 +677,7 @@ def phasor_to_simfcs_referenced(
     if size is None:
         size = min(256, max(4, sizey, sizex))
     elif not 4 <= size <= 65535:
-        raise ValueError(f'{size=} out of range [4..65535]')
+        raise ValueError(f'{size=} out of range [4, 65535]')
 
     harmonics_per_file = 2  # TODO: make this a parameter?
     chunk_shape = tuple(
@@ -690,7 +703,8 @@ def phasor_to_simfcs_referenced(
                 rawdata.append(a.tobytes())
             elif sizey <= size and sizex <= size:
                 chunk[:sizey, :sizex] = a[..., :sizey, :sizex]
-                chunk[sizey:, sizex:] = numpy.nan
+                chunk[:sizey, sizex:] = numpy.nan
+                chunk[sizey:, :] = numpy.nan
                 rawdata.append(chunk.tobytes())
             else:
                 raise RuntimeError  # should not be reached
@@ -759,6 +773,11 @@ def phasor_from_simfcs_referenced(
     See Also
     --------
     phasorpy.io.phasor_to_simfcs_referenced
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -859,6 +878,8 @@ def phasor_from_ifli(
           first axis.
         - ``'frequency'`` (float):
           Fundamental frequency of time-resolved phasor coordinates in MHz.
+        - ``'samples'`` (int):
+            Number of samples per frequency.
         - ``'ifli_header'`` (dict):
           Metadata from IFLI file header.
 
@@ -868,6 +889,11 @@ def phasor_from_ifli(
         File is not an ISS IFLI file.
     IndexError
         Harmonic is not found in file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -884,6 +910,8 @@ def phasor_from_ifli(
     [1, 2, 3, 5]
     >>> attr['frequency']  # doctest: +NUMBER
     80.33
+    >>> attr['samples']
+    64
     >>> attr['ifli_header']
     {'Version': 16, ... 'ModFrequency': (...), 'RefLifetime': (2.5,), ...}
 
@@ -909,6 +937,7 @@ def phasor_from_ifli(
     dims = dims[:-2]
     del data
 
+    samples = header['HistogramResolution']
     frequencies = header['ModFrequency']
     frequency = frequencies[0]
     harmonic_stored = [
@@ -959,6 +988,7 @@ def phasor_from_ifli(
         'dims': tuple(dims),
         'harmonic': harmonic,
         'frequency': frequency * 1e-6,
+        'samples': samples,
         'ifli_header': header,
     }
 
@@ -970,17 +1000,17 @@ def phasor_from_lif(
     /,
     image: str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
-    """Return phasor coordinates and metadata from Leica LIF file.
+    """Return phasor coordinates and metadata from Leica image file.
 
-    LIF files may contain uncalibrated phasor coordinate images and metadata
-    from the analysis of fluorescence lifetime imaging measurements.
+    Leica image files may contain uncalibrated phasor coordinate images and
+    metadata from the analysis of FLIM measurements.
 
     Parameters
     ----------
     filename : str or Path
-        Name of Leica LIF file to read.
+        Name of Leica image file to read.
     image : str, optional
-        Name of image containing phasor coordinates.
+        Name of parent image containing phasor coordinates.
 
     Returns
     -------
@@ -997,16 +1027,24 @@ def phasor_from_lif(
           :ref:`Axes codes <axes>` for `mean` image dimensions.
         - ``'frequency'`` (float):
           Fundamental frequency of time-resolved phasor coordinates in MHz.
-          May not be present in all LIF files.
+          May not be present in all files.
         - ``'flim_rawdata'`` (dict):
-          Settings from LIF SingleMoleculeDetection/RawData XML element.
+          Settings from SingleMoleculeDetection/RawData XML element.
+        - ``'flim_phasor_channels'`` (list of dict):
+          Settings from SingleMoleculeDetection/.../PhasorData/Channels XML
+          elements.
 
     Raises
     ------
     liffile.LifFileError
-        File is not a Leica LIF file.
+        File is not a Leica image file.
     ValueError
-        File does not contain FLIM phasor images and metadata.
+        File or `image` do not contain phasor coordinates and metadata.
+
+    Notes
+    -----
+    The implementation is based on the
+    `liffile <https://github.com/cgohlke/liffile/>`__ library.
 
     Examples
     --------
@@ -1020,14 +1058,12 @@ def phasor_from_lif(
 
     """
     # TODO: read harmonic from XML if possible
-    # TODO: get calibration settings from XML metadata or lifetime and/or
+    # TODO: get calibration settings from XML metadata, lifetime, or
     #   phasor plot images
     import liffile
 
-    if image is None:
-        image = ''
-    else:
-        image = f'.*{image}.*/'
+    image = '' if image is None else f'.*{image}.*/'
+    samples = 1
 
     with liffile.LifFile(filename) as lif:
         try:
@@ -1035,27 +1071,146 @@ def phasor_from_lif(
             dims = im.dims
             coords = im.coords
             # meta = image.attrs
-            mean = im.asarray()
+            mean = im.asarray().astype(numpy.float32)
             real = lif.images[image + 'Phasor Real$'].asarray()
             imag = lif.images[image + 'Phasor Imaginary$'].asarray()
             # mask = lif.images[image + 'Phasor Mask$'].asarray()
         except Exception as exc:
             raise ValueError(
-                f'{lif.filename} does not contain Phasor images'
+                f'{lif.filename!r} does not contain Phasor images'
             ) from exc
 
-        attrs: dict[str, Any] = {'dims': dims}
-        xml = im.xml_element_smd
-        if xml is not None:
+        attrs: dict[str, Any] = {'dims': dims, 'coords': coords}
+        flim = im.parent_image
+        if flim is not None and isinstance(flim, liffile.LifFlimImage):
+            xml = flim.parent.xml_element
             frequency = xml.find('.//Dataset/RawData/LaserPulseFrequency')
             if frequency is not None and frequency.text is not None:
                 attrs['frequency'] = float(frequency.text) * 1e-6
-        attrs['coords'] = coords
+                clock_period = xml.find('.//Dataset/RawData/ClockPeriod')
+                if clock_period is not None and clock_period.text is not None:
+                    tmp = float(clock_period.text) * float(frequency.text)
+                    samples = int(round(1.0 / tmp))
+                    attrs['samples'] = samples
+            channels = []
+            for channel in xml.findall(
+                './/Dataset/FlimData/PhasorData/Channels'
+            ):
+                ch = liffile.xml2dict(channel)['Channels']
+                ch.pop('PhasorPlotShapes', None)
+                channels.append(ch)
+            attrs['flim_phasor_channels'] = channels
+            attrs['flim_rawdata'] = flim.attrs.get('RawData', {})
 
+    if samples > 1:
+        mean /= samples
     return (
-        mean.astype(numpy.float32),
+        mean,
         real.astype(numpy.float32),
         imag.astype(numpy.float32),
+        attrs,
+    )
+
+
+def lifetime_from_lif(
+    filename: str | PathLike[Any],
+    /,
+    image: str | None = None,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
+    """Return lifetime image and metadata from Leica image file.
+
+    Leica image files may contain fluorescence lifetime images and metadata
+    from the analysis of FLIM measurements.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of Leica image file to read.
+    image : str, optional
+        Name of parent image containing lifetime image.
+
+    Returns
+    -------
+    lifetime : ndarray
+        Fluorescence lifetime image in ns.
+    intensity : ndarray
+        Fluorescence intensity image.
+    stddev : ndarray
+        Standard deviation of fluorescence lifetimes in ns.
+    attrs : dict
+        Select metadata:
+
+        - ``'dims'`` (tuple of str):
+          :ref:`Axes codes <axes>` for `intensity` image dimensions.
+        - ``'frequency'`` (float):
+          Fundamental frequency of lifetimes in MHz.
+          May not be present in all files.
+        - ``'samples'`` (int):
+          Number of bins in TCSPC histogram. May not be present in all files.
+        - ``'flim_rawdata'`` (dict):
+          Settings from SingleMoleculeDetection/RawData XML element.
+
+    Raises
+    ------
+    liffile.LifFileError
+        File is not a Leica image file.
+    ValueError
+        File or `image` does not contain lifetime coordinates and metadata.
+
+    Notes
+    -----
+    The implementation is based on the
+    `liffile <https://github.com/cgohlke/liffile/>`__ library.
+
+    Examples
+    --------
+    >>> lifetime, intensity, stddev, attrs = lifetime_from_lif(
+    ...     fetch('FLIM_testdata.lif')
+    ... )
+    >>> lifetime.shape
+    (1024, 1024)
+    >>> attrs['dims']
+    ('Y', 'X')
+    >>> attrs['frequency']
+    19.505
+
+    """
+    import liffile
+
+    image = '' if image is None else f'.*{image}.*/'
+
+    with liffile.LifFile(filename) as lif:
+        try:
+            im = lif.images[image + 'Intensity$']
+            dims = im.dims
+            coords = im.coords
+            # meta = im.attrs
+            intensity = im.asarray()
+            lifetime = lif.images[image + 'Fast Flim$'].asarray()
+            stddev = lif.images[image + 'Standard Deviation$'].asarray()
+        except Exception as exc:
+            raise ValueError(
+                f'{lif.filename!r} does not contain lifetime images'
+            ) from exc
+
+        attrs: dict[str, Any] = {'dims': dims, 'coords': coords}
+        flim = im.parent_image
+        if flim is not None and isinstance(flim, liffile.LifFlimImage):
+            xml = flim.parent.xml_element
+            frequency = xml.find('.//Dataset/RawData/LaserPulseFrequency')
+            if frequency is not None and frequency.text is not None:
+                attrs['frequency'] = float(frequency.text) * 1e-6
+                clock_period = xml.find('.//Dataset/RawData/ClockPeriod')
+                if clock_period is not None and clock_period.text is not None:
+                    tmp = float(clock_period.text) * float(frequency.text)
+                    samples = int(round(1.0 / tmp))
+                    attrs['samples'] = samples
+            attrs['flim_rawdata'] = flim.attrs.get('RawData', {})
+
+    return (
+        lifetime.astype(numpy.float32),
+        intensity.astype(numpy.float32),
+        stddev.astype(numpy.float32),
         attrs,
     )
 
@@ -1068,12 +1223,9 @@ def phasor_from_flimlabs_json(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
     """Return phasor coordinates and metadata from FLIM LABS JSON phasor file.
 
-    Some FLIM LABS JSON files contain uncalibrated phasor coordinates
+    FLIM LABS JSON files may contain calibrated phasor coordinates
     (possibly for multiple channels and harmonics) and metadata from
     digital frequency-domain measurements.
-
-    The real and imaginary parts of the phasor coordinates are zero (not NaN)
-    if the intensity is zero.
 
     Parameters
     ----------
@@ -1126,16 +1278,16 @@ def phasor_from_flimlabs_json(
     Examples
     --------
     >>> mean, real, imag, attrs = phasor_from_flimlabs_json(
-    ...     fetch('convallaria_2_1737113097_phasor_ch1.json'), harmonic='all'
+    ...     fetch('Convallaria_m2_1740751781_phasor_ch1.json'), harmonic='all'
     ... )
     >>> real.shape
-    (4, 256, 256)
+    (3, 256, 256)
     >>> attrs['dims']
     ('Y', 'X')
     >>> attrs['harmonic']
-    [1, 2, 3, 4]
+    [1, 2, 3]
     >>> attrs['frequency']  # doctest: +NUMBER
-    79.51
+    40.00
 
     """
     import json
@@ -1223,6 +1375,11 @@ def phasor_from_flimlabs_json(
             -1 if channel is None else channel,
         )
         mean.shape = shape[1:]
+        # JSON cannot store NaN values
+        nan_mask = mean == 0
+        real[:, nan_mask] = numpy.nan
+        imag[:, nan_mask] = numpy.nan
+        del nan_mask
 
     if nchannels == 1:
         axes = axes[1:]
@@ -1255,7 +1412,7 @@ def signal_from_flimlabs_json(
     """Return TCSPC histogram and metadata from FLIM LABS JSON imaging file.
 
     FLIM LABS JSON imaging files contain encoded, multi-channel TCSPC
-    histogram images and metadata from digital frequency-domain measurements.
+    histograms and metadata from digital frequency-domain measurements.
 
     Parameters
     ----------
@@ -1265,17 +1422,16 @@ def signal_from_flimlabs_json(
     channel : int, optional
         If None (default), return all channels, else return specified channel.
     dtype : dtype-like, optional, default: uint16
-        Unsigned integer type of image histogram array.
+        Unsigned integer type of TCSPC histogram.
         Increase the bit-depth for high photon counts.
 
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram image stack.
-        A 3 or 4-dimensional array of type `dtype` in dimension order
-        ``'CYXH'``.
+        TCSPC histogram with :ref:`axes codes <axes>` ``'CYXH'`` and
+        type specified in ``dtype``:
 
-        - ``coords['H']``: times of histogram bins in ns.
+        - ``coords['H']``: delay-times of histogram bins in ns.
         - ``attrs['frequency']``: laser repetition frequency in MHz.
         - ``attrs['flimlabs_header']``: FLIM LABS file header.
 
@@ -1294,7 +1450,7 @@ def signal_from_flimlabs_json(
     Examples
     --------
     >>> signal = signal_from_flimlabs_json(
-    ...     fetch('convallaria_2_1737113097_phasor_ch1.json')
+    ...     fetch('Convallaria_m2_1740751781_phasor_ch1.json')
     ... )
     >>> signal.values
     array(...)
@@ -1305,7 +1461,7 @@ def signal_from_flimlabs_json(
     >>> signal.coords['H'].data
     array(...)
     >>> signal.attrs['frequency']  # doctest: +NUMBER
-    79.51
+    40.00
 
     """
     import json
@@ -1341,7 +1497,7 @@ def signal_from_flimlabs_json(
 
     if channel is not None:
         if channel >= nchannels or channel < 0:
-            raise IndexError(f'{channel=} not in range(0, {nchannels=})')
+            raise IndexError(f'{channel=} out of range[0, {nchannels=}]')
         nchannels = 1
 
     if 'data' in data:
@@ -1393,17 +1549,15 @@ def signal_from_lif(
     image: int | str | None = None,
     dim: Literal['λ', 'Λ'] | str = 'λ',
 ) -> DataArray:
-    """Return hyperspectral image and metadata from Leica LIF file.
+    """Return hyperspectral image and metadata from Leica image file.
 
-    LIF files may contain hyperspectral images and metadata from laser
+    Leica image files may contain hyperspectral images and metadata from laser
     scanning microscopy measurements.
-    Reading of TCSPC histograms from FLIM measurements is not supported
-    because the compression scheme is patent-pending.
 
     Parameters
     ----------
     filename : str or Path
-        Name of Leica LIF file to read.
+        Name of Leica image file to read.
     image : str or int, optional
         Index or regex pattern of image to return.
         By default, return the first image containing hyperspectral data.
@@ -1422,9 +1576,17 @@ def signal_from_lif(
     Raises
     ------
     liffile.LifFileError
-        File is not a Leica LIF file.
+        File is not a Leica image file.
     ValueError
-        File is not an LSM file or does not contain hyperspectral image.
+        File is not a Leica image file or does not contain hyperspectral image.
+
+    Notes
+    -----
+    The implementation is based on the
+    `liffile <https://github.com/cgohlke/liffile/>`__ library.
+
+    Reading of TCSPC histograms from FLIM measurements is not supported
+    because the compression scheme is patent-pending.
 
     Examples
     --------
@@ -1449,7 +1611,7 @@ def signal_from_lif(
                     break
             else:
                 raise ValueError(
-                    f'{lif!r} does not contain hyperspectral image'
+                    f'{lif.filename!r} does not contain hyperspectral image'
                 )
         else:
             im = lif.images[image]
@@ -1505,6 +1667,11 @@ def signal_from_lsm(
     ValueError
         File is not an LSM file or does not contain hyperspectral image.
 
+    Notes
+    -----
+    The implementation is based on the
+    `tifffile <https://github.com/cgohlke/tifffile/>`__ library.
+
     Examples
     --------
     >>> signal = signal_from_lsm(fetch('paramecium.lsm'))
@@ -1524,7 +1691,7 @@ def signal_from_lsm(
 
     with tifffile.TiffFile(filename) as tif:
         if not tif.is_lsm:
-            raise ValueError(f'{tif.filename} is not an LSM file')
+            raise ValueError(f'{tif.filename!r} is not an LSM file')
 
         page = tif.pages.first
         lsminfo = tif.lsm_metadata
@@ -1532,7 +1699,7 @@ def signal_from_lsm(
 
         if channels < 4 or lsminfo is None or lsminfo['SpectralScan'] != 1:
             raise ValueError(
-                f'{tif.filename} does not contain hyperspectral image'
+                f'{tif.filename!r} does not contain hyperspectral image'
             )
 
         # TODO: contribute this to tifffile
@@ -1545,14 +1712,14 @@ def signal_from_lsm(
         wavelengths = lsminfo['ChannelWavelength'].mean(axis=1)
         if wavelengths.size != data.shape[axis]:
             raise ValueError(
-                f'{tif.filename} wavelengths do not match channel axis'
+                f'{tif.filename!r} wavelengths do not match channel axis'
             )
         # stack may contain non-wavelength frame
         indices = wavelengths > 0
         wavelengths = wavelengths[indices]
         if wavelengths.size < 3:
             raise ValueError(
-                f'{tif.filename} does not contain hyperspectral image'
+                f'{tif.filename!r} does not contain hyperspectral image'
             )
         wavelengths *= 1e9
         data = data.take(indices.nonzero()[0], axis=axis)
@@ -1562,7 +1729,7 @@ def signal_from_lsm(
             coords['T'] = lsminfo['TimeStamps'] - lsminfo['TimeStamps'][0]
             if coords['T'].size != data.shape[dims.index('T')]:
                 raise ValueError(
-                    f'{tif.filename} timestamps do not match time axis'
+                    f'{tif.filename!r} timestamps do not match time axis'
                 )
         # spatial coordinates
         for ax in 'ZYX':
@@ -1586,7 +1753,7 @@ def signal_from_imspector_tiff(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
-    """Return FLIM image stack and metadata from ImSpector TIFF file.
+    """Return TCSPC histogram and metadata from ImSpector TIFF file.
 
     Parameters
     ----------
@@ -1596,10 +1763,10 @@ def signal_from_imspector_tiff(
     Returns
     -------
     xarray.DataArray
-        TCSPC image stack.
-        Usually, a 3-to-5-dimensional array of type ``uint16``.
+        TCSPC histogram with :ref:`axes codes <axes>` ``'HTZYX'`` and
+        type ``uint16``.
 
-        - ``coords['H']``: times of histogram bins in ns.
+        - ``coords['H']``: delay-times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
 
     Raises
@@ -1608,6 +1775,11 @@ def signal_from_imspector_tiff(
         File is not a TIFF file.
     ValueError
         File is not an ImSpector FLIM TIFF file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `tifffile <https://github.com/cgohlke/tifffile/>`__ library.
 
     Examples
     --------
@@ -1641,7 +1813,7 @@ def signal_from_imspector_tiff(
             or len(tif.series) != 1
             or not tif.is_ome
         ):
-            raise ValueError(f'{tif.filename} is not an ImSpector TIFF file')
+            raise ValueError(f'{tif.filename!r} is not an ImSpector TIFF file')
 
         series = tif.series[0]
         ndim = series.ndim
@@ -1650,7 +1822,7 @@ def signal_from_imspector_tiff(
 
         if ndim < 3 or not axes.endswith('YX'):
             raise ValueError(
-                f'{tif.filename} is not an ImSpector FLIM TIFF file'
+                f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
             )
 
         data = series.asarray()
@@ -1697,7 +1869,9 @@ def signal_from_imspector_tiff(
         or 'FirstAxis' not in axes_labels.attrib
         or 'SecondAxis' not in axes_labels.attrib
     ):
-        raise ValueError(f'{tif.filename} is not an ImSpector FLIM TIFF file')
+        raise ValueError(
+            f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
+        )
 
     if axes_labels.attrib['FirstAxis'] == 'lifetime' or axes_labels.attrib[
         'FirstAxis'
@@ -1711,7 +1885,9 @@ def signal_from_imspector_tiff(
         ax = axes[-4]
         assert axes_labels.attrib['SecondAxis-Unit'] == 'ns'
     else:
-        raise ValueError(f'{tif.filename} is not an ImSpector FLIM TIFF file')
+        raise ValueError(
+            f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
+        )
     axes = axes.replace(ax, 'H')
     coords['H'] = coords[ax]
     del coords[ax]
@@ -1731,7 +1907,7 @@ def signal_from_sdt(
     *,
     index: int = 0,
 ) -> DataArray:
-    """Return time-resolved image and metadata from Becker & Hickl SDT file.
+    """Return TCSPC histogram and metadata from Becker & Hickl SDT file.
 
     SDT files contain TCSPC measurement data and instrumentation parameters.
 
@@ -1745,17 +1921,22 @@ def signal_from_sdt(
     Returns
     -------
     xarray.DataArray
-        Time correlated single photon counting image data with
-        :ref:`axes codes <axes>` ``'YXH'`` and type ``uint16``, ``uint32``,
-        or ``float32``.
+        TCSPC histogram with :ref:`axes codes <axes>` ``'QCYXH'`` and
+        type ``uint16``, ``uint32``, or ``float32``.
+        Dimensions ``'Q'`` and ``'C'`` are optional detector channels.
 
-        - ``coords['H']``: times of histogram bins in ns.
+        - ``coords['H']``: delay-times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
 
     Raises
     ------
     ValueError
         File is not a SDT file containing TCSPC histogram.
+
+    Notes
+    -----
+    The implementation is based on the
+    `sdtfile <https://github.com/cgohlke/sdtfile/>`__ library.
 
     Examples
     --------
@@ -1793,7 +1974,7 @@ def signal_from_sdt(
         times = sdt.times[index] * 1e9
 
     # TODO: get spatial coordinates from scanner settings?
-    metadata = _metadata('QYXH'[-data.ndim :], data.shape, filename, H=times)
+    metadata = _metadata('QCYXH'[-data.ndim :], data.shape, filename, H=times)
     metadata['attrs']['frequency'] = 1e3 / float(times[-1] + times[1])
 
     from xarray import DataArray
@@ -1815,8 +1996,8 @@ def signal_from_ptu(
 ) -> DataArray:
     """Return TCSPC histogram and metadata from PicoQuant PTU T3 mode file.
 
-    PTU files contain time-correlated single photon counting measurement data
-    and instrumentation parameters.
+    PTU files contain TCSPC measurement data and instrumentation parameters,
+    which are decoded to a multi-dimensional TCSPC histogram.
 
     Parameters
     ----------
@@ -1835,7 +2016,7 @@ def signal_from_ptu(
     trimdims : str, optional, default: 'TCH'
         Axes to trim.
     dtype : dtype-like, optional, default: uint16
-        Unsigned integer type of image histogram array.
+        Unsigned integer type of TCSPC histogram.
         Increase the bit depth to avoid overflows when integrating.
     frame : int, optional
         If < 0, integrate time axis, else return specified frame.
@@ -1844,9 +2025,9 @@ def signal_from_ptu(
         If < 0, integrate channel axis, else return specified channel.
         Overrides `selection` for axis ``C``.
     dtime : int, optional, default: 0
-        Specifies number of bins in image histogram.
+        Specifies number of bins in TCSPC histogram.
         If 0 (default), return the number of bins in one period.
-        If < 0, integrate delay time axis (image mode only).
+        If < 0, integrate delay-time axis (image mode only).
         If > 0, return up to specified bin.
         Overrides `selection` for axis ``H``.
     keepdims : bool, optional, default: True
@@ -1855,11 +2036,10 @@ def signal_from_ptu(
     Returns
     -------
     xarray.DataArray
-        Decoded TTTR T3 records as up to 5-dimensional image array
-        with :ref:`axes codes <axes>` ``'TYXCH'`` and type specified
-        in ``dtype``:
+        TCSPC histogram with :ref:`axes codes <axes>` ``'TYXCH'`` and
+        type specified in ``dtype``:
 
-        - ``coords['H']``: times of histogram bins in ns.
+        - ``coords['H']``: delay-times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
         - ``attrs['ptu_tags']``: metadata read from PTU file.
 
@@ -1872,6 +2052,11 @@ def signal_from_ptu(
         File is not a PicoQuant PTU file or is corrupted.
     ValueError
         File is not a PicoQuant PTU T3 mode file containing TCSPC data.
+
+    Notes
+    -----
+    The implementation is based on the
+    `ptufile <https://github.com/cgohlke/ptufile/>`__ library.
 
     Examples
     --------
@@ -1940,9 +2125,9 @@ def signal_from_flif(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
-    """Return frequency-domain image and metadata from FlimFast FLIF file.
+    """Return phase images and metadata from FlimFast FLIF file.
 
-    FlimFast FLIF files contain camera images and metadata from
+    FlimFast FLIF files contain phase images and metadata from full-field,
     frequency-domain fluorescence lifetime measurements.
 
     Parameters
@@ -1953,8 +2138,8 @@ def signal_from_flif(
     Returns
     -------
     xarray.DataArray
-        Frequency-domain phase images with :ref:`axes codes <axes>` ``'THYX'``
-        and type ``uint16``:
+        Phase images with :ref:`axes codes <axes>` ``'THYX'`` and
+        type ``uint16``:
 
         - ``coords['H']``: phases in radians.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -1967,6 +2152,11 @@ def signal_from_flif(
     ------
     lfdfiles.LfdFileError
         File is not a FlimFast FLIF file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -2024,10 +2214,10 @@ def signal_from_fbd(
     keepdims: bool = True,
     laser_factor: float = -1.0,
 ) -> DataArray:
-    """Return frequency-domain image and metadata from FLIMbox FBD file.
+    """Return phase histogram and metadata from FLIMbox FBD file.
 
-    FDB files contain encoded data from the FLIMbox device, which can be
-    decoded to photon arrival windows, channels, and global times.
+    FDB files contain encoded cross-correlation phase histograms from
+    digital frequency-domain measurements using a FLIMbox device.
     The encoding scheme depends on the FLIMbox device's firmware.
     The FBD file format is undocumented.
 
@@ -2053,16 +2243,25 @@ def signal_from_fbd(
     Returns
     -------
     xarray.DataArray
-        Frequency-domain image histogram with :ref:`axes codes <axes>`
-        ``'TCYXH'`` and type ``uint16``:
+        Phase histogram with :ref:`axes codes <axes>` ``'TCYXH'`` and
+        type ``uint16``:
 
-        - ``coords['H']``: phases in radians.
+        - ``coords['H']``: cross-correlation phases in radians.
         - ``attrs['frequency']``: repetition frequency in MHz.
+        - ``attrs['harmonic']``: harmonic contained in phase histogram.
+        - ``attrs['flimbox_header']``: FBD binary header, if any.
+        - ``attrs['flimbox_firmware']``: FLIMbox firmware settings, if any.
+        - ``attrs['flimbox_settings']``: Settings from FBS XML, if any.
 
     Raises
     ------
     lfdfiles.LfdFileError
         File is not a FLIMbox FBD file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -2111,7 +2310,7 @@ def signal_from_fbd(
                 data = data[0]
                 axes = axes[1:]
         else:
-            if frame < 0 or frame > data.shape[0]:
+            if frame < 0 or frame >= data.shape[0]:
                 raise IndexError(f'{frame=} out of bounds')
             if keepdims:
                 data = data[frame : frame + 1]
@@ -2128,6 +2327,13 @@ def signal_from_fbd(
         metadata = _metadata(axes, data.shape, H=phases)
         attrs = metadata['attrs']
         attrs['frequency'] = fbd.laser_frequency * 1e-6
+        attrs['harmonic'] = fbd.harmonics
+        if fbd.header is not None:
+            attrs['flimbox_header'] = fbd.header
+        if fbd.fbf is not None:
+            attrs['flimbox_firmware'] = fbd.fbf
+        if fbd.fbs is not None:
+            attrs['flimbox_settings'] = fbd.fbs
 
     from xarray import DataArray
 
@@ -2151,7 +2357,7 @@ def signal_from_b64(
     Returns
     -------
     xarray.DataArray
-        Stack of square-sized intensity images of type ``int16``.
+        Intensity image of type ``int16``.
 
     Raises
     ------
@@ -2159,6 +2365,11 @@ def signal_from_b64(
         File is not a SimFCS B64 file.
     ValueError
         File does not contain an image stack.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -2195,11 +2406,10 @@ def signal_from_z64(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
-    """Return image and metadata from SimFCS Z64 file.
+    """Return image stack and metadata from SimFCS Z64 file.
 
-    Z64 files contain stacks of square images such as intensity volumes
-    or time-domain fluorescence lifetime histograms acquired from
-    Becker & Hickl(r) TCSPC cards. Z64 files contain no metadata.
+    Z64 files commonly contain stacks of square images, such as intensity
+    volumes or TCSPC histograms. Z64 files contain no metadata.
 
     Parameters
     ----------
@@ -2209,12 +2419,17 @@ def signal_from_z64(
     Returns
     -------
     xarray.DataArray
-        Single or stack of square-sized images of type ``float32``.
+        Image stack of type ``float32``.
 
     Raises
     ------
     lfdfiles.LfdFileError
         File is not a SimFCS Z64 file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -2244,11 +2459,10 @@ def signal_from_bh(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
-    """Return image and metadata from SimFCS B&H file.
+    """Return TCSPC histogram and metadata from SimFCS B&H file.
 
-    B&H files contain time-domain fluorescence lifetime histogram data,
-    acquired from Becker & Hickl(r) TCSPC cards, or converted from other
-    data sources. B&H files contain no metadata.
+    B&H files contain TCSPC histograms acquired from Becker & Hickl
+    cards, or converted from other data sources. B&H files contain no metadata.
 
     Parameters
     ----------
@@ -2258,13 +2472,18 @@ def signal_from_bh(
     Returns
     -------
     xarray.DataArray
-        Time-domain fluorescence lifetime histogram with axes ``'HYX'``,
+        TCSPC histogram with ref:`axes codes <axes>` ``'HYX'``,
         shape ``(256, 256, 256)``, and type ``float32``.
 
     Raises
     ------
     lfdfiles.LfdFileError
         File is not a SimFCS B&H file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -2295,11 +2514,10 @@ def signal_from_bhz(
     filename: str | PathLike[Any],
     /,
 ) -> DataArray:
-    """Return image and metadata from SimFCS BHZ file.
+    """Return TCSPC histogram and metadata from SimFCS BHZ file.
 
-    BHZ files contain time-domain fluorescence lifetime histogram data,
-    acquired from Becker & Hickl(r) TCSPC cards, or converted from other
-    data sources. BHZ files contain no metadata.
+    BHZ files contain TCSPC histograms acquired from Becker & Hickl
+    cards, or converted from other data sources. BHZ files contain no metadata.
 
     Parameters
     ----------
@@ -2309,13 +2527,18 @@ def signal_from_bhz(
     Returns
     -------
     xarray.DataArray
-        Time-domain fluorescence lifetime histogram with axes ``'HYX'``,
+        TCSPC histogram with ref:`axes codes <axes>` ``'HYX'``,
         shape ``(256, 256, 256)``, and type ``float32``.
 
     Raises
     ------
     lfdfiles.LfdFileError
         File is not a SimFCS BHZ file.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
     --------
@@ -2379,7 +2602,8 @@ def _squeeze_dims(
 ) -> tuple[tuple[int, ...], tuple[str, ...], tuple[bool, ...]]:
     """Return shape and axes with length-1 dimensions removed.
 
-    Remove unused dimensions unless their axes are listed in `skip`.
+    Remove unused dimensions unless their axes are listed in the `skip`
+    parameter.
 
     Adapted from the tifffile library.
 

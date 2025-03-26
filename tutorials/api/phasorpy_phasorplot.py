@@ -5,7 +5,8 @@ Phasor plot
 An introduction to plotting phasor coordinates.
 
 The :py:class:`phasorpy.plot.PhasorPlot` class is used to plot phasor
-coordinates as scattered points, lines, 2D histograms, and contours.
+coordinates as scattered points, lines, two-dimensional histograms,
+and contours.
 The plots are supplemented with universal semicircles, polar grids,
 polar cursors, component mixture indicators, and manual annotations.
 
@@ -47,7 +48,7 @@ plot.show()
 # Scatter and line plots
 # ----------------------
 #
-# Plot phasor coordinates as scatter and/or lines:
+# Plot phasor coordinates as scatter or lines:
 
 plot = PhasorPlot(frequency=80.0, title='Scatter and line plots')
 plot.plot(0.6, 0.4, label='1')
@@ -59,8 +60,8 @@ plot.show()
 # Cursors
 # -------
 #
-# Point out certain polar coordinates, and ranges thereof,
-# using phasor coordinates:
+# Highlight specific polar coordinates and ranges thereof using phasor
+# coordinates:
 
 plot = PhasorPlot(frequency=80.0, title='Cursors')
 plot.cursor(0.4, 0.3)
@@ -71,7 +72,7 @@ plot.cursor(0.1, 0.3, radius=0.05, radius_minor=0.1, align_semicircle=True)
 plot.show()
 
 # %%
-# Alternatively, use polar coordinates, here demonstrated with various options:
+# Alternatively, use polar coordinates with various options:
 
 plot = PhasorPlot(frequency=80.0, title='Polar cursors')
 plot.polar_cursor(0.6435, 0.5, linestyle='-')
@@ -124,15 +125,15 @@ plot.components(real, imag, weights, marker='o', label='mixture')
 plot.show()
 
 # %%
-# 2D Histogram
-# ------------
+# Two-dimensional histogram
+# -------------------------
 #
-# Plot large number of phasor coordinates as a 2D histogram:
+# Plot large number of phasor coordinates as a two-dimensional histogram:
 
 real, imag = numpy.random.multivariate_normal(
     (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
 ).T
-plot = PhasorPlot(frequency=80.0, title='2D Histogram')
+plot = PhasorPlot(frequency=80.0, title='Two-dimensional histogram')
 plot.hist2d(real, imag)
 plot.show()
 
@@ -150,7 +151,7 @@ plot.show()
 # Image
 # -----
 #
-# Plot the image of a custom-colored 2D histogram:
+# Plot a custom-colored image of a two-dimensional histogram (not implemented):
 
 plot = PhasorPlot(frequency=80.0, title='Image (not implemented yet)')
 # plot.imshow(image)

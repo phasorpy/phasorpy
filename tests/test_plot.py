@@ -11,6 +11,8 @@ from xarray import DataArray
 from phasorpy.plot import (
     PhasorPlot,
     PhasorPlotFret,
+    plot_histograms,
+    plot_image,
     plot_phasor,
     plot_phasor_image,
     plot_polar_frequency,
@@ -307,7 +309,7 @@ def test_fret_phasorplot():
         donor_lifetime=4.2,
         acceptor_lifetime=3.0,
         fret_efficiency=0.5,
-        donor_freting=0.9,
+        donor_fretting=0.9,
         donor_bleedthrough=0.1,
         title='PhasorPlotFret',
     )
@@ -329,14 +331,14 @@ def test_fret_phasorplot_interactive():
         title='PhasorPlotFret interactive',
     )
     plot._frequency_slider.set_val(80.0)
-    plot._donor_freting_slider.set_val(0.9)
+    plot._donor_fretting_slider.set_val(0.9)
     plot._donor_bleedthrough_slider.set_val(0.1)
     plot._donor_bleedthrough_slider.set_val(0.0)
     plot._donor_background_slider.set_val(0.1)
     plot._acceptor_background_slider.set_val(0.1)
     plot._donor_background_slider.set_val(0.0)
     plot._acceptor_background_slider.set_val(0.0)
-    plot._donor_freting_slider.set_val(0.0)
+    plot._donor_fretting_slider.set_val(0.0)
     if INTERACTIVE:
         plot.show()
     pyplot.close()
@@ -418,7 +420,14 @@ def test_plot_signal_image():
     data_ %= math.prod(shape[-2:])
     data = data_ / math.prod(shape[-2:])
 
-    plot_signal_image(data, title='default', show=INTERACTIVE)
+    plot_signal_image(
+        data,
+        vmin=0,
+        vmax=1,
+        title='default',
+        xlabel='xlabel',
+        show=INTERACTIVE,
+    )
     pyplot.close()
     plot_signal_image(data, axis=0, title='axis 0', show=INTERACTIVE)
     pyplot.close()
@@ -528,6 +537,92 @@ def test_plot_phasor_image():
         # percentile out of range
         plot_phasor_image(d, d, d, percentile=50, show=False)
     pyplot.close()
+
+
+def test_plot_plot_histograms():
+    """Test plot_histograms function."""
+    data = (numpy.random.normal(0, 1, 1000), numpy.random.normal(4, 2, 1000))
+    plot_histograms(data[0], show=INTERACTIVE)
+    pyplot.close()
+    plot_histograms(*data, show=INTERACTIVE)
+    pyplot.close()
+    plot_histograms(*data, alpha=0.66, bins=50, show=INTERACTIVE)
+    pyplot.close()
+    plot_histograms(*data, alpha=0.66, title='Histograms', show=INTERACTIVE)
+    pyplot.close()
+    plot_histograms(*data, alpha=0.66, xlabel='X axis', show=INTERACTIVE)
+    pyplot.close()
+    plot_histograms(*data, alpha=0.66, ylabel='Y axis', show=INTERACTIVE)
+    pyplot.close()
+    plot_histograms(*data, alpha=0.66, labels=['A', 'B'], show=INTERACTIVE)
+    pyplot.close()
+
+
+@pytest.mark.parametrize('percentile', (None, 0.9))
+@pytest.mark.parametrize('labels', (None, 'Label'))
+@pytest.mark.parametrize('location', ('right', 'bottom'))
+@pytest.mark.parametrize('aspect', (1.0, 0.75))
+@pytest.mark.parametrize('nimages', (1, 2, 4, 5))
+def test_plot_image(percentile, labels, location, aspect, nimages):
+    """Test plot_image function."""
+    images = numpy.random.normal(1.0, 0.2, (nimages, int(100 * aspect), 100))
+    images[0] *= 2
+    title = f'{nimages=}, {aspect=}, {percentile=}, {labels=}, {location=}'
+    if labels is not None:
+        labels = [labels] * nimages
+    plot_image(
+        *images,
+        title=title,
+        percentile=percentile,
+        location=location,
+        labels=labels,
+        show=INTERACTIVE,
+    )
+    pyplot.close()
+
+
+@pytest.mark.parametrize('columns', (None, 4))
+@pytest.mark.parametrize('percentile', (None, 0.9))
+def test_plot_image_shapes(columns, percentile):
+    """Test plot_image function with images of different shapes."""
+    images = [
+        numpy.random.normal(0.5, 0.1, shape)
+        for shape in (
+            (100, 100, 3),
+            (100, 100),
+            (50, 100),
+            (3, 100, 100),
+            (100, 50, 3),
+        )
+    ]
+    images[1][images[1] < 0.5] = numpy.nan
+    plot_image(
+        *images,
+        columns=columns,
+        title=f'{columns=} {percentile=}',
+        percentile=percentile,
+        labels=[f'{im.shape!r}' for im in images],
+        show=INTERACTIVE,
+    )
+    pyplot.close()
+
+
+def test_plot_image_other():
+    """Test plot_image function with special cases."""
+    images = [numpy.random.normal(0.5, 0.1, (100, 100, 3))] * 7
+    plot_image(*images, title='RGB only', show=INTERACTIVE)
+    pyplot.close()
+
+    with pytest.warns(RuntimeWarning):
+        plot_image(
+            numpy.full((100, 100), numpy.nan),
+            title='NaN only',
+            show=INTERACTIVE,
+        )
+    pyplot.close()
+
+    with pytest.raises(ValueError):
+        plot_image(numpy.zeros(100), show=INTERACTIVE)
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls
