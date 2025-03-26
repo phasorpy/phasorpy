@@ -401,6 +401,21 @@ def test_signal_from_sdt_fcs():
     assert pytest.approx(signal.attrs['frequency']) == 59.959740
 
 
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_signal_from_sdt_bruker():
+    """Test read Becker & Hickl SDT file with routing channel."""
+    # file provided by bruno-pannunzio via email on March 25, 2025
+    filename = private_file('LifetimeData_Cycle00001_000001.sdt')
+    signal = signal_from_sdt(filename)
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (2, 512, 512, 256)
+    assert signal.dims == ('C', 'Y', 'X', 'H')
+    assert_almost_equal(signal.coords['H'][[0, -1]], [0.0, 12.24], decimal=2)
+    assert pytest.approx(signal.attrs['frequency']) == 81.3802
+    assert signal[0].values.sum(dtype=numpy.uint64) == 15234486
+    assert signal[1].values.sum(dtype=numpy.uint64) == 0
+
+
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_phasor_from_ifli():
     """Test read ISS VistaVision file."""

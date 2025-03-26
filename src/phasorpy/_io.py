@@ -1921,8 +1921,9 @@ def signal_from_sdt(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'YXH'`` and
+        TCSPC histogram with :ref:`axes codes <axes>` ``'QCYXH'`` and
         type ``uint16``, ``uint32``, or ``float32``.
+        Dimensions ``'Q'`` and ``'C'`` are optional detector channels.
 
         - ``coords['H']``: delay-times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -1973,7 +1974,7 @@ def signal_from_sdt(
         times = sdt.times[index] * 1e9
 
     # TODO: get spatial coordinates from scanner settings?
-    metadata = _metadata('QYXH'[-data.ndim :], data.shape, filename, H=times)
+    metadata = _metadata('QCYXH'[-data.ndim :], data.shape, filename, H=times)
     metadata['attrs']['frequency'] = 1e3 / float(times[-1] + times[1])
 
     from xarray import DataArray
