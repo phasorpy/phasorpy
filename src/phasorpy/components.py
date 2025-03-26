@@ -327,7 +327,7 @@ def n_fractions_from_phasor(
     components_matrix: NDArray[Any] | None = None,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], ...]:
-    """Return fractions of n components from phasor coordinates.
+    """Return fractions of `n` components from phasor coordinates.
 
     Parameters
     ----------
@@ -345,6 +345,8 @@ def n_fractions_from_phasor(
         The harmonics must be in the first dimension.
     components_matrix : array_like, optional
         Components coefficient matrix.
+        The shape of the matrix must be (2h+1, n), where `h` is
+        the number of harmonics and `n` is the number of components.
         Can be generated from components coordinates using
         :py:func:`components_matrix_from_phasor`.
     **kwargs : optional
@@ -352,9 +354,8 @@ def n_fractions_from_phasor(
 
     Returns
     -------
-    fractions : ndarray
-        fractions : tuple of ndarray
-        Fractions of pure components.
+    fractions : tuple of ndarray
+        Components fractions.
 
     Raises
     ------
@@ -364,6 +365,8 @@ def n_fractions_from_phasor(
         coordinates are not provided.
         The system is undetermined due to the components matrix
         having more columns than rows.
+        The number of harmonics in the components matrix does not
+        match the number of harmonics in the phasor coordinates.
 
     See Also
     --------
@@ -380,9 +383,9 @@ def n_fractions_from_phasor(
     -------
     >>> n_fractions_from_phasor(
     ...     [0.5, 0.3],
-    ...     [0.2, 0.7], 
-    ...     components_real = [0.1, 0.3], 
-    ...     components_imag = [0.2, 0.8]
+    ...     [0.2, 0.7],
+    ...     components_real=[0.1, 0.3],
+    ...     components_imag=[0.2, 0.8],
     ... )  # doctest: +NUMBER
     (array([0.8162, 0.1513]), array([0.1958, 0.8497]))
 
@@ -408,33 +411,41 @@ def n_fractions_from_phasor(
 
     components_matrix = numpy.asarray(components_matrix)
 
-    if components_matrix.shape[0] < components_matrix.shape[1]:
+    num_harmonics = (components_matrix.shape[0] - 1) / 2
+    num_components = components_matrix.shape[1]
+
+    if components_matrix.shape[0] < num_components:
         raise ValueError(
             f'{components_matrix.shape[0]=} < {components_matrix.shape[1]=}'
         )
+    if num_harmonics > 1 and num_harmonics != real.shape[0]:
+        raise ValueError(
+            f'number of harmonics in components matrix '
+            f'({num_harmonics}) does not match {real.shape[0]=}'
+        )
 
-    # TODO: get harmonic information from components_matrix and process real and imag accordingly
-
-
-    if real.ndim < 2:
+    if real.ndim == 1:
         real = numpy.expand_dims(real, axis=0)
         imag = numpy.expand_dims(imag, axis=0)
 
-    real = numpy.nan_to_num(real, nan=0.0)
-    imag = numpy.nan_to_num(imag, nan=0.0)
-
-    # TODO: get NaN mask and restore mask at the end
+    invalid_mask = numpy.any(
+        numpy.isnan(real)
+        | numpy.isnan(imag)
+        | numpy.isinf(real)
+        | numpy.isinf(imag),
+        axis=0,
+    )
+    real = numpy.nan_to_num(real, nan=0.0, posinf=0.0, neginf=0.0)
+    imag = numpy.nan_to_num(imag, nan=0.0, posinf=0.0, neginf=0.0)
 
     ones_array = numpy.ones((1,) + real.shape[1:])
-
     coords = numpy.concatenate([real, imag, ones_array], axis=0)
 
     fractions = scipy.linalg.lstsq(
         components_matrix, coords.reshape(coords.shape[0], -1), **kwargs
     )[0]
-    fractions = fractions.reshape(
-        (components_matrix.shape[1],) + coords.shape[1:]
-    )
+    fractions = fractions.reshape((num_components,) + coords.shape[1:])
+    fractions = [numpy.where(invalid_mask, numpy.nan, f) for f in fractions]
 
     return tuple(map(numpy.asarray, fractions))
 
@@ -469,9 +480,7 @@ def components_matrix_from_phasor(
     -------
     Matrix from phasor coordinates with one harmonic and two components:
 
-    >>> components_matrix_from_phasor(
-    ...     [0.1, 0.2], [0.3, 0.4]
-    ... )
+    >>> components_matrix_from_phasor([0.1, 0.2], [0.3, 0.4])
     array([[0.1, 0.2],
            [0.3, 0.4],
            [1, 1]])
