@@ -35,6 +35,7 @@ __all__ = [
     'two_fractions_from_phasor',
     'graphical_component_analysis',
     'n_fractions_from_phasor',
+    'components_matrix',
 ]
 
 import numbers
