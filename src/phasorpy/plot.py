@@ -372,7 +372,9 @@ class PhasorPlot:
             and :py:meth:`matplotlib.axes.Axes.contour`.
 
         """
-        update_kwargs(kwargs, cmap='Blues', norm='log')
+        if 'cmap' not in kwargs and 'colors' not in kwargs:
+            kwargs['cmap'] = 'Blues'
+        update_kwargs(kwargs, norm='log')
         kwargs_hist2d = parse_kwargs(
             kwargs, 'bins', 'range', 'density', 'weights'
         )
