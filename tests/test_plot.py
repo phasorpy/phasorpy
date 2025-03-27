@@ -119,6 +119,10 @@ class TestPhasorPlot:
         plot.contour(real, imag, bins=200, cmap='viridis', norm='linear')
         self.show(plot)
 
+        plot = PhasorPlot(title='colors=red', allquadrants=True)
+        plot.contour(real, imag, colors='red')
+        self.show(plot)
+
     def test_histogram_contour(self):
         """Test histogram and contour match."""
         real, imag = numpy.random.multivariate_normal(
