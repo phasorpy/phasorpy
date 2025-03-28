@@ -17,10 +17,18 @@ from matplotlib import pyplot
 
 from phasorpy.components import (
     graphical_component_analysis,
+    n_fractions_from_phasor,
     two_fractions_from_phasor,
 )
-from phasorpy.phasor import phasor_from_lifetime
-from phasorpy.plot import PhasorPlot, plot_histograms
+from phasorpy.datasets import fetch
+from phasorpy.io import signal_from_lsm
+from phasorpy.phasor import (
+    phasor_filter_median,
+    phasor_from_lifetime,
+    phasor_from_signal,
+    phasor_threshold,
+)
+from phasorpy.plot import PhasorPlot, plot_histograms, plot_signal_image
 
 numpy.random.seed(42)
 component_style = {
@@ -44,14 +52,14 @@ frequency = 80.0  # MHz
 component_lifetimes = [1.0, 8.0]  # ns
 component_fractions = [0.6, 0.4]
 
-components_real, components_imag = phasor_from_lifetime(
+component_real, component_imag = phasor_from_lifetime(
     frequency, component_lifetimes
 )
 
 plot = PhasorPlot(frequency=frequency, title='Fractions of two components')
 plot.components(
-    components_real,
-    components_imag,
+    component_real,
+    component_imag,
     component_fractions,
     labels=['A', 'B'],
     **component_style,
@@ -68,7 +76,7 @@ real, imag = phasor_from_lifetime(
 )
 
 fraction_of_first_component = two_fractions_from_phasor(
-    real, imag, components_real, components_imag
+    real, imag, component_real, component_imag
 )
 
 assert math.isclose(fraction_of_first_component, component_fractions[0])
@@ -89,7 +97,7 @@ plot = PhasorPlot(
 )
 plot.hist2d(real, imag, cmap='Greys')
 plot.components(
-    components_real, components_imag, labels=['A', 'B'], **component_style
+    component_real, component_imag, labels=['A', 'B'], **component_style
 )
 plot.show()
 
@@ -100,7 +108,7 @@ plot.show()
 # The fractions are plotted as histograms:
 
 fraction_of_first_component = two_fractions_from_phasor(
-    real, imag, components_real, components_imag
+    real, imag, component_real, component_imag
 )
 
 plot_histograms(
@@ -131,8 +139,8 @@ fractions = numpy.linspace(0.0, 1.0, 20)
 counts = graphical_component_analysis(
     real,
     imag,
-    components_real,
-    components_imag,
+    component_real,
+    component_imag,
     fractions=fractions,
     radius=radius,
 )
@@ -153,7 +161,7 @@ pyplot.show()
 # three components:
 
 component_lifetimes = [1.0, 4.0, 15.0]
-components_real, components_imag = phasor_from_lifetime(
+component_real, component_imag = phasor_from_lifetime(
     frequency, component_lifetimes
 )
 
@@ -162,7 +170,7 @@ plot = PhasorPlot(
 )
 plot.hist2d(real, imag, cmap='Greys')
 plot.components(
-    components_real, components_imag, labels=['A', 'B', 'C'], **component_style
+    component_real, component_imag, labels=['A', 'B', 'C'], **component_style
 )
 plot.show()
 
@@ -173,8 +181,8 @@ plot.show()
 counts = graphical_component_analysis(
     real,
     imag,
-    components_real,
-    components_imag,
+    component_real,
+    component_imag,
     fractions=fractions,
     radius=radius,
 )
@@ -206,29 +214,29 @@ plot = PhasorPlot(
 )
 plot.hist2d(real, imag, cmap='Greys')
 plot.components(
-    components_real[:2],
-    components_imag[:2],
+    component_real[:2],
+    component_imag[:2],
     labels=['A', 'B'],
     **component_style,
 )
 plot.components(
-    components_real[2], components_imag[2], labels=['C'], **component_style
+    component_real[2], component_imag[2], labels=['C'], **component_style
 )
 
 hist.set_xlim(0, 1)
 hist.set_xlabel('Fraction')
 hist.set_ylabel('Count')
 
-direction_real = components_real[0] - components_real[1]
-direction_imag = components_imag[0] - components_imag[1]
+direction_real = component_real[0] - component_real[1]
+direction_imag = component_imag[0] - component_imag[1]
 
 plots = []
 for i in range(fractions.size):
-    cursor_real = components_real[1] + fractions[i] * direction_real
-    cursor_imag = components_imag[1] + fractions[i] * direction_imag
+    cursor_real = component_real[1] + fractions[i] * direction_real
+    cursor_imag = component_imag[1] + fractions[i] * direction_imag
     plot_lines = plot.plot(
-        [cursor_real, components_real[2]],
-        [cursor_imag, components_imag[2]],
+        [cursor_real, component_real[2]],
+        [cursor_imag, component_imag[2]],
         '-',
         linewidth=plot.dataunit_to_point * radius * 2 + 5,
         solid_capstyle='round',
@@ -241,6 +249,142 @@ for i in range(fractions.size):
     plots.append(plot_lines + hist_artists)
 
 _ = animation.ArtistAnimation(fig, plots, interval=100, blit=True)
+pyplot.tight_layout()
+pyplot.show()
+
+# %%
+# Solving Multi-Component Analysis Algebraically
+# ----------------------------------------------
+#
+# Multiple components can be solved by a system of linear equations. This
+# algebraic approach uses the phasor coordinates from one or multiple harmonics
+# to determine the fractional contributions of n components simultaneously. The
+# method builds a matrix equation:
+#
+# .. math::
+#
+#    A\mathbf{x} = \mathbf{b}
+#
+# where :math:`A` consists of the components coorindates, :math:`\mathbf{x}`
+# are the unknown fractions, and :math:`\mathbf{b}` represents the measured
+# phasor coordinates.
+#
+# This analysis method will be demonstrated using spectral data from multiple
+# fluorescent markers as presented in Vallmitjana et al. (Methods Appl.
+# Fluoresc., 2022; https://doi.org/10.1088/2050-6120/ac9ae9). Spectral unmixing
+# will be performed using phasor coordinates from two harmonics.
+#
+# Read and plot the phasor coordinates of the components:
+
+components_names = [
+    'Hoechst',
+    'Lyso Tracker',
+    'Golgi',
+    'Mito Tracker',
+    'CellMask',
+]
+component_images = [
+    'spectral hoehst.lsm',
+    'spectral lyso tracker green.lsm',
+    'spectral golgi.lsm',
+    'spectral mito tracker.lsm',
+    'spectral cell mask.lsm',
+]
+component_real = [
+    [0.178, -0.598, -0.685, -0.656, 0.722],
+    [-0.054, -0.155, 0.152, 0.197, 0.117],
+]
+component_imag = [
+    [0.597, 0.626, 0.151, -0.581, -0.630],
+    [0.231, -0.683, -0.231, 0.636, -0.833],
+]
+
+plot_h1 = PhasorPlot(
+    allquadrants=True, title='First Harmonic Phasor Plot of Components'
+)
+plot_h2 = PhasorPlot(
+    allquadrants=True, title='Second Harmonic Phasor Plot of Components'
+)
+
+for i, img in enumerate(component_images):
+    mean, real, imag = phasor_from_signal(
+        signal_from_lsm(fetch(img)), axis=0, harmonic=[1, 2]
+    )
+    mean, real, imag = phasor_threshold(
+        *phasor_filter_median(mean, real, imag, size=5, repeat=3), 3
+    )
+
+    plot_h1.hist2d(real[0], imag[0], cmap='RdYlBu_r', bins=300)
+    plot_h1.plot(
+        component_real[0][i],
+        component_imag[0][i],
+        marker='o',
+        markersize=8,
+        label=components_names[i],
+    )
+
+    plot_h2.hist2d(real[1], imag[1], cmap='RdYlBu_r', bins=300)
+    plot_h2.plot(
+        component_real[1][i],
+        component_imag[1][i],
+        marker='o',
+        markersize=8,
+        label=components_names[i],
+    )
+
+# %%
+# Read and plot the sample image with mixture of components:
+
+signal = signal_from_lsm(
+    fetch('38_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm')
+)
+mean, real, imag = phasor_from_signal(signal, axis=0, harmonic=[1, 2])
+mean, real, imag = phasor_filter_median(mean, real, imag, size=5, repeat=3)
+
+plot_signal_image(signal, axis=0)
+
+# %%
+plot_h1 = PhasorPlot(
+    allquadrants=True, title='First Harmonic Phasor Plot of Sample'
+)
+plot_h2 = PhasorPlot(
+    allquadrants=True, title='Second Harmonic Phasor Plot of Sample'
+)
+
+for i, img in enumerate(component_images):
+    plot_h1.hist2d(real[0], imag[0], cmap='RdYlBu_r', bins=300)
+    plot_h1.plot(
+        component_real[0][i],
+        component_imag[0][i],
+        marker='o',
+        markersize=8,
+        label=components_names[i],
+    )
+
+    plot_h2.hist2d(real[1], imag[1], cmap='RdYlBu_r', bins=300)
+    plot_h2.plot(
+        component_real[1][i],
+        component_imag[1][i],
+        marker='o',
+        markersize=8,
+        label=components_names[i],
+    )
+
+# %%
+# Perform the five component analysis:
+
+fractions = numpy.asarray(
+    n_fractions_from_phasor(mean, real, imag, component_real, component_imag)
+)
+
+# Plot the fractions of each component
+cmap = pyplot.cm.inferno
+for i, fraction in enumerate(fractions):
+    pyplot.figure()
+    pyplot.imshow(fraction, cmap=cmap, vmin=0, vmax=1)
+    pyplot.title(f'Fractions of {components_names[i]}')
+    pyplot.colorbar()
+
 pyplot.tight_layout()
 pyplot.show()
 
