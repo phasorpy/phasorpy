@@ -120,7 +120,7 @@ def anscombe_transform_inverse(
 
     .. math::
 
-        x = 1/4 \cdot z^2{2}
+        x = 1/4 \cdot z^2
           + 1/4 \cdot \sqrt{3/2} \cdot z^{-1}
           - 11/8 \cdot z^{-2}
           + 5/8 \cdot \sqrt(3/2) \cdot z^{-3}

@@ -74,8 +74,6 @@ all = [
 ]
 
 [tool.setuptools]
-package-dir = { "" = "src" }
-packages = ["phasorpy"]
 zip-safe = false
 
 [tool.setuptools.dynamic]
