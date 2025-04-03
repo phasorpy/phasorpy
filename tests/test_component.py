@@ -1,18 +1,18 @@
-"""Tests for the phasorpy.components module."""
+"""Test the phasorpy._component module."""
 
 import pytest
 from numpy.testing import assert_allclose
 
-from phasorpy.components import (
-    graphical_component_analysis,
-    two_fractions_from_phasor,
+from phasorpy import (
+    phasor_component_fraction,
+    phasor_component_graphical_analysis,
 )
 
 
-def test_two_fractions_from_phasor():
-    """Test two_fractions_from_phasor function."""
+def test_phasor_component_fraction():
+    """Test phasor_component_fraction function."""
     assert_allclose(
-        two_fractions_from_phasor(
+        phasor_component_fraction(
             [0.0, 0.5, 0.6, 0.75, 1.0, 1.5],
             [0.0, 0.5, 0.6, 0.75, 1.0, 1.5],
             [0.5, 1.0],
@@ -22,7 +22,7 @@ def test_two_fractions_from_phasor():
         1e-6,
     )
     assert_allclose(
-        two_fractions_from_phasor(
+        phasor_component_fraction(
             [0.2, 0.5, 0.7],
             [0.2, 0.4, 0.3],
             [0.0582399, 0.79830002],
@@ -32,7 +32,7 @@ def test_two_fractions_from_phasor():
         1e-6,
     )
     assert_allclose(
-        two_fractions_from_phasor(
+        phasor_component_fraction(
             [0.0, 0.5, 0.9],
             [0.4, 0.4, 0.6],
             [0.0582399, 0.79830002],
@@ -43,22 +43,22 @@ def test_two_fractions_from_phasor():
     )
 
     with pytest.raises(ValueError):
-        two_fractions_from_phasor([0], [0], [0.1, 0.1], [0.2, 0.2])
+        phasor_component_fraction([0], [0], [0.1, 0.1], [0.2, 0.2])
     with pytest.raises(ValueError):
-        two_fractions_from_phasor([0], [0], [0.3], [0.1, 0.2])
+        phasor_component_fraction([0], [0], [0.3], [0.1, 0.2])
     with pytest.raises(ValueError):
-        two_fractions_from_phasor([0], [0], [0.1, 0.2], [0.3])
+        phasor_component_fraction([0], [0], [0.1, 0.2], [0.3])
     with pytest.raises(ValueError):
-        two_fractions_from_phasor([0], [0], [0.1], [0.3])
+        phasor_component_fraction([0], [0], [0.1], [0.3])
     with pytest.raises(ValueError):
-        two_fractions_from_phasor([0], [0], [0.1, 0.1, 0, 1], [0.1, 0, 2])
+        phasor_component_fraction([0], [0], [0.1, 0.1, 0, 1], [0.1, 0, 2])
 
 
 @pytest.mark.xfail
-def test_two_fractions_from_phasor_channels():
-    """Test two_fractions_from_phasor function for multiple channels."""
+def test_phasor_component_fraction_channels():
+    """Test phasor_component_fraction function for multiple channels."""
     assert_allclose(
-        two_fractions_from_phasor(
+        phasor_component_fraction(
             [[[0.1, 0.2, 0.3]]],
             [[[0.1, 0.2, 0.3]]],
             [[0.2, 0.2, 0.2], [0.9, 0.9, 0.9]],
@@ -73,7 +73,7 @@ def test_two_fractions_from_phasor_channels():
 
 @pytest.mark.parametrize(
     """real, imag,
-    components_real, components_imag,
+    component_real, component_imag,
     radius, fractions,
     expected_counts""",
     [
@@ -173,21 +173,21 @@ def test_two_fractions_from_phasor_channels():
         ),
     ],
 )
-def test_graphical_component_analysis(
+def test_phasor_component_graphical_analysis(
     real,
     imag,
-    components_real,
-    components_imag,
+    component_real,
+    component_imag,
     radius,
     fractions,
     expected_counts,
 ):
-    """Test graphical_component_analysis function."""
-    actual_counts = graphical_component_analysis(
+    """Test phasor_component_graphical_analysis function."""
+    actual_counts = phasor_component_graphical_analysis(
         real,
         imag,
-        components_real,
-        components_imag,
+        component_real,
+        component_imag,
         radius=radius,
         fractions=fractions,
     )
@@ -197,7 +197,7 @@ def test_graphical_component_analysis(
 
 @pytest.mark.parametrize(
     """real, imag,
-    components_real, components_imag,
+    component_real, component_imag,
     fractions
     """,
     [
@@ -205,7 +205,7 @@ def test_graphical_component_analysis(
         ([0], [0, 0], [0, 1], [0, 1], 10),
         # real.shape != imag.shape
         ([0, 0], [0], [0, 1], [0, 1], 10),
-        # components_imag.shape != components_real.shape
+        # component_imag.shape != component_real.shape
         (
             0,
             0,
@@ -213,7 +213,7 @@ def test_graphical_component_analysis(
             [0, 1],
             10,
         ),
-        # components_real.shape != components_imag.shape
+        # component_real.shape != component_imag.shape
         (
             0,
             0,
@@ -247,13 +247,13 @@ def test_graphical_component_analysis(
         ([0, 0], [0, 0], [0, 1], [0, 1], [[0.5], [-0.5]]),
     ],
 )
-def test_errors_graphical_component_analysis(
-    real, imag, components_real, components_imag, fractions
+def test_errors_phasor_component_graphical_analysis(
+    real, imag, component_real, component_imag, fractions
 ):
-    """Test errors in graphical_component_analysis function."""
+    """Test errors in phasor_component_graphical_analysis function."""
     with pytest.raises(ValueError):
-        graphical_component_analysis(
-            real, imag, components_real, components_imag, fractions=fractions
+        phasor_component_graphical_analysis(
+            real, imag, component_real, component_imag, fractions=fractions
         )
 
 

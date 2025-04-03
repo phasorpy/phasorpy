@@ -23,7 +23,7 @@ from tempfile import TemporaryDirectory
 import numpy
 from numpy.testing import assert_allclose
 
-from phasorpy.phasor import (
+from phasorpy import (
     phasor_calibrate,
     phasor_filter_median,
     phasor_from_signal,

@@ -10,7 +10,7 @@ lifetime and hyperspectral images using the :doc:`phasor_approach`.
 Quickstart
 ==========
 
-The :doc:`tutorials/index` demonstrate the use the library, from simple
+The :doc:`tutorials/index` demonstrate the use of the library, from simple
 examples to advanced applications.
 
 The :doc:`api/index` contains detailed information about all functions and

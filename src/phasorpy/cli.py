@@ -1,4 +1,4 @@
-"""PhasorPy package command line interface.
+"""Command line interface.
 
 Invoke the command line application with::
 
@@ -18,11 +18,11 @@ if TYPE_CHECKING:
 
 import click
 
-from . import version
+from . import __version__
 
 
 @click.group(help='PhasorPy package command line interface.')
-@click.version_option(version=version.__version__)
+@click.version_option(version=__version__)
 def main() -> int:
     """PhasorPy command line interface."""
     return 0
@@ -38,7 +38,9 @@ def main() -> int:
 )
 def versions(verbose: bool) -> None:
     """Versions command group."""
-    click.echo(version.versions(verbose=verbose))
+    from .utils import versions
+
+    click.echo(versions(verbose=verbose))
 
 
 @main.command(help='Fetch sample files from remote repositories.')

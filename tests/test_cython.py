@@ -1,4 +1,4 @@
-"""Test the phasorpy._phasorpy module."""
+"""Test the phasorpy._phasorpy Cython extension module."""
 
 import math
 import sys

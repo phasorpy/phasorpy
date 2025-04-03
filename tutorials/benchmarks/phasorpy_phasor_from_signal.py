@@ -4,7 +4,7 @@ Benchmark phasor_from_signal
 
 Benchmark the ``phasor_from_signal`` function.
 
-The :py:func:`phasorpy.phasor.phasor_from_signal` function to calculate phasor
+The :py:func:`phasorpy.phasor_from_signal` function to calculate phasor
 coordinates from time-resolved or spectral signals can operate in two modes:
 
 - using an internal Cython function optimized for calculating a small number
@@ -25,7 +25,7 @@ from timeit import timeit
 import numpy
 from numpy.fft import rfft as numpy_fft  # noqa
 
-from phasorpy.phasor import phasor_from_signal  # noqa
+from phasorpy import phasor_from_signal  # noqa
 from phasorpy.utils import number_threads
 
 try:

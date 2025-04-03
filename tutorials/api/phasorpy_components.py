@@ -15,11 +15,11 @@ import matplotlib.animation as animation
 import numpy
 from matplotlib import pyplot
 
-from phasorpy.components import (
-    graphical_component_analysis,
-    two_fractions_from_phasor,
+from phasorpy import (
+    phasor_component_fraction,
+    phasor_component_graphical_analysis,
+    phasor_from_lifetime,
 )
-from phasorpy.phasor import phasor_from_lifetime
 from phasorpy.plot import PhasorPlot, plot_histograms
 
 numpy.random.seed(42)
@@ -44,14 +44,14 @@ frequency = 80.0  # MHz
 component_lifetimes = [1.0, 8.0]  # ns
 component_fractions = [0.6, 0.4]
 
-components_real, components_imag = phasor_from_lifetime(
+component_real, component_imag = phasor_from_lifetime(
     frequency, component_lifetimes
 )
 
 plot = PhasorPlot(frequency=frequency, title='Fractions of two components')
 plot.components(
-    components_real,
-    components_imag,
+    component_real,
+    component_imag,
     component_fractions,
     labels=['A', 'B'],
     **component_style,
@@ -67,8 +67,8 @@ real, imag = phasor_from_lifetime(
     frequency, component_lifetimes, component_fractions
 )
 
-fraction_of_first_component = two_fractions_from_phasor(
-    real, imag, components_real, components_imag
+fraction_of_first_component = phasor_component_fraction(
+    real, imag, component_real, component_imag
 )
 
 assert math.isclose(fraction_of_first_component, component_fractions[0])
@@ -89,7 +89,7 @@ plot = PhasorPlot(
 )
 plot.hist2d(real, imag, cmap='Greys')
 plot.components(
-    components_real, components_imag, labels=['A', 'B'], **component_style
+    component_real, component_imag, labels=['A', 'B'], **component_style
 )
 plot.show()
 
@@ -99,8 +99,8 @@ plot.show()
 # projecting the phasor coordinate onto the line connecting the components.
 # The fractions are plotted as histograms:
 
-fraction_of_first_component = two_fractions_from_phasor(
-    real, imag, components_real, components_imag
+fraction_of_first_component = phasor_component_fraction(
+    real, imag, component_real, component_imag
 )
 
 plot_histograms(
@@ -119,7 +119,7 @@ plot_histograms(
 # Graphical analysis of two components
 # ------------------------------------
 #
-# The :py:func:`phasorpy.components.graphical_component_analysis`
+# The :py:func:`phasorpy.phasor_component_graphical_analysis`
 # function for two components counts the number of phasor coordinates
 # that fall within a radius at given fractions along the line between
 # the components.
@@ -128,11 +128,11 @@ plot_histograms(
 radius = 0.025
 fractions = numpy.linspace(0.0, 1.0, 20)
 
-counts = graphical_component_analysis(
+counts = phasor_component_graphical_analysis(
     real,
     imag,
-    components_real,
-    components_imag,
+    component_real,
+    component_imag,
     fractions=fractions,
     radius=radius,
 )
@@ -153,7 +153,7 @@ pyplot.show()
 # three components:
 
 component_lifetimes = [1.0, 4.0, 15.0]
-components_real, components_imag = phasor_from_lifetime(
+component_real, component_imag = phasor_from_lifetime(
     frequency, component_lifetimes
 )
 
@@ -162,7 +162,7 @@ plot = PhasorPlot(
 )
 plot.hist2d(real, imag, cmap='Greys')
 plot.components(
-    components_real, components_imag, labels=['A', 'B', 'C'], **component_style
+    component_real, component_imag, labels=['A', 'B', 'C'], **component_style
 )
 plot.show()
 
@@ -170,11 +170,11 @@ plot.show()
 # The results of the graphical component analysis are plotted as
 # histograms for each component pair:
 
-counts = graphical_component_analysis(
+counts = phasor_component_graphical_analysis(
     real,
     imag,
-    components_real,
-    components_imag,
+    component_real,
+    component_imag,
     fractions=fractions,
     radius=radius,
 )
@@ -206,29 +206,29 @@ plot = PhasorPlot(
 )
 plot.hist2d(real, imag, cmap='Greys')
 plot.components(
-    components_real[:2],
-    components_imag[:2],
+    component_real[:2],
+    component_imag[:2],
     labels=['A', 'B'],
     **component_style,
 )
 plot.components(
-    components_real[2], components_imag[2], labels=['C'], **component_style
+    component_real[2], component_imag[2], labels=['C'], **component_style
 )
 
 hist.set_xlim(0, 1)
 hist.set_xlabel('Fraction')
 hist.set_ylabel('Count')
 
-direction_real = components_real[0] - components_real[1]
-direction_imag = components_imag[0] - components_imag[1]
+direction_real = component_real[0] - component_real[1]
+direction_imag = component_imag[0] - component_imag[1]
 
 plots = []
 for i in range(fractions.size):
-    cursor_real = components_real[1] + fractions[i] * direction_real
-    cursor_imag = components_imag[1] + fractions[i] * direction_imag
+    cursor_real = component_real[1] + fractions[i] * direction_real
+    cursor_imag = component_imag[1] + fractions[i] * direction_imag
     plot_lines = plot.plot(
-        [cursor_real, components_real[2]],
-        [cursor_imag, components_imag[2]],
+        [cursor_real, component_real[2]],
+        [cursor_imag, component_imag[2]],
         '-',
         linewidth=plot.dataunit_to_point * radius * 2 + 5,
         solid_capstyle='round',

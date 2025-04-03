@@ -1,13 +1,4 @@
-"""Cluster phasor coordinates.
-
-The `phasorpy.cluster` module provides functions to:
-
-- fit elliptic clusters to phasor coordinates using
-  Gaussian Mixture Model (GMM):
-
-  - :py:func:`phasor_cluster_gmm`
-
-"""
+"""Cluster phasor coordinates."""
 
 from __future__ import annotations
 
@@ -21,7 +12,6 @@ if TYPE_CHECKING:
 import math
 
 import numpy
-from sklearn.mixture import GaussianMixture
 
 
 def phasor_cluster_gmm(
@@ -115,6 +105,8 @@ def phasor_cluster_gmm(
     (0.2, 0.4)
 
     """
+    from sklearn.mixture import GaussianMixture
+
     coords = numpy.stack((real, imag), axis=-1).reshape(-1, 2)
 
     valid_data = ~numpy.isnan(coords).any(axis=1)

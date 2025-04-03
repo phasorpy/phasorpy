@@ -1,10 +1,10 @@
-"""Tests for the phasorpy.cluster module."""
+"""Test the phasorpy._cluster module."""
 
 import numpy
 import pytest
 from numpy.testing import assert_allclose
 
-from phasorpy.cluster import phasor_cluster_gmm
+from phasorpy import phasor_cluster_gmm
 
 numpy.random.seed(42)
 
@@ -28,11 +28,11 @@ def test_phasor_cluster_gmm_basic(clusters):
     assert len(radius_minor) == clusters
     assert len(angle) == clusters
     if clusters == 2:
-        assert_allclose(centers_real, [0.4, 0.2], atol=0.01)
-        assert_allclose(centers_imag, [0.5, 0.3], atol=0.01)
+        assert_allclose(sorted(centers_real), [0.2, 0.4], atol=0.01)
+        assert_allclose(sorted(centers_imag), [0.3, 0.5], atol=0.01)
         assert_allclose(radius_major, [0.17, 0.17], atol=0.01)
         assert_allclose(radius_minor, [0.105, 0.105], atol=0.01)
-        assert_allclose(angle, [2.11, 0.54], atol=0.2)
+        assert_allclose(sorted(angle), [0.54, 2.11], atol=0.2)
 
 
 def test_phasor_cluster_gmm_invalid_shapes():

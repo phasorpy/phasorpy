@@ -3,8 +3,7 @@
 import os
 
 import phasorpy
-from phasorpy import versions
-from phasorpy.utils import number_threads
+from phasorpy.utils import number_threads, versions
 
 
 def pytest_report_header(config, start_path):
@@ -21,4 +20,4 @@ def pytest_report_header(config, start_path):
 collect_ignore = ['data']
 
 
-# mypy: allow-untyped-defs, allow-untyped-calls
+# mypy: allow-untyped-defs

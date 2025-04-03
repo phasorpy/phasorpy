@@ -1,4 +1,4 @@
-"""Tests handling NaN coordinates."""
+"""Test handling NaN coordinates."""
 
 import warnings
 
@@ -8,24 +8,20 @@ from matplotlib import pyplot
 from numpy import nan
 from numpy.testing import assert_allclose, assert_array_equal
 
-from phasorpy.components import (
-    graphical_component_analysis,
-    two_fractions_from_phasor,
-)
-from phasorpy.cursors import (
-    mask_from_circular_cursor,
-    mask_from_elliptic_cursor,
-    mask_from_polar_cursor,
-)
-from phasorpy.phasor import (
+from phasorpy import (
     phasor_at_harmonic,
     phasor_calibrate,
     phasor_center,
+    phasor_component_fraction,
+    phasor_component_graphical_analysis,
     phasor_divide,
     phasor_filter_median,
     phasor_from_apparent_lifetime,
     phasor_from_polar,
     phasor_from_signal,
+    phasor_mask_circular,
+    phasor_mask_elliptic,
+    phasor_mask_polar,
     phasor_multiply,
     phasor_threshold,
     phasor_to_apparent_lifetime,
@@ -87,31 +83,31 @@ def test_plot_phasor_image_nan():
     pyplot.close()
 
 
-def test_mask_from_circular_cursor_nan():
-    """Test mask_from_circular_cursor function with NaN values."""
+def test_phasor_mask_circular_nan():
+    """Test phasor_mask_circular function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        mask = mask_from_circular_cursor(
+        mask = phasor_mask_circular(
             *VALUES_WITH_NAN[1:], 0.55, 0.55, radius=0.1
         )
     assert_allclose(mask, [True, False, False])
 
 
-def test_mask_from_elliptic_cursor_nan():
-    """Test mask_from_elliptic_cursor function with NaN values."""
+def test_phasor_mask_elliptic_nan():
+    """Test phasor_mask_elliptic function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        mask = mask_from_elliptic_cursor(
+        mask = phasor_mask_elliptic(
             *VALUES_WITH_NAN[1:], 0.55, 0.55, radius=0.1
         )
     assert_allclose(mask, [True, False, False])
 
 
-def test_mask_from_polar_cursor_nan():
-    """Test mask_from_polar_cursor function with NaN values."""
+def test_phasor_mask_polar_nan():
+    """Test phasor_mask_polarfunction with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        mask = mask_from_polar_cursor(*VALUES_WITH_NAN[1:], 0, 1, 0.6, 0.8)
+        mask = phasor_mask_polar(*VALUES_WITH_NAN[1:], 0, 1, 0.6, 0.8)
     assert_allclose(mask, [True, False, False])
 
 
@@ -372,21 +368,21 @@ def test_polar_to_apparent_lifetime_nan():
     )
 
 
-def test_two_fractions_from_phasor_nan():
-    """Test two_fractions_from_phasor function with NaN values."""
+def test_phasor_component_fraction_nan():
+    """Test phasor_component_fraction function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        fractions = two_fractions_from_phasor(
+        fractions = phasor_component_fraction(
             *VALUES_WITH_NAN[1:], [0.5, 1.0], [0.5, 1.0]
         )
     assert_allclose(fractions, [1.0, nan, 1.0])
 
 
-def test_graphical_component_analysis_nan():
-    """Test graphical_component_analysis function with NaN values."""
+def test_phasor_component_graphical_analysis_nan():
+    """Test phasor_component_graphical_analysis function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        counts = graphical_component_analysis(
+        counts = phasor_component_graphical_analysis(
             *VALUES_WITH_NAN[1:],
             [0.0, 0.0, 1.0],
             [0.0, 1.0, 0.0],

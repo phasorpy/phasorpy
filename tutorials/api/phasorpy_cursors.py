@@ -9,16 +9,16 @@ An introduction to selecting phasor coordinates using cursors.
 # %%
 # Import required modules, functions, and classes:
 
-from phasorpy.color import CATEGORICAL
-from phasorpy.cursors import (
-    mask_from_circular_cursor,
-    mask_from_elliptic_cursor,
-    mask_from_polar_cursor,
-    pseudo_color,
+from phasorpy import (
+    phasor_from_signal,
+    phasor_mask_circular,
+    phasor_mask_elliptic,
+    phasor_mask_polar,
+    phasor_threshold,
 )
+from phasorpy.color import CATEGORICAL
 from phasorpy.datasets import fetch
 from phasorpy.io import signal_from_lsm
-from phasorpy.phasor import phasor_from_signal, phasor_threshold
 from phasorpy.plot import PhasorPlot, plot_image
 
 # %%
@@ -40,7 +40,7 @@ cursors_real = [-0.33, 0.54]
 cursors_imag = [-0.72, -0.74]
 radius = [0.2, 0.22]
 
-circular_mask = mask_from_circular_cursor(
+circular_mask = phasor_mask_circular(
     real, imag, cursors_real, cursors_imag, radius=radius
 )
 
@@ -63,6 +63,8 @@ plot.show()
 #
 # The cursor masks can be blended to produce a pseudo-colored image:
 
+from phasorpy.color import pseudo_color
+
 pseudo_color_image = pseudo_color(*circular_mask)
 
 plot_image(
@@ -79,7 +81,7 @@ plot_image(
 radius = [0.1, 0.06]
 radius_minor = [0.3, 0.25]
 
-elliptic_mask = mask_from_elliptic_cursor(
+elliptic_mask = phasor_mask_elliptic(
     real,
     imag,
     cursors_real,
@@ -127,7 +129,7 @@ phase_max = [-1.57, -0.70]
 modulation_min = [0.7, 0.8]
 modulation_max = [0.9, 1.0]
 
-polar_mask = mask_from_polar_cursor(
+polar_mask = phasor_mask_polar(
     real, imag, phase_min, phase_max, modulation_min, modulation_max
 )
 
