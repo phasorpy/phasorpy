@@ -92,6 +92,9 @@ from __future__ import annotations
 
 __all__ = ['__version__']
 
+__version__ = '0.5.dev'
+"""PhasorPy version string."""
+
 from ._cluster import *
 from ._component import *
 from ._cursor import *
@@ -100,8 +103,10 @@ from ._lifetime import *
 from ._phasor import *
 from ._utils import init_module
 
-__version__ = '0.5.dev'
-"""PhasorPy version string."""
+# The `init_module()` function dynamically populates the `__all__` list with
+# all public symbols imported from submodules or defined in this module.
+# Any name not starting with an underscore will be automatically exported
+# when using "from phasorpy import *"
 
 init_module(globals())
 del init_module

@@ -126,6 +126,11 @@ from ._leica import *
 from ._ometiff import *
 from ._simfcs import *
 
+# The `init_module()` function dynamically populates the `__all__` list with
+# all public symbols imported from submodules or defined in this module.
+# Any name not starting with an underscore will be automatically exported
+# when using "from phasorpy.io import *"
+
 init_module(globals())
 del init_module
 

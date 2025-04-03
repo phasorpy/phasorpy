@@ -15,6 +15,11 @@ from ._phasorplot import *
 from ._phasorplot_fret import *
 from ._plot import *
 
+# The `init_module()` function dynamically populates the `__all__` list with
+# all public symbols imported from submodules or defined in this module.
+# Any name not starting with an underscore will be automatically exported
+# when using "from phasorpy.plot import *"
+
 init_module(globals())
 del init_module
 
