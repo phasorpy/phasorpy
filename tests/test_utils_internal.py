@@ -287,9 +287,16 @@ def test_chunk_iter():
 
 def test_init_module():
     """Test set_module function."""
+    from phasorpy import __all__, phasor_from_signal
     from phasorpy._utils import init_module  # noqa: F401
     from phasorpy.io import phasor_from_ometiff
 
+    assert len(__all__) >= 38
+    assert 'utils' not in __all__
+    assert 'annotations' not in __all__
+    assert 'phasor_from_signal' in __all__
+    assert '__version__' in __all__
+    assert phasor_from_signal.__module__ == 'phasorpy'
     assert phasor_from_ometiff.__module__ == 'phasorpy.io'
 
 
