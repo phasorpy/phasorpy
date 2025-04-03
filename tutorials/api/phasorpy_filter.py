@@ -13,15 +13,15 @@ include the median and wavelet filtering.
 # %%
 # Import required modules and functions:
 
-from phasorpy.datasets import fetch
-from phasorpy.io import signal_from_imspector_tiff
-from phasorpy.phasor import (
+from phasorpy import (
     phasor_calibrate,
     phasor_filter_median,
     phasor_filter_pawflim,
     phasor_from_signal,
     phasor_threshold,
 )
+from phasorpy.datasets import fetch
+from phasorpy.io import signal_from_imspector_tiff
 from phasorpy.plot import plot_image, plot_phasor
 
 # %%
@@ -75,7 +75,7 @@ plot_phasor(
 #
 # Median filtering replaces each pixel value with the median of its
 # neighboring values, reducing noise while preserving edges.
-# The function :py:func:`phasorpy.phasor.phasor_filter_median` applies a
+# The function :py:func:`phasorpy.phasor_filter_median` applies a
 # median filter to phasor coordinates. Typically, applying a 3×3 kernel
 # one to three times is sufficient to remove noise while maintaining
 # important features:
@@ -134,7 +134,7 @@ plot_image(
 # ----------------------
 #
 # Filtering based on wavelet decomposition is another method to reduce noise.
-# The function :py:func:`phasorpy.phasor.phasor_filter_pawflim` is based
+# The function :py:func:`phasorpy.phasor_filter_pawflim` is based
 # on the `pawFLIM <https://github.com/maurosilber/pawflim>`_ library.
 # While the median filter is applicable to any type of phasor coordinates,
 # the pawFLIM filter requires calibrated phasor coordinates from FLIM

@@ -1,9 +1,10 @@
-"""Tests for the phasorpy command line interface."""
+"""Test the phasorpy.cli module."""
 
 from click.testing import CliRunner
 
-from phasorpy import __version__, versions
+from phasorpy import __version__
 from phasorpy.cli import main
+from phasorpy.utils import versions
 
 
 def test_version():

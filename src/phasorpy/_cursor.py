@@ -1,26 +1,11 @@
-"""Select regions of interest (cursors) from phasor coordinates.
-
-The ``phasorpy.cursors`` module provides functions to:
-
-- create masks for regions of interests in the phasor space:
-
-  - :py:func:`mask_from_circular_cursor`
-  - :py:func:`mask_from_elliptic_cursor`
-  - :py:func:`mask_from_polar_cursor`
-
-- create pseudo-color image from average signal and cursor masks:
-
-  - :py:func:`pseudo_color`
-
-"""
+"""Select regions of interest (cursors) in phasor coordinates."""
 
 from __future__ import annotations
 
 __all__ = [
-    'mask_from_circular_cursor',
-    'mask_from_elliptic_cursor',
-    'mask_from_polar_cursor',
-    'pseudo_color',
+    'phasor_mask_circular',
+    'phasor_mask_elliptic',
+    'phasor_mask_polar',
 ]
 
 from typing import TYPE_CHECKING
@@ -33,18 +18,14 @@ if TYPE_CHECKING:
 
 import numpy
 
-from phasorpy.color import CATEGORICAL
-
 from ._phasorpy import (
-    _blend_normal,
-    _blend_overlay,
     _is_inside_circle,
     _is_inside_ellipse_,
     _is_inside_polar_rectangle,
 )
 
 
-def mask_from_circular_cursor(
+def phasor_mask_circular(
     real: ArrayLike,
     imag: ArrayLike,
     center_real: ArrayLike,
@@ -53,7 +34,7 @@ def mask_from_circular_cursor(
     *,
     radius: ArrayLike = 0.05,
 ) -> NDArray[numpy.bool_]:
-    """Return masks for circular cursors of phasor coordinates.
+    """Return mask for phasor coordinates within circle(s).
 
     Parameters
     ----------
@@ -73,8 +54,7 @@ def mask_from_circular_cursor(
     masks : ndarray
         Boolean array of shape `(n, *real.shape)`.
         The first dimension is omitted if `center_*` and `radius` are scalars.
-        Values are True if phasor coordinates are inside circular cursor,
-        else False.
+        Values are True if phasor coordinates are inside circle, else False.
 
     Raises
     ------
@@ -89,14 +69,14 @@ def mask_from_circular_cursor(
 
     Examples
     --------
-    Create mask for a single circular cursor:
+    Create mask for a single circle:
 
-    >>> mask_from_circular_cursor([0.2, 0.5], [0.4, 0.5], 0.2, 0.4, radius=0.1)
+    >>> phasor_mask_circular([0.2, 0.5], [0.4, 0.5], 0.2, 0.4, radius=0.1)
     array([ True, False])
 
-    Create masks for two circular cursors with different radius:
+    Create masks for two circles with different radius:
 
-    >>> mask_from_circular_cursor(
+    >>> phasor_mask_circular(
     ...     [0.2, 0.5], [0.4, 0.5], [0.2, 0.5], [0.4, 0.5], radius=[0.1, 0.05]
     ... )
     array([[ True, False],
@@ -130,7 +110,7 @@ def mask_from_circular_cursor(
     return mask.astype(numpy.bool_)  # type: ignore[no-any-return]
 
 
-def mask_from_elliptic_cursor(
+def phasor_mask_elliptic(
     real: ArrayLike,
     imag: ArrayLike,
     center_real: ArrayLike,
@@ -142,7 +122,7 @@ def mask_from_elliptic_cursor(
     angle: ArrayLike | None = None,
     align_semicircle: bool = False,
 ) -> NDArray[numpy.bool_]:
-    """Return masks for elliptic cursors of phasor coordinates.
+    """Return mask for phasor coordinates within ellipse(s).
 
     Parameters
     ----------
@@ -174,8 +154,7 @@ def mask_from_elliptic_cursor(
         Boolean array of shape `(n, *real.shape)`.
         The first dimension is omitted if `center*`, `radius*`, and `angle`
         are scalars.
-        Values are True if phasor coordinates are inside elliptic cursor,
-        else False.
+        Values are True if phasor coordinates are inside ellipse, else False.
 
     Raises
     ------
@@ -190,14 +169,14 @@ def mask_from_elliptic_cursor(
 
     Examples
     --------
-    Create mask for a single elliptic cursor:
+    Create mask for a single ellipse:
 
-    >>> mask_from_elliptic_cursor([0.2, 0.5], [0.4, 0.5], 0.2, 0.4, radius=0.1)
+    >>> phasor_mask_elliptic([0.2, 0.5], [0.4, 0.5], 0.2, 0.4, radius=0.1)
     array([ True, False])
 
-    Create masks for two elliptic cursors with different radii:
+    Create masks for two ellipses with different radii:
 
-    >>> mask_from_elliptic_cursor(
+    >>> phasor_mask_elliptic(
     ...     [0.2, 0.5],
     ...     [0.4, 0.5],
     ...     [0.2, 0.5],
@@ -273,7 +252,7 @@ def mask_from_elliptic_cursor(
     return mask.astype(numpy.bool_)  # type: ignore[no-any-return]
 
 
-def mask_from_polar_cursor(
+def phasor_mask_polar(
     real: ArrayLike,
     imag: ArrayLike,
     phase_min: ArrayLike,
@@ -282,7 +261,7 @@ def mask_from_polar_cursor(
     modulation_max: ArrayLike,
     /,
 ) -> NDArray[numpy.bool_]:
-    """Return mask for polar cursor of polar coordinates.
+    """Return mask for polar range of polar coordinates.
 
     Parameters
     ----------
@@ -291,15 +270,15 @@ def mask_from_polar_cursor(
     imag : array_like
         Imaginary component of phasor coordinates.
     phase_min : array_like, shape (n,)
-        Lower bound of angular range of cursors in radians.
+        Lower bound of angular range in radians.
         Values should be in range [-pi, pi].
     phase_max : array_like, shape (n,)
-        Upper bound of angular range of cursors in radians.
+        Upper bound of angular range in radians.
         Values should be in range [-pi, pi].
     modulation_min : array_like, shape (n,)
-        Lower bound of radial range of cursors.
+        Lower bound of radial range.
     modulation_max : array_like, shape (n,)
-        Upper bound of radial range of cursors.
+        Upper bound of radial range.
 
     Returns
     -------
@@ -307,7 +286,7 @@ def mask_from_polar_cursor(
         Boolean array of shape `(n, *real.shape)`.
         The first dimension is omitted if `phase_*` and `modulation_*`
         are scalars.
-        Values are True if phasor coordinates are inside polar range cursor,
+        Values are True if phasor coordinates are inside polar range,
         else False.
 
     Raises
@@ -324,14 +303,14 @@ def mask_from_polar_cursor(
 
     Example
     -------
-    Create mask from a single polar cursor:
+    Create mask from a single polar range:
 
-    >>> mask_from_polar_cursor([0.2, 0.5], [0.4, 0.5], 1.1, 1.2, 0.4, 0.5)
+    >>> phasor_mask_polar([0.2, 0.5], [0.4, 0.5], 1.1, 1.2, 0.4, 0.5)
     array([ True, False])
 
-    Create masks for two polar cursors with different ranges:
+    Create masks for two polar ranges:
 
-    >>> mask_from_polar_cursor(
+    >>> phasor_mask_polar(
     ...     [0.2, 0.5],
     ...     [0.4, 0.5],
     ...     [1.1, 0.7],
@@ -381,122 +360,3 @@ def mask_from_polar_cursor(
     if moveaxis:
         mask = numpy.moveaxis(mask, -1, 0)
     return mask.astype(numpy.bool_)  # type: ignore[no-any-return]
-
-
-def pseudo_color(
-    *masks: ArrayLike,
-    intensity: ArrayLike | None = None,
-    colors: ArrayLike | None = None,
-    vmin: float | None = 0.0,
-    vmax: float | None = None,
-) -> NDArray[numpy.float32]:
-    """Return pseudo-colored image from cursor masks.
-
-    Parameters
-    ----------
-    *masks : array_like
-        Boolean mask for each cursor.
-    intensity : array_like, optional
-        Intensity used as base layer to blend cursor colors in "overlay" mode.
-        If None, cursor masks are blended using "screen" mode.
-    vmin : float, optional
-        Minimum value to normalize `intensity`.
-        If None, the minimum value of `intensity` is used.
-    vmax : float, optional
-        Maximum value to normalize `intensity`.
-        If None, the maximum value of `intensity` is used.
-    colors : array_like, optional, shape (N, 3)
-        RGB colors assigned to each cursor.
-        The last dimension contains the normalized RGB floating point values.
-        The default is :py:data:`phasorpy.color.CATEGORICAL`.
-
-    Returns
-    -------
-    ndarray
-        Pseudo-colored image of shape ``(*masks[0].shape, 3)``.
-
-    Raises
-    ------
-    ValueError
-        `colors` is not a (n, 3) shaped floating point array.
-        The shapes of `masks` or `mean` cannot broadcast.
-
-    See Also
-    --------
-    :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
-
-    Example
-    -------
-    Create pseudo-color image from single mask:
-
-    >>> pseudo_color([True, False, True])  # doctest: +NUMBER
-    array([[0.8254, 0.09524, 0.127],
-           [0, 0, 0],
-           [0.8254, 0.09524, 0.127]]...)
-
-    Create pseudo-color image from two masks and intensity image:
-
-    >>> pseudo_color(
-    ...     [True, False], [False, True], intensity=[0.4, 0.6], vmax=1.0
-    ... )  # doctest: +NUMBER
-    array([[0.6603, 0.07619, 0.1016],
-           [0.2762, 0.5302, 1]]...)
-
-    """
-    if len(masks) == 0:
-        raise TypeError(
-            "pseudo_color() missing 1 required positional argument: 'masks'"
-        )
-
-    if colors is None:
-        colors = CATEGORICAL
-    else:
-        colors = numpy.asarray(colors)
-        if colors.ndim != 2:
-            raise ValueError(f'{colors.ndim=} != 2')
-        if colors.shape[-1] != 3:
-            raise ValueError(f'{colors.shape[-1]=} != 3')
-        if colors.dtype.kind != 'f':
-            raise ValueError('colors is not a floating point array')
-    # TODO: add support for matplotlib colors
-
-    shape = numpy.asarray(masks[0]).shape
-
-    if intensity is not None:
-        # normalize intensity to range [0, 1]
-        intensity = numpy.array(
-            intensity, dtype=numpy.float32, ndmin=1, copy=True
-        )
-        if intensity.size > 1:
-            if vmin is None:
-                vmin = numpy.nanmin(intensity)
-            if vmax is None:
-                vmax = numpy.nanmax(intensity)
-            if vmin != 0.0:
-                intensity -= vmin
-            scale = vmax - vmin
-            if scale != 0.0 and scale != 1.0:
-                intensity /= scale
-        numpy.clip(intensity, 0.0, 1.0, out=intensity)
-        if intensity.shape == shape:
-            intensity = intensity[..., numpy.newaxis]
-        pseudocolor = numpy.full((*shape, 3), intensity, dtype=numpy.float32)
-    else:
-        pseudocolor = numpy.zeros((*shape, 3), dtype=numpy.float32)
-
-    # TODO: support intensity or RGB input in addition to masks
-    blend = numpy.empty_like(pseudocolor)
-    for i, mask_ in enumerate(masks):
-        mask = numpy.asarray(mask_)
-        if mask.shape != shape:
-            raise ValueError(f'masks[{i}].shape={mask.shape} != {shape}')
-        blend.fill(numpy.nan)
-        blend[mask] = colors[i]
-        if intensity is None:
-            # TODO: replace by _blend_screen?
-            _blend_normal(pseudocolor, blend, out=pseudocolor)
-        else:
-            _blend_overlay(pseudocolor, blend, out=pseudocolor)
-
-    pseudocolor.clip(0.0, 1.0, out=pseudocolor)
-    return pseudocolor

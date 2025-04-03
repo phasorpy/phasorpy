@@ -1,22 +1,18 @@
-"""Tests for the phasorpy.cursors module."""
+"""Test the phasorpy._cursor module."""
 
 import numpy
 import pytest
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import assert_array_equal
 
-from phasorpy.color import CATEGORICAL
-from phasorpy.cursors import (
-    mask_from_circular_cursor,
-    mask_from_elliptic_cursor,
-    mask_from_polar_cursor,
-    pseudo_color,
+from phasorpy import (
+    phasor_from_polar,
+    phasor_mask_circular,
+    phasor_mask_elliptic,
+    phasor_mask_polar,
 )
-from phasorpy.phasor import phasor_from_polar
 
 
-@pytest.mark.parametrize(
-    'func', [mask_from_circular_cursor, mask_from_elliptic_cursor]
-)
+@pytest.mark.parametrize('func', [phasor_mask_circular, phasor_mask_elliptic])
 @pytest.mark.parametrize(
     'real, imag, center_real, center_imag, radius, expected',
     [
@@ -79,17 +75,15 @@ from phasorpy.phasor import phasor_from_polar
         # TODO: add tests for multiple radius
     ],
 )
-def test_mask_from_circular_cursor(
+def test_phasor_mask_circular(
     func, real, imag, center_real, center_imag, radius, expected
 ):
-    """Test mask_from_circular/elliptic_cursor functions."""
+    """Test phasor_mask_circular/elliptic functions."""
     mask = func(real, imag, center_real, center_imag, radius=radius)
     assert_array_equal(mask, expected)
 
 
-@pytest.mark.parametrize(
-    'func', [mask_from_circular_cursor, mask_from_elliptic_cursor]
-)
+@pytest.mark.parametrize('func', [phasor_mask_circular, phasor_mask_elliptic])
 @pytest.mark.parametrize(
     'real, imag, center_real, center_imag, radius',
     [
@@ -98,10 +92,10 @@ def test_mask_from_circular_cursor(
         (0.0, 0.0, [[0, 0], [0, 0]], [[0, 0], [0, 0]], 0.1),
     ],
 )
-def test_mask_from_circular_cursor_errors(
+def test_phasor_mask_circular_errors(
     func, real, imag, center_real, center_imag, radius
 ):
-    """Test errors for mask_from_circular/elliptic_cursor functions."""
+    """Test errors for phasor_mask_circular/elliptic functions."""
     with pytest.raises(ValueError):
         func(real, imag, center_real, center_imag, radius=radius)
 
@@ -123,12 +117,12 @@ def test_mask_from_circular_cursor_errors(
         (0.5, 0.5, 0.0, None, [[True, True], [True, True]]),
     ],
 )
-def test_mask_from_elliptic_cursor(
+def test_phasor_mask_elliptic(
     radius, radius_minor, angle, align_semicircle, expected
 ):
-    """Test mask_from_elliptic_cursor function."""
-    # the function is also tested in test_mask_from_circular_cursor
-    mask = mask_from_elliptic_cursor(
+    """Test phasor_mask_elliptic function."""
+    # the function is also tested in test_phasor_mask_circular
+    mask = phasor_mask_elliptic(
         [0.2, 0.5],
         [0.4, 0.5],
         [0.2, 0.5],
@@ -222,7 +216,7 @@ def test_mask_from_elliptic_cursor(
         # TODO: add tests for axis parameter
     ],
 )
-def test_mask_from_polar_cursor(
+def test_phasor_mask_polar(
     phase,
     modulation,
     phase_min,
@@ -231,13 +225,13 @@ def test_mask_from_polar_cursor(
     modulation_max,
     expected,
 ):
-    """Test mask_from_cursor function."""
+    """Test phasor_mask_polar function."""
     real, imag = phasor_from_polar(numpy.deg2rad(phase), modulation)
     phase_min = numpy.deg2rad(phase_min)
     phase_max = numpy.deg2rad(phase_max)
 
     assert_array_equal(
-        mask_from_polar_cursor(
+        phasor_mask_polar(
             real, imag, phase_min, phase_max, modulation_min, modulation_max
         ),
         expected,
@@ -262,16 +256,14 @@ def test_mask_from_polar_cursor(
         ),  # range array is 2D
     ],
 )
-def test_mask_from_polar_cursor_errors(
-    real, imag, phase_range, modulation_range
-):
-    """Test errors for mask_from_polar_cursor function."""
+def test_phasor_mask_polar_errors(real, imag, phase_range, modulation_range):
+    """Test errors for phasor_mask_polar function."""
     with pytest.raises(ValueError):
-        mask_from_polar_cursor(real, imag, *phase_range, *modulation_range)
+        phasor_mask_polar(real, imag, *phase_range, *modulation_range)
 
 
-def test_cursors_on_grid():
-    """Plot cursor functions on grid of points."""
+def test_mask_on_grid():
+    """Plot mask functions on grid of points."""
     from math import pi
 
     from matplotlib import pyplot
@@ -299,19 +291,19 @@ def test_cursors_on_grid():
 
     _, ax = pyplot.subplots(4, 1, figsize=(3.2, 9), layout='constrained')
 
-    mask = mask_from_circular_cursor(real, imag, 0.5, 0.5, radius=0.1)
-    plot_mask(real, imag, mask, title='mask_from_circular_cursor', ax=ax[0])
+    mask = phasor_mask_circular(real, imag, 0.5, 0.5, radius=0.1)
+    plot_mask(real, imag, mask, title='phasor_mask_circular', ax=ax[0])
     assert_array_equal(
-        mask, mask_from_elliptic_cursor(real, imag, 0.5, 0.5, radius=0.1)
+        mask, phasor_mask_elliptic(real, imag, 0.5, 0.5, radius=0.1)
     )
 
-    mask = mask_from_elliptic_cursor(
+    mask = phasor_mask_elliptic(
         real, imag, 0.5, 0.5, radius=0.15, radius_minor=0.05  # , angle=pi / 4
     )
-    plot_mask(real, imag, mask, title='mask_from_elliptic_cursor', ax=ax[1])
+    plot_mask(real, imag, mask, title='phasor_mask_elliptic', ax=ax[1])
     assert_array_equal(
         mask,
-        mask_from_elliptic_cursor(
+        phasor_mask_elliptic(
             real,
             imag,
             0.5,
@@ -322,7 +314,7 @@ def test_cursors_on_grid():
         ),
     )
 
-    mask = mask_from_elliptic_cursor(
+    mask = phasor_mask_elliptic(
         real,
         imag,
         0.5,
@@ -334,7 +326,7 @@ def test_cursors_on_grid():
     plot_mask(real, imag, mask, title='align_semicircle=True', ax=ax[2])
     assert_array_equal(
         mask,
-        mask_from_elliptic_cursor(
+        phasor_mask_elliptic(
             real,
             imag,
             0.5,
@@ -345,133 +337,15 @@ def test_cursors_on_grid():
         ),
     )
 
-    mask = mask_from_polar_cursor(
+    mask = phasor_mask_polar(
         real, imag, pi / 5, pi / 3 + 4 * pi, 0.6071, 0.8071
     )
-    plot_mask(real, imag, mask, title='mask_from_polar_cursor', ax=ax[3])
+    plot_mask(real, imag, mask, title='phasor_mask_polar', ax=ax[3])
 
     if show:
         pyplot.show()
     else:
         pyplot.close()
-
-
-@pytest.mark.parametrize(
-    'masks, mean, colors, expected',
-    [
-        ([True], None, None, CATEGORICAL[0]),  # single value true
-        ([False], None, None, [0, 0, 0]),  # single value false
-        (
-            [[True, True]],
-            None,
-            None,
-            numpy.asarray([CATEGORICAL[0], CATEGORICAL[0]]),
-        ),  # 1D array
-        (
-            [[True, False]],
-            None,
-            None,
-            numpy.asarray([CATEGORICAL[0], [0, 0, 0]]),
-        ),  # 1D array with false
-        (
-            [[[True, True], [False, False]]],
-            None,
-            None,
-            numpy.asarray(
-                [[CATEGORICAL[0], CATEGORICAL[0]], [[0, 0, 0], [0, 0, 0]]]
-            ),
-        ),  # 2D array
-        (
-            [True, True],
-            None,
-            None,
-            CATEGORICAL[1],
-        ),  # single value with two masks
-        (
-            [[True, False], [False, True]],
-            None,
-            None,
-            numpy.asarray([CATEGORICAL[0], CATEGORICAL[1]]),
-        ),  # 1D array with two masks
-        (
-            [[True, False], [True, True]],
-            None,
-            None,
-            numpy.asarray([CATEGORICAL[1], CATEGORICAL[1]]),
-        ),  # 1D array with two masks all true
-        (
-            [True],
-            None,
-            [[0, 0, 0.5]],
-            [0, 0, 0.5],
-        ),  # single value true with custom color
-        (
-            [False],
-            None,
-            [[0, 0, 0.5]],
-            [0, 0, 0],
-        ),  # single value false with custom color
-        (
-            [[True, False]],
-            None,
-            [[0, 0, 0.5]],
-            [[0, 0, 0.5], [0, 0, 0]],
-        ),  # 1D array with custom color
-    ],
-)
-def test_pseudo_color(masks, mean, colors, expected):
-    """Test pseudo_color function."""
-    assert_allclose(
-        pseudo_color(*masks, intensity=mean, colors=colors),
-        expected,
-    )
-
-
-def test_pseudo_color_overlay():
-    """Test pseudo_color function with intensity."""
-    assert_allclose(pseudo_color(True, intensity=1.0), [1, 1, 1])
-    assert_allclose(pseudo_color(True, intensity=0.5), CATEGORICAL[0])
-    assert_allclose(pseudo_color(False, intensity=0.4), [0.4, 0.4, 0.4])
-    assert_allclose(
-        pseudo_color(
-            [True, True, True],
-            intensity=[-0.1, 0.5, 1.1],
-            vmin=None,
-            vmax=None,
-        ),
-        [[0.0, 0.0, 0.0], [0.825397, 0.095238, 0.126984], [1.0, 1.0, 1.0]],
-    )
-    assert_allclose(
-        pseudo_color(
-            [True, True, True], intensity=[-0.1, 0.5, 1.1], vmin=-0.1, vmax=1.1
-        ),
-        [[0.0, 0.0, 0.0], [0.825397, 0.095238, 0.126984], [1.0, 1.0, 1.0]],
-    )
-    assert_allclose(
-        pseudo_color(
-            [True, True, True], intensity=[-0.1, 0.5, 1.1], vmin=0.0, vmax=1.0
-        ),
-        [[0.0, 0.0, 0.0], [0.825397, 0.095238, 0.126984], [1.0, 1.0, 1.0]],
-    )
-
-
-def test_pseudo_color_errors():
-    """Test errors for pseudo_color function."""
-    # no masks
-    with pytest.raises(TypeError):
-        pseudo_color()
-    # masks shape mismatch
-    with pytest.raises(ValueError):
-        pseudo_color([0], [[0]])
-    # colors not float
-    with pytest.raises(ValueError):
-        pseudo_color(0, colors=[[0, 0, 0]])
-    # colors not 2D
-    with pytest.raises(ValueError):
-        pseudo_color(0, colors=[0.0, 0, 0])
-    # colors last dimension not 3
-    with pytest.raises(ValueError):
-        pseudo_color(0, colors=[[0.0, 0]])
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

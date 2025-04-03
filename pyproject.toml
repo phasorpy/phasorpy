@@ -36,7 +36,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -87,7 +86,7 @@ packages = ["phasorpy"]
 zip-safe = false
 
 [tool.setuptools.dynamic]
-version = { attr = "phasorpy.version.__version__" }
+version = { attr = "phasorpy.__version__" }
 
 [tool.setuptools.package-data]
 phasorpy = ["py.typed"]
@@ -148,9 +147,10 @@ ignore_missing_imports = true
 
 [tool.coverage.run]
 plugins = ["Cython.Coverage"]
+omit = ["conftest.py", "__main__.py"]
 
 [tool.coverage.report]
-exclude_lines = ["pragma: no cover", "pragma: ${PY_MAJOR_VERSION} no cover"]
+exclude_lines = ["if TYPE_CHECKING:", "plot.show()", "pragma: no cover", "pragma: ${PY_MAJOR_VERSION} no cover"]
 
 [tool.coverage.html]
 directory = "_htmlcov"
@@ -160,7 +160,7 @@ minversion = "7"
 log_cli_level = "INFO"
 # filterwarnings = ["error"]  # breaks debugging tests in VSCode (Sept. 2024)
 xfail_strict = true
-addopts = "-rfEXs --strict-config --strict-markers --doctest-modules --doctest-glob=*.py --doctest-glob=*.rst --ignore=src/phasorpy/_io.py"
+addopts = "-rfEXs --strict-config --strict-markers --doctest-modules --doctest-glob=*.py --doctest-glob=*.rst"
 doctest_optionflags = [
     "NORMALIZE_WHITESPACE",
     "ELLIPSIS",

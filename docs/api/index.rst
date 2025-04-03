@@ -12,14 +12,11 @@ PhasorPy library version |version|.
     :maxdepth: 3
 
     phasorpy
-    phasor
-    cursors
-    components
-    cluster
-    plot
     io
+    plot
     color
     datasets
+    experimental
     utils
     _utils
     _phasorpy

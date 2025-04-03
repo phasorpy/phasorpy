@@ -1,4 +1,4 @@
-"""Tests for the phasorpy.datasets module."""
+"""Test the phasorpy.datasets module."""
 
 import os
 

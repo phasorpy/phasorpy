@@ -4,7 +4,7 @@ Phasor coordinates from lifetimes
 
 An introduction to the `phasor_from_lifetime` function.
 
-The :py:func:`phasorpy.phasor.phasor_from_lifetime` function is used
+The :py:func:`phasorpy.phasor_from_lifetime` function is used
 to calculate phasor coordinates as a function of frequency,
 single or multiple lifetime components, and the pre-exponential amplitudes
 or fractional intensities of the components.
@@ -16,7 +16,7 @@ or fractional intensities of the components.
 
 import numpy
 
-from phasorpy.phasor import phasor_from_lifetime, phasor_to_polar
+from phasorpy import phasor_from_lifetime, phasor_to_polar
 from phasorpy.plot import PhasorPlot, plot_phasor, plot_polar_frequency
 
 rng = numpy.random.default_rng(42)

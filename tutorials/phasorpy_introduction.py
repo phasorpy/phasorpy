@@ -109,8 +109,8 @@ plot_signal_image(signal, axis='H', xlabel='delay-time (ns)')
 # Calculate phasor coordinates
 # ----------------------------
 #
-# The :py:mod:`phasorpy.phasor` module provides functions to calculate,
-# calibrate, filter, and convert phasor coordinates.
+# The phasorpy library provides functions to calculate, calibrate, filter,
+# and convert phasor coordinates.
 #
 # Phasor coordinates are the real and imaginary components of the complex
 # numbers returned by a real forward Digital Fourier Transform (DFT)
@@ -123,7 +123,7 @@ plot_signal_image(signal, axis='H', xlabel='delay-time (ns)')
 # Phasor coordinates of the first harmonic are calculated from the signal
 # over the axis containing the TCSPC histogram bins (`axis='H'` or `axis=0`):
 
-from phasorpy.phasor import phasor_from_signal
+from phasorpy import phasor_from_signal
 
 mean, real, imag = phasor_from_signal(signal, axis='H')
 
@@ -146,7 +146,7 @@ plot_phasor_image(mean, real, imag, title='Sample')
 # However, only when the phasor coordinates at all harmonics are considered
 # (including the mean intensity) is the signal completely described:
 
-from phasorpy.phasor import phasor_to_signal
+from phasorpy import phasor_to_signal
 
 phasor_all_harmonics = phasor_from_signal(signal, axis=0, harmonic='all')
 reconstructed_signal = phasor_to_signal(
@@ -194,7 +194,7 @@ plot_phasor_image(
 # Calibrate the raw phasor coordinates with the reference coordinates of known
 # lifetime (Fluorescein, 4.2 ns):
 
-from phasorpy.phasor import phasor_calibrate
+from phasorpy import phasor_calibrate
 
 real, imag = phasor_calibrate(
     real,
@@ -244,7 +244,7 @@ numpy.testing.assert_allclose(
 # The filter is applied independently to the real and imaginary components,
 # but not to the signal average:
 
-from phasorpy.phasor import phasor_filter_median
+from phasorpy import phasor_filter_median
 
 mean, real, imag = phasor_filter_median(mean, real, imag, size=3, repeat=2)
 
@@ -252,7 +252,7 @@ mean, real, imag = phasor_filter_median(mean, real, imag, size=3, repeat=2)
 # Pixels with low intensities are commonly excluded from analysis and
 # visualization of phasor coordinates:
 
-from phasorpy.phasor import phasor_threshold
+from phasorpy import phasor_threshold
 
 mean, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 
@@ -344,18 +344,20 @@ plot_phasor(
 # Select phasor coordinates
 # -------------------------
 #
-# The :py:mod:`phasorpy.cursors` module provides functions for selecting phasor
-# coordinates to define and mask regions of interest within the phasor space.
+# The phasorpy library provides functions for selecting phasor coordinates
+# to define and mask regions of interest within the phasor space.
 #
-# Mask regions of interest in the phasor space using circular cursors:
+# Mask regions of interest in the phasor space using circular selections
+# ("cursors"):
 
+from phasorpy import phasor_mask_circular
 from phasorpy.color import CATEGORICAL
-from phasorpy.cursors import mask_from_circular_cursor
 
 cursor_real = 0.69, 0.59
 cursor_imag = 0.32, 0.33
 radius = 0.05, 0.05
-cursors_masks = mask_from_circular_cursor(
+
+cursor_masks = phasor_mask_circular(
     real, imag, cursor_real, cursor_imag, radius=radius
 )
 
@@ -365,26 +367,26 @@ cursors_masks = mask_from_circular_cursor(
 
 from phasorpy.plot import PhasorPlot
 
-phasorplot = PhasorPlot(frequency=frequency, title='Cursors')
-phasorplot.hist2d(real, imag)
+plot = PhasorPlot(frequency=frequency, title='Cursors')
+plot.hist2d(real, imag)
 for i in range(len(cursor_real)):
-    phasorplot.circle(
+    plot.circle(
         cursor_real[i],
         cursor_imag[i],
         radius=radius[i],
         color=CATEGORICAL[i],
         linestyle='-',
     )
-phasorplot.show()
+plot.show()
 
 # %%
-# Blend the cursor masks with the mean intensity image to produce a
+# Blend the masks with the mean intensity image to produce a
 # pseudo-colored image:
 
-from phasorpy.cursors import pseudo_color
+from phasorpy.color import pseudo_color
 from phasorpy.plot import plot_image
 
-pseudo_color_image = pseudo_color(*cursors_masks, intensity=mean)
+pseudo_color_image = pseudo_color(*cursor_masks, intensity=mean)
 
 plot_image(
     pseudo_color_image, title='Pseudo-color image from circular cursors'
@@ -437,16 +439,16 @@ plot_phasor(real, imag, allquadrants=True, title='Hyperspectral phasor plot')
 # Automatically find the two elliptical clusters in the phasor space using
 # a Gaussian mixture model and plot them in distinct colors:
 
-from phasorpy.cluster import phasor_cluster_gmm
+from phasorpy import phasor_cluster_gmm
 
 center_real, center_imag, radius, radius_minor, angle = phasor_cluster_gmm(
     real, imag, clusters=2
 )
 
-phasorplot = PhasorPlot(allquadrants=True, title='Elliptical clusters')
-phasorplot.hist2d(real, imag, cmap='Greys')
+plot = PhasorPlot(allquadrants=True, title='Elliptical clusters')
+plot.hist2d(real, imag, cmap='Greys')
 for i in range(len(center_real)):
-    phasorplot.cursor(
+    plot.cursor(
         center_real[i],
         center_imag[i],
         radius=radius[i],
@@ -455,14 +457,14 @@ for i in range(len(center_real)):
         color=CATEGORICAL[i],
         linestyle='-',
     )
-phasorplot.show()
+plot.show()
 
 # %%
 # Use the elliptic clusters to mask regions of interest in the phasor space:
 
-from phasorpy.cursors import mask_from_elliptic_cursor
+from phasorpy import phasor_mask_elliptic
 
-elliptic_masks = mask_from_elliptic_cursor(
+elliptic_masks = phasor_mask_elliptic(
     real,
     imag,
     center_real,
@@ -488,7 +490,9 @@ plot_image(
 #
 # Print information about Python interpreter and installed packages:
 
-print(phasorpy.versions())
+from phasorpy.utils import versions
+
+print(versions())
 
 # %%
 # sphinx_gallery_thumbnail_number = -8

@@ -13,13 +13,14 @@ __all__ = [
     'phasor_from_polar_scalar',
     'phasor_to_polar_scalar',
     'scale_matrix',
-    'set_module',
+    'init_module',
     'sort_coordinates',
     'update_kwargs',
 ]
 
 import math
 import numbers
+import sys
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -581,8 +582,8 @@ def chunk_iter(
         )
 
 
-def set_module(globs: dict[str, Any], /) -> None:
-    """Set ``__module__`` attribute for objects in ``__all__``.
+def init_module(globs: dict[str, Any], /) -> None:
+    """Add names in module to ``__all__`` and set ``__module__`` attributes.
 
     Parameters
     ----------
@@ -591,11 +592,21 @@ def set_module(globs: dict[str, Any], /) -> None:
 
     Examples
     --------
-    >>> set_module(globals())
+    >>> init_module(globals())
 
     """
-    name = globs['__name__']
-    for item in globs['__all__']:
-        obj = globs[item]
+    all = globs['__all__']
+    module_name = globs['__name__']
+    module = sys.modules[module_name]
+    for name in dir(module):
+        if name.startswith('_') or name in {
+            'annotations',
+            'init_module',
+            'utils',  # TODO: where does this come from?
+        }:
+            continue
+        all.append(name)
+        obj = getattr(module, name)
         if hasattr(obj, '__module__'):
-            obj.__module__ = name
+            obj.__module__ = module_name
+    globs['__all__'] = sorted(all)

@@ -9,6 +9,66 @@ documentation and maintenance changes.
     The PhasorPy library is still under construction. Backwards-incompatible
     changes may occur between revisions.
 
+0.5 (unreleased)
+----------------
+
+This is the fifth alpha release of the PhasorPy library.
+It contains several bug fixes, improvements, and a reorganized namespace.
+The new ``phasor_cluster_gmm`` function finds clusters in phasor coordinates
+using a Gaussian mixture model.
+The ``phasor_filter_pawflim`` function applies a wavelet filter using the
+pawFLIM library.
+This release supports Python 3.11 to 3.13. Python 3.10 is no longer supported.
+
+The following functions were moved or renamed:
+
+- ``versions`` -> ``utils.versions``
+- ``components.two_fractions_from_phasor`` -> ``phasor_component_fraction``
+- ``components.graphical_component_analysis`` -> ``phasor_component_graphical_analysis``
+- ``cursors.mask_from_circular_cursor`` -> ``phasor_mask_circular``
+- ``cursors.mask_from_elliptic_cursor`` -> ``phasor_mask_elliptic``
+- ``cursors.mask_from_polar_cursor`` -> ``phasor_mask_polar``
+- ``cursors.pseudo_color`` -> ``color.pseudo_color``
+- ``utils.spectral_vector_denoise`` -> ``experimental.spectral_vector_denoise``
+- ``utils.anscombe_transform`` -> ``experimental.anscombe_transform``
+- ``utils.anscombe_transform_inverse`` -> ``experimental.anscombe_transform_inverse``
+- ``phasor.lifetime_fraction_from_amplitude`` -> ``lifetime_fraction_from_amplitude``
+- ``phasor.lifetime_fraction_to_amplitude`` -> ``lifetime_fraction_to_amplitude``
+- ``phasor.lifetime_from_frequency`` -> ``lifetime_from_frequency``
+- ``phasor.lifetime_to_frequency`` -> ``lifetime_to_frequency``
+- ``phasor.lifetime_to_signal`` -> ``lifetime_to_signal``
+- ``phasor.phasor_at_harmonic`` -> ``phasor_at_harmonic``
+- ``phasor.phasor_calibrate`` -> ``phasor_calibrate``
+- ``phasor.phasor_center`` -> ``phasor_center``
+- ``phasor.phasor_divide`` -> ``phasor_divide``
+- ``phasor.phasor_filter_median`` -> ``phasor_filter_median``
+- ``phasor.phasor_from_apparent_lifetime`` -> ``phasor_from_apparent_lifetime``
+- ``phasor.phasor_from_fret_acceptor`` -> ``phasor_from_fret_acceptor``
+- ``phasor.phasor_from_fret_donor`` -> ``phasor_from_fret_donor``
+- ``phasor.phasor_from_lifetime`` -> ``phasor_from_lifetime``
+- ``phasor.phasor_from_polar`` -> ``phasor_from_polar``
+- ``phasor.phasor_from_signal`` -> ``phasor_from_signal``
+- ``phasor.phasor_multiply`` -> ``phasor_multiply``
+- ``phasor.phasor_normalize`` -> ``phasor_normalize``
+- ``phasor.phasor_semicircle`` -> ``phasor_semicircle``
+- ``phasor.phasor_threshold`` -> ``phasor_threshold``
+- ``phasor.phasor_to_apparent_lifetime`` -> ``phasor_to_apparent_lifetime``
+- ``phasor.phasor_to_complex`` -> ``phasor_to_complex``
+- ``phasor.phasor_to_polar`` -> ``phasor_to_polar``
+- ``phasor.phasor_to_principal_plane`` -> ``phasor_to_principal_plane``
+- ``phasor.phasor_to_signal`` -> ``phasor_to_signal``
+- ``phasor.phasor_transform`` -> ``phasor_transform``
+- ``phasor.polar_from_apparent_lifetime`` -> ``polar_from_apparent_lifetime``
+- ``phasor.polar_from_reference`` -> ``polar_from_reference``
+- ``phasor.polar_from_reference_phasor`` -> ``polar_from_reference_phasor``
+- ``phasor.polar_to_apparent_lifetime`` -> ``polar_to_apparent_lifetime``
+
+What's Changed
+..............
+
+- TODO
+
+
 0.4 (2025.1.30)
 ---------------
 

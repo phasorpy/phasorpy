@@ -1,8 +1,19 @@
-"""Color palettes and manipulation."""
+"""Color palettes and manipulation.
+
+The ``phasorpy.color`` module provides color palettes and functions for color
+manipulation.
+
+"""
 
 from __future__ import annotations
 
-__all__ = ['float2int', 'wavelength2rgb', 'CATEGORICAL', 'SRGB_SPECTRUM']
+__all__ = [
+    'float2int',
+    'pseudo_color',
+    'wavelength2rgb',
+    'CATEGORICAL',
+    'SRGB_SPECTRUM',
+]
 
 from typing import TYPE_CHECKING
 
@@ -10,6 +21,127 @@ if TYPE_CHECKING:
     from ._typing import Any, ArrayLike, DTypeLike, NDArray
 
 import numpy
+
+from ._phasorpy import _blend_normal, _blend_overlay
+
+
+def pseudo_color(
+    *masks: ArrayLike,
+    intensity: ArrayLike | None = None,
+    colors: ArrayLike | None = None,
+    vmin: float | None = 0.0,
+    vmax: float | None = None,
+) -> NDArray[numpy.float32]:
+    """Return pseudo-colored image from masks.
+
+    Parameters
+    ----------
+    *masks : array_like
+        Boolean masks.
+    intensity : array_like, optional
+        Intensity used as base layer to blend masks in "overlay" mode.
+        If None, masks are blended using "screen" mode.
+    vmin : float, optional
+        Minimum value to normalize `intensity`.
+        If None, the minimum value of `intensity` is used.
+    vmax : float, optional
+        Maximum value to normalize `intensity`.
+        If None, the maximum value of `intensity` is used.
+    colors : array_like, optional, shape (N, 3)
+        RGB colors assigned to each mask.
+        The last dimension contains the normalized RGB floating point values.
+        The default is :py:data:`phasorpy.color.CATEGORICAL`.
+
+    Returns
+    -------
+    ndarray
+        Pseudo-colored image of shape ``(*masks[0].shape, 3)``.
+
+    Raises
+    ------
+    ValueError
+        `colors` is not a (n, 3) shaped floating point array.
+        The shapes of `masks` or `mean` cannot broadcast.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
+
+    Example
+    -------
+    Create pseudo-color image from single mask:
+
+    >>> pseudo_color([True, False, True])  # doctest: +NUMBER
+    array([[0.8254, 0.09524, 0.127],
+           [0, 0, 0],
+           [0.8254, 0.09524, 0.127]]...)
+
+    Create pseudo-color image from two masks and intensity image:
+
+    >>> pseudo_color(
+    ...     [True, False], [False, True], intensity=[0.4, 0.6], vmax=1.0
+    ... )  # doctest: +NUMBER
+    array([[0.6603, 0.07619, 0.1016],
+           [0.2762, 0.5302, 1]]...)
+
+    """
+    if len(masks) == 0:
+        raise TypeError(
+            "pseudo_color() missing 1 required positional argument: 'masks'"
+        )
+
+    if colors is None:
+        colors = CATEGORICAL
+    else:
+        colors = numpy.asarray(colors)
+        if colors.ndim != 2:
+            raise ValueError(f'{colors.ndim=} != 2')
+        if colors.shape[-1] != 3:
+            raise ValueError(f'{colors.shape[-1]=} != 3')
+        if colors.dtype.kind != 'f':
+            raise ValueError('colors is not a floating point array')
+    # TODO: add support for matplotlib colors
+
+    shape = numpy.asarray(masks[0]).shape
+
+    if intensity is not None:
+        # normalize intensity to range [0, 1]
+        intensity = numpy.array(
+            intensity, dtype=numpy.float32, ndmin=1, copy=True
+        )
+        if intensity.size > 1:
+            if vmin is None:
+                vmin = numpy.nanmin(intensity)
+            if vmax is None:
+                vmax = numpy.nanmax(intensity)
+            if vmin != 0.0:
+                intensity -= vmin
+            scale = vmax - vmin
+            if scale != 0.0 and scale != 1.0:
+                intensity /= scale
+        numpy.clip(intensity, 0.0, 1.0, out=intensity)
+        if intensity.shape == shape:
+            intensity = intensity[..., numpy.newaxis]
+        pseudocolor = numpy.full((*shape, 3), intensity, dtype=numpy.float32)
+    else:
+        pseudocolor = numpy.zeros((*shape, 3), dtype=numpy.float32)
+
+    # TODO: support intensity or RGB input in addition to masks
+    blend = numpy.empty_like(pseudocolor)
+    for i, mask_ in enumerate(masks):
+        mask = numpy.asarray(mask_)
+        if mask.shape != shape:
+            raise ValueError(f'masks[{i}].shape={mask.shape} != {shape}')
+        blend.fill(numpy.nan)
+        blend[mask] = colors[i]
+        if intensity is None:
+            # TODO: replace by _blend_screen?
+            _blend_normal(pseudocolor, blend, out=pseudocolor)
+        else:
+            _blend_overlay(pseudocolor, blend, out=pseudocolor)
+
+    pseudocolor.clip(0.0, 1.0, out=pseudocolor)
+    return pseudocolor
 
 
 def wavelength2rgb(
