@@ -4,7 +4,8 @@ import os
 
 import numpy
 
-from phasorpy.utils import logger, number_threads
+from phasorpy import __version__
+from phasorpy.utils import logger, number_threads, versions
 
 numpy.random.seed(42)
 
@@ -34,6 +35,17 @@ def test_number_threads():
         assert number_threads(0) == 4
         assert number_threads(6) == 6
         del os.environ['PHASORPY_NUM_THREADS']
+
+
+def test_versions():
+    """Test phasorpy.versions function."""
+    ver = versions()
+    assert 'Python-' in ver
+    assert f'phasorpy-{__version__}\nnumpy-' in ver
+    assert '(' not in ver
+
+    ver = versions(sep=', ', dash=' ', verbose=True)
+    assert f', phasorpy {__version__}  (' in ver
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls
