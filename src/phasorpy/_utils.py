@@ -595,7 +595,7 @@ def init_module(globs: dict[str, Any], /) -> None:
     >>> init_module(globals())
 
     """
-    all = globs['__all__']
+    names = globs['__all__']
     module_name = globs['__name__']
     module = sys.modules[module_name]
     for name in dir(module):
@@ -605,8 +605,8 @@ def init_module(globs: dict[str, Any], /) -> None:
             'utils',  # TODO: where does this come from?
         }:
             continue
-        all.append(name)
+        names.append(name)
         obj = getattr(module, name)
         if hasattr(obj, '__module__'):
             obj.__module__ = module_name
-    globs['__all__'] = sorted(all)
+    globs['__all__'] = sorted(names)
