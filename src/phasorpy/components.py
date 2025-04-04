@@ -216,7 +216,7 @@ def graphical_component_analysis(
     >>> graphical_component_analysis(
     ...     [0.6, 0.3], [0.35, 0.38], [0.2, 0.9], [0.4, 0.3], fractions=6
     ... )  # doctest: +NUMBER
-    (array([0, 0, 1, 0, 1, 0]),)
+    (array([0, 0, 1, 0, 1, 0], dtype=uint64),)
 
     Count the number of phasors between the combinations of three components:
 
@@ -227,9 +227,9 @@ def graphical_component_analysis(
     ...     [0.0, 0.4, 0.3],
     ...     fractions=6,
     ... )  # doctest: +NUMBER +NORMALIZE_WHITESPACE
-    (array([0, 1, 1, 1, 1, 0]),
-     array([0, 1, 0, 0, 0, 0]),
-     array([0, 1, 2, 0, 0, 0]))
+    (array([0, 1, 1, 1, 1, 0], dtype=uint64),
+     array([0, 1, 0, 0, 0, 0], dtype=uint64),
+     array([0, 1, 2, 0, 0, 0], dtype=uint64))
 
     """
     real = numpy.asarray(real)
@@ -305,7 +305,7 @@ def graphical_component_analysis(
                         components_imag[3 - i - j],  # c_imag
                         radius,
                     )
-                fraction_counts = numpy.sum(mask)
+                fraction_counts = numpy.sum(mask, dtype=numpy.uint64)
                 component_counts.append(fraction_counts)
 
             counts.append(numpy.asarray(component_counts))
