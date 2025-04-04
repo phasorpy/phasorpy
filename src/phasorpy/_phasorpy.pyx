@@ -4,6 +4,7 @@
 # cython: wraparound = False
 # cython: cdivision = True
 # cython: nonecheck = False
+# cython: freethreading_compatible = True
 
 """Cython implementation of low-level functions for the PhasorPy library."""
 
