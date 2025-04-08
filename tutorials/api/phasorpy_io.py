@@ -202,25 +202,24 @@ plot_phasor(
 # library.
 #
 # The :py:func:`phasorpy.io.signal_from_ptu` function is used to read
-# the TCSPC histogram from a PTU file exported from the `FLIM_testdata dataset
-# <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_ with the
-# Leica LAS X software.
-# By default, the function returns a 5-dimensional image with dimension order
-# TYXCH. Channel and frames are specified to reduce the dimensionality:
+# the TCSPC histogram from a PTU file exported from the `FLIM_testdata LIF
+# dataset <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_ with the
+# Leica LAS X software. For phasor analysis, all photons in periods with
+# multiple photons must be discarded before exporting to PTU format.
+# In the LAS X software, select ...(TODO)
+# By default, the PTU reader function returns a 5-dimensional image with
+# dimension order TYXCH. Channel and frames are specified to reduce the
+# dimensionality:
 
 from phasorpy.io import signal_from_ptu
 
-filename = 'FLIM_testdata.lif.ptu'
+filename = 'FLIM_testdata.lif.filtered.ptu'
 
 signal = signal_from_ptu(fetch(filename), channel=0, frame=0, keepdims=False)
 
 plot_signal_image(signal, title=filename, xlabel='delay-time (ns)')
 
 # %%
-# The TCSPC histogram contains more photons than the phasor intensity image
-# stored in the LIF-FLIM file. The LAS X software likely applies a filter to
-# the TCSPC histogram before phasor analysis.
-#
 # The returned ``signal`` is an `xarray.DataArray
 # <https://docs.xarray.dev/en/stable/generated/xarray.DataArray.html>`_
 # holding the TCSPC histogram as a NumPy array, and metadata as a
