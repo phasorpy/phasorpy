@@ -1329,6 +1329,8 @@ def phasor_from_flimlabs_json(
     channels = sorted(channels)
 
     if len(channels) > nchannels:
+        # FLIM LABS phasor files may specify more channels than they
+        # actually contain. Let nchannels >= len(channels) pass
         raise ValueError(f'{len(channels)=} > {nchannels=}')
 
     if isinstance(harmonic, str) and harmonic == 'all':
