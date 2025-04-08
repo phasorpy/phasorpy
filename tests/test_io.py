@@ -343,7 +343,7 @@ def test_signal_from_flimlabs_json_old():
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
 def test_signal_from_flimlabs_json_channel():
-    """Test read FLIM LABS JSON image file."""
+    """Test read FLIM LABS JSON multi-channel image file."""
     filename = private_file('test03_1733492714_imaging.json')
     signal = signal_from_flimlabs_json(filename)
     assert signal.values.sum(dtype=numpy.uint64) == 4680256
@@ -368,7 +368,7 @@ def test_signal_from_flimlabs_json_channel():
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
 def test_phasor_from_flimlabs_json_channel():
-    """Test read FLIM LABS JSON image file."""
+    """Test read FLIM LABS JSON phasor file from multi-channel dataset."""
     filename = private_file(
         'FLIMLABS/convallaria-03_1742566249_phasor_ch1.json'
     )
