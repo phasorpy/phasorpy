@@ -1328,8 +1328,8 @@ def phasor_from_flimlabs_json(
     harmonics = sorted(harmonics)
     channels = sorted(channels)
 
-    if len(channels) != nchannels:
-        raise ValueError(f'{len(channels)=} != {nchannels=}')
+    if len(channels) > nchannels:
+        raise ValueError(f'{len(channels)=} > {nchannels=}')
 
     if isinstance(harmonic, str) and harmonic == 'all':
         harmonic = harmonics

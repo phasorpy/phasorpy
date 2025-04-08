@@ -366,6 +366,19 @@ def test_signal_from_flimlabs_json_channel():
         signal_from_flimlabs_json(filename, channel=1, dtype=numpy.int8)
 
 
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_phasor_from_flimlabs_json_channel():
+    """Test read FLIM LABS JSON image file."""
+    filename = private_file(
+        'FLIMLABS/convallaria-03_1742566249_phasor_ch1.json'
+    )
+    mean, real, imag, attrs = phasor_from_flimlabs_json(filename)
+    assert attrs['dims'] == ('Y', 'X')
+    assert mean.shape == (247, 245)
+    assert real.shape == (247, 245)
+    assert imag.shape == (247, 245)
+
+
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_signal_from_sdt():
     """Test read Becker & Hickl SDT file."""
