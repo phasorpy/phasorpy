@@ -436,6 +436,14 @@ FIGSHARE_22336594_EXPORTED = pooch.create(
             'sha256:'
             'ad0ad6389f38dcba6f9809b54934ef3f19da975d9dabeb4c3a248692b959b9cf'
         ),
+        'FLIM_testdata.lif.filtered.ptu': (
+            'sha256:'
+            'a00b84f626a39e79263322c60ae50b64163b36bb977ecc4dc54619097ba7f5b7'
+        ),
+        'FLIM_testdata.lif.filtered.ptu.zip': (
+            'sha256:'
+            '717366b231213bfd6e295c3efb7bf1bcd90e720eb28aab3223376087172e93e5'
+        ),
     },
 )
 
