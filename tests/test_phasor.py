@@ -3606,6 +3606,28 @@ def test_phasor_threshold():
     )
 
 
+@pytest.mark.parametrize('dtype', [numpy.float32, numpy.float64])
+@pytest.mark.parametrize(
+    'kwargs',
+    [
+        {},
+        {'mean_min': 0.5},
+        {'real_min': 0.5, 'phase_max': 0.7},
+    ],
+)
+def test_phasor_threshold_dtype(dtype, kwargs):
+    """Test phasor_threshold function preserves dtype."""
+    mean, real, imag = phasor_threshold(
+        numpy.asarray([0.5, 0.4], dtype=dtype),
+        numpy.asarray([0.2, 0.5], dtype=dtype),
+        numpy.asarray([0.3, 0.5], dtype=dtype),
+        **kwargs,
+    )
+    assert mean.dtype == dtype
+    assert real.dtype == dtype
+    assert imag.dtype == dtype
+
+
 def test_phasor_threshold_harmonic():
     """Test phasor_threshold function with multiple harmonics."""
     nan = numpy.nan
