@@ -2166,6 +2166,7 @@ def _median_filter_2d(
 # Decoder functions
 
 
+@cython.boundscheck(True)
 def _flimlabs_signal(
     uint_t[:, :, ::] signal,   # channel, pixel, bin
     list data,  # list[list[list[[int, int]]]]
@@ -2173,6 +2174,7 @@ def _flimlabs_signal(
 ):
     """Return TCSPC histogram image from FLIM LABS JSON intensity data."""
     cdef:
+        uint_t[::] signal_
         list channels, pixels
         ssize_t c, i, h, count
 
@@ -2181,18 +2183,21 @@ def _flimlabs_signal(
         for channels in data:
             i = 0
             for pixels in channels:
+                signal_ = signal[c, i]
                 for h, count in pixels:
-                    signal[c, i, h] = <uint_t> count
+                    signal_[h] = <uint_t> count
                 i += 1
             c += 1
     else:
         i = 0
         for pixels in data[channel]:
+            signal_ = signal[0, i]
             for h, count in pixels:
-                signal[0, i, h] = <uint_t> count
+                signal_[h] = <uint_t> count
             i += 1
 
 
+@cython.boundscheck(True)
 def _flimlabs_mean(
     float_t[:, ::] mean,   # channel, pixel
     list data,  # list[list[list[[int, int]]]]
@@ -2200,6 +2205,7 @@ def _flimlabs_mean(
 ):
     """Return mean intensity image from FLIM LABS JSON intensity data."""
     cdef:
+        float_t[::] mean_
         list channels, pixels
         ssize_t c, i, h, count
         double sum
@@ -2207,19 +2213,21 @@ def _flimlabs_mean(
     if channel < 0:
         c = 0
         for channels in data:
+            mean_ = mean[c]
             i = 0
             for pixels in channels:
                 sum = 0.0
                 for h, count in pixels:
                     sum += <double> count
-                mean[c, i] = <float_t> (sum / 256.0)
+                mean_[i] = <float_t> (sum / 256.0)
                 i += 1
             c += 1
     else:
         i = 0
+        mean_ = mean[0]
         for pixels in data[channel]:
             sum = 0.0
             for h, count in pixels:
                 sum += <double> count
-            mean[0, i] = <float_t> (sum / 256.0)
+            mean_[i] = <float_t> (sum / 256.0)
             i += 1
