@@ -367,16 +367,33 @@ def test_signal_from_flimlabs_json_channel():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_phasor_from_flimlabs_json_channel():
+@pytest.mark.parametrize('channel', (0, 1))
+def test_phasor_from_flimlabs_json_channel(channel):
     """Test read FLIM LABS JSON phasor file from multi-channel dataset."""
     filename = private_file(
-        'FLIMLABS/convallaria-03_1742566249_phasor_ch1.json'
+        f'FLIMLABS/convallaria-03_1742566249_phasor_ch{channel + 1}.json'
     )
-    mean, real, imag, attrs = phasor_from_flimlabs_json(filename)
-    assert attrs['dims'] == ('Y', 'X')
-    assert mean.shape == (247, 245)
-    assert real.shape == (247, 245)
-    assert imag.shape == (247, 245)
+    for c in (None, channel):
+        mean, real, imag, attrs = phasor_from_flimlabs_json(
+            filename, channel=c
+        )
+        assert attrs['dims'] == ('Y', 'X')
+        assert mean.shape == (247, 245)
+        assert real.shape == (247, 245)
+        assert imag.shape == (247, 245)
+        if channel == 0:
+            assert pytest.approx(mean.mean()) == 0.215034812
+            assert pytest.approx(numpy.nanmean(real)) == 0.5872460
+        else:
+            assert pytest.approx(mean.mean()) == 0.08891675
+            assert pytest.approx(numpy.nanmean(real)) == 0.61652845
+
+    with pytest.raises(IndexError):
+        phasor_from_flimlabs_json(filename, channel=-1)
+    with pytest.raises(IndexError):
+        phasor_from_flimlabs_json(filename, channel=channel + 1)
+    with pytest.raises(IndexError):
+        phasor_from_flimlabs_json(filename, channel=channel - 1)
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
