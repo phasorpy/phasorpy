@@ -203,10 +203,11 @@ plot_phasor(
 #
 # The :py:func:`phasorpy.io.signal_from_ptu` function is used to read
 # the TCSPC histogram from a PTU file exported from the `FLIM_testdata LIF
-# dataset <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_ with the
-# Leica LAS X software. For phasor analysis, all photons in periods with
-# multiple photons must be discarded before exporting to PTU format.
-# In the LAS X software, select ...(TODO)
+# dataset <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_.
+# For phasor analysis, all photons in periods with multiple photons must
+# be discarded before exporting to PTU format. In the Leica LAS X software,
+# select the "FLIM" tab, click on the "Phasor" button, and under
+# "Specialist Settings" select the option "Standard (High Speed)".
 # By default, the PTU reader function returns a 5-dimensional image with
 # dimension order TYXCH. Channel and frames are specified to reduce the
 # dimensionality:
