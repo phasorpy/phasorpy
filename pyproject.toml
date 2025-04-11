@@ -36,7 +36,6 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -66,13 +65,6 @@ docs = [
     "pydata-sphinx-theme>=0.16.0",
     "numpydoc",
 ]
-test = [
-    "pytest",
-    "pytest-cov",
-    "pytest-runner",
-    "pytest-doctestplus",
-    "coverage",
-]
 all = [
     "lfdfiles>=2024.5.24",
     "sdtfile>=2024.5.24",
@@ -82,8 +74,6 @@ all = [
 ]
 
 [tool.setuptools]
-package-dir = { "" = "src" }
-packages = ["phasorpy"]
 zip-safe = false
 
 [tool.setuptools.dynamic]
@@ -148,9 +138,10 @@ ignore_missing_imports = true
 
 [tool.coverage.run]
 plugins = ["Cython.Coverage"]
+omit = ["conftest.py", "__main__.py"]
 
 [tool.coverage.report]
-exclude_lines = ["pragma: no cover", "pragma: ${PY_MAJOR_VERSION} no cover"]
+exclude_lines = ["if TYPE_CHECKING:", "plot.show()", "pragma: no cover", "pragma: ${PY_MAJOR_VERSION} no cover"]
 
 [tool.coverage.html]
 directory = "_htmlcov"
