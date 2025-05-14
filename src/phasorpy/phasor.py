@@ -49,6 +49,11 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_from_fret_donor`
   - :py:func:`phasor_from_fret_acceptor`
 
+- calculate FRET efficiency for donor and acceptor channels:
+
+  - :py:func:`fret_efficiency_from_donor`
+  - :py:func:`fret_efficiency_from_acceptor`
+
 - convert between single component lifetimes and optimal frequency:
 
   - :py:func:`lifetime_to_frequency`
@@ -74,6 +79,8 @@ The ``phasorpy.phasor`` module provides functions to:
 from __future__ import annotations
 
 __all__ = [
+    'fret_efficiency_from_donor',
+    'fret_efficiency_from_acceptor',
     'lifetime_fraction_from_amplitude',
     'lifetime_fraction_to_amplitude',
     'lifetime_from_frequency',
@@ -124,6 +131,7 @@ if TYPE_CHECKING:
 import numpy
 
 from ._phasorpy import (
+    _distance_from_point,
     _gaussian_signal,
     _median_filter_2d,
     _phasor_at_harmonic,
@@ -2668,6 +2676,235 @@ def phasor_from_fret_acceptor(
         background_imag,
         **kwargs,
     )
+
+
+def fret_efficiency_from_donor(
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    frequency: ArrayLike,
+    donor_lifetime: ArrayLike,
+    *,
+    donor_fretting: ArrayLike = 1.0,
+    donor_background: ArrayLike = 0.0,
+    background_real: ArrayLike = 0.0,
+    background_imag: ArrayLike = 0.0,
+    unit_conversion: float = 1e-3,
+    efficiency_resolution: int = 1000,
+    **kwargs: Any,
+) -> NDArray[numpy.float64]:
+    """Return FRET efficiency from donor channel phasor coordinates.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    frequency : array_like
+        Fundamental laser pulse or modulation frequency in MHz.
+    donor_lifetime : array_like
+        Lifetime of donor without FRET in ns.
+    donor_fretting : array_like, optional, default 1
+        Fraction of donors participating in FRET. Range [0, 1].
+    donor_background : array_like, optional, default 0
+        Weight of background fluorescence in donor channel
+        relative to fluorescence of donor without FRET.
+        A weight of 1 means the fluorescence of background and donor
+        without FRET are equal.
+    background_real : array_like, optional, default 0
+        Real component of background fluorescence phasor coordinate
+        at `frequency`.
+    background_imag : array_like, optional, default 0
+        Imaginary component of background fluorescence phasor coordinate
+        at `frequency`.
+    unit_conversion : float, optional
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    efficiency_resolution : int, optional, default 100
+        Number of FRET efficiency values to calculate.
+        The default is 1000.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    donor_fret_efficiency : ndarray
+        FRET efficiency of donor channel.
+
+    Examples
+    --------
+    >>> fret_efficiency_from_donor(
+    ...     [0.6, 0.9],
+    ...     [0.4, 0.2],
+    ...     frequency=80,
+    ...     donor_lifetime=4,
+    ... )  # doctest: +NUMBER
+    array([0.6116, 0.8829])
+
+    """
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+
+    efficiency_values = numpy.linspace(0.0, 1.0, efficiency_resolution)
+
+    donor_trajectory_real, donor_trajectory_imag = phasor_from_fret_donor(
+        frequency,
+        donor_lifetime,
+        fret_efficiency=efficiency_values,
+        donor_fretting=donor_fretting,
+        donor_background=donor_background,
+        background_real=background_real,
+        background_imag=background_imag,
+        unit_conversion=unit_conversion,
+        **kwargs,
+    )
+
+    donor_distance = numpy.full(
+        (len(efficiency_values), *real.shape), numpy.nan, dtype=numpy.float64
+    )
+    for i, (tr, ti) in enumerate(
+        zip(donor_trajectory_real, donor_trajectory_imag)
+    ):
+        donor_distance[i] = _distance_from_point(real, imag, tr, ti)
+    donor_fret_efficiency = numpy.asarray(
+        efficiency_values[numpy.argmin(donor_distance, axis=0)]
+    )
+    donor_fret_efficiency[numpy.isnan(donor_distance).all(axis=0)] = numpy.nan
+
+    return numpy.asarray(donor_fret_efficiency)
+
+
+def fret_efficiency_from_acceptor(
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    frequency: ArrayLike,
+    donor_lifetime: ArrayLike,
+    acceptor_lifetime: ArrayLike,
+    *,
+    donor_fretting: ArrayLike = 1.0,
+    donor_bleedthrough: ArrayLike = 0.0,
+    acceptor_bleedthrough: ArrayLike = 0.0,
+    acceptor_background: ArrayLike = 0.0,
+    background_real: ArrayLike = 0.0,
+    background_imag: ArrayLike = 0.0,
+    unit_conversion: float = 1e-3,
+    efficiency_resolution: int = 1000,
+    **kwargs: Any,
+) -> NDArray[numpy.float64]:
+    """Return FRET efficiency from acceptor channel phasor coordinates.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+    donor_lifetime : array_like
+        Lifetime of donor without FRET in ns.
+    acceptor_lifetime : array_like
+        Lifetime of acceptor in ns.
+    donor_fretting : array_like, optional, default 1
+        Fraction of donors participating in FRET. Range [0, 1].
+    donor_bleedthrough : array_like, optional, default 0
+        Weight of donor fluorescence in acceptor channel
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence from donor and fully sensitized
+        acceptor are equal.
+        The background in the donor channel does not bleed through.
+    acceptor_bleedthrough : array_like, optional, default 0
+        Weight of fluorescence from directly excited acceptor
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence from directly excited acceptor
+        and fully sensitized acceptor are equal.
+    acceptor_background : array_like, optional, default 0
+        Weight of background fluorescence in acceptor channel
+        relative to fluorescence of fully sensitized acceptor.
+        A weight of 1 means the fluorescence of background and fully
+        sensitized acceptor are equal.
+    background_real : array_like, optional, default 0
+        Real component of background fluorescence phasor coordinate
+        at `frequency`.
+    background_imag : array_like, optional, default 0
+        Imaginary component of background fluorescence phasor coordinate
+        at `frequency`.
+    unit_conversion : float, optional
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    harmonic : int, sequence of int, default: 1
+        Harmonics included in `real` and `imag`.
+        If an integer, the harmonics at which `real` and `imag` were acquired
+        or calculated.
+        If a sequence, the harmonics included in the first axis of `real` and
+        `imag`.
+        The default is the first harmonic (fundamental frequency).
+    efficiency_resolution : int, optional, default 1000
+        Number of FRET efficiency values to calculate.
+        The default is 1000.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    acceptor_fret_efficiency : ndarray
+        FRET efficiency of acceptor channel.
+
+    Examples
+    --------
+    >>> fret_efficiency_from_acceptor(
+    ...     [-0.05, 0.1],
+    ...     [0.35, 0.4],
+    ...     frequency=80,
+    ...     donor_lifetime=2,
+    ...     acceptor_lifetime=4,
+    ... )  # doctest: +NUMBER
+    array([0.2883, 0.7688])
+
+    """
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+
+    efficiency_values = numpy.linspace(0.0, 1.0, efficiency_resolution)
+
+    acceptor_trajectory_real, acceptor_trajectory_imag = (
+        phasor_from_fret_acceptor(
+            frequency=frequency,
+            donor_lifetime=donor_lifetime,
+            acceptor_lifetime=acceptor_lifetime,
+            fret_efficiency=efficiency_values,
+            donor_fretting=donor_fretting,
+            donor_bleedthrough=donor_bleedthrough,
+            acceptor_bleedthrough=acceptor_bleedthrough,
+            acceptor_background=acceptor_background,
+            background_real=background_real,
+            background_imag=background_imag,
+            unit_conversion=unit_conversion,
+            **kwargs,
+        )
+    )
+
+    acceptor_distance = numpy.full(
+        (len(efficiency_values), *real.shape), numpy.nan, dtype=numpy.float64
+    )
+    for i, (tr, ti) in enumerate(
+        zip(acceptor_trajectory_real, acceptor_trajectory_imag)
+    ):
+        acceptor_distance[i] = _distance_from_point(real, imag, tr, ti)
+    acceptor_fret_efficiency = numpy.asarray(
+        efficiency_values[numpy.argmin(acceptor_distance, axis=0)]
+    )
+    acceptor_fret_efficiency[numpy.isnan(acceptor_distance).all(axis=0)] = (
+        numpy.nan
+    )
+
+    return numpy.asarray(acceptor_fret_efficiency)
 
 
 def phasor_to_principal_plane(

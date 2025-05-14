@@ -18,6 +18,8 @@ from phasorpy.cursors import (
     mask_from_polar_cursor,
 )
 from phasorpy.phasor import (
+    fret_efficiency_from_acceptor,
+    fret_efficiency_from_donor,
     phasor_at_harmonic,
     phasor_calibrate,
     phasor_center,
@@ -399,6 +401,22 @@ def test_graphical_component_analysis_nan():
             [1, 1, 0, 0, 0, 0, 0, 0, 1, 0],
             [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
         ),
+    )
+
+
+def test_fret_efficiency_from_donor_nan():
+    """Test fret_efficiency_from_donor function with NaN values."""
+    assert_allclose(
+        fret_efficiency_from_donor([0.5, nan], [0.5, nan], 80, 4),
+        [0.5025025, nan],
+    )
+
+
+def test_fret_efficiency_from_acceptor_nan():
+    """Test fret_efficiency_from_acceptor function with NaN values."""
+    assert_allclose(
+        fret_efficiency_from_acceptor([0, nan], [0.4, nan], 80, 2, 4),
+        [0.50650651, nan],
     )
 
 

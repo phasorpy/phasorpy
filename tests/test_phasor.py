@@ -23,6 +23,8 @@ except ImportError:
     mkl_fft = None
 
 from phasorpy.phasor import (
+    fret_efficiency_from_acceptor,
+    fret_efficiency_from_donor,
     lifetime_fraction_from_amplitude,
     lifetime_fraction_to_amplitude,
     lifetime_from_frequency,
@@ -2307,6 +2309,108 @@ def test_phasor_from_fret_acceptor():
         ),
         [[0.199564, 0.057723, 0.286733], [0.322489, 0.310325, 0.429246]],
         atol=1e-3,
+    )
+
+
+def test_fret_efficiency_from_donor():
+    """Test fret_efficiency_from_donor function."""
+    # 0D phasor
+    assert_allclose(fret_efficiency_from_donor(0.5, 0.5, 80, 4), [0.5025025])
+    # 2D phasor
+    assert_allclose(
+        fret_efficiency_from_donor(
+            [[0.4, 0.5], [0.6, 0.7]], [[0.4, 0.5], [0.6, 0.7]], 80, 4
+        ),
+        [[0.36336336, 0.5025025], [0.57857858, 0.62462462]],
+    )
+    # 3D phasor
+    assert_allclose(
+        fret_efficiency_from_donor(
+            [
+                [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
+                [[0.7, 0.8, 0.9], [0.9, 0.8, 0.7]],
+            ],
+            [
+                [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]],
+                [[0.7, 0.8, 0.9], [0.9, 0.8, 0.7]],
+            ],
+            80,
+            4,
+        ),
+        [
+            [[0, 0, 0.07107107], [0.36336336, 0.5025025, 0.57857858]],
+            [
+                [0.62462462, 0.65565566, 0.67667668],
+                [0.67667668, 0.65565566, 0.62462462],
+            ],
+        ],
+    )
+    # phasor from fret donor
+    assert_allclose(
+        fret_efficiency_from_donor(
+            *phasor_from_fret_donor(80, 4, fret_efficiency=[0.5, 0.2]), 80, 4
+        ),
+        [0.5, 0.2],
+        atol=1e-3,
+    )
+    # efficiency resolution
+    assert_allclose(
+        fret_efficiency_from_donor(0.5, 0.5, 80, 4, efficiency_resolution=10),
+        [0.44444444],
+    )
+
+
+def test_fret_efficiency_from_acceptor():
+    """Test fret_efficiency_from_acceptor function."""
+    # 0D phasor
+    assert_allclose(
+        fret_efficiency_from_acceptor(0, 0.4, 80, 2, 4), [0.50650651]
+    )
+    # 2D phasor
+    assert_allclose(
+        fret_efficiency_from_acceptor(
+            [[0, 0.1], [-0.1, 0.2]], [[0.4, 0.5], [0.3, 0.4]], 80, 2, 4
+        ),
+        [[0.50650651, 0.76776777], [0.01201201, 1]],
+        atol=1e-3,
+    )
+    # 3D phasor
+    assert_allclose(
+        fret_efficiency_from_acceptor(
+            [
+                [[-0.2, -0.1, 0], [0.1, 0.2, 0.3]],
+                [[0.1, 0.2, 0.3], [-0.2, -0.1, 0]],
+            ],
+            [
+                [[0.2, 0.25, 0.3], [0.4, 0.45, 0.5]],
+                [[0.4, 0.45, 0.5], [0.2, 0.25, 0.3]],
+            ],
+            80,
+            2,
+            4,
+        ),
+        [
+            [[0, 0, 0.29029029], [0.76876877, 0.96096096, 1]],
+            [[0.76876877, 0.96096096, 1], [0, 0, 0.29029029]],
+        ],
+    )
+    # phasor from fret acceptor
+    assert_allclose(
+        fret_efficiency_from_acceptor(
+            *phasor_from_fret_acceptor(80, 2, 4, fret_efficiency=[0.5, 0.2]),
+            80,
+            2,
+            4,
+        ),
+        [0.5, 0.2],
+        atol=1e-3,
+    )
+    # efficiency resolution
+    assert_allclose(
+        fret_efficiency_from_acceptor(
+            0, 0.4, 80, 2, 4, efficiency_resolution=10
+        ),
+        [0.555555556],
     )
 
 
