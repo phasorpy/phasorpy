@@ -25,6 +25,7 @@ The following people (in alphabetical order) have contributed to the
 development of PhasorPy by providing code, documentation, tutorials,
 bug fixes, or expertise:
 
+- :user:`Rodrigo Blanco <R-Blanco802>`
 - :user:`Christoph Gohlke <cgohlke>`
 - Enrico Gratton
 - :user:`Leonel Malacrida <lmalacrida>`

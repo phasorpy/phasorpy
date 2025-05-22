@@ -4,14 +4,9 @@
 # cython: wraparound = False
 # cython: cdivision = True
 # cython: nonecheck = False
+# cython: freethreading_compatible = True
 
 """Cython implementation of low-level functions for the PhasorPy library."""
-
-# TODO: replace short with unsigned char when Cython supports it
-# https://github.com/cython/cython/pull/6196#issuecomment-2209509572
-
-# TODO: use fused return types for functions returning more than two items
-# https://github.com/cython/cython/issues/6328
 
 cimport cython
 
@@ -982,7 +977,7 @@ cdef (float_t, float_t) _phasor_divide(
 
 
 @cython.ufunc
-cdef short _is_inside_range(
+cdef unsigned char _is_inside_range(
     float_t x,  # point
     float_t y,
     float_t xmin,  # x range
@@ -1002,7 +997,7 @@ cdef short _is_inside_range(
 
 
 @cython.ufunc
-cdef short _is_inside_rectangle(
+cdef unsigned char _is_inside_rectangle(
     float_t x,  # point
     float_t y,
     float_t x0,  # segment start
@@ -1044,7 +1039,7 @@ cdef short _is_inside_rectangle(
 
 
 @cython.ufunc
-cdef short _is_inside_polar_rectangle(
+cdef unsigned char _is_inside_polar_rectangle(
     float_t x,  # point
     float_t y,
     float_t angle_min,  # phase, -pi to pi
@@ -1083,7 +1078,7 @@ cdef short _is_inside_polar_rectangle(
 
 
 @cython.ufunc
-cdef short _is_inside_circle(
+cdef unsigned char _is_inside_circle(
     float_t x,  # point
     float_t y,
     float_t x0,  # circle center
@@ -1100,7 +1095,7 @@ cdef short _is_inside_circle(
 
 
 @cython.ufunc
-cdef short _is_inside_ellipse(
+cdef unsigned char _is_inside_ellipse(
     float_t x,  # point
     float_t y,
     float_t x0,  # ellipse center
@@ -1135,7 +1130,7 @@ cdef short _is_inside_ellipse(
 
 
 @cython.ufunc
-cdef short _is_inside_ellipse_(
+cdef unsigned char _is_inside_ellipse_(
     float_t x,  # point
     float_t y,
     float_t x0,  # ellipse center
@@ -1164,7 +1159,7 @@ cdef short _is_inside_ellipse_(
 
 
 @cython.ufunc
-cdef short _is_inside_stadium(
+cdef unsigned char _is_inside_stadium(
     float_t x,  # point
     float_t y,
     float_t x0,  # line start
@@ -1210,7 +1205,7 @@ _is_near_segment = _is_inside_stadium
 
 
 @cython.ufunc
-cdef short _is_near_line(
+cdef unsigned char _is_near_line(
     float_t x,  # point
     float_t y,
     float_t x0,  # line start
@@ -1476,7 +1471,7 @@ cdef float_t _distance_from_line(
 
 
 @cython.ufunc
-cdef (double, double, double) _segment_direction_and_length(
+cdef (float_t, float_t, float_t) _segment_direction_and_length(
     float_t x0,  # segment start
     float_t y0,
     float_t x1,  # segment end
@@ -1500,7 +1495,7 @@ cdef (double, double, double) _segment_direction_and_length(
 
 
 @cython.ufunc
-cdef (double, double, double, double) _intersection_circle_circle(
+cdef (float_t, float_t, float_t, float_t) _intersection_circle_circle(
     float_t x0,  # circle 0
     float_t y0,
     float_t r0,
@@ -1538,15 +1533,15 @@ cdef (double, double, double, double) _intersection_circle_circle(
     hd = sqrt(dd) / dr
     ld = ll / dr
     return (
-        ld * dx + hd * dy + x0,
-        ld * dy - hd * dx + y0,
-        ld * dx - hd * dy + x0,
-        ld * dy + hd * dx + y0,
+        <float_t> (ld * dx + hd * dy + x0),
+        <float_t> (ld * dy - hd * dx + y0),
+        <float_t> (ld * dx - hd * dy + x0),
+        <float_t> (ld * dy + hd * dx + y0),
     )
 
 
 @cython.ufunc
-cdef (double, double, double, double) _intersection_circle_line(
+cdef (float_t, float_t, float_t, float_t) _intersection_circle_line(
     float_t x,  # circle
     float_t y,
     float_t r,
@@ -1581,10 +1576,10 @@ cdef (double, double, double, double) _intersection_circle_line(
         return NAN, NAN, NAN, NAN
     rdd = sqrt(rdd)
     return (
-        x + (dd * dy + copysign(1.0, dy) * dx * rdd) / dr,
-        y + (-dd * dx + fabs(dy) * rdd) / dr,
-        x + (dd * dy - copysign(1.0, dy) * dx * rdd) / dr,
-        y + (-dd * dx - fabs(dy) * rdd) / dr,
+        x + <float_t> ((dd * dy + copysign(1.0, dy) * dx * rdd) / dr),
+        y + <float_t> ((-dd * dx + fabs(dy) * rdd) / dr),
+        x + <float_t> ((dd * dy - copysign(1.0, dy) * dx * rdd) / dr),
+        y + <float_t> ((-dd * dx - fabs(dy) * rdd) / dr),
     )
 
 
@@ -1665,7 +1660,7 @@ cdef float_t _blend_lighten(
 
 
 @cython.ufunc
-cdef (double, double, double) _phasor_threshold_open(
+cdef (float_t, float_t, float_t) _phasor_threshold_open(
     float_t mean,
     float_t real,
     float_t imag,
@@ -1727,7 +1722,7 @@ cdef (double, double, double) _phasor_threshold_open(
 
 
 @cython.ufunc
-cdef (double, double, double) _phasor_threshold_closed(
+cdef (float_t, float_t, float_t) _phasor_threshold_closed(
     float_t mean,
     float_t real,
     float_t imag,
@@ -1789,7 +1784,7 @@ cdef (double, double, double) _phasor_threshold_closed(
 
 
 @cython.ufunc
-cdef (double, double, double) _phasor_threshold_mean_open(
+cdef (float_t, float_t, float_t) _phasor_threshold_mean_open(
     float_t mean,
     float_t real,
     float_t imag,
@@ -1809,7 +1804,7 @@ cdef (double, double, double) _phasor_threshold_mean_open(
 
 
 @cython.ufunc
-cdef (double, double, double) _phasor_threshold_mean_closed(
+cdef (float_t, float_t, float_t) _phasor_threshold_mean_closed(
     float_t mean,
     float_t real,
     float_t imag,
@@ -1829,7 +1824,7 @@ cdef (double, double, double) _phasor_threshold_mean_closed(
 
 
 @cython.ufunc
-cdef (double, double, double) _phasor_threshold_nan(
+cdef (float_t, float_t, float_t) _phasor_threshold_nan(
     float_t mean,
     float_t real,
     float_t imag,
@@ -2171,6 +2166,7 @@ def _median_filter_2d(
 # Decoder functions
 
 
+@cython.boundscheck(True)
 def _flimlabs_signal(
     uint_t[:, :, ::] signal,   # channel, pixel, bin
     list data,  # list[list[list[[int, int]]]]
@@ -2178,6 +2174,7 @@ def _flimlabs_signal(
 ):
     """Return TCSPC histogram image from FLIM LABS JSON intensity data."""
     cdef:
+        uint_t[::] signal_
         list channels, pixels
         ssize_t c, i, h, count
 
@@ -2186,18 +2183,21 @@ def _flimlabs_signal(
         for channels in data:
             i = 0
             for pixels in channels:
+                signal_ = signal[c, i]
                 for h, count in pixels:
-                    signal[c, i, h] = <uint_t> count
+                    signal_[h] = <uint_t> count
                 i += 1
             c += 1
     else:
         i = 0
         for pixels in data[channel]:
+            signal_ = signal[0, i]
             for h, count in pixels:
-                signal[0, i, h] = <uint_t> count
+                signal_[h] = <uint_t> count
             i += 1
 
 
+@cython.boundscheck(True)
 def _flimlabs_mean(
     float_t[:, ::] mean,   # channel, pixel
     list data,  # list[list[list[[int, int]]]]
@@ -2205,6 +2205,7 @@ def _flimlabs_mean(
 ):
     """Return mean intensity image from FLIM LABS JSON intensity data."""
     cdef:
+        float_t[::] mean_
         list channels, pixels
         ssize_t c, i, h, count
         double sum
@@ -2212,19 +2213,21 @@ def _flimlabs_mean(
     if channel < 0:
         c = 0
         for channels in data:
+            mean_ = mean[c]
             i = 0
             for pixels in channels:
                 sum = 0.0
                 for h, count in pixels:
                     sum += <double> count
-                mean[c, i] = <float_t> (sum / 256.0)
+                mean_[i] = <float_t> (sum / 256.0)
                 i += 1
             c += 1
     else:
         i = 0
+        mean_ = mean[0]
         for pixels in data[channel]:
             sum = 0.0
             for h, count in pixels:
                 sum += <double> count
-            mean[0, i] = <float_t> (sum / 256.0)
+            mean_[i] = <float_t> (sum / 256.0)
             i += 1

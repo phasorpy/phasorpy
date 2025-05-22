@@ -23,8 +23,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-20.04"]
-        python-version: ["3.10", "3.12"]
+        os: ["ubuntu-22.04"]
+        python-version: ["3.12", "3.13"]
         # 3.11 tested with cibuildwheel
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +56,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["windows-2019", "macos-13"]
-        python-version: ["3.10"]
+        python-version: ["3.11"]
         # 3.12 tested with cibuildwheel
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
         os: ["ubuntu-22.04", "windows-2019", "macos-13"]
     steps:
       - uses: actions/checkout@v4
-      - uses: pypa/cibuildwheel@v2.23.0
+      - uses: pypa/cibuildwheel@v2.23.3
         env:
           # CIBW_ENVIRONMENT: "PIP_PRE=1"
           CIBW_BUILD_VERBOSITY: 3
@@ -115,7 +115,7 @@ jobs:
   #        uses: docker/setup-qemu-action@v3
   #        with:
   #          platforms: all
-  #      - uses: pypa/cibuildwheel@v2.23.0
+  #      - uses: pypa/cibuildwheel@v2.23.3
   #        env:
   #          CIBW_ARCHS_LINUX: aarch64
   #          CIBW_BUILD_VERBOSITY: 2

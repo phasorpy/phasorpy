@@ -1312,12 +1312,8 @@ def phasor_from_flimlabs_json(
     header = data['header']
     phasor_data = data['phasors_data']
 
-    nchannels = len([c for c in header['channels'] if c])
-    if channel is not None and (channel < 0 or channel >= nchannels):
-        raise IndexError(f'{channel=}')
-
     harmonics = []
-    channels = []
+    channels = []  # 1-based
     for d in phasor_data:
         h = d['harmonic']
         if h not in harmonics:
@@ -1328,8 +1324,10 @@ def phasor_from_flimlabs_json(
     harmonics = sorted(harmonics)
     channels = sorted(channels)
 
-    if len(channels) != nchannels:
-        raise ValueError(f'{len(channels)=} != {nchannels=}')
+    if channel is not None:
+        if channel + 1 not in channels:
+            raise IndexError(f'{channel=}')
+        channel += 1  # 1-based index
 
     if isinstance(harmonic, str) and harmonic == 'all':
         harmonic = harmonics
@@ -1357,11 +1355,13 @@ def phasor_from_flimlabs_json(
         if h not in harmonic_index:
             continue
         h = harmonic_index[h]
-        c = channels.index(d['channel'])
         if channel is not None:
-            if c != channel:
+            if d['channel'] != channel:
                 continue
             c = 0
+        else:
+            c = channels.index(d['channel'])
+
         real[h, c] = numpy.asarray(d['g_data'], dtype)
         imag[h, c] = numpy.asarray(d['s_data'], dtype)
 
@@ -1372,7 +1372,7 @@ def phasor_from_flimlabs_json(
         _flimlabs_mean(
             mean,
             data['intensities_data'],
-            -1 if channel is None else channel,
+            -1 if channel is None else channels.index(channel),
         )
         mean.shape = shape[1:]
         # JSON cannot store NaN values
@@ -1921,8 +1921,9 @@ def signal_from_sdt(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'YXH'`` and
+        TCSPC histogram with :ref:`axes codes <axes>` ``'QCYXH'`` and
         type ``uint16``, ``uint32``, or ``float32``.
+        Dimensions ``'Q'`` and ``'C'`` are optional detector channels.
 
         - ``coords['H']``: delay-times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -1973,7 +1974,7 @@ def signal_from_sdt(
         times = sdt.times[index] * 1e9
 
     # TODO: get spatial coordinates from scanner settings?
-    metadata = _metadata('QYXH'[-data.ndim :], data.shape, filename, H=times)
+    metadata = _metadata('QCYXH'[-data.ndim :], data.shape, filename, H=times)
     metadata['attrs']['frequency'] = 1e3 / float(times[-1] + times[1])
 
     from xarray import DataArray

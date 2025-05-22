@@ -16,12 +16,15 @@ image processing, array programming, and Python.
 # Install Python
 # --------------
 #
-# An installation of Python version 3.10 or higher is required to use the
+# An installation of Python version 3.11 or higher is required to use the
 # PhasorPy library.
 # Python is an easy to learn, powerful programming language.
 # Python installers can be obtained from, for example,
 # `Python.org <https://www.python.org/downloads/>`_ or
 # `Anaconda.com <https://www.anaconda.com/>`_.
+# Alternatively, Python can be used via
+# `Google Colab <https://colab.research.google.com/>`_,
+# a free, cloud-based service.
 # Refer to the `Python Tutorial <https://docs.python.org/3/tutorial/>`_
 # for an introduction to Python.
 #
@@ -311,13 +314,14 @@ assert attrs['description'].startswith('Phasor coordinates of')
 # Large number of phasor coordinates, such as obtained from imaging,
 # are commonly visualized as two-dimensional histograms:
 
-from phasorpy.plot import PhasorPlot
+from phasorpy.plot import plot_phasor
 
-phasorplot = PhasorPlot(
-    frequency=frequency, title='Calibrated, filtered phasor coordinates'
+plot_phasor(
+    real,
+    imag,
+    frequency=frequency,
+    title='Calibrated, filtered phasor coordinates',
 )
-phasorplot.hist2d(real, imag)
-phasorplot.show()
 
 # %%
 # The calibrated phasor coordinates of all pixels lie inside the universal
@@ -329,9 +333,12 @@ phasorplot.show()
 # %%
 # For comparison, the uncalibrated, unfiltered phasor coordinates:
 
-phasorplot = PhasorPlot(allquadrants=True, title='Raw phasor coordinates')
-phasorplot.hist2d(uncalibrated_real, uncalibrated_imag)
-phasorplot.show()
+plot_phasor(
+    uncalibrated_real,
+    uncalibrated_imag,
+    allquadrants=True,
+    title='Raw phasor coordinates',
+)
 
 # %%
 # Select phasor coordinates
@@ -345,22 +352,25 @@ phasorplot.show()
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursors import mask_from_circular_cursor
 
-cursors_real = [0.69, 0.59]
-cursors_imag = [0.32, 0.33]
-radius = [0.05, 0.05]
+cursor_real = 0.69, 0.59
+cursor_imag = 0.32, 0.33
+radius = 0.05, 0.05
 cursors_masks = mask_from_circular_cursor(
-    real, imag, cursors_real, cursors_imag, radius=radius
+    real, imag, cursor_real, cursor_imag, radius=radius
 )
 
 # %%
-# Plot the cursors in distinct colors:
+# Plot the cursors in distinct colors using the higher-level
+# :py:class:`PhasorPlot` interface:
+
+from phasorpy.plot import PhasorPlot
 
 phasorplot = PhasorPlot(frequency=frequency, title='Cursors')
 phasorplot.hist2d(real, imag)
-for i in range(len(cursors_real)):
+for i in range(len(cursor_real)):
     phasorplot.circle(
-        cursors_real[i],
-        cursors_imag[i],
+        cursor_real[i],
+        cursor_imag[i],
         radius=radius[i],
         color=CATEGORICAL[i],
         linestyle='-',
@@ -416,39 +426,50 @@ mean, real, imag = phasor_from_signal(hyperspectral_signal, axis=0)
 _, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 
 # %%
-# Plot the phasor coordinates as a two-dimensional histogram and select two
-# clusters in the phasor plot by means of elliptical cursors:
+# Plot the phasor coordinates as a two-dimensional histogram:
 
-cursors_real = [-0.33, 0.54]
-cursors_imag = [-0.72, -0.74]
-radius = [0.1, 0.06]
-radius_minor = [0.3, 0.25]
+plot_phasor(real, imag, allquadrants=True, title='Hyperspectral phasor plot')
 
-phasorplot = PhasorPlot(allquadrants=True, title='Spectral phasor plot')
+# %%
+# Find clusters
+# -------------
+#
+# Automatically find the two elliptical clusters in the phasor space using
+# a Gaussian mixture model and plot them in distinct colors:
+
+from phasorpy.cluster import phasor_cluster_gmm
+
+center_real, center_imag, radius, radius_minor, angle = phasor_cluster_gmm(
+    real, imag, clusters=2
+)
+
+phasorplot = PhasorPlot(allquadrants=True, title='Elliptical clusters')
 phasorplot.hist2d(real, imag, cmap='Greys')
-for i in range(len(cursors_real)):
+for i in range(len(center_real)):
     phasorplot.cursor(
-        cursors_real[i],
-        cursors_imag[i],
+        center_real[i],
+        center_imag[i],
         radius=radius[i],
         radius_minor=radius_minor[i],
+        angle=angle[i],
         color=CATEGORICAL[i],
         linestyle='-',
     )
 phasorplot.show()
 
 # %%
-# Use the elliptic cursors to mask regions of interest in the phasor space:
+# Use the elliptic clusters to mask regions of interest in the phasor space:
 
 from phasorpy.cursors import mask_from_elliptic_cursor
 
 elliptic_masks = mask_from_elliptic_cursor(
     real,
     imag,
-    cursors_real,
-    cursors_imag,
+    center_real,
+    center_imag,
     radius=radius,
     radius_minor=radius_minor,
+    angle=angle,
 )
 
 # %%
@@ -470,7 +491,7 @@ plot_image(
 print(phasorpy.versions())
 
 # %%
-# sphinx_gallery_thumbnail_number = -7
+# sphinx_gallery_thumbnail_number = -8
 # mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"
+# mypy: disable-error-code="arg-type, assignment"
 # isort: skip_file

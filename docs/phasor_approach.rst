@@ -200,8 +200,8 @@ approach to analyze fluorescence time-resolved or spectral images:
   microscopy written in MATLAB by Alexander Vallmitjana, released under
   the CC BY 4.0 license.
 
-- `AlliGator <https://alligator-distribution.readthedocs.io>`_
-  is a free, closed-source software for fluorescence lifetime image data
+- `AlliGator <https://github.com/smXplorer/AlliGator>`_
+  is an open-source software for fluorescence lifetime image data
   analysis using the phasor approach and standard nonlinear fitting.
   The software is written in LabVIEW for Windows by Xavier Michalet.
 

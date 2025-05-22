@@ -18,7 +18,7 @@ wheel
 twine
 packaging
 cibuildwheel
-Cython>=3.0.11
+cython>=3.1.0
 # meson-python
 #
 # documentation requirements
@@ -40,7 +40,6 @@ pytest-runner
 pytest-doctestplus
 #
 # tools requirements
-tomli; python_version < "3.11"
 black
 blackdoc
 flake8
@@ -55,11 +54,11 @@ pre-commit-hooks
 #
 # optional requirements
 # scikit-image
-# scikit-learn
 # pandas
 # zarr
 # fsspec
 # bioio
+scikit-learn
 lfdfiles
 sdtfile
 ptufile
