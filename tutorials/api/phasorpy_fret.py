@@ -2,14 +2,20 @@
 Förster Resonance Energy Transfer
 =================================
 
-Calculate and plot phasor coordinates of FRET donor and acceptor channels.
+This tutorial demonstrates how to compute and visualize phasor coordinates
+for FRET (Förster Resonance Energy Transfer) donor and acceptor channels,
+and how to estimate FRET efficiency.
 
 The :py:func:`phasorpy.phasor.phasor_from_fret_donor`,
 :py:func:`phasorpy.phasor.phasor_from_fret_acceptor`, and
-:py:class:`phasorpy.plot.PhasorPlotFret` functions and classes
-are used to calculate and plot phasor coordinates of
-FRET (Förster Resonance Energy Transfer) donor and acceptor channels
-as a function of:
+:py:class:`phasorpy.plot.PhasorPlotFret` functions and classes are used to
+calculate and plot phasor coordinates of FRET donor and acceptor channels.
+The :py:func:`phasorpy.phasor.fret_efficiency_from_donor` and
+:py:func:`phasorpy.phasor.fret_efficiency_from_acceptor` functions can
+be used to calculate FRET efficiency from measured donor and acceptor
+phasor coordinates, respectively.
+
+Parameters used in these FRET calculations include:
 
 - laser pulse or modulation frequency
 - donor and acceptor lifetimes
@@ -22,7 +28,7 @@ as a function of:
 """
 
 # %%
-# Define FRET model settings used throughout this tutorial:
+# Define FRET model settings used throughout the first section of the tutorial:
 
 settings = {
     'frequency': 60.0,  # MHz
@@ -226,6 +232,77 @@ plot_polar_frequency(
     *phasor_to_polar(acceptor_real, acceptor_imag),
     title='Acceptor channel',
 )
+
+
+# %%
+# FRET efficiency
+# ---------------
+#
+# The FRET efficiency can be calculated from the phasor coordinates
+# of the donor and acceptor channels by projecting the phasor
+# coordinates onto the FRET efficiency trajectory.
+#
+# In this example, we'll load a reference dataset, process the phasor data,
+# and calculate the FRET efficiency map:
+
+import matplotlib.pyplot as plt
+
+from phasorpy.datasets import fetch
+from phasorpy.io import phasor_from_simfcs_referenced
+from phasorpy.phasor import (
+    fret_efficiency_from_donor,
+    phasor_filter_median,
+    phasor_threshold,
+    phasor_to_apparent_lifetime,
+)
+
+frequency = 80
+mean, real, imag, attrs = phasor_from_simfcs_referenced(
+    fetch('CFP and CFP-YFp.ref')
+)
+mean, real, imag = phasor_filter_median(mean, real, imag, repeat=2)
+_, real, imag = phasor_threshold(
+    mean, real, imag, mean_min=6202, real_min=0, imag_min=0, open_interval=True
+)
+
+# Define parameters for FRET calculation
+background_phasor = 0.6, 0.41
+donor_phasor = 0.72, 0.45
+donor_lifetime = numpy.mean(
+    phasor_to_apparent_lifetime(*donor_phasor, frequency)
+)
+
+# Configure settings for FRET plot and efficiency calculation
+settings = {
+    'frequency': frequency,
+    'donor_lifetime': donor_lifetime,
+    'donor_fretting': 1.0,
+    'donor_background': 0.1,
+    'background_real': background_phasor[0],
+    'background_imag': background_phasor[1],
+}
+
+fret_plot = PhasorPlotFret(**settings, xlim=(0.5, 1), ylim=(0.2, 0.6))
+fret_plot.hist2d(real, imag)
+fret_plot.show()
+
+# %%
+# Calculate FRET efficiency from donor phasor coordinates
+# and visualize the FRET efficiency map
+
+fret_efficiency = fret_efficiency_from_donor(
+    real,
+    imag,
+    **settings,
+)
+
+fig, ax = plt.subplots()
+im = ax.imshow(fret_efficiency, cmap='plasma', vmax=0.5)
+cbar = fig.colorbar(im, ax=ax)
+cbar.set_label('FRET Efficiency')
+ax.set_title('FRET Efficiency')
+plt.tight_layout()
+plt.show()
 
 # %%
 # sphinx_gallery_thumbnail_number = 5
