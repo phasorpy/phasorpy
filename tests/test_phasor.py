@@ -2026,7 +2026,7 @@ def test_phasor_to_normal_lifetime():
     # verify against phasor_to_apparent_lifetime
     real, imag = phasor_semicircle(11)
     expected = phasor_to_apparent_lifetime(real, imag, frequency=80)[0]
-    assert expected[0] == numpy.inf
+    assert numpy.isinf(expected[0])
     assert expected[-1] == 0.0
     assert_allclose(
         phasor_to_normal_lifetime(real, imag, frequency=80),
