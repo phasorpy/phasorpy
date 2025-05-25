@@ -768,6 +768,33 @@ cdef (float_t, float_t) _phasor_from_apparent_lifetime(
 
 
 @cython.ufunc
+cdef float_t _phasor_to_normal_lifetime(
+    float_t real,
+    float_t imag,
+    float_t omega,
+) noexcept nogil:
+    """Return normal lifetimes from phasor coordinates."""
+    cdef:
+        double taunorm = INFINITY
+        double t
+
+    if isnan(real) or isnan(imag):
+        return <float_t> NAN
+
+    omega *= omega
+    if omega > 0.0:
+        t = 0.5 * (1.0 + cos(atan2(imag, real - 0.5)))
+        if t <= 0.0:
+            taunorm = INFINITY
+        elif t > 1.0:
+            taunorm = NAN
+        else:
+            taunorm = sqrt((1.0 - t) / (omega * t))
+
+    return <float_t> taunorm
+
+
+@cython.ufunc
 cdef (float_t, float_t) _phasor_from_single_lifetime(
     float_t lifetime,
     float_t omega,

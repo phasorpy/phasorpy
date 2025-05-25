@@ -17,6 +17,7 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_from_lifetime`
   - :py:func:`phasor_from_apparent_lifetime`
   - :py:func:`phasor_to_apparent_lifetime`
+  - :py:func:`phasor_to_normal_lifetime`
 
 - convert to and from polar coordinates (phase and modulation):
 
@@ -97,6 +98,7 @@ __all__ = [
     'phasor_threshold',
     'phasor_to_apparent_lifetime',
     'phasor_to_complex',
+    'phasor_to_normal_lifetime',
     'phasor_to_polar',
     'phasor_to_principal_plane',
     'phasor_to_signal',
@@ -142,6 +144,7 @@ from ._phasorpy import (
     _phasor_threshold_nan,
     _phasor_threshold_open,
     _phasor_to_apparent_lifetime,
+    _phasor_to_normal_lifetime,
     _phasor_to_polar,
     _phasor_transform,
     _phasor_transform_const,
@@ -1816,6 +1819,82 @@ def phasor_from_apparent_lifetime(
         )
     return _phasor_from_apparent_lifetime(  # type: ignore[no-any-return]
         phase_lifetime, modulation_lifetime, omega, **kwargs
+    )
+
+
+def phasor_to_normal_lifetime(
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    frequency: ArrayLike,
+    *,
+    unit_conversion: float = 1e-3,
+    **kwargs: Any,
+) -> NDArray[Any]:
+    r"""Return normal lifetimes from phasor coordinates.
+
+    The normal lifetime of phasor coordinates represents the single lifetime
+    equivalent corresponding to the perpendicular projection of the coordinates
+    onto the universal semicircle, as defined in [3]_.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    frequency : array_like
+        Laser pulse or modulation frequency in MHz.
+    unit_conversion : float, optional
+        Product of `frequency` and returned `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    normal_lifetime : ndarray
+        Normal lifetime from of phasor coordinates.
+
+    Notes
+    -----
+    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
+    are converted to normal lifetimes `normal_lifetime` (:math:`\tau_{N}`)
+    at frequency :math:`f` according to:
+
+    .. math::
+
+        \omega &= 2 \pi f
+
+        G_{N} &= 0.5 \cdot (1 + \cos{\arctan{\frac{S}{G - 0.5}}})
+
+        \tau_{N} &= \sqrt{\frac{1 - G_{N}}{\omega^{2} \cdot G_{N}}}
+
+    References
+    ----------
+
+    .. [3] Silberberg M, and Grecco H. `pawFLIM: reducing bias and
+      uncertainty to enable lower photon count in FLIM experiments
+      <https://doi.org/10.1088/2050-6120/aa72ab>`_.
+      *Methods Appl Fluoresc*, 5(2): 024016 (2017)
+
+    Examples
+    --------
+    The normal lifetimes of phasor coordinates with a real component of 0.5
+    are independent of the imaginary component:
+
+    >>> phasor_to_normal_lifetime(
+    ...     0.5, [0.5, 0.45], frequency=80
+    ... )  # doctest: +NUMBER
+    array([1.989, 1.989])
+
+    """
+    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega *= math.pi * 2.0 * unit_conversion
+    return _phasor_to_normal_lifetime(  # type: ignore[no-any-return]
+        real, imag, omega, **kwargs
     )
 
 

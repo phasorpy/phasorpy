@@ -30,6 +30,7 @@ from phasorpy.phasor import (
     phasor_threshold,
     phasor_to_apparent_lifetime,
     phasor_to_complex,
+    phasor_to_normal_lifetime,
     phasor_to_polar,
     phasor_to_principal_plane,
     phasor_to_signal,
@@ -370,6 +371,14 @@ def test_polar_to_apparent_lifetime_nan():
         [[1.086834, nan, 0.199609], [3.445806, nan, 19.794646]],
         atol=1e-3,
     )
+
+
+def test_phasor_to_normal_lifetime_nan():
+    """Test phasor_to_normal_lifetime function with NaN values."""
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        taunorm = phasor_to_normal_lifetime(*VALUES_WITH_NAN[1:], 80)
+    assert_allclose(taunorm, [1.989437, nan, 16.160405], atol=1e-3)
 
 
 def test_two_fractions_from_phasor_nan():
