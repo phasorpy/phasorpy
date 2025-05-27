@@ -46,6 +46,7 @@ from phasorpy.phasor import (
     phasor_threshold,
     phasor_to_apparent_lifetime,
     phasor_to_complex,
+    phasor_to_normal_lifetime,
     phasor_to_polar,
     phasor_to_principal_plane,
     phasor_to_signal,
@@ -2011,6 +2012,50 @@ def test_phasor_calibrate_exceptions():
             harmonic=[1, 2, 3, 4],
             lifetime=4,
         )
+
+
+def test_phasor_to_normal_lifetime():
+    """Test phasor_to_normal_lifetime function."""
+    taunorm = phasor_to_normal_lifetime(
+        [0.5, 0.5, 0, 1, -1.1], [0.5, 0.45, 0, 0, 1.1], frequency=80
+    )
+    assert_allclose(
+        taunorm, [1.989437, 1.989437, math.inf, 0.0, 6.405351], atol=1e-3
+    )
+
+    # verify against phasor_to_apparent_lifetime
+    real, imag = phasor_semicircle(11)
+    expected = phasor_to_apparent_lifetime(real, imag, frequency=80)[0]
+    assert numpy.isinf(expected[0])
+    assert expected[-1] == 0.0
+    assert_allclose(
+        phasor_to_normal_lifetime(real, imag, frequency=80),
+        expected,
+        atol=1e-3,
+    )
+
+    phase, modulation = phasor_to_polar(real - 0.5, imag)
+    real, imag = phasor_from_polar(phase, modulation * 0.6)
+    assert_allclose(
+        phasor_to_normal_lifetime(real + 0.5, imag, frequency=80),
+        expected,
+        atol=1e-3,
+    )
+
+    # broadcast, mix dtypes
+    taunorm = phasor_to_normal_lifetime(
+        0.5,
+        numpy.array([0.5, 0.45], dtype=numpy.float32),
+        frequency=numpy.array([[20], [40], [80]], dtype=numpy.int32),
+        #  dtype=numpy.float32
+    )
+    assert taunorm.shape == (3, 2)
+    assert taunorm.dtype == 'float64'
+    assert_allclose(
+        taunorm,
+        [[7.957747, 7.957747], [3.978874, 3.978874], [1.989437, 1.989437]],
+        atol=1e-3,
+    )
 
 
 def test_phasor_to_apparent_lifetime():
