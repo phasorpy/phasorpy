@@ -61,9 +61,9 @@ and include the following items in the bug report:
   of::
 
     $ python -m phasorpy versions
-    Python 3.11.4 ...
-    phasorpy 0.1.dev ...
-    numpy 1.25.2
+    Python-3.13.3
+    phasorpy-0.5
+    numpy-2.2.6
     ...
 
 Contribute code or documentation
@@ -289,4 +289,6 @@ and must pass before code or documentation can be accepted.
 Other PhasorPy developers will review the pull request to check and help
 to improve its implementation, documentation, and style.
 
-Pull requests must be approved by a core team member before merging.
+Pull requests must be approved by a
+`PhasorPy organization member <https://github.com/orgs/phasorpy/people>`_
+before merging.

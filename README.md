@@ -15,7 +15,7 @@ PhasorPy is a community-maintained project.
 in the form of bug reports, bug fixes, feature implementations, documentation,
 datasets, and enhancement proposals are welcome.
 
-This software project is supported in part by the
+This software project was supported in part by the
 [Essential Open Source Software for Science (EOSS)](https://chanzuckerberg.com/eoss/)
 program at
 [Chan Zuckerberg Initiative](https://chanzuckerberg.com/).
