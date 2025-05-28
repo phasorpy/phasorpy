@@ -1,3 +1,5 @@
+:orphan:
+
 Code of conduct
 ===============
 
@@ -68,9 +70,8 @@ Enforcement
 -----------
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leader responsible for enforcement:
-
-- `Leonel Malacrida <conduct@phasorpy.org>`_
+reported to `<conduct@phasorpy.org>`_ and `PhasorPy organization members
+<https://github.com/orgs/phasorpy/people>`_.
 
 All complaints will be reviewed and investigated promptly and fairly.
 

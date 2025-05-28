@@ -62,7 +62,6 @@ Contents
     api/index
     release
     contributing
-    code_of_conduct
     acknowledgments
     license
 
