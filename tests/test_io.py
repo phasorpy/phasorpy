@@ -345,7 +345,7 @@ def test_signal_from_flimlabs_json_old():
 def test_signal_from_flimlabs_json_channel():
     """Test read FLIM LABS JSON multi-channel image file."""
     filename = private_file('test03_1733492714_imaging.json')
-    signal = signal_from_flimlabs_json(filename)
+    signal = signal_from_flimlabs_json(filename, channel=None)
     assert signal.values.sum(dtype=numpy.uint64) == 4680256
     assert signal.dtype == numpy.uint16
     assert signal.shape == (3, 256, 256, 256)
@@ -576,7 +576,7 @@ def test_signal_from_ptu_irf():
     """Test read PicoQuant PTU file containing IRF."""
     # data file from PicoQuant's Samples.sptw
     filename = private_file('Cy5_diff_IRF+FLCS-pattern.ptu')
-    signal = signal_from_ptu(filename)
+    signal = signal_from_ptu(filename, channel=None, keepdims=True)
     assert signal.values.sum(dtype=numpy.uint64) == 13268548
     assert signal.dtype == numpy.uint32
     assert signal.shape == (1, 1, 1, 2, 6250)
@@ -587,10 +587,10 @@ def test_signal_from_ptu_irf():
     assert pytest.approx(signal.attrs['frequency'], abs=1e-4) == 19.999732
     assert signal.attrs['ptu_tags']['HW_Type'] == 'PicoHarp 300'
 
-    signal = signal_from_ptu(filename, channel=0, keepdims=True)
+    signal = signal_from_ptu(filename)
     assert signal.values.sum(dtype=numpy.uint64) == 6984849
-    assert signal.shape == (1, 1, 1, 1, 6250)
-    assert signal.dims == ('T', 'Y', 'X', 'C', 'H')
+    assert signal.shape == (1, 1, 6250)
+    assert signal.dims == ('Y', 'X', 'H')
 
     with pytest.raises(ValueError):
         signal_from_ptu(filename, dtime=-1)
@@ -603,6 +603,14 @@ def test_signal_from_ptu_irf():
         signal.coords['H'].data[[1, -1]], [0.007999, 32.759999], decimal=4
     )
 
+    signal = signal_from_ptu(filename, channel=0, dtime=None, keepdims=True)
+    assert signal.values.sum(dtype=numpy.uint64) == 6984849
+    assert signal.shape == (1, 1, 1, 1, 4096)
+    assert signal.dims == ('T', 'Y', 'X', 'C', 'H')
+    assert_almost_equal(
+        signal.coords['H'].data[[1, -1]], [0.007999, 32.759999], decimal=4
+    )
+
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_signal_from_fbd():
@@ -610,7 +618,7 @@ def test_signal_from_fbd():
     # TODO: test files with different firmwares
     # TODO: gather public FBD files and upload to Zenodo
     filename = fetch('Convallaria_$EI0S.fbd')
-    signal = signal_from_fbd(filename)
+    signal = signal_from_fbd(filename, channel=None, keepdims=True)
     assert signal.values.sum(dtype=numpy.uint64) == 9310275
     assert signal.dtype == numpy.uint16
     assert signal.shape == (9, 2, 256, 256, 64)
@@ -627,12 +635,12 @@ def test_signal_from_fbd():
     assert attrs['flimbox_header'] is not None
     assert 'flimbox_settings' not in attrs
 
-    signal = signal_from_fbd(filename, frame=-1, channel=0)
+    signal = signal_from_fbd(filename, frame=-1, channel=0, keepdims=True)
     assert signal.values.sum(dtype=numpy.uint64) == 9310275
     assert signal.shape == (1, 1, 256, 256, 64)
     assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
 
-    signal = signal_from_fbd(filename, frame=-1, channel=1, keepdims=False)
+    signal = signal_from_fbd(filename, frame=-1, channel=1)
     assert signal.values.sum(dtype=numpy.uint64) == 0  # channel 1 is empty
     assert signal.shape == (256, 256, 64)
     assert signal.dims == ('Y', 'X', 'H')
@@ -642,7 +650,7 @@ def test_signal_from_fbd():
     assert signal.shape == (256, 256, 64)
     assert signal.dims == ('Y', 'X', 'H')
 
-    signal = signal_from_fbd(filename, frame=1, channel=0)
+    signal = signal_from_fbd(filename, frame=1, channel=0, keepdims=True)
     assert signal.values.sum(dtype=numpy.uint64) == 1033137
     assert signal.shape == (1, 1, 256, 256, 64)
     assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
