@@ -208,15 +208,13 @@ plot_phasor(
 # be discarded before exporting to PTU format. In the Leica LAS X software,
 # select the "FLIM" tab, click on the "Phasor" button, and under
 # "Specialist Settings" select the option "Standard (High Speed)".
-# By default, the PTU reader function returns a 5-dimensional image with
-# dimension order TYXCH. Channel and frames are specified to reduce the
-# dimensionality:
+# The first channel in the first frame is read from the PTU file:
 
 from phasorpy.io import signal_from_ptu
 
 filename = 'FLIM_testdata.lif.filtered.ptu'
 
-signal = signal_from_ptu(fetch(filename), channel=0, frame=0, keepdims=False)
+signal = signal_from_ptu(fetch(filename), channel=0, frame=0)
 
 plot_signal_image(signal, title=filename, xlabel='delay-time (ns)')
 

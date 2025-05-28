@@ -822,7 +822,7 @@ def phasor_from_ifli(
     filename: str | PathLike[Any],
     /,
     *,
-    channel: int | None = None,
+    channel: int | None = 0,
     harmonic: int | Sequence[int] | Literal['all', 'any'] | str | None = None,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
@@ -838,7 +838,9 @@ def phasor_from_ifli(
     filename : str or Path
         Name of ISS IFLI file to read.
     channel : int, optional
-        If None (default), return all channels, else return specified channel.
+        Index of channel to return.
+        By default, return the first channel.
+        If None, return all channels.
     harmonic : int, sequence of int, or 'all', optional
         Harmonic(s) to return from file.
         If None (default), return the first harmonic stored in file.
@@ -1218,7 +1220,7 @@ def lifetime_from_lif(
 def phasor_from_flimlabs_json(
     filename: str | PathLike[Any],
     /,
-    channel: int | None = None,
+    channel: int | None = 0,
     harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
     """Return phasor coordinates and metadata from FLIM LABS JSON phasor file.
@@ -1233,7 +1235,9 @@ def phasor_from_flimlabs_json(
         Name of FLIM LABS JSON phasor file to read.
         The file name usually contains the string "_phasor".
     channel : int, optional
-        If None (default), return all channels, else return specified channel.
+        Index of channel to return.
+        By default, return the first channel.
+        If None, return all channels.
     harmonic : int, sequence of int, or 'all', optional
         Harmonic(s) to return from file.
         If None (default), return the first harmonic stored in the file.
@@ -1406,7 +1410,7 @@ def signal_from_flimlabs_json(
     filename: str | PathLike[Any],
     /,
     *,
-    channel: int | None = None,
+    channel: int | None = 0,
     dtype: DTypeLike | None = None,
 ) -> DataArray:
     """Return TCSPC histogram and metadata from FLIM LABS JSON imaging file.
@@ -1420,7 +1424,9 @@ def signal_from_flimlabs_json(
         Name of FLIM LABS JSON imaging file to read.
         The file name usually contains the string "_imaging" or "_phasor".
     channel : int, optional
-        If None (default), return all channels, else return specified channel.
+        Index of channel to return.
+        By default, return the first channel.
+        If None, return all channels.
     dtype : dtype-like, optional, default: uint16
         Unsigned integer type of TCSPC histogram.
         Increase the bit-depth for high photon counts.
@@ -1990,9 +1996,9 @@ def signal_from_ptu(
     trimdims: Sequence[Literal['T', 'C', 'H']] | str | None = None,
     dtype: DTypeLike | None = None,
     frame: int | None = None,
-    channel: int | None = None,
+    channel: int | None = 0,
     dtime: int | None = 0,
-    keepdims: bool = True,
+    keepdims: bool = False,
 ) -> DataArray:
     """Return TCSPC histogram and metadata from PicoQuant PTU T3 mode file.
 
@@ -2022,7 +2028,9 @@ def signal_from_ptu(
         If < 0, integrate time axis, else return specified frame.
         Overrides `selection` for axis ``T``.
     channel : int, optional
-        If < 0, integrate channel axis, else return specified channel.
+        Index of channel to return.
+        By default, return the first channel.
+        If < 0, integrate channel axis.
         Overrides `selection` for axis ``C``.
     dtime : int, optional, default: 0
         Specifies number of bins in TCSPC histogram.
@@ -2030,8 +2038,8 @@ def signal_from_ptu(
         If < 0, integrate delay-time axis (image mode only).
         If > 0, return up to specified bin.
         Overrides `selection` for axis ``H``.
-    keepdims : bool, optional, default: True
-        If true (default), reduced axes are left as size-one dimension.
+    keepdims : bool, optional, default: False
+        If true, return reduced axes as size-one dimensions.
 
     Returns
     -------
@@ -2066,9 +2074,9 @@ def signal_from_ptu(
     >>> signal.dtype
     dtype('uint16')
     >>> signal.shape
-    (5, 256, 256, 1, 132)
+    (5, 256, 256, 132)
     >>> signal.dims
-    ('T', 'Y', 'X', 'C', 'H')
+    ('T', 'Y', 'X', 'H')
     >>> signal.coords['H'].data
     array([0, ..., 12.7])
     >>> signal.attrs['frequency']  # doctest: +NUMBER
@@ -2210,8 +2218,8 @@ def signal_from_fbd(
     /,
     *,
     frame: int | None = None,
-    channel: int | None = None,
-    keepdims: bool = True,
+    channel: int | None = 0,
+    keepdims: bool = False,
     laser_factor: float = -1.0,
 ) -> DataArray:
     """Return phase histogram and metadata from FLIMbox FBD file.
@@ -2234,9 +2242,11 @@ def signal_from_fbd(
         If None (default), return all frames.
         If < 0, integrate time axis, else return specified frame.
     channel : int, optional
-        If None (default), return all channels, else return specified channel.
-    keepdims : bool, optional
-        If true (default), reduced axes are left as size-one dimension.
+        Index of channel to return.
+        By default, return the first channel.
+        If None, return all channels.
+    keepdims : bool, optional, default: False
+        If true, return reduced axes as size-one dimensions.
     laser_factor : float, optional
         Factor to correct dwell_time/laser_frequency.
 
@@ -2273,9 +2283,9 @@ def signal_from_fbd(
     >>> signal.dtype  # doctest: +SKIP
     dtype('uint16')
     >>> signal.shape  # doctest: +SKIP
-    (9, 2, 256, 256, 64)
+    (9, 256, 256, 64)
     >>> signal.dims  # doctest: +SKIP
-    ('T', 'C', 'Y', 'X', 'H')
+    ('T', 'Y', 'X', 'H')
     >>> signal.coords['H'].data  # doctest: +SKIP
     array([0, ..., 6.185])
     >>> signal.attrs['frequency']  # doctest: +SKIP
