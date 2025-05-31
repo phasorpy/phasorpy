@@ -123,37 +123,8 @@ sphinx_gallery_conf = {
     'gallery_dirs': 'tutorials',
     'reference_url': {'phasorpy': None},
     'matplotlib_animations': True,
-    'within_subsection_order': 'conf.TutorialOrder',
+    'within_subsection_order': 'sphinxext.TutorialOrder',
 }
-
-
-class TutorialOrder:
-    """Order tutorials in gallery subsections."""
-
-    tutorials = [
-        'introduction',
-        'lifetime_geometry',
-        'lfd_workshop',
-        # api
-        'io',
-        'phasor_from_lifetime',
-        'multi-harmonic',
-        'filtering',
-        'phasorplot',
-        'cursors',
-        'components',
-        'fret',
-        'lifetime_to_signal',
-        'pca',
-        # benchmarks
-        'phasor_from_signal',
-    ]
-
-    def __init__(self, srcdir: str): ...
-
-    def __call__(self, filename: str) -> int:
-        return self.tutorials.index(filename[9:-3])
-
 
 copybutton_prompt_text = (
     r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
