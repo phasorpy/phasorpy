@@ -2,9 +2,9 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 # pylint: skip-file
 
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('../src/'))
+import os
+import sys
+sys.path.insert(0, os.path.dirname(__file__))
 
 # remove the examples header from HTML tutorials
 import sphinx_gallery.gen_rst
