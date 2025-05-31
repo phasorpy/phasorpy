@@ -1580,6 +1580,7 @@ def phasor_to_polar(
     See Also
     --------
     phasorpy.phasor.phasor_from_polar
+    :ref:`sphx_glr_tutorials_phasorpy_lifetime_geometry.py`
 
     Examples
     --------
@@ -1687,6 +1688,7 @@ def phasor_to_apparent_lifetime(
     See Also
     --------
     phasorpy.phasor.phasor_from_apparent_lifetime
+    :ref:`sphx_glr_tutorials_phasorpy_lifetime_geometry.py`
 
     Notes
     -----
@@ -1857,6 +1859,10 @@ def phasor_to_normal_lifetime(
     -------
     normal_lifetime : ndarray
         Normal lifetime from of phasor coordinates.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_phasorpy_lifetime_geometry.py`
 
     Notes
     -----
@@ -2216,6 +2222,11 @@ def phasor_from_lifetime(
     ------
     ValueError
         Input arrays exceed their allowed dimensionality or do not match.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_phasor_from_lifetime.py`
+    :ref:`sphx_glr_tutorials_phasorpy_lifetime_geometry.py`
 
     Notes
     -----
