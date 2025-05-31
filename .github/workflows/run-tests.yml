@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["windows-2019", "macos-13"]
+        os: ["windows-2022", "macos-13"]
         python-version: ["3.11"]
         # 3.12 tested with cibuildwheel
     steps:
@@ -84,7 +84,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-22.04", "windows-2019", "macos-13"]
+        os: ["ubuntu-22.04", "windows-2022", "macos-13"]
     steps:
       - uses: actions/checkout@v4
       - uses: pypa/cibuildwheel@v2.23.3
