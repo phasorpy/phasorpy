@@ -4,7 +4,7 @@ from __future__ import annotations
 
 __all__ = ['__version__', 'versions']
 
-__version__ = '0.6.dev'
+__version__ = '0.6.dev0'
 
 
 def versions(
@@ -36,6 +36,7 @@ def versions(
     ...
 
     """
+    import importlib.metadata
     import os
     import sys
 
@@ -68,7 +69,11 @@ def versions(
             version_strings.append(f'{module.lower()}{dash}n/a')
             continue
         lib = sys.modules[module]
-        ver = f"{module.lower()}{dash}{getattr(lib, '__version__', 'unknown')}"
+        try:
+            ver = importlib.metadata.version(module)
+        except importlib.metadata.PackageNotFoundError:
+            ver = getattr(lib, '__version__', 'unknown')
+        ver = f'{module.lower()}{dash}{ver}'
         if verbose:
             try:
                 path = getattr(lib, '__file__')
