@@ -191,6 +191,20 @@ class TestPhasorPlot:
         plot.line([0.8, 0.4], [0.2, 0.3], color='tab:red', linestyle='--')
         self.show(plot)
 
+    def test_arrow(self):
+        """Test arrow method."""
+        plot = PhasorPlot(title='arrow')
+        plot.arrow([0.0, 0.0], [0.8, 0.4], color='tab:blue', linewidth=2)
+        plot.arrow(
+            [math.hypot(0.8, 0.4), 0.0],
+            [0.8, 0.4],
+            angle=math.atan2(0.4, 0.8),
+            arrowstyle='<->',
+            linestyle='--',
+            color='tab:red',
+        )
+        self.show(plot)
+
     def test_circle(self):
         """Test circle method."""
         plot = PhasorPlot(title='circle')

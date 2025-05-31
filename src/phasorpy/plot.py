@@ -37,7 +37,7 @@ from matplotlib import pyplot
 from matplotlib.font_manager import FontProperties
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
-from matplotlib.patches import Arc, Circle, Ellipse, Polygon
+from matplotlib.patches import Arc, Circle, Ellipse, FancyArrowPatch, Polygon
 from matplotlib.path import Path
 from matplotlib.patheffects import AbstractPathEffect
 from matplotlib.widgets import Slider
@@ -587,6 +587,51 @@ class PhasorPlot:
             fill=GRID_FILL,
         )
         self._ax.add_patch(Circle((real, imag), radius, **kwargs))
+
+    def arrow(
+        self,
+        point0: ArrayLike,
+        point1: ArrayLike,
+        /,
+        *,
+        angle: float | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Draw arrow between points.
+
+        By default, draw a straight arrow with a `'-|>'` style, a mutation
+        scale of 20, and a miter join style.
+
+        Parameters
+        ----------
+        point0 : array_like
+            X and y coordinates of start point of arrow.
+        point1 : array_like
+            X and y coordinates of end point of arrow.
+        angle : float, optional
+            Angle in radians, controlling curvature of line between points.
+            If None (default), draw a straight line.
+        **kwargs
+            Additional parameters passed to
+            :py:class:`matplotlib.patches.FancyArrowPatch`.
+
+        """
+        arrowstyle = kwargs.pop('arrowstyle', '-|>')
+        mutation_scale = kwargs.pop('mutation_scale', 20)
+        joinstyle = kwargs.pop('joinstyle', 'miter')
+        if angle is not None:
+            kwargs['connectionstyle'] = f'arc3,rad={math.tan(angle / 4.0)}'
+
+        patch = FancyArrowPatch(
+            point0,  # type: ignore[arg-type]
+            point1,  # type: ignore[arg-type]
+            arrowstyle=arrowstyle,
+            mutation_scale=mutation_scale,
+            # capstyle='projecting',
+            joinstyle=joinstyle,
+            **kwargs,
+        )
+        self._ax.add_patch(patch)
 
     def cursor(
         self,

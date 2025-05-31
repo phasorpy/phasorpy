@@ -2,9 +2,10 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 # pylint: skip-file
 
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('../src/'))
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
 
 # remove the examples header from HTML tutorials
 import sphinx_gallery.gen_rst
@@ -123,7 +124,37 @@ sphinx_gallery_conf = {
     'gallery_dirs': 'tutorials',
     'reference_url': {'phasorpy': None},
     'matplotlib_animations': True,
+    'within_subsection_order': 'conf.TutorialOrder',
 }
+
+
+class TutorialOrder:
+    """Order tutorials in gallery subsections."""
+
+    tutorials = [
+        'introduction',
+        'lifetime_geometry',
+        'lfd_workshop',
+        # api
+        'io',
+        'phasor_from_lifetime',
+        'multi-harmonic',
+        'filtering',
+        'phasorplot',
+        'cursors',
+        'components',
+        'fret',
+        'lifetime_to_signal',
+        'pca',
+        # benchmarks
+        'phasor_from_signal',
+    ]
+
+    def __init__(self, srcdir: str): ...
+
+    def __call__(self, filename: str) -> int:
+        return self.tutorials.index(filename[9:-3])
+
 
 copybutton_prompt_text = (
     r'>>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: '
