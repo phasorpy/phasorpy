@@ -91,7 +91,8 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
             print_(f'{fft_name}', t)
 
 # %%
-# For reference, the results on a Core i7-14700K CPU, Windows 11::
+# For reference, the results on a Core i7-14700K CPU, Windows 11,
+# Python 3.13.3, numpy 2.2.6, scipy 1.15.3, mkl-fft 1.3.14::
 #
 #     harmonics 1
 #       axis -1
