@@ -96,41 +96,41 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
 #     harmonics 1
 #       axis -1
 #         not_fft              0.036s   1.00
-#         not_fft (6 threads)  0.008s   0.21
-#         numpy_fft            0.285s   7.89
-#         scipy_fft            0.247s   6.84
-#         mkl_fft              0.124s   3.43
+#         not_fft (6 threads)  0.006s   0.17
+#         numpy_fft            0.270s   7.60
+#         scipy_fft            0.236s   6.64
+#         mkl_fft              0.114s   3.20
 #       axis 0
-#         not_fft              0.156s   4.32
-#         not_fft (6 threads)  0.041s   1.14
-#         numpy_fft            0.743s  20.60
-#         scipy_fft            0.583s  16.16
-#         mkl_fft              0.182s   5.03
+#         not_fft              0.139s   3.90
+#         not_fft (6 threads)  0.028s   0.78
+#         numpy_fft            0.591s  16.63
+#         scipy_fft            0.509s  14.32
+#         mkl_fft              0.148s   4.18
 #       axis 2
-#         not_fft              0.037s   1.02
-#         not_fft (6 threads)  0.009s   0.25
-#         numpy_fft            0.282s   7.81
-#         scipy_fft            0.244s   6.78
-#         mkl_fft              0.125s   3.47
+#         not_fft              0.037s   1.03
+#         not_fft (6 threads)  0.006s   0.16
+#         numpy_fft            0.265s   7.47
+#         scipy_fft            0.239s   6.72
+#         mkl_fft              0.117s   3.29
 #     harmonics 8
 #       axis -1
-#         not_fft              0.275s   7.62
-#         not_fft (6 threads)  0.041s   1.13
-#         numpy_fft            0.295s   8.18
-#         scipy_fft            0.267s   7.39
-#         mkl_fft              0.145s   4.02
+#         not_fft              0.284s   8.00
+#         not_fft (6 threads)  0.040s   1.13
+#         numpy_fft            0.279s   7.84
+#         scipy_fft            0.247s   6.94
+#         mkl_fft              0.129s   3.64
 #       axis 0
-#         not_fft              1.250s  34.66
-#         not_fft (6 threads)  0.325s   9.01
-#         numpy_fft            0.732s  20.28
-#         scipy_fft            0.546s  15.13
-#         mkl_fft              0.168s   4.67
+#         not_fft              1.120s  31.52
+#         not_fft (6 threads)  0.280s   7.88
+#         numpy_fft            0.679s  19.11
+#         scipy_fft            0.525s  14.78
+#         mkl_fft              0.165s   4.65
 #       axis 2
-#         not_fft              0.278s   7.72
-#         not_fft (6 threads)  0.040s   1.11
-#         numpy_fft            0.298s   8.25
-#         scipy_fft            0.270s   7.48
-#         mkl_fft              0.143s   3.98
+#         not_fft              0.285s   8.03
+#         not_fft (6 threads)  0.039s   1.10
+#         numpy_fft            0.278s   7.84
+#         scipy_fft            0.243s   6.85
+#         mkl_fft              0.131s   3.68
 
 # %%
 # Results
