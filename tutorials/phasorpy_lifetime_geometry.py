@@ -6,31 +6,14 @@ Demonstrate the geometrical interpretation of fluorescence lifetimes in the
 phasor plot.
 
 The PhasorPy library is used to demonstrate the geometrical interpretation
-of fluorescence lifetimes in the phasor plot:
+of fluorescence lifetimes and other quantities in the phasor plot:
 
-- **single exponential lifetimes** :math:`\tau_{i}` have corresponding
-  phasor coordinates on the **universal circle**.
-- the **phasor coordinates** :math:`G` and :math:`S` of a mixture of
-  two components with single-exponential lifetimes, weighted by their
-  fractional intensities :math:`\alpha_{i}`, lie on a line between the phasor
-  coordinates of the single components.
-- the **phase** :math:`\varphi` of the phasor coordinates :math:`G` and
-  :math:`S` is the angle of the phasor coordinates with respect to the origin.
-- the **modulation** :math:`M` of the phasor coordinates :math:`G` and
-  :math:`S` is the distance from the origin to the phasor coordinates.
-- the **apparent single lifetime from phase** :math:`\tau_{\varphi}`
-  of the component mixture is the single exponential lifetime corresponding
-  to the intercept of the universal circle with a line through the origin
-  and the phasor coordinates :math:`G` and :math:`S`.
-- the **apparent single lifetime from modulation** :math:`\tau_{M}`
-  of the component mixture is the single exponential lifetime corresponding
-  to the intercept of the universal circle with a circle around the origin
-  of radius equal to the modulation :math:`M`.
-- the **normal lifetime** :math:`\tau_{N}` of the component mixture
-  is the single exponential lifetime corresponding to the nearest point on the
-  universal circle to the phasor coordinates :math:`G` and :math:`S`, which
-  is the intercept of the universal circle with the line through the center of
-  the universal circle and the phasor coordinates :math:`G` and :math:`S`.
+- single exponential lifetimes
+- fractional intensities of lifetime components
+- apparent single lifetime from phase and modulation
+- normal lifetime
+- phase and modulation
+- phasor coordinates
 
 """
 
@@ -287,6 +270,35 @@ plot.components(
 )
 
 plot.show()
+
+# %%
+# The figure demonstrates:
+#
+# - **single exponential lifetimes** :math:`\tau_{i}` correspond to
+#   phasor coordinates on the **universal semicircle**.
+# - the **phasor coordinates** :math:`G` and :math:`S` of a mixture of
+#   two components with single-exponential lifetimes, weighted by their
+#   fractional intensities :math:`\alpha_{i}`, lie on a line between the
+#   phasor coordinates of the single components.
+# - the **phase** :math:`\varphi` of the phasor coordinates :math:`G` and
+#   :math:`S` is the angle of the phasor coordinates with respect to the
+#   origin.
+# - the **modulation** :math:`M` of the phasor coordinates :math:`G` and
+#   :math:`S` is the distance from the origin to the phasor coordinates.
+# - the **apparent single lifetime from phase** :math:`\tau_{\varphi}`
+#   of the component mixture is the single exponential lifetime corresponding
+#   to the intercept of the universal circle with a line through the origin
+#   and the phasor coordinates :math:`G` and :math:`S`.
+# - the **apparent single lifetime from modulation** :math:`\tau_{M}`
+#   of the component mixture is the single exponential lifetime corresponding
+#   to the intercept of the universal circle with a circle around the origin
+#   of radius equal to the modulation :math:`M`.
+# - the **normal lifetime** :math:`\tau_{N}` of the component mixture
+#   is the single exponential lifetime corresponding to the nearest point on
+#   the universal circle to the phasor coordinates :math:`G` and :math:`S`,
+#   which is the intercept of the universal circle with the line through the
+#   center of the universal circle and the phasor coordinates :math:`G` and
+#   :math:`S`.
 
 # %%
 # sphinx_gallery_thumbnail_number = -1
