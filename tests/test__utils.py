@@ -285,9 +285,9 @@ def test_chunk_iter():
         list(chunk_iter((2,), (1, 2)))
 
 
-def test_set_module():
-    """Test set_module function."""
-    from phasorpy._utils import set_module  # noqa: F401
+def test_init_module():
+    """Test init_module function."""
+    from phasorpy._utils import init_module  # noqa: F401
     from phasorpy.io import phasor_from_ometiff
 
     assert phasor_from_ometiff.__module__ == 'phasorpy.io'

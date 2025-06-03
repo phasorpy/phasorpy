@@ -10,10 +10,12 @@ from __future__ import annotations
 __all__ = [
     'anscombe_transformation',
     'anscombe_transformation_inverse',
+    'logger',
     'number_threads',
     'spectral_vector_denoise',
 ]
 
+import logging
 import math
 import os
 from typing import TYPE_CHECKING
@@ -310,6 +312,11 @@ def anscombe_transformation_inverse(
             data, **kwargs
         )
     return _anscombe_inverse(data, **kwargs)  # type: ignore[no-any-return]
+
+
+def logger() -> logging.Logger:
+    """Return ``logging.getLogger('phasorpy')``."""
+    return logging.getLogger('phasorpy')
 
 
 def number_threads(
