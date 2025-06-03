@@ -620,7 +620,7 @@ def init_module(globs: dict[str, Any], /) -> None:
         obj = getattr(module, name)
         if hasattr(obj, '__module__'):
             obj.__module__ = module_name
-    globs['__all__'] = sorted(names)
+    globs['__all__'] = sorted(set(names))
 
 
 def xarray_metadata(
