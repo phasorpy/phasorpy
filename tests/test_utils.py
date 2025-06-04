@@ -12,6 +12,7 @@ from phasorpy.phasor import phasor_from_signal
 from phasorpy.utils import (
     anscombe_transformation,
     anscombe_transformation_inverse,
+    logger,
     number_threads,
     spectral_vector_denoise,
 )
@@ -19,8 +20,15 @@ from phasorpy.utils import (
 numpy.random.seed(42)
 
 
+def test_logger():
+    """Test logger function."""
+    import logging
+
+    assert logger() is logging.getLogger('phasorpy')
+
+
 def test_number_threads():
-    """Test `number_threads` function."""
+    """Test number_threads function."""
     assert number_threads() == 1
     assert number_threads(None, 0) == 1
     assert number_threads(1) == 1

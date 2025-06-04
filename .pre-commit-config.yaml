@@ -14,6 +14,7 @@ repos:
         args: [--allow-multiple-documents]
       - id: name-tests-test
         args: ["--pytest-test-first"]
+        exclude: "_conftest.py"
       - id: debug-statements
       - id: end-of-file-fixer
       - id: mixed-line-ending
