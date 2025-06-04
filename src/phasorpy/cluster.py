@@ -46,8 +46,6 @@ def phasor_cluster_gmm(
     extract the parameters of ellipses that represent each cluster according
     to [1]_.
 
-    Clusters are returned in descending order of their elliptic area.
-
     Parameters
     ----------
     real : array_like
