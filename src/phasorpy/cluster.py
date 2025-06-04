@@ -16,7 +16,7 @@ __all__ = ['phasor_cluster_gmm']
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, ArrayLike
+    from ._typing import Any, ArrayLike, Literal
 
 import math
 
@@ -31,6 +31,7 @@ def phasor_cluster_gmm(
     *,
     sigma: float = 2.0,
     clusters: int = 1,
+    sort: Literal['polar', 'phasor', 'area'] | None = None,
     **kwargs: Any,
 ) -> tuple[
     tuple[float, ...],
@@ -58,6 +59,13 @@ def phasor_cluster_gmm(
     clusters : int, optional
         Number of Gaussian distributions to fit to phasor coordinates.
         Defaults to 1.
+    sort: {'polar', 'phasor', 'area'}, optional
+        Sorting method for output clusters. Defaults to 'polar'.
+
+        - 'polar': Sort by polar coordinates (phase, then modulation).
+        - 'phasor': Sort by phasor coordinates (real, then imaginary).
+        - 'area': Sort by inverse area of ellipse (-major * minor).
+
     **kwargs
         Additional keyword arguments passed to
         :py:class:`sklearn.mixture.GaussianMixture`.
@@ -161,10 +169,38 @@ def phasor_cluster_gmm(
         radius_major.append(sigma * math.sqrt(2 * eigenvalues[0]))
         radius_minor.append(sigma * math.sqrt(2 * eigenvalues[1]))
 
+    if clusters == 1:
+        argsort = [0]
+    else:
+        if sort is None or sort == 'polar':
+
+            def sort_key(i: int) -> Any:
+                return (
+                    math.atan2(center_imag[i], center_real[i]),
+                    math.hypot(center_real[i], center_imag[i]),
+                )
+
+        elif sort == 'phasor':
+
+            def sort_key(i: int) -> Any:
+                return center_imag[i], center_real[i]
+
+        elif sort == 'area':
+
+            def sort_key(i: int) -> Any:
+                return -radius_major[i] * radius_minor[i]
+
+        else:
+            raise ValueError(
+                f"invalid {sort=!r} != 'phasor', 'polar', or 'area'"
+            )
+
+        argsort = sorted(range(len(center_real)), key=sort_key)
+
     return (
-        tuple(center_real),
-        tuple(center_imag),
-        tuple(radius_major),
-        tuple(radius_minor),
-        tuple(angle),
+        tuple(center_real[i] for i in argsort),
+        tuple(center_imag[i] for i in argsort),
+        tuple(radius_major[i] for i in argsort),
+        tuple(radius_minor[i] for i in argsort),
+        tuple(angle[i] for i in argsort),
     )
