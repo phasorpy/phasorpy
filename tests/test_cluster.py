@@ -12,7 +12,7 @@ numpy.random.seed(42)
 @pytest.mark.parametrize('clusters', [1, 2, 3])
 def test_phasor_cluster_gmm_basic(clusters):
     real1, imag1 = numpy.random.multivariate_normal(
-        [0.2, 0.3], [[3e-3, 1e-3], [1e-3, 2e-3]], 2**15
+        [0.2, 0.3], [[3e-3, 1e-3], [1e-3, 1e-3]], 2**15
     ).T
     real2, imag2 = numpy.random.multivariate_normal(
         [0.4, 0.5], [[2e-3, -1e-3], [-1e-3, 3e-3]], 2**14
@@ -31,7 +31,7 @@ def test_phasor_cluster_gmm_basic(clusters):
         assert_allclose(centers_real, [0.4, 0.2], atol=0.01)
         assert_allclose(centers_imag, [0.5, 0.3], atol=0.01)
         assert_allclose(radius_major, [0.17, 0.17], atol=0.01)
-        assert_allclose(radius_minor, [0.105, 0.105], atol=0.01)
+        assert_allclose(radius_minor, [0.105, 0.068], atol=0.01)
         assert_allclose(angle, [2.11, 0.54], atol=0.2)
 
 
