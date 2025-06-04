@@ -27,7 +27,7 @@ def test_phasor_cluster_gmm_basic(clusters):
     assert len(radius_major) == clusters
     assert len(radius_minor) == clusters
     assert len(angle) == clusters
-    if clusters == 0:
+    if clusters == 2:
         # TODO: custers are not returned in any particular order
         assert_allclose(centers_real, [0.4, 0.2], atol=0.01)
         assert_allclose(centers_imag, [0.5, 0.3], atol=0.01)
