@@ -45,6 +45,8 @@ def phasor_cluster_gmm(
     extract the parameters of ellipses that represent each cluster according
     to [1]_.
 
+    Clusters are returned in descending order of their elliptic area.
+
     Parameters
     ----------
     real : array_like
@@ -161,10 +163,15 @@ def phasor_cluster_gmm(
         radius_major.append(sigma * math.sqrt(2 * eigenvalues[0]))
         radius_minor.append(sigma * math.sqrt(2 * eigenvalues[1]))
 
+    def area(i: int) -> float:
+        return radius_major[i] * radius_minor[i]  # * math.pi
+
+    argsort = sorted(range(len(center_real)), key=area, reverse=True)
+
     return (
-        tuple(center_real),
-        tuple(center_imag),
-        tuple(radius_major),
-        tuple(radius_minor),
-        tuple(angle),
+        tuple(center_real[i] for i in argsort),
+        tuple(center_imag[i] for i in argsort),
+        tuple(radius_major[i] for i in argsort),
+        tuple(radius_minor[i] for i in argsort),
+        tuple(angle[i] for i in argsort),
     )
