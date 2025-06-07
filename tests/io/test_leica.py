@@ -55,7 +55,7 @@ def test_lifetime_from_lif(format):
     for data in (intensity, lifetime, stddev):
         assert data.shape == (1024, 1024)
         assert data.dtype == numpy.float32
-    assert intensity.sum() == 19278548.0
+    assert intensity.sum(dtype=numpy.float64) == 19278552.0
     assert attrs['frequency'] == 19.505
     assert attrs['samples'] == 529
     assert 'harmonic' not in attrs
