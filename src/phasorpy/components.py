@@ -3,20 +3,16 @@
 The ``phasorpy.components`` module provides functions to:
 
 - calculate fractions of two known components by projecting onto the
-  line between the components:
-
-  - :py:func:`two_fractions_from_phasor`
+  line between the components (:py:func:`two_fractions_from_phasor`)
 
 - calculate phasor coordinates of second component if only one is
   known (not implemented)
 
 - calculate fractions of three or four known components by using higher
-  harmonic information (not implemented)
+  harmonic information (:py:func:`phasor_component_fit`)
 
 - calculate fractions of two or three known components by resolving
-  graphically with histogram:
-
-  - :py:func:`graphical_component_analysis`
+  graphically with histogram (:py:func:`graphical_component_analysis`)
 
 - blindly resolve fractions of `n` components by using harmonic
   information (not implemented)
@@ -28,6 +24,7 @@ from __future__ import annotations
 __all__ = [
     'two_fractions_from_phasor',
     'graphical_component_analysis',
+    'phasor_component_fit',
 ]
 
 import numbers
@@ -39,11 +36,13 @@ if TYPE_CHECKING:
 import numpy
 
 from ._phasorpy import (
+    _blend_and,
     _fraction_on_segment,
     _is_inside_circle,
     _is_inside_stadium,
     _segment_direction_and_length,
 )
+from .phasor import phasor_threshold
 
 
 def two_fractions_from_phasor(
@@ -311,3 +310,170 @@ def graphical_component_analysis(
             counts.append(numpy.asarray(component_counts))
 
     return tuple(counts)
+
+
+def phasor_component_fit(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    component_real: ArrayLike,
+    component_imag: ArrayLike,
+    /,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], ...]:
+    """Return fractions of multiple components from phasor coordinates.
+
+    Component fractions are obtained from the least-squares solution of a
+    linear matrix equation that relates phasor coordinates from one or
+    multiple harmonics to component fractions according to [2]_.
+
+    Parameters
+    ----------
+    mean : array_like
+        Intensity of phasor coordinates.
+    real : array_like
+        Real component of phasor coordinates.
+        Harmonics, if any, must be in the first dimension.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+        Harmonics, if any, must be in the first dimension.
+    component_real : array_like
+        Real coordinates of components.
+        Must be one or two-dimensional with harmonics in the first dimension.
+    component_imag : array_like
+        Imaginary coordinates of components.
+        Must be one or two-dimensional with harmonics in the first dimension.
+    **kwargs : optional
+        Additional arguments passed to :py:func:`scipy.linalg.lstsq()`.
+
+    Returns
+    -------
+    fractions : tuple of ndarray
+        Component fractions, one array per component.
+        Fractions may not exactly add up to 1.0.
+
+    Raises
+    ------
+    ValueError
+        The array shapes of `real` and `imag` do not match.
+        The array shapes of `component_real` and `component_imag` do not match.
+        The number of harmonics in the components does not
+        match the ones in the phasor coordinates.
+        The system is underdetermined; the component matrix having more
+        columns than rows.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_components.py`
+    :ref:`sphx_glr_tutorials_applications_phasorpy_component_fit.py`
+
+    Notes
+    -----
+    For now, calculation of fractions of components from different channels
+    or frequencies is not supported. Only one set of components can be
+    analyzed and is broadcast to all channels/frequencies.
+
+    The method builds a linear matrix equation,
+    :math:`A\\mathbf{x} = \\mathbf{b}`, where :math:`A` consists of the
+    phasor coordinates of individual components, :math:`\\mathbf{x}` are
+    the unknown fractions, and :math:`\\mathbf{b}` represents the measured
+    phasor coordinates in the mixture. The least-squares solution of this
+    linear matrix equation yields the fractions.
+
+    References
+    ----------
+    .. [2] Vallmitjana A, Lepanto P, Irigoin F, and Malacrida L.
+      `Phasor-based multi-harmonic unmixing for in-vivo hyperspectral
+      imaging <https://doi.org/10.1088/2050-6120/ac9ae9>`_.
+      *Methods Appl Fluoresc*, 11(1): 014001 (2022)
+
+    Example
+    -------
+    >>> phasor_component_fit(
+    ...     [1, 1, 1], [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.9], [0.4, 0.3]
+    ... )  # doctest: +NUMBER
+    (array([0.4644, 0.5356, 0.6068]), array([0.5559, 0.4441, 0.3322]))
+
+    """
+    from scipy.linalg import lstsq
+
+    mean = numpy.atleast_1d(mean)
+    real = numpy.atleast_1d(real)
+    imag = numpy.atleast_1d(imag)
+    component_real = numpy.atleast_1d(component_real)
+    component_imag = numpy.atleast_1d(component_imag)
+
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if mean.shape != real.shape[-mean.ndim :]:
+        raise ValueError(f'{mean.shape=} does not match {real.shape=}')
+
+    if component_real.shape != component_imag.shape:
+        raise ValueError(f'{component_real.shape=} != {component_imag.shape=}')
+    if numpy.isnan(component_real).any() or numpy.isnan(component_imag).any():
+        raise ValueError(
+            'component phasor coordinates must not contain NaN values'
+        )
+    if numpy.isinf(component_real).any() or numpy.isinf(component_imag).any():
+        raise ValueError(
+            'component phasor coordinates must not contain infinite values'
+        )
+
+    if component_real.ndim == 1:
+        component_real = component_real.reshape(1, -1)
+        component_imag = component_imag.reshape(1, -1)
+    elif component_real.ndim > 2:
+        raise ValueError(f'{component_real.ndim=} > 2')
+
+    num_harmonics, num_components = component_real.shape
+
+    # create component matrix for least squares solving:
+    # [real coordinates of components (for each harmonic)] +
+    # [imaginary coordinates of components (for each harmonic)] +
+    # [ones for intensity constraint]
+    component_matrix = numpy.ones((2 * num_harmonics + 1, num_components))
+    component_matrix[:num_harmonics] = component_real
+    component_matrix[num_harmonics : 2 * num_harmonics] = component_imag
+
+    if component_matrix.shape[0] < component_matrix.shape[1]:
+        raise ValueError(
+            'the system is undetermined '
+            f'({num_components=} > {num_harmonics * 2 + 1=})'
+        )
+
+    has_harmonic_axis = mean.ndim + 1 == real.ndim
+    if not has_harmonic_axis:
+        real = numpy.expand_dims(real, axis=0)
+        imag = numpy.expand_dims(imag, axis=0)
+    elif real.shape[0] != num_harmonics:
+        raise ValueError(f'{real.shape[0]=} != {component_real.shape[0]=}')
+
+    # TODO: replace Inf with NaN values?
+    mean, real, imag = phasor_threshold(mean, real, imag)
+
+    # replace NaN values with 0.0 for least squares solving
+    real = numpy.nan_to_num(real, nan=0.0, copy=False)
+    imag = numpy.nan_to_num(imag, nan=0.0, copy=False)
+
+    # create coordinates matrix for least squares solving:
+    # [real coordinates (for each harmonic)] +
+    # [imaginary coordinates (for each harmonic)] +
+    # [ones for intensity constraint]
+    coords = numpy.ones((2 * num_harmonics + 1,) + real.shape[1:])
+    coords[:num_harmonics] = real
+    coords[num_harmonics : 2 * num_harmonics] = imag
+
+    fractions = lstsq(
+        component_matrix, coords.reshape(coords.shape[0], -1), **kwargs
+    )[0]
+
+    # reshape to match input dimensions
+    fractions = fractions.reshape((num_components,) + coords.shape[1:])
+
+    # TODO: normalize fractions to sum up to 1.0?
+    # fractions /= numpy.sum(fractions, axis=0, keepdims=True)
+
+    # restore NaN values in fractions from mean
+    _blend_and(mean, fractions, out=fractions)
+
+    return tuple(fractions)
