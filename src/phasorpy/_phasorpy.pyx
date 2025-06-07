@@ -1615,6 +1615,17 @@ cdef (float_t, float_t, float_t, float_t) _intersection_circle_line(
 
 
 @cython.ufunc
+cdef float_t _blend_and(
+    float_t a,  # base layer
+    float_t b,  # blend layer
+) noexcept nogil:
+    """Return blended layers using `and` mode."""
+    if isnan(a):
+        return NAN
+    return b
+
+
+@cython.ufunc
 cdef float_t _blend_normal(
     float_t a,  # base layer
     float_t b,  # blend layer

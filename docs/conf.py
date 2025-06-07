@@ -146,6 +146,8 @@ class TutorialOrder:
         'fret',
         'lifetime_to_signal',
         'pca',
+        # applications
+        'component_fit',
         # benchmarks
         'phasor_from_signal',
     ]

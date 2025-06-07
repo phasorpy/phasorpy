@@ -1,12 +1,16 @@
 """Tests for the phasorpy.components module."""
 
+import numpy
 import pytest
 from numpy.testing import assert_allclose
 
 from phasorpy.components import (
     graphical_component_analysis,
+    phasor_component_fit,
     two_fractions_from_phasor,
 )
+
+numpy.random.seed(42)
 
 
 def test_two_fractions_from_phasor():
@@ -257,5 +261,122 @@ def test_errors_graphical_component_analysis(
         )
 
 
+def test_phasor_component_fit():
+    """Test phasor_component_fit function."""
+    size = 5
+    component_real = [0.1, 0.9]
+    component_imag = [0.2, 0.3]
+    mean = numpy.random.rand(size)
+    real = numpy.linspace(*component_real, size)
+    imag = numpy.linspace(*component_imag, size)
+    fractions = (numpy.linspace(1, 0, size), numpy.linspace(0, 1, size))
+
+    # precise solution
+    assert_allclose(
+        phasor_component_fit(mean, real, imag, component_real, component_imag),
+        fractions,
+        atol=1e-5,
+    )
+
+    # scalars are returned as arrays
+    assert_allclose(
+        phasor_component_fit(
+            mean[1], real[1], imag[1], component_real, component_imag
+        ),
+        (fractions[0][1:2], fractions[1][1:2]),
+        atol=1e-5,
+    )
+
+    # add noise
+    real += numpy.random.rand(size) * 1e-3
+    imag += numpy.random.rand(size) * 1e-3
+    assert_allclose(
+        phasor_component_fit(mean, real, imag, component_real, component_imag),
+        fractions,
+        atol=1e-2,
+    )
+
+    # lapack_driver
+    assert_allclose(
+        phasor_component_fit(
+            mean,
+            real,
+            imag,
+            component_real,
+            component_imag,
+            lapack_driver='gelsd',
+        ),
+        fractions,
+        atol=1e-2,
+    )
+
+    # NaN handling
+    mean[0] = numpy.nan
+    real[1] = numpy.nan
+    fractions[0][:2] = numpy.nan
+    fractions[1][:2] = numpy.nan
+    assert_allclose(
+        phasor_component_fit(mean, real, imag, component_real, component_imag),
+        fractions,
+        atol=1e-2,
+    )
+
+    # 3 harmonics, 4 components
+    phasor_component_fit(
+        numpy.zeros((3, 4)),
+        numpy.zeros((3, 3, 4)),
+        numpy.zeros((3, 3, 4)),
+        numpy.zeros((3, 4)),
+        numpy.zeros((3, 4)),
+    )
+
+    with pytest.raises(ValueError):
+        phasor_component_fit(
+            numpy.zeros((3, 4)),
+            numpy.zeros((2, 3, 4)),  # 2 harmonics
+            numpy.zeros((2, 3, 4)),
+            numpy.zeros((3, 4)),  # 3 harmonics
+            numpy.zeros((3, 4)),
+        )
+
+    # system is undetermined: 4 components, 1 harmonic
+    with pytest.raises(ValueError):
+        phasor_component_fit(
+            numpy.zeros(10),
+            numpy.zeros(10),
+            numpy.zeros(10),
+            numpy.zeros(4),
+            numpy.zeros(4),
+        )
+
+    with pytest.raises(ValueError):
+        phasor_component_fit(
+            mean, real, imag, numpy.zeros((1, 2, 2)), numpy.zeros((1, 2, 2))
+        ),
+
+    with pytest.raises(ValueError):
+        phasor_component_fit(
+            mean[:-1], real, imag, component_real, component_imag
+        )
+
+    with pytest.raises(ValueError):
+        phasor_component_fit(
+            mean, real[:-1], imag, component_real, component_imag
+        )
+
+    with pytest.raises(ValueError):
+        phasor_component_fit(
+            mean, real, imag, component_real[:-1], component_imag
+        )
+
+    component_real[0] = numpy.nan
+    with pytest.raises(ValueError):
+        phasor_component_fit(mean, real, imag, component_real, component_real)
+
+    component_imag[0] = numpy.inf
+    with pytest.raises(ValueError):
+        phasor_component_fit(mean, real, imag, component_imag, component_imag)
+
+
 # mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"
+# mypy: disable-error-code="arg-type, call-overload"
