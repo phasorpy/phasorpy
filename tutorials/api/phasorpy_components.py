@@ -16,9 +16,9 @@ import numpy
 from matplotlib import pyplot
 
 from phasorpy.components import (
-    graphical_component_analysis,
     phasor_component_fit,
-    two_fractions_from_phasor,
+    phasor_component_fraction,
+    phasor_component_graphical,
 )
 from phasorpy.phasor import phasor_from_lifetime
 from phasorpy.plot import PhasorPlot, plot_histograms
@@ -68,7 +68,7 @@ real, imag = phasor_from_lifetime(
     frequency, component_lifetimes, component_fractions
 )
 
-fraction_of_first_component = two_fractions_from_phasor(
+fraction_of_first_component = phasor_component_fraction(
     real, imag, component_real, component_imag
 )
 
@@ -99,10 +99,10 @@ plot.show()
 # their fractional contributions to phasor coordinates can be calculated by
 # projecting the phasor coordinate onto the line connecting the components.
 # Fractions are calculated using
-# :py:func:`phasorpy.components.two_fractions_from_phasor`
+# :py:func:`phasorpy.components.phasor_component_fraction`
 # and plotted as histograms:
 
-fraction_of_first_component = two_fractions_from_phasor(
+fraction_of_first_component = phasor_component_fraction(
     real, imag, component_real, component_imag
 )
 
@@ -156,7 +156,7 @@ plot_histograms(
 # Graphical analysis of two components
 # ------------------------------------
 #
-# The :py:func:`phasorpy.components.graphical_component_analysis`
+# The :py:func:`phasorpy.components.phasor_component_graphical`
 # function for two components counts the number of phasor coordinates
 # that fall within a radius at given fractions along the line between
 # the components.
@@ -165,7 +165,7 @@ plot_histograms(
 radius = 0.025
 fractions = numpy.linspace(0.0, 1.0, 20)
 
-counts = graphical_component_analysis(
+counts = phasor_component_graphical(
     real,
     imag,
     component_real,
@@ -207,7 +207,7 @@ plot.show()
 # The results of the graphical component analysis are plotted as
 # histograms for each component pair:
 
-counts = graphical_component_analysis(
+counts = phasor_component_graphical(
     real,
     imag,
     component_real,

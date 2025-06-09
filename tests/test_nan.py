@@ -9,8 +9,8 @@ from numpy import nan
 from numpy.testing import assert_allclose, assert_array_equal
 
 from phasorpy.components import (
-    graphical_component_analysis,
-    two_fractions_from_phasor,
+    phasor_component_fraction,
+    phasor_component_graphical,
 )
 from phasorpy.cursors import (
     mask_from_circular_cursor,
@@ -381,21 +381,21 @@ def test_phasor_to_normal_lifetime_nan():
     assert_allclose(taunorm, [1.989437, nan, 16.160405], atol=1e-3)
 
 
-def test_two_fractions_from_phasor_nan():
-    """Test two_fractions_from_phasor function with NaN values."""
+def test_phasor_component_fraction_nan():
+    """Test phasor_component_fraction function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        fractions = two_fractions_from_phasor(
+        fractions = phasor_component_fraction(
             *VALUES_WITH_NAN[1:], [0.5, 1.0], [0.5, 1.0]
         )
     assert_allclose(fractions, [1.0, nan, 1.0])
 
 
-def test_graphical_component_analysis_nan():
-    """Test graphical_component_analysis function with NaN values."""
+def test_phasor_component_graphical_nan():
+    """Test phasor_component_graphical function with NaN values."""
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        counts = graphical_component_analysis(
+        counts = phasor_component_graphical(
             *VALUES_WITH_NAN[1:],
             [0.0, 0.0, 1.0],
             [0.0, 1.0, 0.0],
