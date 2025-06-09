@@ -126,7 +126,8 @@ plot_histograms(
 # When the phasor coordinates of multiple contributing components are known,
 # their fractional contributions to phasor coordinates can be obtained by
 # solving a linear system of equations, using multiple harmonics if necessary.
-# Fractions are fitted using
+#
+# Fractions of 2 components are fitted using
 # :py:func:`phasorpy.components.phasor_component_fit`
 # and plotted as histograms:
 
@@ -146,6 +147,10 @@ plot_histograms(
     labels=['A', 'B'],
 )
 
+# %%
+# Up to three components can be fit to single harmonics phasor coordinates.
+# The :ref:`sphx_glr_tutorials_applications_phasorpy_component_fit.py`
+# tutorial demonstrates how to fit 5 components using two-harmonics.
 
 # %%
 # Graphical analysis of two components

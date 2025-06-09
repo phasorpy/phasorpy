@@ -327,6 +327,10 @@ def phasor_component_fit(
     linear matrix equation that relates phasor coordinates from one or
     multiple harmonics to component fractions according to [2]_.
 
+    Up to ``2 * number harmonics + 1`` components can be fit to multi-harmonic
+    phasor coordinates, that is up to three components for single harmonic
+    phasor coordinates.
+
     Parameters
     ----------
     mean : array_like
