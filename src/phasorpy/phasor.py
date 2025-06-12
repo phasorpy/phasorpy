@@ -70,6 +70,10 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_filter_pawflim`
   - :py:func:`phasor_threshold`
 
+- find nearest phasor coordinates from another set of phasor coordinates:
+
+  - :py:func:`phasor_nearest`
+
 """
 
 from __future__ import annotations
@@ -93,6 +97,7 @@ __all__ = [
     'phasor_from_polar',
     'phasor_from_signal',
     'phasor_multiply',
+    'phasor_nearest',
     'phasor_normalize',
     'phasor_semicircle',
     'phasor_threshold',
@@ -124,8 +129,10 @@ if TYPE_CHECKING:
     )
 
 import numpy
+from scipy.spatial import KDTree
 
 from ._phasorpy import (
+    _blend_and,
     _gaussian_signal,
     _median_filter_2d,
     _phasor_at_harmonic,
@@ -3540,6 +3547,86 @@ def phasor_threshold(
         mean = numpy.asarray(numpy.asarray(mean)[0])
 
     return mean, real, imag
+
+
+def phasor_nearest(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    reference_real: ArrayLike,
+    reference_imag: ArrayLike,
+    values: ArrayLike,
+    /,
+) -> NDArray[Any]:
+    """Return the closest values from one set of phasor coordinates to another.
+
+    Parameters
+    ----------
+    mean : array_like
+        Intensity of phasor coordinates.
+    real : array_like
+        Real component of phasor coordinates
+    imag : array_like
+        Imaginary component of phasor coordinates
+    reference_real : array_like
+        Real component of reference phasor coordinates.
+    reference_imag : array_like
+        Imaginary component of reference phasor coordinates.
+    values : array_like
+        Array of values corresponding to the reference coordinates.
+
+    Returns
+    -------
+    closest_values : ndarray
+        Values corresponding to the closest reference coordinates.
+
+    Examples
+    --------
+
+
+    """
+    mean = numpy.asarray(mean)
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    reference_real = numpy.asarray(reference_real)
+    reference_imag = numpy.asarray(reference_imag)
+    values = numpy.asarray(values)
+
+    if real.shape != imag.shape:
+        raise ValueError(f"Shape mismatch: {real.shape=} != {imag.shape=}")
+    if reference_real.shape != reference_imag.shape:
+        raise ValueError(
+            f"Shape mismatch: {reference_real.shape=} != {reference_imag.shape=}"
+        )
+
+    # replace NaN values with 0.0 for least squares solving
+    real = numpy.nan_to_num(real, nan=0.0, copy=False)
+    imag = numpy.nan_to_num(imag, nan=0.0, copy=False)
+    reference_real = numpy.nan_to_num(reference_real, nan=0.0, copy=False)
+    reference_imag = numpy.nan_to_num(reference_imag, nan=0.0, copy=False)
+
+    real_flat = real.ravel()
+    imag_flat = imag.ravel()
+    reference_real_flat = reference_real.ravel()
+    reference_imag_flat = reference_imag.ravel()
+
+    query_coords = numpy.column_stack((real_flat, imag_flat))
+    reference_coords = numpy.column_stack(
+        (reference_real_flat, reference_imag_flat)
+    )
+
+    tree = KDTree(reference_coords)
+
+    _, indices = tree.query(query_coords)
+    indices = indices.reshape(real.shape)
+
+    closest_values = values.ravel()[indices]
+    closest_values = closest_values.reshape(real.shape)
+
+    # restore NaN values in closest values from mean
+    _blend_and(mean, closest_values, out=closest_values)
+
+    return numpy.asarray(closest_values)
 
 
 def phasor_center(
