@@ -95,6 +95,7 @@ __all__ = [
     'phasor_multiply',
     'phasor_normalize',
     'phasor_semicircle',
+    'phasor_semicircle_intersect',
     'phasor_threshold',
     'phasor_to_apparent_lifetime',
     'phasor_to_complex',
@@ -127,6 +128,7 @@ import numpy
 
 from ._phasorpy import (
     _gaussian_signal,
+    _intersect_semicircle_line,
     _median_filter_2d,
     _phasor_at_harmonic,
     _phasor_divide,
@@ -795,6 +797,65 @@ def phasor_semicircle(
     imag = numpy.sin(arange)
     imag *= 0.5
     return real, imag
+
+
+def phasor_semicircle_intersect(
+    real0: ArrayLike,
+    imag0: ArrayLike,
+    real1: ArrayLike,
+    imag1: ArrayLike,
+    /,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """Return intersection of line through phasors with universal semicircle.
+
+    Return the phasor coordinates of two intersections of the universal
+    semicircle with the line between two phasor coordinates.
+    Return NaN if the line does not intersect the semicircle.
+
+    Parameters
+    ----------
+    real0 : array_like
+        Real component of first set of phasor coordinates.
+    imag0 : array_like
+        Imaginary component of first set of phasor coordinates.
+    real1 : array_like
+        Real component of second set of phasor coordinates.
+    imag1 : array_like
+        Imaginary component of second set of phasor coordinates.
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    real0 : ndarray
+        Real component of first intersect of phasors with semicircle.
+    imag0 : ndarray
+        Imaginary component of first intersect of phasors with semicircle.
+    real0 : ndarray
+        Real component of second intersect of phasors with semicircle.
+    imag0 : ndarray
+        Imaginary component of second intersect of phasors with semicircle.
+
+    Examples
+    --------
+    Calculate two intersects of a line through two phasor coordinates
+    with the universal semicircle:
+
+    >>> phasor_semicircle_intersect(0.2, 0.25, 0.6, 0.25)  # doctest: +NUMBER
+    (0.066, 0.25, 0.933, 0.25)
+
+    The line between two phasor coordinates may not intersect the semicircle
+    at two points:
+
+    >>> phasor_semicircle_intersect(0.2, 0.0, 0.6, 0.25)  # doctest: +NUMBER
+    (nan, nan, 0.817, 0.386)
+
+    """
+    return _intersect_semicircle_line(  # type: ignore[no-any-return]
+        real0, imag0, real1, imag1, **kwargs
+    )
 
 
 def phasor_to_complex(

@@ -1522,7 +1522,7 @@ cdef (float_t, float_t, float_t) _segment_direction_and_length(
 
 
 @cython.ufunc
-cdef (float_t, float_t, float_t, float_t) _intersection_circle_circle(
+cdef (float_t, float_t, float_t, float_t) _intersect_circle_circle(
     float_t x0,  # circle 0
     float_t y0,
     float_t r0,
@@ -1568,7 +1568,7 @@ cdef (float_t, float_t, float_t, float_t) _intersection_circle_circle(
 
 
 @cython.ufunc
-cdef (float_t, float_t, float_t, float_t) _intersection_circle_line(
+cdef (float_t, float_t, float_t, float_t) _intersect_circle_line(
     float_t x,  # circle
     float_t y,
     float_t r,
@@ -1608,6 +1608,42 @@ cdef (float_t, float_t, float_t, float_t) _intersection_circle_line(
         x + <float_t> ((dd * dy - copysign(1.0, dy) * dx * rdd) / dr),
         y + <float_t> ((-dd * dx - fabs(dy) * rdd) / dr),
     )
+
+
+@cython.ufunc
+cdef (float_t, float_t, float_t, float_t) _intersect_semicircle_line(
+    float_t x0,  # line start
+    float_t y0,
+    float_t x1,  # line end
+    float_t y1,
+) noexcept nogil:
+    """Return coordinates of intersections of line and universal semicircle."""
+    cdef:
+        double dx, dy, dr, dd, rdd
+
+    if isnan(x0) or isnan(x1) or isnan(y0) or isnan(y1):
+        return NAN, NAN, NAN, NAN
+
+    dx = x1 - x0
+    dy = y1 - y0
+    dr = dx * dx + dy * dy
+    dd = (x0 - 0.5) * y1 - (x1 - 0.5) * y0
+    rdd = 0.25 * dr - dd * dd  # discriminant
+    if rdd < 0.0 or dr <= 0.0:
+        # no intersection
+        return NAN, NAN, NAN, NAN
+    rdd = sqrt(rdd)
+    x0 = <float_t> ((dd * dy - copysign(1.0, dy) * dx * rdd) / dr + 0.5)
+    y0 = <float_t> ((-dd * dx - fabs(dy) * rdd) / dr)
+    x1 = <float_t> ((dd * dy + copysign(1.0, dy) * dx * rdd) / dr + 0.5)
+    y1 = <float_t> ((-dd * dx + fabs(dy) * rdd) / dr)
+    if y0 < 0.0:
+        x0 = NAN
+        y0 = NAN
+    if y1 < 0.0:
+        x1 = NAN
+        y1 = NAN
+    return x0, y0, x1, y1
 
 
 ###############################################################################

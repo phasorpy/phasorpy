@@ -42,7 +42,7 @@ from matplotlib.path import Path
 from matplotlib.patheffects import AbstractPathEffect
 from matplotlib.widgets import Slider
 
-from ._phasorpy import _intersection_circle_circle, _intersection_circle_line
+from ._phasorpy import _intersect_circle_circle, _intersect_circle_line
 from ._utils import (
     dilate_coordinates,
     parse_kwargs,
@@ -790,11 +790,9 @@ class PhasorPlot:
             if _circle_only:
                 return None
             del kwargs['fill']
-            x0, y0, x1, y1 = _intersection_circle_line(
-                x, y, radius, 0, 0, x, y
-            )
+            x0, y0, x1, y1 = _intersect_circle_line(x, y, radius, 0, 0, x, y)
             ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
-            x0, y0, x1, y1 = _intersection_circle_circle(
+            x0, y0, x1, y1 = _intersect_circle_circle(
                 0, 0, modulation, x, y, radius
             )
             ax.add_patch(

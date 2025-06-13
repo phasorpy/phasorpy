@@ -21,8 +21,8 @@ from phasorpy._phasorpy import (
     _distance_from_segment,
     _fraction_on_line,
     _fraction_on_segment,
-    _intersection_circle_circle,
-    _intersection_circle_line,
+    _intersect_circle_circle,
+    _intersect_circle_line,
     _is_inside_circle,
     _is_inside_ellipse,
     _is_inside_ellipse_,
@@ -225,30 +225,30 @@ def test_segment_direction_and_length(segment, expected):
     assert_allclose(_segment_direction_and_length(*segment), expected)
 
 
-def test_intersection_circle_circle():
-    """Test _intersection_circle_circle function."""
+def test_intersect_circle_circle():
+    """Test _intersect_circle_circle function."""
     assert_allclose(
-        _intersection_circle_circle(
+        _intersect_circle_circle(
             0.0, 0.0, math.hypot(0.6, 0.4), 0.6, 0.4, 0.2
         ),
         [0.686791, 0.219813, 0.467055, 0.549418],
         1e-3,
     )
     assert_array_equal(
-        _intersection_circle_circle(0.0, 0.0, 1.0, 0.6, 0.4, 0.2),
+        _intersect_circle_circle(0.0, 0.0, 1.0, 0.6, 0.4, 0.2),
         [nan, nan, nan, nan],
     )
 
 
-def test__intersection_circle_line():
-    """Test _intersection_circle_line function."""
+def test__intersect_circle_line():
+    """Test _intersect_circle_line function."""
     assert_allclose(
-        _intersection_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.4),
+        _intersect_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.4),
         [0.76641, 0.51094, 0.43359, 0.28906],
         1e-3,
     )
     assert_array_equal(
-        _intersection_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.1),
+        _intersect_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.1),
         [nan, nan, nan, nan],
     )
 
