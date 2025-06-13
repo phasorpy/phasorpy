@@ -43,6 +43,7 @@ from phasorpy.phasor import (
     phasor_multiply,
     phasor_normalize,
     phasor_semicircle,
+    phasor_semicircle_intersect,
     phasor_threshold,
     phasor_to_apparent_lifetime,
     phasor_to_complex,
@@ -735,6 +736,64 @@ def test_phasor_semicircle():
     assert len(real) == 101
     with pytest.raises(ValueError):
         phasor_semicircle(0)
+
+
+def test_phasor_semicircle_intersect():
+    """Test phasor_semicircle_intersect function."""
+    assert_allclose(
+        phasor_semicircle_intersect(
+            [0.2, 0.2, math.nan], [0.25, 0.0, 0.25], 0.6, 0.25
+        ),
+        (
+            [0.066, numpy.nan, numpy.nan],
+            [0.25, numpy.nan, numpy.nan],
+            [0.933, 0.817, numpy.nan],
+            [0.25, 0.386, numpy.nan],
+        ),
+        atol=1e-3,
+    )
+    # reverse order
+    assert_allclose(
+        phasor_semicircle_intersect(
+            0.6, 0.25, [0.2, 0.2, math.nan], [0.25, 0.0, 0.25]
+        ),
+        (
+            [0.933, numpy.nan, numpy.nan],
+            [0.25, numpy.nan, numpy.nan],
+            [0.066, 0.817, numpy.nan],
+            [0.25, 0.386, numpy.nan],
+        ),
+        atol=1e-3,
+    )
+    # no intersection
+    assert_allclose(
+        phasor_semicircle_intersect(0.1, -0.1, 0.9, -0.1),
+        (numpy.nan, numpy.nan, numpy.nan, numpy.nan),
+        atol=1e-3,
+    )
+    # no line
+    assert_allclose(
+        phasor_semicircle_intersect(0.25, 0.25, 0.25, 0.25),
+        (numpy.nan, numpy.nan, numpy.nan, numpy.nan),
+        atol=1e-3,
+    )
+    # tangent
+    assert_allclose(
+        phasor_semicircle_intersect(0.4, 0.5, 0.6, 0.5),
+        (0.5, 0.5, 0.5, 0.5),
+        atol=1e-3,
+    )
+    # lifetime
+    assert_allclose(
+        phasor_semicircle_intersect(
+            *phasor_from_lifetime(80, 4.2),  # single component
+            *phasor_from_lifetime(80, [4.2, 1.1], [1, 1]),  # mixture
+        ),
+        numpy.array(
+            phasor_from_lifetime(80, [4.2, 1.1])  # two single components
+        ).T.flat,
+        atol=1e-4,
+    )
 
 
 def test_phasor_from_polar():

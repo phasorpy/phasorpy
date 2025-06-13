@@ -287,16 +287,16 @@ plot.show()
 #   :math:`S` is the distance from the origin to the phasor coordinates.
 # - the **apparent single lifetime from phase** :math:`\tau_{\varphi}`
 #   of the component mixture is the single exponential lifetime corresponding
-#   to the intercept of the universal circle with a line through the origin
+#   to the intersection of the universal circle with a line through the origin
 #   and the phasor coordinates :math:`G` and :math:`S`.
 # - the **apparent single lifetime from modulation** :math:`\tau_{M}`
 #   of the component mixture is the single exponential lifetime corresponding
-#   to the intercept of the universal circle with a circle around the origin
+#   to the intersection of the universal circle with a circle around the origin
 #   of radius equal to the modulation :math:`M`.
 # - the **normal lifetime** :math:`\tau_{N}` of the component mixture
 #   is the single exponential lifetime corresponding to the nearest point on
 #   the universal circle to the phasor coordinates :math:`G` and :math:`S`,
-#   which is the intercept of the universal circle with the line through the
+#   which is the intersection of the universal circle with the line through the
 #   center of the universal circle and the phasor coordinates :math:`G` and
 #   :math:`S`.
 
