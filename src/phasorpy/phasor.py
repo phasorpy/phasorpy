@@ -833,9 +833,9 @@ def phasor_semicircle_intersect(
         Real component of first intersect of phasors with semicircle.
     imag0 : ndarray
         Imaginary component of first intersect of phasors with semicircle.
-    real0 : ndarray
+    real1 : ndarray
         Real component of second intersect of phasors with semicircle.
-    imag0 : ndarray
+    imag1 : ndarray
         Imaginary component of second intersect of phasors with semicircle.
 
     Examples
