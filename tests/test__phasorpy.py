@@ -240,7 +240,7 @@ def test_intersect_circle_circle():
     )
 
 
-def test__intersect_circle_line():
+def test_intersect_circle_line():
     """Test _intersect_circle_line function."""
     assert_allclose(
         _intersect_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.4),
