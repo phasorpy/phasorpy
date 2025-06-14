@@ -1232,6 +1232,44 @@ _is_near_segment = _is_inside_stadium
 
 
 @cython.ufunc
+cdef unsigned char _is_inside_semicircle(
+    float_t x,  # point
+    float_t y,
+    float_t r,  # distance
+) noexcept nogil:
+    """Return whether point is inside universal semicircle."""
+    if r < 0.0 or isnan(x) or isnan(y):
+        return False
+    if y < -r:
+        return False
+    if y <= 0.0:
+        if x >= 0.0 and x <= 1.0:
+            return True
+        # near endpoints?
+        if x > 0.5:
+            x -= <float_t> 1.0
+        return x * x + y * y <= r * r
+    return hypot(x - 0.5, y) <= r + 0.5
+
+
+@cython.ufunc
+cdef unsigned char _is_near_semicircle(
+    float_t x,  # point
+    float_t y,
+    float_t r,  # distance
+) noexcept nogil:
+    """Return whether point is near universal semicircle."""
+    if r < 0.0 or isnan(x) or isnan(y):
+        return False
+    if y < 0.0:
+        # near endpoints?
+        if x > 0.5:
+            x -= <float_t> 1.0
+        return x * x + y * y <= r * r
+    return fabs(hypot(x - 0.5, y) - 0.5) <= r
+
+
+@cython.ufunc
 cdef unsigned char _is_near_line(
     float_t x,  # point
     float_t y,
