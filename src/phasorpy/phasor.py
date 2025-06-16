@@ -3618,7 +3618,7 @@ def phasor_nearest(
     reference_imag: ArrayLike,
     values: ArrayLike,
     /,
-) -> NDArray[Any]:
+) -> NDArray[numpy.float64]:
     """Return the closest values from one set of phasor coordinates to another.
 
     Parameters
@@ -3643,7 +3643,15 @@ def phasor_nearest(
 
     Examples
     --------
-
+    >>> phasor_nearest(
+    ...     [1, 1, numpy.nan],
+    ...     [0.1, 0.5, numpy.nan],
+    ...     [0.1, 0.5, numpy.nan],
+    ...     [0, 0.4],
+    ...     [0, 0.4],
+    ...     [10, 20],
+    ... )
+    array([10, 20, nan])
 
     """
     mean = numpy.asarray(mean)
@@ -3651,7 +3659,7 @@ def phasor_nearest(
     imag = numpy.asarray(imag)
     reference_real = numpy.asarray(reference_real)
     reference_imag = numpy.asarray(reference_imag)
-    values = numpy.asarray(values)
+    values = numpy.asarray(values, dtype=float)
 
     if real.shape != imag.shape:
         raise ValueError(f"Shape mismatch: {real.shape=} != {imag.shape=}")
