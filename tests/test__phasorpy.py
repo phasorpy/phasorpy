@@ -19,6 +19,7 @@ from phasorpy._phasorpy import (
     _distance_from_line,
     _distance_from_point,
     _distance_from_segment,
+    _distance_from_semicircle,
     _fraction_on_line,
     _fraction_on_segment,
     _intersect_circle_circle,
@@ -197,6 +198,18 @@ def test_distance_from_segment():
     )
 
 
+def test_distance_from_semicircle():
+    """Test _distance_from_semicircle function."""
+    assert_allclose(
+        _distance_from_semicircle(
+            [0.0, 0.5, 1.0, 0.5, 0.5, 0.0, -0.5, 1.0, nan],
+            [0.0, 0.5, 0.0, 0.25, 0.0, -0.5, 0.0, -0.5, 0.0],
+        ),
+        [0.0, 0.0, 0.0, 0.25, 0.5, 0.5, 0.5, 0.5, nan],
+        atol=1e-6,
+    )
+
+
 def test_fraction_on_line():
     """Test _fraction_on_line function."""
     assert_allclose(
@@ -345,10 +358,13 @@ def test_geometric_ufunc_on_grid():
 
     _, ax = pyplot.subplots(9, 2, figsize=(4, 13), layout='constrained')
 
-    plot_points(real, imag, title='grid', ax=ax[0, 0])
+    # plot_points(real, imag, title='grid', ax=ax[0, 0])
 
     distance = _distance_from_point(real, imag, 0.5, 0.5)
-    plot_image(distance, title='_distance_from_point', ax=ax[0, 1])
+    plot_image(distance, title='_distance_from_point', ax=ax[0, 0])
+
+    distance = _distance_from_semicircle(real, imag)
+    plot_image(distance, title='_distance_from_semicircle', ax=ax[0, 1])
 
     distance = _distance_from_line(real, imag, *line)
     plot_image(distance, title='_distance_from_line', ax=ax[1, 0])

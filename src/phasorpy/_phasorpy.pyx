@@ -1536,6 +1536,22 @@ cdef float_t _distance_from_line(
 
 
 @cython.ufunc
+cdef float_t _distance_from_semicircle(
+    float_t x,  # point
+    float_t y,
+) noexcept nogil:
+    """Return distance from universal semicircle."""
+    if isnan(x) or isnan(y):
+        return NAN
+    if y < 0.0:
+        # distance to endpoints
+        if x > 0.5:
+            x -= <float_t> 1.0
+        return <float_t> hypot(x, y)
+    return <float_t> fabs(hypot(x - 0.5, y) - 0.5)
+
+
+@cython.ufunc
 cdef (float_t, float_t, float_t) _segment_direction_and_length(
     float_t x0,  # segment start
     float_t y0,
