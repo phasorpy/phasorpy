@@ -21,16 +21,18 @@ from phasorpy._phasorpy import (
     _distance_from_segment,
     _fraction_on_line,
     _fraction_on_segment,
-    _intersection_circle_circle,
-    _intersection_circle_line,
+    _intersect_circle_circle,
+    _intersect_circle_line,
     _is_inside_circle,
     _is_inside_ellipse,
     _is_inside_ellipse_,
     _is_inside_polar_rectangle,
     _is_inside_range,
     _is_inside_rectangle,
+    _is_inside_semicircle,
     _is_inside_stadium,
     _is_near_line,
+    _is_near_semicircle,
     _point_on_line,
     _point_on_segment,
     _segment_direction_and_length,
@@ -122,6 +124,42 @@ def test_is_inside_stadium():
         [False],
     )
     assert _is_near_segment is _is_near_segment
+
+
+def test_is_inside_semicircle():
+    """Test _is_inside_semicircle function."""
+    real = [0.0, 0.5, 1.0, 0.5, -0.01, 1.01, 0.5, -0.015, math.nan]
+    imag = [0.0, 0.5, 0.0, 0.25, -0.01, -0.01, -1.0, -0.015, 0.0]
+    assert_array_equal(
+        _is_inside_semicircle(real, imag, 0.02).astype(bool),
+        [True, True, True, True, True, True, False, False, False],
+    )
+    assert_array_equal(
+        _is_inside_semicircle(real, imag, 0.0).astype(bool),
+        [True, True, True, True, False, False, False, False, False],
+    )
+    assert_array_equal(
+        _is_inside_semicircle(real, imag, -0.1).astype(bool),
+        [False, False, False, False, False, False, False, False, False],
+    )
+
+
+def test_is_near_semicircle():
+    """Test _is_near_semicircle function."""
+    real = [0.0, 0.5, 1.0, 0.5, -0.01, 1.01, 0.5, -0.015, math.nan]
+    imag = [0.0, 0.5, 0.0, 0.25, -0.01, -0.01, -1.0, -0.015, 0.0]
+    assert_array_equal(
+        _is_near_semicircle(real, imag, 0.02).astype(bool),
+        [True, True, True, False, True, True, False, False, False],
+    )
+    assert_array_equal(
+        _is_near_semicircle(real, imag, 0.0).astype(bool),
+        [True, True, True, False, False, False, False, False, False],
+    )
+    assert_array_equal(
+        _is_near_semicircle(real, imag, -0.1).astype(bool),
+        [False, False, False, False, False, False, False, False, False],
+    )
 
 
 def test_is_near_line():
@@ -225,30 +263,30 @@ def test_segment_direction_and_length(segment, expected):
     assert_allclose(_segment_direction_and_length(*segment), expected)
 
 
-def test_intersection_circle_circle():
-    """Test _intersection_circle_circle function."""
+def test_intersect_circle_circle():
+    """Test _intersect_circle_circle function."""
     assert_allclose(
-        _intersection_circle_circle(
+        _intersect_circle_circle(
             0.0, 0.0, math.hypot(0.6, 0.4), 0.6, 0.4, 0.2
         ),
         [0.686791, 0.219813, 0.467055, 0.549418],
         1e-3,
     )
     assert_array_equal(
-        _intersection_circle_circle(0.0, 0.0, 1.0, 0.6, 0.4, 0.2),
+        _intersect_circle_circle(0.0, 0.0, 1.0, 0.6, 0.4, 0.2),
         [nan, nan, nan, nan],
     )
 
 
-def test__intersection_circle_line():
-    """Test _intersection_circle_line function."""
+def test_intersect_circle_line():
+    """Test _intersect_circle_line function."""
     assert_allclose(
-        _intersection_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.4),
+        _intersect_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.4),
         [0.76641, 0.51094, 0.43359, 0.28906],
         1e-3,
     )
     assert_array_equal(
-        _intersection_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.1),
+        _intersect_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.1),
         [nan, nan, nan, nan],
     )
 
@@ -267,8 +305,8 @@ def test_geometric_ufunc_on_grid():
         mask = mask.astype(bool)
         ax.set(
             aspect='equal',
-            xlim=[0, 1],
-            ylim=[0, 1],
+            xlim=[-0.05, 1.05],
+            ylim=[-0.05, 1.05],
             xticks=[],
             yticks=[],
             **kwargs,
@@ -282,8 +320,8 @@ def test_geometric_ufunc_on_grid():
         ax = kwargs.pop('ax') if not show else pyplot.subplot()
         ax.set(
             aspect='equal',
-            xlim=[0, 1],
-            ylim=[0, 1],
+            xlim=[-0.05, 1.05],
+            ylim=[-0.05, 1.05],
             xticks=[],
             yticks=[],
             **kwargs,
@@ -302,10 +340,10 @@ def test_geometric_ufunc_on_grid():
             pyplot.show()
 
     line = (0.25, 0.75, 0.75, 0.25)
-    coords = numpy.linspace(0.0, 1.0, 501)
+    coords = numpy.linspace(-0.05, 1.05, 501)
     real, imag = numpy.meshgrid(coords, coords)
 
-    _, ax = pyplot.subplots(8, 2, figsize=(6.4, 12), layout='constrained')
+    _, ax = pyplot.subplots(9, 2, figsize=(4, 13), layout='constrained')
 
     plot_points(real, imag, title='grid', ax=ax[0, 0])
 
@@ -356,6 +394,12 @@ def test_geometric_ufunc_on_grid():
     plot_mask(real, imag, mask, title='_is_inside_range', ax=ax[7, 0])
 
     plot_points([], [], title='', ax=ax[7, 1])
+
+    mask = _is_near_semicircle(real, imag, 0.02)
+    plot_mask(real, imag, mask, title='_is_near_semicircle', ax=ax[8, 0])
+
+    mask = _is_inside_semicircle(real, imag, 0.02)
+    plot_mask(real, imag, mask, title='_is_inside_semicircle', ax=ax[8, 1])
 
     if show:
         pyplot.show()
