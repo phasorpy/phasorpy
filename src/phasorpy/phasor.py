@@ -130,7 +130,6 @@ if TYPE_CHECKING:
     )
 
 import numpy
-from scipy.spatial import KDTree
 
 from ._phasorpy import (
     _blend_and,
@@ -3654,6 +3653,8 @@ def phasor_nearest(
     array([10, 20, nan])
 
     """
+    from scipy.spatial import KDTree
+
     mean = numpy.asarray(mean)
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
