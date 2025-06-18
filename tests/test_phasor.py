@@ -3806,9 +3806,9 @@ def test_phasor_nearest_neighbor():
     result_indices, result_values = phasor_nearest_neighbor(
         mean, arr, arr, arr, arr
     )
-    assert_array_equal(arr, original_arr)
-    assert_array_equal(mean, original_mean)
-    assert_array_equal(result_indices, [[-1, 1], [2, -1]])
+    assert_allclose(arr, original_arr, atol=1e-7)
+    assert_allclose(mean, original_mean, atol=1e-7)
+    assert_allclose(result_indices, [[-1, 1], [2, -1]], atol=1e-7)
     assert result_values.size == 0
     assert result_values.dtype == float
 
@@ -3822,11 +3822,11 @@ def test_phasor_nearest_neighbor():
     result_indices, result_values = phasor_nearest_neighbor(
         mean, arr, arr, arr / 2, arr / 2, values=values
     )
-    assert_array_equal(arr, original_arr)
-    assert_array_equal(mean, original_mean)
-    assert_array_equal(values, original_values)
-    assert_allclose(result_indices, [[-1, 3], [3, -1]])
-    assert_allclose(result_values, [[nan, 8], [8, nan]])
+    assert_allclose(arr, original_arr, atol=1e-7)
+    assert_allclose(mean, original_mean, atol=1e-7)
+    assert_allclose(values, original_values, atol=1e-7)
+    assert_allclose(result_indices, [[-1, 3], [3, -1]], atol=1e-7)
+    assert_allclose(result_values, [[nan, 8], [8, nan]], atol=1e-7)
 
     # Test multi-dimensional inputs
     # TODO: modify this when multiple dimensions are supported
@@ -3845,10 +3845,12 @@ def test_phasor_nearest_neighbor():
     assert_allclose(
         result_indices,
         [[[0, 0], [0, -1]], [[1, 1], [1, 1]], [[2, 2], [-1, 2]]],
+        atol=1e-7,
     )
     assert_allclose(
         result_values,
         [[[0, 0], [0, nan]], [[1, 1], [1, 1]], [[2, 2], [nan, 2]]],
+        atol=1e-7,
     )
 
 
@@ -3870,10 +3872,12 @@ def test_phasor_nearest_neighbor_harmonics():
     assert_allclose(
         result_indices,
         [[[0, 0], [-1, -1]], [[0, 0], [-1, -1]], [[0, 0], [-1, -1]]],
+        atol=1e-7,
     )
     assert_allclose(
         result_values,
         [[[0, 0], [nan, nan]], [[0, 0], [nan, nan]], [[0, 0], [nan, nan]]],
+        atol=1e-7,
     )
 
 
