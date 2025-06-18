@@ -41,6 +41,7 @@ from phasorpy.phasor import (
     phasor_from_polar,
     phasor_from_signal,
     phasor_multiply,
+    phasor_nearest_neighbor,
     phasor_normalize,
     phasor_semicircle,
     phasor_semicircle_intersect,
@@ -3791,6 +3792,112 @@ def test_phasor_threshold_harmonic():
     assert_allclose(mean1, mean_)
     assert_allclose(real1, real_)
     assert_allclose(imag1, imag_)
+
+
+def test_phasor_nearest_neighbor():
+    """Test phasor_nearest_neighbor function."""
+    nan = numpy.nan
+
+    # Test input arrays are not modified, no values
+    mean = numpy.array([[1, 2], [3, nan]])
+    original_mean = mean.copy()
+    arr = numpy.array([[nan, 2], [3, 4]])
+    original_arr = arr.copy()
+    result_indices, result_values = phasor_nearest_neighbor(
+        mean, arr, arr, arr, arr
+    )
+    assert_array_equal(arr, original_arr)
+    assert_array_equal(mean, original_mean)
+    assert_array_equal(result_indices, [[-1, 1], [2, -1]])
+    assert result_values.size == 0
+    assert result_values.dtype == float
+
+    # Test input arrays are not modified, with values
+    mean = numpy.array([[1, 2], [3, nan]])
+    original_mean = mean.copy()
+    arr = numpy.array([[nan, 2], [3, 4]])
+    original_arr = arr.copy()
+    values = numpy.array([[5, 6], [7, 8]])
+    original_values = values.copy()
+    result_indices, result_values = phasor_nearest_neighbor(
+        mean, arr, arr, arr / 2, arr / 2, values=values
+    )
+    assert_array_equal(arr, original_arr)
+    assert_array_equal(mean, original_mean)
+    assert_array_equal(values, original_values)
+    assert_array_equal(result_indices, [[-1, 3], [3, -1]])
+    assert_array_equal(result_values, [[nan, 8], [8, nan]])
+
+    # Test multi-dimensional inputs
+    # TODO: modify this when multiple dimensions are supported
+    arr = numpy.array(
+        [[[1, 1], [1, nan]], [[2, 2], [2, 2]], [[3, 3], [nan, 3]]]
+    )
+    neighbor_arr = numpy.array(
+        [[[1, 2], [3, 4]], [[2, 3], [4, 5]], [[3, 4], [5, 6]]]
+    )
+    values = numpy.array(
+        [[[0, 1], [2, 3]], [[4, 5], [6, 7]], [[8, 9], [10, 11]]]
+    )
+    result_indices, result_values = phasor_nearest_neighbor(
+        arr, arr, arr, neighbor_arr, neighbor_arr, values=values
+    )
+    assert_array_equal(
+        result_indices,
+        [[[0, 0], [0, -1]], [[1, 1], [1, 1]], [[2, 2], [-1, 2]]],
+    )
+    assert_array_equal(
+        result_values,
+        [[[0, 0], [0, nan]], [[1, 1], [1, 1]], [[2, 2], [nan, 2]]],
+    )
+
+
+@pytest.mark.xfail(reason='Muiltiple harmonics not yet supported')
+def test_phasor_nearest_neighbor_harmonics():
+    """Test phasor_nearest_neighbor function with multiple harmonics."""
+    nan = numpy.nan
+    mean = numpy.array([[1, 2], [3, nan]])
+    arr = numpy.array(
+        [[[1, 1], [1, nan]], [[2, 2], [2, 2]], [[3, 3], [nan, 3]]]
+    )
+    neighbor_arr = numpy.array(
+        [[[1, 2], [3, 4]], [[2, 3], [4, 5]], [[3, 4], [5, 6]]]
+    )
+    values = numpy.array([[0, 1], [2, 3]])
+    result_indices, result_values = phasor_nearest_neighbor(
+        mean, arr, arr, neighbor_arr, neighbor_arr, values=values
+    )
+    assert_array_equal(
+        result_indices,
+        [[[0, 0], [-1, -1]], [[0, 0], [-1, -1]], [[0, 0], [-1, -1]]],
+    )
+    assert_array_equal(
+        result_values,
+        [[[0, 0], [nan, nan]], [[0, 0], [nan, nan]], [[0, 0], [nan, nan]]],
+    )
+
+
+def test_phasor_nearest_neighbor_errors():
+    """Test phasor_nearest_neighbor function errors."""
+    arr = numpy.ones((3, 2))
+
+    # Shape mismatch between mean and real
+    with pytest.raises(ValueError):
+        phasor_nearest_neighbor(numpy.ones(3), arr, arr, arr, arr)
+
+    # Shape mismatch between real and imag
+    with pytest.raises(ValueError):
+        phasor_nearest_neighbor(arr, arr, numpy.ones((3, 3)), arr, arr)
+
+    # Shape mismatch between neighbor_real and neighbor_imag
+    with pytest.raises(ValueError):
+        phasor_nearest_neighbor(arr, arr, arr, arr, numpy.ones((3, 3)))
+
+    # Shape mismatch between values and neighbor_real
+    with pytest.raises(ValueError):
+        phasor_nearest_neighbor(
+            arr, arr, arr, arr, arr, values=numpy.ones((3, 3))
+        )
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls
