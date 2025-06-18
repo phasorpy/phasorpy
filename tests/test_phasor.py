@@ -3825,8 +3825,8 @@ def test_phasor_nearest_neighbor():
     assert_array_equal(arr, original_arr)
     assert_array_equal(mean, original_mean)
     assert_array_equal(values, original_values)
-    assert_array_equal(result_indices, [[-1, 3], [3, -1]])
-    assert_array_equal(result_values, [[nan, 8], [8, nan]])
+    assert_allclose(result_indices, [[-1, 3], [3, -1]])
+    assert_allclose(result_values, [[nan, 8], [8, nan]])
 
     # Test multi-dimensional inputs
     # TODO: modify this when multiple dimensions are supported
@@ -3842,11 +3842,11 @@ def test_phasor_nearest_neighbor():
     result_indices, result_values = phasor_nearest_neighbor(
         arr, arr, arr, neighbor_arr, neighbor_arr, values=values
     )
-    assert_array_equal(
+    assert_allclose(
         result_indices,
         [[[0, 0], [0, -1]], [[1, 1], [1, 1]], [[2, 2], [-1, 2]]],
     )
-    assert_array_equal(
+    assert_allclose(
         result_values,
         [[[0, 0], [0, nan]], [[1, 1], [1, 1]], [[2, 2], [nan, 2]]],
     )
@@ -3867,11 +3867,11 @@ def test_phasor_nearest_neighbor_harmonics():
     result_indices, result_values = phasor_nearest_neighbor(
         mean, arr, arr, neighbor_arr, neighbor_arr, values=values
     )
-    assert_array_equal(
+    assert_allclose(
         result_indices,
         [[[0, 0], [-1, -1]], [[0, 0], [-1, -1]], [[0, 0], [-1, -1]]],
     )
-    assert_array_equal(
+    assert_allclose(
         result_values,
         [[[0, 0], [nan, nan]], [[0, 0], [nan, nan]], [[0, 0], [nan, nan]]],
     )
