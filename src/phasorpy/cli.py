@@ -83,6 +83,58 @@ def fret(hide: bool) -> None:
         plot.show()
 
 
+@main.command(help='Start interactive lifetime plots.')
+@click.option(
+    '-f',
+    '--frequency',
+    default=60.0,
+    type=float,
+    required=False,
+    help='Laser/modulation frequency in MHz.',
+)
+@click.option(
+    '-l',
+    '--lifetime',
+    default=(4.0, 1.0),
+    type=float,
+    multiple=True,
+    required=False,
+    help='Lifetime in ns.',
+)
+@click.option(
+    '-a',
+    '--fraction',
+    type=float,
+    multiple=True,
+    required=False,
+    help='Fractional intensity of lifetime.',
+)
+@click.option(
+    '--hide',
+    default=False,
+    is_flag=True,
+    type=click.BOOL,
+    help='Do not show interactive plot.',
+)
+def lifetime(
+    frequency: float,
+    lifetime: tuple[float, ...],
+    fraction: tuple[float, ...],
+    hide: bool,
+) -> None:
+    """Lifetime command group."""
+    from .plot import LifetimePlots
+
+    plot = LifetimePlots(
+        frequency,
+        lifetime,
+        fraction if len(fraction) > 0 else None,
+        interactive=True,
+    )
+    if not hide:
+        plot.show()
+
+
 if __name__ == '__main__':
     import sys
 

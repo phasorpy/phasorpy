@@ -679,7 +679,7 @@ def lifetime_to_signal(
         mean = 1.0
     mean = numpy.asarray(mean)
     mean -= background
-    if numpy.any(mean <= 0.0):
+    if numpy.any(mean < 0.0):
         raise ValueError('mean - background must not be less than zero')
 
     scale = samples / (2.0 * math.pi)
