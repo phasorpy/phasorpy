@@ -31,9 +31,9 @@ from ..plot._phasorplot import (
 
 
 class LifetimePlots:
-    """Plot lifetimes in time-domain, frequency-domain, and phasor plot.
+    """Plot lifetimes in time domain, frequency domain, and phasor plot.
 
-    Plot the time-domain signals, phasor coordinates, and multi-frequency
+    Plot the time domain signals, phasor coordinates, and multi-frequency
     phase and modulation curves for a set of lifetime components and their
     mixture at given frequency and fractional intensities.
 
@@ -52,7 +52,7 @@ class LifetimePlots:
         Default is (10.0, 200.0, 1.0).
     lifetime_range : tuple[float, float, float], optional
         Range of lifetimes in ns for lifetime sliders.
-        Default is (0.1, 20.0, 0.1).
+        Default is (0.0, 20.0, 0.1).
     interactive: bool
         If True, add sliders to change frequency and lifetimes interactively.
         Default is False.
@@ -65,7 +65,7 @@ class LifetimePlots:
     _frequency: float  # current frequency in MHz
     _zero_phase: float | None = None  # location of IRF peak in the phase
     _zero_stdev: float | None = None  # standard deviation of IRF in radians
-    _frequencies: NDArray[Any]  # for frequency-domain plot
+    _frequencies: NDArray[Any]  # for frequency domain plot
 
     _time_plot: Axes
     _phasor_plot: Axes
@@ -110,7 +110,7 @@ class LifetimePlots:
         fraction: ArrayLike | None = None,
         *,
         frequency_range: tuple[float, float, float] = (10.0, 200.0, 1.0),
-        lifetime_range: tuple[float, float, float] = (0.1, 20.0, 0.1),
+        lifetime_range: tuple[float, float, float] = (0.0, 20.0, 0.1),
         interactive: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -149,7 +149,7 @@ class LifetimePlots:
         if interactive:
             fcm = fig.canvas.manager
             if fcm is not None:
-                fcm.set_window_title('Lifetime plots')
+                fcm.set_window_title('PhasorPy lifetime plots')
 
         self._signal_lines = []
         self._phasor_lines = []
@@ -157,9 +157,9 @@ class LifetimePlots:
         self._phase_lines = []
         self._modulation_lines = []
 
-        # time-domain plot
-        time_plot.set_title('Time-domain')
-        time_plot.set_xlabel('Times [ns]')
+        # time domain plot
+        time_plot.set_title('Time domain')
+        time_plot.set_xlabel('Time [ns]')
         time_plot.set_ylabel('Intensity [normalized]')
         lines = time_plot.plot(
             times, signal, label='Signal', color='tab:blue', lw=2, zorder=10
@@ -215,8 +215,8 @@ class LifetimePlots:
                 )
                 self._phasor_points.append(lines[0])
 
-        # frequency-domain plot
-        phase_plot.set_title('Frequency-domain')
+        # frequency domain plot
+        phase_plot.set_title('Frequency domain')
         phase_plot.set_xscale('log', base=10)
         phase_plot.set_xlabel('Frequency (MHz)')
         phase_plot.set_ylabel('Phase (°)', color='tab:blue')
@@ -457,7 +457,7 @@ class LifetimePlots:
                     )
                 )
             self._frequency_line.set_data([frequency, frequency], [0, 90])
-            # self._time_plot.set_title(f'Time-domain ({frequency:.0f} MHz)')
+            # self._time_plot.set_title(f'Time domain ({frequency:.0f} MHz)')
             # self._phasor_plot.set_title(f'Phasor plot ({frequency:.0f} MHz)')
 
         lifetimes = numpy.asarray([s.val for s in self._lifetime_sliders])
@@ -488,7 +488,7 @@ class LifetimePlots:
             component_modulation_,
         ) = self._calculate(frequency, lifetimes, fractions)
 
-        # time-domain plot
+        # time domain plot
         self._signal_lines[0].set_data(times, signal)
         if num_components > 1:
             for i in range(num_components):
@@ -510,7 +510,7 @@ class LifetimePlots:
                     [component_imag[i]],
                 )
 
-        # frequency-domain plot
+        # frequency domain plot
         self._frequency_line.set_data([frequency, frequency], [0, 90])
         self._phase_point.set_data([frequency], [phase])
         self._modulation_point.set_data([frequency], [modulation])

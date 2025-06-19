@@ -66,7 +66,7 @@ def test_lifetime_plots_three():
     plot._frequency_slider.set_val(80.0)
     plot._lifetime_sliders[0].set_val(8.0)
     plot._lifetime_sliders[1].set_val(4.0)
-    plot._lifetime_sliders[2].set_val(1.0)
+    plot._lifetime_sliders[2].set_val(0.0)
     plot._fraction_sliders[0].set_val(0.5)
     plot._fraction_sliders[1].set_val(0.3)
     plot._fraction_sliders[2].set_val(0.2)
