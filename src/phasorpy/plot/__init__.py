@@ -12,6 +12,7 @@ __all__: list[str] = []
 
 from .._utils import init_module
 from ._functions import *
+from ._lifetime_plots import *
 from ._phasorplot import *
 from ._phasorplot_fret import *
 

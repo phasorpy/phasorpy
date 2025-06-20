@@ -37,5 +37,18 @@ def test_fret():
     assert result.exit_code == 0
 
 
+def test_lifetime():
+    """Test ``python -m phasorpy lifetime``."""
+    runner = CliRunner()
+    result = runner.invoke(main, ['lifetime', '--hide'])
+    assert result.exit_code == 0
+    result = runner.invoke(main, ['lifetime', '-f 60', '-l 4.2', '--hide'])
+    assert result.exit_code == 0
+    result = runner.invoke(
+        main, ['lifetime', '-l 4.2', '-l 1.0', '-a 0.6', '-a 0.4', '--hide']
+    )
+    assert result.exit_code == 0
+
+
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"

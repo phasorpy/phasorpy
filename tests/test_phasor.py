@@ -706,9 +706,9 @@ def test_lifetime_to_signal_error():
     with pytest.raises(ValueError):
         lifetime_to_signal(40.0, 4.2, samples=15)
     with pytest.raises(ValueError):
-        lifetime_to_signal(40.0, 4.2, mean=0.0)
+        lifetime_to_signal(40.0, 4.2, mean=-0.1)
     with pytest.raises(ValueError):
-        lifetime_to_signal(40.0, 4.2, mean=1.0, background=1.0)
+        lifetime_to_signal(40.0, 4.2, mean=1.0, background=1.1)
     with pytest.raises(ValueError):
         lifetime_to_signal(40.0, 4.2, zero_phase=-1.0)
     with pytest.raises(ValueError):
