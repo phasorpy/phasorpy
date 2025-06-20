@@ -18,6 +18,7 @@ from matplotlib.widgets import Slider
 
 from .._utils import update_kwargs
 from ..phasor import (
+    lifetime_to_frequency,
     lifetime_to_signal,
     phasor_from_lifetime,
     phasor_to_polar,
@@ -41,6 +42,8 @@ class LifetimePlots:
     ----------
     frequency : float
         Fundamental laser pulse or modulation frequency in MHz.
+        If None, an optimal frequency is calculated from the mean of the
+        lifetime components.
     lifetime : array_like
         Lifetime components in ns. Up to 6 components are supported.
     fraction : array_like, optional
@@ -105,7 +108,7 @@ class LifetimePlots:
 
     def __init__(
         self,
-        frequency: float,
+        frequency: float | None,
         lifetime: ArrayLike,
         fraction: ArrayLike | None = None,
         *,
@@ -114,10 +117,10 @@ class LifetimePlots:
         interactive: bool = False,
         **kwargs: Any,
     ) -> None:
-        self._frequency = float(frequency)
         self._frequencies = numpy.logspace(-1, 4, self._samples)
 
         (
+            frequency,
             lifetimes,
             fractions,
             signal,
@@ -135,6 +138,8 @@ class LifetimePlots:
             component_phase_,
             component_modulation_,
         ) = self._calculate(frequency, lifetime, fraction)
+
+        self._frequency = frequency
 
         num_components = max(lifetimes.size, 1)
         if num_components > 6:
@@ -343,11 +348,12 @@ class LifetimePlots:
 
     def _calculate(
         self,
-        frequency: float,
+        frequency: float | None,
         lifetimes: ArrayLike,
         fractions: ArrayLike | None,
         /,
     ) -> tuple[
+        float,  # frequency
         NDArray[Any],  # lifetimes
         NDArray[Any],  # fractions
         NDArray[Any],  # signal
@@ -366,7 +372,6 @@ class LifetimePlots:
         NDArray[Any],  # component_modulation_
     ]:
         """Return values for plotting."""
-        frequency = float(frequency)
         lifetimes = numpy.asarray(lifetimes)
         num_components = max(lifetimes.size, 1)
 
@@ -382,6 +387,13 @@ class LifetimePlots:
                 fractions = numpy.clip(fractions / s, 0.0, 1.0)
             else:
                 fractions = numpy.ones(num_components) / num_components
+
+        if frequency is None:
+            frequency = float(
+                # lifetime_to_frequency(numpy.atleast_1d(lifetimes)[0])
+                # lifetime_to_frequency(numpy.mean(lifetimes * fractions))
+                lifetime_to_frequency(numpy.mean(lifetimes))
+            )
 
         signal, irf, times = lifetime_to_signal(
             frequency,
@@ -425,6 +437,7 @@ class LifetimePlots:
         )
 
         return (
+            frequency,
             lifetimes,
             fractions,
             signal,
@@ -470,6 +483,7 @@ class LifetimePlots:
             fractions = numpy.asarray([fractions[0], 1.0 - fractions[0]])
 
         (
+            frequency,
             lifetimes,
             fractions,
             signal,

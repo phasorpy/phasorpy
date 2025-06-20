@@ -87,7 +87,6 @@ def fret(hide: bool) -> None:
 @click.option(
     '-f',
     '--frequency',
-    default=60.0,
     type=float,
     required=False,
     help='Laser/modulation frequency in MHz.',
@@ -117,7 +116,7 @@ def fret(hide: bool) -> None:
     help='Do not show interactive plot.',
 )
 def lifetime(
-    frequency: float,
+    frequency: float | None,
     lifetime: tuple[float, ...],
     fraction: tuple[float, ...],
     hide: bool,

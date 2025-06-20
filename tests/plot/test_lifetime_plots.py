@@ -78,7 +78,7 @@ def test_lifetime_plots_three():
 def test_lifetime_plots_four():
     """Test LifetimePlots interactive with four components."""
     plot = LifetimePlots(
-        frequency=80.0,
+        frequency=None,
         lifetime=(8, 4, 2, 1),
         fraction=(0, 0, 0, 0),
         interactive=True,
@@ -86,6 +86,7 @@ def test_lifetime_plots_four():
     assert len(plot._lifetime_sliders) == 4
     assert len(plot._fraction_sliders) == 4
     assert plot._fraction_sliders[0].val == 0.25
+    assert plot._frequency_slider.val == 50.0
     if INTERACTIVE:
         plot.show()
     pyplot.close()
