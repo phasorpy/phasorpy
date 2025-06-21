@@ -70,6 +70,10 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_filter_pawflim`
   - :py:func:`phasor_threshold`
 
+- find nearest neighbor phasor coordinates from another set of phasor coordinates:
+
+  - :py:func:`phasor_nearest_neighbor`
+
 """
 
 from __future__ import annotations
@@ -93,6 +97,7 @@ __all__ = [
     'phasor_from_polar',
     'phasor_from_signal',
     'phasor_multiply',
+    'phasor_nearest_neighbor',
     'phasor_normalize',
     'phasor_semicircle',
     'phasor_semicircle_intersect',
@@ -127,9 +132,11 @@ if TYPE_CHECKING:
 import numpy
 
 from ._phasorpy import (
+    _blend_and,
     _gaussian_signal,
     _intersect_semicircle_line,
     _median_filter_2d,
+    _nearest_neighbor_2d,
     _phasor_at_harmonic,
     _phasor_divide,
     _phasor_from_apparent_lifetime,
@@ -3601,6 +3608,140 @@ def phasor_threshold(
         mean = numpy.asarray(numpy.asarray(mean)[0])
 
     return mean, real, imag
+
+
+def phasor_nearest_neighbor(
+    real: ArrayLike,
+    imag: ArrayLike,
+    neighbor_real: ArrayLike,
+    neighbor_imag: ArrayLike,
+    /,
+    *,
+    values: ArrayLike | None = None,
+    distance_max: float | None = None,
+    num_threads: int | None = None,
+) -> NDArray[Any]:
+    """Return indices and values of nearest neighbor from other coordinates.
+
+    For each phasor coordinate, finds the nearest neighbor in another set of
+    coordinates. Invalid coordinates are handled by returning an index of -1.
+    If `values` are provided, the function returns both the indices and the
+    corresponding values from the neighbor coordinates.
+
+    Parameters
+    ----------
+    mean : array_like
+        Intensity of phasor coordinates.
+    real : array_like
+        Real component of phasor coordinates
+    imag : array_like
+        Imaginary component of phasor coordinates
+    neighbor_real : array_like
+        Real component of neighbor phasor coordinates.
+    neighbor_imag : array_like
+        Imaginary component of neighbor phasor coordinates.
+    values : array_like, optional
+        Array of values corresponding to the neighbor coordinates.
+        If provided, the function returns the values corresponding
+        to the nearest neighbor coordinates.
+    distance_max : float, optional
+        Maximum Euclidean distance to consider a neighbor valid.
+        If not provided, all neighbors are considered.
+    num_threads : int, optional
+        Number of OpenMP threads to use for parallelization.
+        By default, multi-threading is disabled.
+        If zero, up to half of logical CPUs are used.
+        OpenMP may not be available on all platforms.
+
+    Returns
+    -------
+    nearest : ndarray
+        Indices (or the corresponding values if provided) of the nearest
+        neighbor coordinates.
+
+    Raises
+    ------
+    ValueError
+        If the shapes of `mean`, `real`, and `imag` do not match.
+        If the shapes of `neighbor_real` and `neighbor_imag` do not match.
+        If the shapes of `values` and `neighbor_real` do not match.
+        If `distance_max` is less than or equal to zero.
+
+    Notes
+    -----
+    This function is designed to work with single harmonic, single channel,
+    single frequency data. All input dimensions are flattened, and the nearest
+    neighbor is calculated across all dimensions. As a result, this function
+    does not support multi-harmonic, multi-channel, or multi-frequency data.
+    If more than one neighbor has the same distance, the one with the smallest
+    index is returned.
+
+    Examples
+    --------
+    >>> phasor_nearest_neighbor(
+    ...     [0.1, 0.5, numpy.nan],
+    ...     [0.1, 0.5, numpy.nan],
+    ...     [0, 0.4],
+    ...     [0, 0.4],
+    ...     values=[10, 20],
+    ... )
+    array([10, 20, nan])
+
+    """
+    real = numpy.asarray(real, dtype=float)
+    imag = numpy.asarray(imag, dtype=float)
+    neighbor_real = numpy.asarray(neighbor_real, dtype=float)
+    neighbor_imag = numpy.asarray(neighbor_imag, dtype=float)
+
+    if real.shape != imag.shape:
+        raise ValueError(f"Shape mismatch: {real.shape=} != {imag.shape=}")
+    if neighbor_real.shape != neighbor_imag.shape:
+        raise ValueError(
+            f"Shape mismatch: {neighbor_real.shape=} != {neighbor_imag.shape=}"
+        )
+
+    real_flat = real.ravel()
+    imag_flat = imag.ravel()
+    neighbor_real_flat = neighbor_real.ravel()
+    neighbor_imag_flat = neighbor_imag.ravel()
+
+    indices = numpy.empty_like(real_flat, dtype=numpy.intp)
+
+    if distance_max is None:
+        distance_max = numpy.inf
+    else:
+        distance_max = float(distance_max)
+        if distance_max <= 0:
+            raise ValueError(f'{distance_max=} <= 0')
+
+    num_threads = number_threads(num_threads)
+
+    _nearest_neighbor_2d(
+        indices,
+        real_flat,
+        imag_flat,
+        neighbor_real_flat,
+        neighbor_imag_flat,
+        distance_max,
+        num_threads,
+    )
+
+    indices = indices.reshape(real.shape)
+
+    if values is not None:
+
+        values = numpy.asarray(values, dtype=float)
+        if values.shape != neighbor_real.shape:
+            raise ValueError(f'{values.shape=} != {neighbor_real.shape=}')
+
+        nearest_values = numpy.where(
+            indices == -1, numpy.nan, values.ravel()[indices]
+        )
+        nearest_values = nearest_values.reshape(real.shape)
+
+        return numpy.asarray(nearest_values)
+
+    return numpy.asarray(indices)
 
 
 def phasor_center(

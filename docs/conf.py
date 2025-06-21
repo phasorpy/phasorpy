@@ -148,6 +148,7 @@ class TutorialOrder:
         'pca',
         # applications
         'component_fit',
+        'fret_efficiency',
         # benchmarks
         'phasor_from_signal',
     ]

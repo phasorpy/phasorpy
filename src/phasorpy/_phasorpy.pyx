@@ -1700,6 +1700,58 @@ cdef (float_t, float_t, float_t, float_t) _intersect_semicircle_line(
     return x0, y0, x1, y1
 
 
+def _nearest_neighbor_2d(
+    ssize_t[::1] indices,
+    const float_t[::1] x0,
+    const float_t[::1] y0,
+    const float_t[::1] x1,
+    const float_t[::1] y1,
+    const float_t distance_max,
+    const int num_threads
+):
+    """Find nearest neighbors in 2D.
+
+    For each point in the first set of arrays (x0, y0) find the nearest point
+    in the second set of arrays (x1, y1) and store the index of the nearest
+    point in the second array in the indices array.
+    If any coordinates are NaN, the index is set to -1.
+
+    """
+    cdef:
+        ssize_t i, j, index
+        float_t x, y, dmin, distance_max_squared
+
+    if (
+        indices.shape[0] != x0.shape[0]
+        or x0.shape[0] != y0.shape[0]
+        or x1.shape[0] != y1.shape[0]
+    ):
+        raise ValueError('input array size mismatch')
+
+    distance_max_squared = distance_max * distance_max
+
+    with nogil, parallel(num_threads=num_threads):
+        for i in prange(x0.shape[0]):
+            x = x0[i]
+            y = y0[i]
+            if isnan(x) or isnan(y):
+                indices[i] = -1
+                continue
+            index = -1
+            dmin = INFINITY
+            for j in range(x1.shape[0]):
+                x = x0[i] - x1[j]
+                y = y0[i] - y1[j]
+                x = x * x + y * y
+                if x < dmin:
+                    dmin = x
+                    index = j
+            if dmin > distance_max_squared:
+                indices[i] = -1
+            else:
+                indices[i] = index
+
+
 ###############################################################################
 # Blend ufuncs
 
