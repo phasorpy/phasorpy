@@ -3845,7 +3845,7 @@ def test_phasor_nearest_neighbor():
     # TODO: num_threads parameter not tested
 
 
-@pytest.mark.xfail(reason='Muiltiple harmonics not yet supported')
+@pytest.mark.xfail(reason='Multiple harmonics not yet supported')
 def test_phasor_nearest_neighbor_harmonics():
     """Test phasor_nearest_neighbor function with multiple harmonics."""
     nan = numpy.nan
