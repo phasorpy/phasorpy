@@ -8,8 +8,8 @@ coordinates onto the FRET efficiency trajectory.
 
 The :py:func:`phasorpy.phasor.phasor_from_fret_donor` function can be
 used to calculate the FRET efficiency trajectory and the
-:py:func::py:func:`phasorpy.phasor.phasor_nearest_neighbor` function
-can be used to estimate the FRET efficiency from the phasor coordinates.
+:py:func:`phasorpy.phasor.phasor_nearest_neighbor` function can be used
+to estimate the FRET efficiency from the phasor coordinates.
 
 """
 
@@ -76,8 +76,7 @@ donor_trajectory_real, donor_trajectory_imag = phasor_from_fret_donor(
 # Estimate and visualize the FRET efficiency values
 # from donor phasor coordinates:
 
-trajectory_indices, fret_efficiency_values = phasor_nearest_neighbor(
-    mean,
+fret_efficiency_values = phasor_nearest_neighbor(
     real,
     imag,
     donor_trajectory_real,

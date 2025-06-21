@@ -3799,34 +3799,29 @@ def test_phasor_nearest_neighbor():
     nan = numpy.nan
 
     # Test input arrays are not modified, no values
-    mean = numpy.array([[1, 2], [3, nan]])
-    original_mean = mean.copy()
     arr = numpy.array([[nan, 2], [3, 4]])
     original_arr = arr.copy()
-    result_indices, result_values = phasor_nearest_neighbor(
-        mean, arr, arr, arr, arr
-    )
-    assert_allclose(arr, original_arr, atol=1e-7)
-    assert_allclose(mean, original_mean, atol=1e-7)
-    assert_allclose(result_indices, [[-1, 1], [2, -1]], atol=1e-7)
-    assert result_values.size == 0
-    assert result_values.dtype == float
+    result = phasor_nearest_neighbor(arr, arr, arr, arr)
+    assert_array_equal(arr, original_arr)
+    assert_array_equal(result, [[-1, 1], [2, 3]])
 
     # Test input arrays are not modified, with values
-    mean = numpy.array([[1, 2], [3, nan]])
-    original_mean = mean.copy()
-    arr = numpy.array([[nan, 2], [3, 4]])
-    original_arr = arr.copy()
     values = numpy.array([[5, 6], [7, 8]])
     original_values = values.copy()
-    result_indices, result_values = phasor_nearest_neighbor(
-        mean, arr, arr, arr / 2, arr / 2, values=values
+    result = phasor_nearest_neighbor(arr, arr, arr / 2, arr / 2, values=values)
+    assert_array_equal(arr, original_arr)
+    assert_array_equal(values, original_values)
+    assert_array_equal(result, [[nan, 8], [8, 8]])
+
+    # Test distance_max parameter
+    result = phasor_nearest_neighbor(arr, arr, [2], [2], distance_max=2)
+    assert_array_equal(result, [[-1, 0], [0, -1]])
+
+    # Test distance_max with values
+    result = phasor_nearest_neighbor(
+        arr, arr, [2, 2], [2, 2], values=[10, 20], distance_max=2
     )
-    assert_allclose(arr, original_arr, atol=1e-7)
-    assert_allclose(mean, original_mean, atol=1e-7)
-    assert_allclose(values, original_values, atol=1e-7)
-    assert_allclose(result_indices, [[-1, 3], [3, -1]], atol=1e-7)
-    assert_allclose(result_values, [[nan, 8], [8, nan]], atol=1e-7)
+    assert_array_equal(result, [[nan, 10], [10, nan]])
 
     # Test multi-dimensional inputs
     # TODO: modify this when multiple dimensions are supported
@@ -3839,26 +3834,20 @@ def test_phasor_nearest_neighbor():
     values = numpy.array(
         [[[0, 1], [2, 3]], [[4, 5], [6, 7]], [[8, 9], [10, 11]]]
     )
-    result_indices, result_values = phasor_nearest_neighbor(
-        arr, arr, arr, neighbor_arr, neighbor_arr, values=values
+    result = phasor_nearest_neighbor(
+        arr, arr, neighbor_arr, neighbor_arr, values=values
     )
-    assert_allclose(
-        result_indices,
-        [[[0, 0], [0, -1]], [[1, 1], [1, 1]], [[2, 2], [-1, 2]]],
-        atol=1e-7,
+    assert_array_equal(
+        result, [[[0, 0], [0, nan]], [[1, 1], [1, 1]], [[2, 2], [nan, 2]]]
     )
-    assert_allclose(
-        result_values,
-        [[[0, 0], [0, nan]], [[1, 1], [1, 1]], [[2, 2], [nan, 2]]],
-        atol=1e-7,
-    )
+
+    # TODO: num_threads parameter not tested
 
 
 @pytest.mark.xfail(reason='Muiltiple harmonics not yet supported')
 def test_phasor_nearest_neighbor_harmonics():
     """Test phasor_nearest_neighbor function with multiple harmonics."""
     nan = numpy.nan
-    mean = numpy.array([[1, 2], [3, nan]])
     arr = numpy.array(
         [[[1, 1], [1, nan]], [[2, 2], [2, 2]], [[3, 3], [nan, 3]]]
     )
@@ -3866,18 +3855,12 @@ def test_phasor_nearest_neighbor_harmonics():
         [[[1, 2], [3, 4]], [[2, 3], [4, 5]], [[3, 4], [5, 6]]]
     )
     values = numpy.array([[0, 1], [2, 3]])
-    result_indices, result_values = phasor_nearest_neighbor(
-        mean, arr, arr, neighbor_arr, neighbor_arr, values=values
+    result = phasor_nearest_neighbor(
+        arr, arr, neighbor_arr, neighbor_arr, values=values
     )
-    assert_allclose(
-        result_indices,
-        [[[0, 0], [-1, -1]], [[0, 0], [-1, -1]], [[0, 0], [-1, -1]]],
-        atol=1e-7,
-    )
-    assert_allclose(
-        result_values,
+    assert_array_equal(
+        result,
         [[[0, 0], [nan, nan]], [[0, 0], [nan, nan]], [[0, 0], [nan, nan]]],
-        atol=1e-7,
     )
 
 
@@ -3885,23 +3868,25 @@ def test_phasor_nearest_neighbor_errors():
     """Test phasor_nearest_neighbor function errors."""
     arr = numpy.ones((3, 2))
 
-    # Shape mismatch between mean and real
-    with pytest.raises(ValueError):
-        phasor_nearest_neighbor(numpy.ones(3), arr, arr, arr, arr)
-
     # Shape mismatch between real and imag
     with pytest.raises(ValueError):
-        phasor_nearest_neighbor(arr, arr, numpy.ones((3, 3)), arr, arr)
+        phasor_nearest_neighbor(arr, numpy.ones((3, 3)), arr, arr)
 
     # Shape mismatch between neighbor_real and neighbor_imag
     with pytest.raises(ValueError):
-        phasor_nearest_neighbor(arr, arr, arr, arr, numpy.ones((3, 3)))
+        phasor_nearest_neighbor(arr, arr, arr, numpy.ones((3, 3)))
 
     # Shape mismatch between values and neighbor_real
     with pytest.raises(ValueError):
-        phasor_nearest_neighbor(
-            arr, arr, arr, arr, arr, values=numpy.ones((3, 3))
-        )
+        phasor_nearest_neighbor(arr, arr, arr, arr, values=numpy.ones((3, 3)))
+
+    # distance_max = 0
+    with pytest.raises(ValueError):
+        phasor_nearest_neighbor(arr, arr, arr, arr, distance_max=0)
+
+    # distance_max < 0
+    with pytest.raises(ValueError):
+        phasor_nearest_neighbor(arr, arr, arr, arr, distance_max=-1)
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls
