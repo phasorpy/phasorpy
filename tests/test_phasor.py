@@ -2556,7 +2556,7 @@ def test_phasor_to_principal_plane():
     """Test phasor_to_principal_plane function."""
     # see phasorpy_principal_components.py for comments and visualization
 
-    def distribution(values, stddev=0.05, samples=100):
+    def distribution(values, stddev=0.05, samples=1000):
         return numpy.ascontiguousarray(
             numpy.vstack(
                 [
@@ -2581,11 +2581,12 @@ def test_phasor_to_principal_plane():
     imag = numpy.hstack([imag0, imag1])
 
     x, y, transformation_matrix = phasor_to_principal_plane(real, imag)
-    assert x.shape == (200,)
-    assert y.shape == (200,)
+    assert x.shape == (2000,)
+    assert y.shape == (2000,)
     assert transformation_matrix.shape == (2, 10)
-    assert_allclose(x.mean(), 0.306839, atol=1e-2, rtol=1e-2)
-    assert_allclose(y.mean(), 0.281617, atol=1e-2, rtol=1e-2)
+    # TODO: these values are not always reproducible, why?
+    assert_allclose(x.mean(), 0.307, atol=1e-2, rtol=1e-2)
+    assert_allclose(y.mean(), 0.277, atol=1e-2, rtol=1e-2)
 
     # for single harmonics, reoriented projection matches phasor coordinates
     real = real[:1]

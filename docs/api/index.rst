@@ -19,6 +19,7 @@ PhasorPy library version |version|.
     plot
     io
     color
+    experimental
     datasets
     utils
     _utils
