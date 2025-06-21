@@ -77,7 +77,7 @@ all = [
 zip-safe = false
 
 [tool.setuptools.dynamic]
-version = { attr = "phasorpy.version.__version__" }
+version = { attr = "phasorpy.__version__" }
 
 [tool.setuptools.package-data]
 phasorpy = ["py.typed"]

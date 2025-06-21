@@ -488,7 +488,9 @@ plot_image(
 #
 # Print information about Python interpreter and installed packages:
 
-print(phasorpy.versions())
+from phasorpy.utils import versions
+
+print(versions())
 
 # %%
 # sphinx_gallery_thumbnail_number = -8
