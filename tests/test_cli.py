@@ -2,8 +2,9 @@
 
 from click.testing import CliRunner
 
-from phasorpy import __version__, versions
+from phasorpy import __version__
 from phasorpy.cli import main
+from phasorpy.utils import versions
 
 
 def test_version():
@@ -34,6 +35,19 @@ def test_fret():
     """Test ``python -m phasorpy fret``."""
     runner = CliRunner()
     result = runner.invoke(main, ['fret', '--hide'])
+    assert result.exit_code == 0
+
+
+def test_lifetime():
+    """Test ``python -m phasorpy lifetime``."""
+    runner = CliRunner()
+    result = runner.invoke(main, ['lifetime', '--hide'])
+    assert result.exit_code == 0
+    result = runner.invoke(main, ['lifetime', '-f 60', '-l 4.2', '--hide'])
+    assert result.exit_code == 0
+    result = runner.invoke(
+        main, ['lifetime', '-l 4.2', '-l 1.0', '-a 0.6', '-a 0.4', '--hide']
+    )
     assert result.exit_code == 0
 
 

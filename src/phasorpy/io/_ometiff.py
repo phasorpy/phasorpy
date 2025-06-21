@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 import numpy
 
-from ..version import __version__
+from .. import __version__
 
 
 def phasor_to_ometiff(

@@ -140,7 +140,7 @@ class PhasorPlotFret(PhasorPlot):
     ) -> None:
         update_kwargs(
             kwargs,
-            title='FRET phasor plot',
+            title='PhasorPy FRET phasor plot',
             xlim=[-0.2, 1.1],
             ylim=[-0.1, 0.8],
         )

@@ -18,11 +18,11 @@ if TYPE_CHECKING:
 
 import click
 
-from . import version
+from . import __version__
 
 
 @click.group(help='PhasorPy package command line interface.')
-@click.version_option(version=version.__version__)
+@click.version_option(version=__version__)
 def main() -> int:
     """PhasorPy command line interface."""
     return 0
@@ -38,7 +38,9 @@ def main() -> int:
 )
 def versions(verbose: bool) -> None:
     """Versions command group."""
-    click.echo(version.versions(verbose=verbose))
+    from .utils import versions
+
+    click.echo(versions(verbose=verbose))
 
 
 @main.command(help='Fetch sample files from remote repositories.')
@@ -77,6 +79,57 @@ def fret(hide: bool) -> None:
         donor_lifetime=4.2,
         acceptor_lifetime=3.0,
         fret_efficiency=0.5,
+        interactive=True,
+    )
+    if not hide:
+        plot.show()
+
+
+@main.command(help='Start interactive lifetime plots.')
+@click.option(
+    '-f',
+    '--frequency',
+    type=float,
+    required=False,
+    help='Laser/modulation frequency in MHz.',
+)
+@click.option(
+    '-l',
+    '--lifetime',
+    default=(4.0, 1.0),
+    type=float,
+    multiple=True,
+    required=False,
+    help='Lifetime in ns.',
+)
+@click.option(
+    '-a',
+    '--fraction',
+    type=float,
+    multiple=True,
+    required=False,
+    help='Fractional intensity of lifetime.',
+)
+@click.option(
+    '--hide',
+    default=False,
+    is_flag=True,
+    type=click.BOOL,
+    help='Do not show interactive plot.',
+)
+def lifetime(
+    frequency: float | None,
+    lifetime: tuple[float, ...],
+    fraction: tuple[float, ...],
+    hide: bool,
+) -> None:
+    """Lifetime command group."""
+    from .plot import LifetimePlots
+
+    plot = LifetimePlots(
+        frequency,
+        lifetime,
+        fraction if len(fraction) > 0 else None,
         interactive=True,
     )
     if not hide:

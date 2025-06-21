@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-__all__ = ['__version__', 'versions']
+__all__ = ['__version__']
 
-from .version import __version__, versions
 
-__version__ = __version__  # pylint: disable=self-assigning-variable
+__version__ = '0.6.dev0'
 """PhasorPy version string."""
