@@ -50,6 +50,12 @@ ctypedef fused uint_t:
     uint32_t
     uint64_t
 
+ctypedef fused int_t:
+    int8_t
+    int16_t
+    int32_t
+    int64_t
+
 ctypedef fused signal_t:
     uint8_t
     uint16_t
@@ -1701,7 +1707,7 @@ cdef (float_t, float_t, float_t, float_t) _intersect_semicircle_line(
 
 
 def _nearest_neighbor_2d(
-    ssize_t[::1] indices,
+    int_t[::1] indices,
     const float_t[::1] x0,
     const float_t[::1] y0,
     const float_t[::1] x1,
@@ -1714,12 +1720,14 @@ def _nearest_neighbor_2d(
     For each point in the first set of arrays (x0, y0) find the nearest point
     in the second set of arrays (x1, y1) and store the index of the nearest
     point in the second array in the indices array.
-    If any coordinates are NaN, the index is set to -1.
+    If any coordinates are NaN, or the distance to the nearest point
+    is larger than distance_max, the index is set to -1.
 
     """
     cdef:
         ssize_t i, j, index
-        float_t x, y, dmin, distance_max_squared
+        float_t x, y, dmin
+        float_t distance_max_squared = distance_max * distance_max
 
     if (
         indices.shape[0] != x0.shape[0]
@@ -1727,8 +1735,6 @@ def _nearest_neighbor_2d(
         or x1.shape[0] != y1.shape[0]
     ):
         raise ValueError('input array size mismatch')
-
-    distance_max_squared = distance_max * distance_max
 
     with nogil, parallel(num_threads=num_threads):
         for i in prange(x0.shape[0]):
@@ -1746,10 +1752,7 @@ def _nearest_neighbor_2d(
                 if x < dmin:
                     dmin = x
                     index = j
-            if dmin > distance_max_squared:
-                indices[i] = -1
-            else:
-                indices[i] = index
+            indices[i] = -1 if dmin > distance_max_squared else <int_t> index
 
 
 ###############################################################################
