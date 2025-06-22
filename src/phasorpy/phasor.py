@@ -3746,7 +3746,7 @@ def phasor_nearest_neighbor(
     )
 
     if values is None:
-        return indices.reshape(shape)
+        return numpy.asarray(indices.reshape(shape))
 
     values = numpy.ascontiguousarray(values, dtype=dtype).ravel()
     if values.shape != neighbor_real.shape:
@@ -3755,7 +3755,7 @@ def phasor_nearest_neighbor(
     nearest_values = values[indices]
     nearest_values[indices == -1] = numpy.nan
 
-    return nearest_values.reshape(shape)
+    return numpy.asarray(nearest_values.reshape(shape))
 
 
 def phasor_center(
