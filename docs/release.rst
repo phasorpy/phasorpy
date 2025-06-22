@@ -69,7 +69,7 @@ What's Changed
 * Add interactive LifetimePlots class by @cgohlke in https://github.com/phasorpy/phasorpy/pull/247
 * Reorganize version, utils, and experimental modules by @cgohlke in https://github.com/phasorpy/phasorpy/pull/248
 * Add phasor_nearest_neighbor function by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/243
-* Release v0.6 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/244
+* Release v0.6 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/249
 
 **Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.5...v0.6
 
