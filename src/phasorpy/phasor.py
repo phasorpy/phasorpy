@@ -132,7 +132,6 @@ if TYPE_CHECKING:
 import numpy
 
 from ._phasorpy import (
-    _blend_and,
     _gaussian_signal,
     _intersect_semicircle_line,
     _median_filter_2d,
@@ -2675,6 +2674,7 @@ def phasor_from_fret_donor(
     --------
     phasorpy.phasor.phasor_from_fret_acceptor
     :ref:`sphx_glr_tutorials_api_phasorpy_fret.py`
+    :ref:`sphx_glr_tutorials_applications_phasorpy_fret_efficiency.py`
 
     Examples
     --------
@@ -3618,35 +3618,46 @@ def phasor_nearest_neighbor(
     /,
     *,
     values: ArrayLike | None = None,
+    dtype: DTypeLike | None = None,
     distance_max: float | None = None,
     num_threads: int | None = None,
 ) -> NDArray[Any]:
-    """Return indices and values of nearest neighbor from other coordinates.
+    """Return indices or values of nearest neighbor from other coordinates.
 
-    For each phasor coordinate, finds the nearest neighbor in another set of
-    coordinates. Invalid coordinates are handled by returning an index of -1.
-    If `values` are provided, the function returns both the indices and the
-    corresponding values from the neighbor coordinates.
+    For each phasor coordinate, find the nearest neighbor in another set of
+    phasor coordinates and return its flat index. If more than one neighbor
+    has the same distance, return the smallest index.
+
+    For phasor coordinates that are NaN, or have a distance to the nearest
+    neighbor that is larger than `distance_max`, return an index of -1.
+
+    If `values` are provided, return the values corresponding to the nearest
+    neighbor coordinates instead of indices. Return NaN values for indices
+    that are -1.
+
+    This function does not support multi-harmonic, multi-channel, or
+    multi-frequency phasor coordinates.
 
     Parameters
     ----------
-    mean : array_like
-        Intensity of phasor coordinates.
     real : array_like
-        Real component of phasor coordinates
+        Real component of phasor coordinates.
     imag : array_like
-        Imaginary component of phasor coordinates
+        Imaginary component of phasor coordinates.
     neighbor_real : array_like
         Real component of neighbor phasor coordinates.
     neighbor_imag : array_like
         Imaginary component of neighbor phasor coordinates.
     values : array_like, optional
-        Array of values corresponding to the neighbor coordinates.
-        If provided, the function returns the values corresponding
-        to the nearest neighbor coordinates.
+        Array of values corresponding to neighbor coordinates.
+        If provided, return the values corresponding to the nearest
+        neighbor coordinates.
     distance_max : float, optional
         Maximum Euclidean distance to consider a neighbor valid.
-        If not provided, all neighbors are considered.
+        By default, all neighbors are considered.
+    dtype : dtype_like, optional
+        Floating point data type used for calculation and output values.
+        Either `float32` or `float64`. The default is `float64`.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
         By default, multi-threading is disabled.
@@ -3656,25 +3667,28 @@ def phasor_nearest_neighbor(
     Returns
     -------
     nearest : ndarray
-        Indices (or the corresponding values if provided) of the nearest
+        Flat indices (or the corresponding values if provided) of the nearest
         neighbor coordinates.
 
     Raises
     ------
     ValueError
-        If the shapes of `mean`, `real`, and `imag` do not match.
+        If the shapes of `real`, and `imag` do not match.
         If the shapes of `neighbor_real` and `neighbor_imag` do not match.
         If the shapes of `values` and `neighbor_real` do not match.
         If `distance_max` is less than or equal to zero.
 
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_applications_phasorpy_fret_efficiency.py`
+
     Notes
     -----
-    This function is designed to work with single harmonic, single channel,
-    single frequency data. All input dimensions are flattened, and the nearest
-    neighbor is calculated across all dimensions. As a result, this function
-    does not support multi-harmonic, multi-channel, or multi-frequency data.
-    If more than one neighbor has the same distance, the one with the smallest
-    index is returned.
+    This function uses linear search, which is inefficient for large
+    number of coordinates or neighbors.
+    ``scipy.spatial.KDTree.query()`` would be more efficient in those cases.
+    However, KDTree is known to return non-deterministic results in case of
+    multiple neighbors with the same distance.
 
     Examples
     --------
@@ -3688,24 +3702,29 @@ def phasor_nearest_neighbor(
     array([10, 20, nan])
 
     """
-    real = numpy.asarray(real, dtype=float)
-    imag = numpy.asarray(imag, dtype=float)
-    neighbor_real = numpy.asarray(neighbor_real, dtype=float)
-    neighbor_imag = numpy.asarray(neighbor_imag, dtype=float)
+    dtype = numpy.dtype(dtype)
+    if dtype.char not in {'f', 'd'}:
+        raise ValueError(f'{dtype=} is not a floating point type')
+
+    real = numpy.ascontiguousarray(real, dtype=dtype)
+    imag = numpy.ascontiguousarray(imag, dtype=dtype)
+    neighbor_real = numpy.ascontiguousarray(neighbor_real, dtype=dtype)
+    neighbor_imag = numpy.ascontiguousarray(neighbor_imag, dtype=dtype)
 
     if real.shape != imag.shape:
-        raise ValueError(f"Shape mismatch: {real.shape=} != {imag.shape=}")
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
     if neighbor_real.shape != neighbor_imag.shape:
-        raise ValueError(
-            f"Shape mismatch: {neighbor_real.shape=} != {neighbor_imag.shape=}"
-        )
+        raise ValueError(f'{neighbor_real.shape=} != {neighbor_imag.shape=}')
 
-    real_flat = real.ravel()
-    imag_flat = imag.ravel()
-    neighbor_real_flat = neighbor_real.ravel()
-    neighbor_imag_flat = neighbor_imag.ravel()
+    shape = real.shape
+    real = real.ravel()
+    imag = imag.ravel()
+    neighbor_real = neighbor_real.ravel()
+    neighbor_imag = neighbor_imag.ravel()
 
-    indices = numpy.empty_like(real_flat, dtype=numpy.intp)
+    indices = numpy.empty(
+        real.shape, numpy.min_scalar_type(-neighbor_real.size)
+    )
 
     if distance_max is None:
         distance_max = numpy.inf
@@ -3718,30 +3737,25 @@ def phasor_nearest_neighbor(
 
     _nearest_neighbor_2d(
         indices,
-        real_flat,
-        imag_flat,
-        neighbor_real_flat,
-        neighbor_imag_flat,
+        real,
+        imag,
+        neighbor_real,
+        neighbor_imag,
         distance_max,
         num_threads,
     )
 
-    indices = indices.reshape(real.shape)
+    if values is None:
+        return indices.reshape(shape)
 
-    if values is not None:
+    values = numpy.ascontiguousarray(values, dtype=dtype).ravel()
+    if values.shape != neighbor_real.shape:
+        raise ValueError(f'{values.shape=} != {neighbor_real.shape=}')
 
-        values = numpy.asarray(values, dtype=float)
-        if values.shape != neighbor_real.shape:
-            raise ValueError(f'{values.shape=} != {neighbor_real.shape=}')
+    nearest_values = values[indices]
+    nearest_values[indices == -1] = numpy.nan
 
-        nearest_values = numpy.where(
-            indices == -1, numpy.nan, values.ravel()[indices]
-        )
-        nearest_values = nearest_values.reshape(real.shape)
-
-        return numpy.asarray(nearest_values)
-
-    return numpy.asarray(indices)
+    return nearest_values.reshape(shape)
 
 
 def phasor_center(
@@ -3878,3 +3892,145 @@ def _median(
         numpy.nanmedian(real, **kwargs),
         numpy.nanmedian(imag, **kwargs),
     )
+
+
+def phasor_nearest_neighbor_scipy(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    neighbor_real: ArrayLike,
+    neighbor_imag: ArrayLike,
+    /,
+    *,
+    values: ArrayLike | None = None,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[numpy.float64]]:
+    """Return indices and values of nearest neighbor from other coordinates.
+
+    For each phasor coordinate, finds the nearest neighbor in another set of
+    coordinates. Invalid coordinates are handled by returning an index of -1.
+    If `values` are provided, the function returns both the indices and the
+    corresponding values from the neighbor coordinates.
+
+    Parameters
+    ----------
+    mean : array_like
+        Intensity of phasor coordinates.
+    real : array_like
+        Real component of phasor coordinates
+    imag : array_like
+        Imaginary component of phasor coordinates
+    neighbor_real : array_like
+        Real component of neighbor phasor coordinates.
+    neighbor_imag : array_like
+        Imaginary component of neighbor phasor coordinates.
+    values : array_like, optional
+        Array of values corresponding to the neighbor coordinates.
+        If provided, the function returns the values corresponding
+        to the nearest neighbor coordinates.
+    **kwargs
+        Optional arguments passed to :py:func:`scipy.spatial.KDTree.__init__`
+        and :py:func:`scipy.spatial.KDTree.query`.
+
+    Returns
+    -------
+    nearest_indices : ndarray
+        Indices of the nearest neighbor coordinates.
+    nearest_values : ndarray
+        Values corresponding to the nearest neighbor coordinates.
+
+    Raises
+    ------
+    ValueError
+        If the shapes of `mean`, `real`, and `imag` do not match.
+        If the shapes of `neighbor_real` and `neighbor_imag` do not match.
+        If the shapes of `values` and `neighbor_real` do not match.
+
+    Notes
+    -----
+    This function is designed to work with single harmonic, single channel,
+    single frequency data. All input dimensions are flattened, and the nearest
+    neighbor is calculated across all dimensions. As a result, this function
+    does not support multi-harmonic, multi-channel, or multi-frequency data.
+    If more than one neighbor has the same distance, the one with the smallest
+    index is returned.
+
+    Examples
+    --------
+    >>> phasor_nearest_neighbor(
+    ...     [1, 1, numpy.nan],
+    ...     [0.1, 0.5, numpy.nan],
+    ...     [0.1, 0.5, numpy.nan],
+    ...     [0, 0.4],
+    ...     [0, 0.4],
+    ...     values=[10, 20],
+    ... )
+    (array([ 0, 1, -1]), array([10, 20, nan]))
+
+    """
+    from scipy.spatial import KDTree
+
+    mean = numpy.asarray(mean)
+    real = numpy.asarray(real)
+    imag = numpy.asarray(imag)
+    neighbor_real = numpy.asarray(neighbor_real)
+    neighbor_imag = numpy.asarray(neighbor_imag)
+
+    if mean.shape != real.shape:
+        raise ValueError(f'{mean.shape=} != {real.shape=}')
+    if real.shape != imag.shape:
+        raise ValueError(f"Shape mismatch: {real.shape=} != {imag.shape=}")
+    if neighbor_real.shape != neighbor_imag.shape:
+        raise ValueError(
+            f"Shape mismatch: {neighbor_real.shape=} != {neighbor_imag.shape=}"
+        )
+
+    mean, _, _ = phasor_threshold(mean, real, imag)
+
+    # TODO: get harmonics from mean and process harmonics separately
+    query_coords = numpy.column_stack((real.ravel(), imag.ravel()))
+    neighbor_coords = numpy.column_stack(
+        (neighbor_real.ravel(), neighbor_imag.ravel())
+    )
+
+    # replace NaN values with 0.0 for KDTree query
+    query_coords = numpy.nan_to_num(query_coords, nan=0.0, copy=False)
+    neighbor_coords = numpy.nan_to_num(neighbor_coords, nan=0.0, copy=False)
+
+    kdtree_params = {
+        'leafsize',
+        'compact_nodes',
+        'copy_data',
+        'balanced_tree',
+        'boxsize',
+    }
+    query_params = {'eps', 'p', 'distance_upper_bound', 'workers'}
+    kdtree_kwargs = {k: v for k, v in kwargs.items() if k in kdtree_params}
+    query_kwargs = {k: v for k, v in kwargs.items() if k in query_params}
+
+    # Force k=1 for nearest neighbor
+    query_kwargs['k'] = 1
+
+    tree = KDTree(neighbor_coords, **kdtree_kwargs)
+
+    _, indices = tree.query(query_coords, **query_kwargs)
+    indices = indices.reshape(real.shape)
+
+    # Set indices to -1 where coordinates are invalid
+    indices[numpy.isnan(mean)] = -1
+
+    if values is not None:
+
+        values = numpy.asarray(values, dtype=float)
+        if values.shape != neighbor_real.shape:
+            raise ValueError(f'{values.shape=} != {neighbor_real.shape=}')
+
+        nearest_values = values.ravel()[indices]
+        nearest_values = nearest_values.reshape(real.shape)
+
+        # restore NaN values in nearest values from mean
+        _blend_and(mean, nearest_values, out=nearest_values)
+
+        return numpy.asarray(nearest_values)
+
+    return numpy.asarray(indices)

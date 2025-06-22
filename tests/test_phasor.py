@@ -3799,10 +3799,17 @@ def test_phasor_nearest_neighbor():
     """Test phasor_nearest_neighbor function."""
     nan = numpy.nan
 
+    # test scalar inputs
+    assert_array_equal(phasor_nearest_neighbor(1, 1, 1, 1), 0)
+    assert_array_equal(phasor_nearest_neighbor(1, 1, 1, 1, values=1), 1.0)
+    assert_array_equal(phasor_nearest_neighbor(nan, 1, 1, 1), -1)
+    assert_array_equal(phasor_nearest_neighbor(nan, 1, 1, 1, values=1), nan)
+
     # Test input arrays are not modified, no values
     arr = numpy.array([[nan, 2], [3, 4]])
     original_arr = arr.copy()
     result = phasor_nearest_neighbor(arr, arr, arr, arr)
+    assert result.dtype == numpy.int8
     assert_array_equal(arr, original_arr)
     assert_array_equal(result, [[-1, 1], [2, 3]])
 
@@ -3812,6 +3819,19 @@ def test_phasor_nearest_neighbor():
     result = phasor_nearest_neighbor(arr, arr, arr / 2, arr / 2, values=values)
     assert_array_equal(arr, original_arr)
     assert_array_equal(values, original_values)
+    assert_array_equal(result, [[nan, 8], [8, 8]])
+
+    # test dtype parameter
+    result = phasor_nearest_neighbor(
+        arr, arr, arr / 2, arr / 2, values=values, dtype=numpy.float32
+    )
+    assert result.dtype == numpy.float32
+    assert_array_equal(result, [[nan, 8], [8, 8]])
+
+    # test num_threads parameter
+    result = phasor_nearest_neighbor(
+        arr, arr, arr / 2, arr / 2, values=values, num_threads=2
+    )
     assert_array_equal(result, [[nan, 8], [8, 8]])
 
     # Test distance_max parameter
@@ -3841,8 +3861,6 @@ def test_phasor_nearest_neighbor():
     assert_array_equal(
         result, [[[0, 0], [0, nan]], [[1, 1], [1, 1]], [[2, 2], [nan, 2]]]
     )
-
-    # TODO: num_threads parameter not tested
 
 
 @pytest.mark.xfail(reason='Multiple harmonics not yet supported')
@@ -3888,6 +3906,10 @@ def test_phasor_nearest_neighbor_errors():
     # distance_max < 0
     with pytest.raises(ValueError):
         phasor_nearest_neighbor(arr, arr, arr, arr, distance_max=-1)
+
+    # not a floating point types
+    with pytest.raises(ValueError):
+        phasor_nearest_neighbor(arr, arr, arr, arr, dtype=numpy.int8)
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls
