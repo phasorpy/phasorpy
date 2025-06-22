@@ -9,7 +9,7 @@ documentation and maintenance changes.
     The PhasorPy library is still under construction. Backwards-incompatible
     changes may occur between revisions.
 
-0.6 (2025.6.24)
+0.6 (2025.6.22)
 ---------------
 
 This is the sixth alpha release of the PhasorPy library.
@@ -21,24 +21,24 @@ The ``phasor_nearest_neighbor`` function returns nearest neighbors in phasor
 coordinates.
 The ``phasor_to_normal_lifetime`` function returns single lifetimes closest
 to phasor coordinates.
-The ``phasor_semicircle_intersect`` function returns line intersections with
-the universal semicircle.
+The ``phasor_semicircle_intersect`` function returns intersections of lines
+with the universal semicircle.
 
 The ``LifetimePlots`` class interactively plots lifetimes in the time domain,
 frequency domain, and phasor plot. It can be invoked from the command line
 with ``python -m phasorpy lifetime``.
 
 The ``two_fractions_from_phasor`` and ``graphical_component_analysis``
-functions were renamed to ``phasor_component_fraction`` and
+functions are renamed to ``phasor_component_fraction`` and
 ``phasor_component_graphical``, respectively.
-The ``versions`` function was moved to the ``utils`` module.
+The ``versions`` function has moved to the ``phasorpy.utils`` namespace.
 The ``spectral_vector_denoise``, ``anscombe_transform``, and
-``anscombe_transform_inverse`` functions were moved to the ``experimental``
-module.
+``anscombe_transform_inverse`` functions have moved to the
+``phasorpy.experimental`` namespace.
 
-Functions in the ``io`` module now return the first channel by default.
+Functions in the ``io`` module now return only the first channel by default.
 
-Three new tutorials were added: "Geometrical interpretation of lifetimes",
+Three new tutorials are added: "Geometrical interpretation of lifetimes",
 "Multi-component fit", and "FRET efficiency image".
 This release supports Python 3.11 to 3.13.
 
