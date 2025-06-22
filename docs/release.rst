@@ -9,6 +9,70 @@ documentation and maintenance changes.
     The PhasorPy library is still under construction. Backwards-incompatible
     changes may occur between revisions.
 
+0.6 (2025.6.22)
+---------------
+
+This is the sixth alpha release of the PhasorPy library.
+It contains several bug fixes, improvements, and breaking changes.
+
+The new ``phasor_component_fit`` function fits fractions of multiple
+components to phasor coordinates.
+The ``phasor_nearest_neighbor`` function returns nearest neighbors in phasor
+coordinates.
+The ``phasor_to_normal_lifetime`` function returns single lifetimes closest
+to phasor coordinates.
+The ``phasor_semicircle_intersect`` function returns intersections of lines
+with the universal semicircle.
+
+The ``LifetimePlots`` class interactively plots lifetimes in the time domain,
+frequency domain, and phasor plot. It can be invoked from the command line
+with ``python -m phasorpy lifetime``.
+
+The ``two_fractions_from_phasor`` and ``graphical_component_analysis``
+functions are renamed to ``phasor_component_fraction`` and
+``phasor_component_graphical``, respectively.
+The ``versions`` function has moved to the ``phasorpy.utils`` namespace.
+The ``spectral_vector_denoise``, ``anscombe_transform``, and
+``anscombe_transform_inverse`` functions have moved to the
+``phasorpy.experimental`` namespace.
+
+Functions in the ``io`` module now return only the first channel by default.
+
+Three new tutorials are added: "Geometrical interpretation of lifetimes",
+"Multi-component fit", and "FRET efficiency image".
+This release supports Python 3.11 to 3.13.
+
+What's Changed
+..............
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/221
+* Bump pypa/cibuildwheel from 2.23.2 to 2.23.3 in the github-actions group by @dependabot in https://github.com/phasorpy/phasorpy/pull/223
+* Update description of AlliGator software by @cgohlke in https://github.com/phasorpy/phasorpy/pull/225
+* Cython 3.1.0 is released by @cgohlke in https://github.com/phasorpy/phasorpy/pull/226
+* Add phasor_to_normal_lifetime function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/228
+* Read first channel from files by default by @cgohlke in https://github.com/phasorpy/phasorpy/pull/229
+* Update acknowledgments by @cgohlke in https://github.com/phasorpy/phasorpy/pull/230
+* Use importlib to get package versions by @cgohlke in https://github.com/phasorpy/phasorpy/pull/231
+* Use Windows Server 2022 in GitHub Actions by @cgohlke in https://github.com/phasorpy/phasorpy/pull/232
+* Add tutorial about geometrical interpretation of lifetimes by @cgohlke in https://github.com/phasorpy/phasorpy/pull/233
+* Update reference phasor_from_signal benchmark results by @cgohlke in https://github.com/phasorpy/phasorpy/pull/234
+* Sort clusters returned by phasor_cluster_gmm by @cgohlke in https://github.com/phasorpy/phasorpy/pull/236
+* Reorganize io module by @cgohlke in https://github.com/phasorpy/phasorpy/pull/235
+* Update pre-commit configuration by @cgohlke in https://github.com/phasorpy/phasorpy/pull/237
+* Fix test failing with numpy 2.3.0 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/239
+* Add phasor_component_fit function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/238
+* Rename functions in components module by @cgohlke in https://github.com/phasorpy/phasorpy/pull/240
+* Add phasor_semicircle_intersect function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/241
+* Add private helper functions to mask universal semicircle by @cgohlke in https://github.com/phasorpy/phasorpy/pull/242
+* Add private _distance_from_semicircle function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/244
+* Reorganize plot module by @cgohlke in https://github.com/phasorpy/phasorpy/pull/245
+* Add interactive LifetimePlots class by @cgohlke in https://github.com/phasorpy/phasorpy/pull/247
+* Reorganize version, utils, and experimental modules by @cgohlke in https://github.com/phasorpy/phasorpy/pull/248
+* Add phasor_nearest_neighbor function by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/243
+* Release v0.6 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/244
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.5...v0.6
+
 0.5 (2025.4.11)
 ---------------
 

@@ -111,7 +111,7 @@ def anscombe_transform_inverse(
 
     Notes
     -----
-    The inverse Anscombe transformation according to [6]_:
+    The inverse Anscombe transformation according to [1]_:
 
     .. math::
 
