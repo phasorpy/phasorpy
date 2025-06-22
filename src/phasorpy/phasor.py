@@ -70,6 +70,10 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_filter_pawflim`
   - :py:func:`phasor_threshold`
 
+- find nearest neighbor phasor coordinates from another set of phasor coordinates:
+
+  - :py:func:`phasor_nearest_neighbor`
+
 """
 
 from __future__ import annotations
@@ -93,6 +97,7 @@ __all__ = [
     'phasor_from_polar',
     'phasor_from_signal',
     'phasor_multiply',
+    'phasor_nearest_neighbor',
     'phasor_normalize',
     'phasor_semicircle',
     'phasor_semicircle_intersect',
@@ -130,6 +135,7 @@ from ._phasorpy import (
     _gaussian_signal,
     _intersect_semicircle_line,
     _median_filter_2d,
+    _nearest_neighbor_2d,
     _phasor_at_harmonic,
     _phasor_divide,
     _phasor_from_apparent_lifetime,
@@ -2668,6 +2674,7 @@ def phasor_from_fret_donor(
     --------
     phasorpy.phasor.phasor_from_fret_acceptor
     :ref:`sphx_glr_tutorials_api_phasorpy_fret.py`
+    :ref:`sphx_glr_tutorials_applications_phasorpy_fret_efficiency.py`
 
     Examples
     --------
@@ -3601,6 +3608,154 @@ def phasor_threshold(
         mean = numpy.asarray(numpy.asarray(mean)[0])
 
     return mean, real, imag
+
+
+def phasor_nearest_neighbor(
+    real: ArrayLike,
+    imag: ArrayLike,
+    neighbor_real: ArrayLike,
+    neighbor_imag: ArrayLike,
+    /,
+    *,
+    values: ArrayLike | None = None,
+    dtype: DTypeLike | None = None,
+    distance_max: float | None = None,
+    num_threads: int | None = None,
+) -> NDArray[Any]:
+    """Return indices or values of nearest neighbor from other coordinates.
+
+    For each phasor coordinate, find the nearest neighbor in another set of
+    phasor coordinates and return its flat index. If more than one neighbor
+    has the same distance, return the smallest index.
+
+    For phasor coordinates that are NaN, or have a distance to the nearest
+    neighbor that is larger than `distance_max`, return an index of -1.
+
+    If `values` are provided, return the values corresponding to the nearest
+    neighbor coordinates instead of indices. Return NaN values for indices
+    that are -1.
+
+    This function does not support multi-harmonic, multi-channel, or
+    multi-frequency phasor coordinates.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    neighbor_real : array_like
+        Real component of neighbor phasor coordinates.
+    neighbor_imag : array_like
+        Imaginary component of neighbor phasor coordinates.
+    values : array_like, optional
+        Array of values corresponding to neighbor coordinates.
+        If provided, return the values corresponding to the nearest
+        neighbor coordinates.
+    distance_max : float, optional
+        Maximum Euclidean distance to consider a neighbor valid.
+        By default, all neighbors are considered.
+    dtype : dtype_like, optional
+        Floating point data type used for calculation and output values.
+        Either `float32` or `float64`. The default is `float64`.
+    num_threads : int, optional
+        Number of OpenMP threads to use for parallelization.
+        By default, multi-threading is disabled.
+        If zero, up to half of logical CPUs are used.
+        OpenMP may not be available on all platforms.
+
+    Returns
+    -------
+    nearest : ndarray
+        Flat indices (or the corresponding values if provided) of the nearest
+        neighbor coordinates.
+
+    Raises
+    ------
+    ValueError
+        If the shapes of `real`, and `imag` do not match.
+        If the shapes of `neighbor_real` and `neighbor_imag` do not match.
+        If the shapes of `values` and `neighbor_real` do not match.
+        If `distance_max` is less than or equal to zero.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_applications_phasorpy_fret_efficiency.py`
+
+    Notes
+    -----
+    This function uses linear search, which is inefficient for large
+    number of coordinates or neighbors.
+    ``scipy.spatial.KDTree.query()`` would be more efficient in those cases.
+    However, KDTree is known to return non-deterministic results in case of
+    multiple neighbors with the same distance.
+
+    Examples
+    --------
+    >>> phasor_nearest_neighbor(
+    ...     [0.1, 0.5, numpy.nan],
+    ...     [0.1, 0.5, numpy.nan],
+    ...     [0, 0.4],
+    ...     [0, 0.4],
+    ...     values=[10, 20],
+    ... )
+    array([10, 20, nan])
+
+    """
+    dtype = numpy.dtype(dtype)
+    if dtype.char not in {'f', 'd'}:
+        raise ValueError(f'{dtype=} is not a floating point type')
+
+    real = numpy.ascontiguousarray(real, dtype=dtype)
+    imag = numpy.ascontiguousarray(imag, dtype=dtype)
+    neighbor_real = numpy.ascontiguousarray(neighbor_real, dtype=dtype)
+    neighbor_imag = numpy.ascontiguousarray(neighbor_imag, dtype=dtype)
+
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if neighbor_real.shape != neighbor_imag.shape:
+        raise ValueError(f'{neighbor_real.shape=} != {neighbor_imag.shape=}')
+
+    shape = real.shape
+    real = real.ravel()
+    imag = imag.ravel()
+    neighbor_real = neighbor_real.ravel()
+    neighbor_imag = neighbor_imag.ravel()
+
+    indices = numpy.empty(
+        real.shape, numpy.min_scalar_type(-neighbor_real.size)
+    )
+
+    if distance_max is None:
+        distance_max = numpy.inf
+    else:
+        distance_max = float(distance_max)
+        if distance_max <= 0:
+            raise ValueError(f'{distance_max=} <= 0')
+
+    num_threads = number_threads(num_threads)
+
+    _nearest_neighbor_2d(
+        indices,
+        real,
+        imag,
+        neighbor_real,
+        neighbor_imag,
+        distance_max,
+        num_threads,
+    )
+
+    if values is None:
+        return numpy.asarray(indices.reshape(shape))
+
+    values = numpy.ascontiguousarray(values, dtype=dtype).ravel()
+    if values.shape != neighbor_real.shape:
+        raise ValueError(f'{values.shape=} != {neighbor_real.shape=}')
+
+    nearest_values = values[indices]
+    nearest_values[indices == -1] = numpy.nan
+
+    return numpy.asarray(nearest_values.reshape(shape))
 
 
 def phasor_center(
