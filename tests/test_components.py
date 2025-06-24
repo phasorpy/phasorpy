@@ -4,13 +4,117 @@ import numpy
 import pytest
 from numpy.testing import assert_allclose
 
+from phasorpy._phasorpy import _is_near_semicircle
 from phasorpy.components import (
+    phasor_component_blind,
     phasor_component_fit,
     phasor_component_fraction,
     phasor_component_graphical,
 )
+from phasorpy.phasor import phasor_from_lifetime, phasor_to_normal_lifetime
 
 numpy.random.seed(42)
+
+
+@pytest.mark.parametrize('exact', [True, False])
+def test_phasor_component_blind_two(exact):
+    """Test phasor_component_blind function with two components."""
+    # scalar
+    component_real, component_imag, fractions = phasor_component_blind(
+        [0.3773104, 0.20213886],
+        [0.3834715, 0.30623315],
+        num_components=2,
+        samples=256,
+    )
+    assert_allclose(component_real, [0.829962, 0.183186], atol=1e-5)
+    assert_allclose(component_imag, [0.375666, 0.386819], atol=1e-5)
+    assert_allclose(fractions, [0.3, 0.7], atol=1e-3)
+
+    # boundary conditions
+    nan = numpy.nan
+    component_real, component_imag, fractions = phasor_component_blind(
+        [[0.0, 0.5, 1.0, nan], [0.0, 0.2, 1.0, 0.0]],
+        [[0.0, 0.5, 0.0, 0.0], [0.0, 0.4, 0.0, 0.0]],
+        num_components=2,
+        samples=255,
+    )
+    assert_allclose(
+        component_real, [[1.0, 1.0, 1.0, nan], [0.0, 0.5, 1.0, nan]], atol=1e-3
+    )
+    assert_allclose(
+        component_imag, [[0.0, 0.0, 0.0, nan], [0.0, 0.5, 0.0, nan]], atol=1e-3
+    )
+    assert_allclose(
+        fractions, [[0.0, 0.0, 0.0, nan], [1.0, 1.0, 1.0, nan]], atol=1e-3
+    )
+
+    # test that two lifetime components can be recovered from a distribution
+    shape = (256, 256)
+    frequency = 80.0
+    lifetime = [0.5, 4.1]
+    fraction = numpy.empty((*shape, 2))
+    fraction[..., 0] = numpy.random.normal(0.3, 0.01, shape)
+    fraction[..., 1] = 1.0 - fraction[..., 0]
+
+    real, imag = phasor_from_lifetime(
+        [frequency, 2 * frequency], lifetime, fraction.reshape(-1, 2)
+    )
+    real = real.reshape(2, *shape)
+    imag = imag.reshape(2, *shape)
+    if not exact:
+        # add noise to the imaginary parts
+        imag += numpy.random.normal(0.0, 0.005, (2, *shape))
+        dtype = 'float32'
+    else:
+        dtype = 'float64'
+
+    component_real, component_imag, fractions = phasor_component_blind(
+        real, imag, 2, samples=255, dtype=dtype, num_threads=2
+    )
+
+    lifetimes = phasor_to_normal_lifetime(
+        component_real, component_imag, frequency
+    )
+
+    assert not (component_real[1] > 0.5).all()
+    assert _is_near_semicircle(component_real, component_imag, 1e-4).all()
+    assert_allclose(lifetimes[0].mean(), lifetime[0], atol=1e-2)
+    assert_allclose(lifetimes[1].mean(), lifetime[1], atol=1e-2)
+    assert_allclose(fractions[0].mean(), 0.3, atol=1e-3)
+    assert_allclose(fractions[1].mean(), 0.7, atol=1e-3)
+
+
+def test_phasor_component_blind_exceptions():
+    real = [0.1, 0.2]
+    imag = [0.4, 0.3]
+    phasor_component_blind(real, imag, 2)
+
+    # shape mismatch
+    with pytest.raises(ValueError):
+        phasor_component_blind(real, imag[0], 2)
+
+    # no harmonics
+    with pytest.raises(ValueError):
+        phasor_component_blind(real[0], imag[0], 2)
+
+    # number of components < 2
+    with pytest.raises(ValueError):
+        phasor_component_blind(real, imag, 1)
+
+    # number of components does not match harmonics
+    with pytest.raises(ValueError):
+        phasor_component_blind(real, imag, 3)
+
+    # samples < 1
+    with pytest.raises(ValueError):
+        phasor_component_blind(real, imag, 2, samples=0)
+
+    # dtype not float
+    with pytest.raises(ValueError):
+        phasor_component_blind(real, imag, 2, dtype=numpy.int32)
+
+    with pytest.raises(NotImplementedError):
+        phasor_component_blind([0.1, 0.2, 0.3, 0.4], [0.4, 0.3, 0.2, 0.1], 4)
 
 
 def test_phasor_component_fraction():

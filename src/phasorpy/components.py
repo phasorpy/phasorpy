@@ -14,15 +14,15 @@ The ``phasorpy.components`` module provides functions to:
 - calculate fractions of two or three known components by resolving
   graphically with histogram (:py:func:`phasor_component_graphical`)
 
-- blindly resolve fractions of multiple components by using harmonic
-  information (:py:func:`phasor_component_blind`, not implemented)
+- blindly resolve multiple lifetime components and their fractions
+  using harmonic information (:py:func:`phasor_component_blind`)
 
 """
 
 from __future__ import annotations
 
 __all__ = [
-    # phasor_component_blind,
+    'phasor_component_blind',
     'phasor_component_fit',
     'phasor_component_fraction',
     'phasor_component_graphical',
@@ -32,18 +32,139 @@ import numbers
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, ArrayLike, NDArray
+    from ._typing import Any, ArrayLike, NDArray, DTypeLike
 
 import numpy
 
 from ._phasorpy import (
     _blend_and,
+    _component_search_2,
     _fraction_on_segment,
     _is_inside_circle,
     _is_inside_stadium,
     _segment_direction_and_length,
 )
 from .phasor import phasor_threshold
+from .utils import number_threads
+
+
+def phasor_component_blind(
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    num_components: int,
+    *,
+    samples: int = 256,
+    dtype: DTypeLike = None,
+    num_threads: int | None = None,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    """Return lifetime components from multi-harmonic phasor coordinates.
+
+    Return phasor coordinates and fractional intensities of multiple single
+    lifetime components given a set of multi-harmonic phasor coordinates
+    using the graphical or minimization approaches described in [3]_.
+
+    Currently only the two component graphical method is implemented.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+        Must contain `num_components` harmonics in the first dimension.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+        Must contain `num_components` harmonics in the first dimension.
+    num_components : int, optional
+        Number of components to resolve.
+    samples : int, optional
+        Number of first-component candidates to scan in graphical methods.
+        The higher the number, the more accurate the result of the first
+        component, but also the longer the calculation time.
+        The default is 256.
+    dtype : dtype_like, optional
+        Floating point data type used for calculation and output values.
+        Either `float32` or `float64`. The default is `float64`.
+    num_threads : int, optional
+        Number of OpenMP threads to use for parallelization.
+        By default, multi-threading is disabled.
+        If zero, up to half of logical CPUs are used.
+        OpenMP may not be available on all platforms.
+
+    Returns
+    -------
+    component_real : ndarray
+        Real coordinates of resolved components.
+    component_imag : ndarray
+        Imaginary coordinates of resolved components.
+    fraction : ndarray
+        Fractional intensities of resolved components.
+
+    Raises
+    ------
+    ValueError
+        The real or imaginary coordinates do not match in shape.
+        The number of components is less than 2.
+        The number of components does not match number of harmonics.
+
+    References
+    ----------
+    .. [3] Vallmitjana A, Torrado B, Dvornikov A, Ranjit S, and Gratton E.
+      `Blind resolution of lifetime components in individual pixels of
+      fluorescence lifetime images using the phasor approach
+      <https://doi.org/10.1021/acs.jpcb.0c06946>`_.
+      *J Phys Chem B*, 124(45): 10126-10137 (2020)
+
+    Examples
+    --------
+    Resolve two components from the phasor coordinates of a mixture of 4.2
+    and 0.9 ns lifetimes with 70/30% fractions at 80 and 160 MHz:
+
+    >>> phasor_component_blind(
+    ...     [0.3773104, 0.20213886],
+    ...     [0.3834715, 0.30623315],
+    ...     num_components=2,
+    ...     samples=256,
+    ... )
+    (array([0.83, 0.1832]), array([0.3757, 0.3868]), array([0.3002, 0.6998]))
+
+    """
+    if num_components < 2:
+        raise ValueError(f'{num_components=} < 2')
+
+    num_threads = number_threads(num_threads)
+
+    dtype = numpy.dtype(dtype)
+    if dtype.char not in {'f', 'd'}:
+        raise ValueError(f'{dtype=} is not a floating point type')
+
+    real = numpy.ascontiguousarray(real, dtype)
+    imag = numpy.ascontiguousarray(imag, dtype)
+
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if real.shape[0] != num_components:
+        raise ValueError(f'{real.shape[0]=} != {num_components=}')
+
+    shape = real.shape[1:]
+    real = real.reshape((num_components, -1))
+    imag = imag.reshape((num_components, -1))
+    size = real.shape[-1]
+
+    component = numpy.zeros((2, num_components, size), dtype=dtype)
+    fraction = numpy.zeros((num_components, size), dtype=dtype)
+
+    if num_components == 2:
+        # resolve two components
+        _component_search_2(
+            component, fraction, real, imag, samples, num_threads
+        )
+    else:
+        raise NotImplementedError
+
+    component = component.reshape(2, num_components, *shape)
+    fraction = fraction.reshape(num_components, *shape)
+
+    return *component, fraction
 
 
 def phasor_component_fraction(

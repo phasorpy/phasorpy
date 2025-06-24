@@ -1706,6 +1706,147 @@ cdef (float_t, float_t, float_t, float_t) _intersect_semicircle_line(
     return x0, y0, x1, y1
 
 
+###############################################################################
+# Search functions
+
+def _component_search_2(
+    float_t[:, :, ::] component,  # (re/im, num_components, pixels)
+    float_t[:, ::] fraction,  # (num_components, pixels)
+    float_t[:, ::] real,  # (num_components, pixels)
+    float_t[:, ::] imag,  # (num_components, pixels)
+    ssize_t samples,
+    ssize_t num_threads
+):
+    """Find two lifetime components and fractions in harmonic coordinates."""
+    cdef:
+        ssize_t i, j
+        double re1, im1, re2, im2
+        double g0, g1, s0, s1, g0h1, s0h1, g1h1, s1h1, g0h2, s0h2, g1h2, s1h2
+        double x, y, dx, dy, dr, dd, rdd
+        double dmin, d, f, t
+
+    if (
+        component.shape[0] != 2
+        or component.shape[1] != 2
+        or component.shape[2] != real.shape[1]
+    ):
+        raise ValueError('component shape invalid')
+    if fraction.shape[0] != 2 or fraction.shape[1] != real.shape[1]:
+        raise ValueError('fraction shape invalid')
+    if real.shape[0] != imag.shape[0] != 2:
+        raise ValueError('phasor array harmonics invalid')
+    if real.shape[1] != imag.shape[1]:
+        raise ValueError('phasor array size invalid')
+    if samples < 1:
+        raise ValueError('samples must be positive')
+
+    with nogil, parallel(num_threads=num_threads):
+
+        for i in prange(real.shape[1]):
+            # loop over phasor coordinates
+
+            re1 = real[0, i]
+            im1 = imag[0, i]
+            re2 = real[1, i]
+            im2 = imag[1, i]
+
+            if isnan(re1) or isnan(im1) or isnan(re2) or isnan(im2):
+                component[0, 0, i] = NAN
+                component[0, 1, i] = NAN
+                component[1, 0, i] = NAN
+                component[1, 1, i] = NAN
+                fraction[0, i] = NAN
+                fraction[1, i] = NAN
+                continue
+
+            dmin = INFINITY
+            g0 = NAN
+            g1 = NAN
+            s0 = NAN
+            s1 = NAN
+            f = NAN
+
+            for j in range(samples):
+                # scan first component on semicircle in equidistant steps
+                t = (j * M_PI) / (samples - 1)
+                g0h1 = cos(t) / 2.0 + 0.5
+                s0h1 = sin(t) / 2.0
+
+                # second component is intersection of semicircle with line
+                # between first component and phasor coordinate
+                dx = re1 - g0h1
+                dy = im1 - s0h1
+                dr = dx * dx + dy * dy
+                dd = (g0h1 - 0.5) * im1 - (re1 - 0.5) * s0h1
+                rdd = 0.25 * dr - dd * dd  # discriminant
+                if rdd < 0.0 or dr <= 0.0:
+                    # no intersection
+                    g0 = g0h1
+                    s0 = s0h1
+                    g1 = g0h1
+                    s1 = s0h1
+                    f = 1.0
+                    break
+                rdd = sqrt(rdd)
+                g0h1 = (dd * dy - copysign(1.0, dy) * dx * rdd) / dr + 0.5
+                s0h1 = (-dd * dx - fabs(dy) * rdd) / dr
+                g1h1 = (dd * dy + copysign(1.0, dy) * dx * rdd) / dr + 0.5
+                s1h1 = (-dd * dx + fabs(dy) * rdd) / dr
+
+                if g0h1 < g1h1:
+                    t = g0h1
+                    g0h1 = g1h1
+                    g1h1 = t
+                    t = s0h1
+                    s0h1 = s1h1
+                    s1h1 = t
+
+                if s0h1 < 0 or s1h1 < 0:
+                    # no other intersection with semicircle
+                    continue
+
+                # second harmonic component coordinates on semicircle
+                g0h2 = g0h1 / (4.0 + (1.0 - 4.0) * g0h1)
+                s0h2 = sqrt(g0h2 - g0h2 * g0h2)
+                g1h2 = g1h1 / (4.0 + (1.0 - 4.0) * g1h1)
+                s1h2 = sqrt(g1h2 - g1h2 * g1h2)
+
+                # distance of phasor coordinates to line between
+                # components at second harmonic
+                # normalize line coordinates
+                dx = g1h2 - g0h2
+                dy = s1h2 - s0h2
+                x = re2 - g0h2
+                y = im2 - s0h2
+                # square of line length
+                t = dx * dx + dy * dy
+                if t == 0.0:
+                    continue
+                # projection of point on line using dot product
+                t = (x * dx + y * dy) / t
+                # add square of distance of point to line
+                dx = x - t * dx
+                dy = y - t * dy
+                d = dx * dx + dy * dy
+
+                if d < dmin:
+                    dmin = d
+                    g0 = g0h1
+                    g1 = g1h1
+                    s0 = s0h1
+                    s1 = s1h1
+                    f = t
+                elif d > dmin:
+                    break
+
+            component[0, 0, i] = <float_t> g0
+            component[0, 1, i] = <float_t> g1
+            component[1, 0, i] = <float_t> s0
+            component[1, 1, i] = <float_t> s1
+            fraction[0, i] = <float_t> (1.0 - f)
+            fraction[1, i] = <float_t> f
+
+
 def _nearest_neighbor_2d(
     int_t[::1] indices,
     const float_t[::1] x0,
