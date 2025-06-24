@@ -15,17 +15,18 @@ The ``phasorpy.components`` module provides functions to:
   graphically with histogram (:py:func:`phasor_component_graphical`)
 
 - blindly resolve multiple lifetime components and their fractions
-  using harmonic information (:py:func:`phasor_component_blind`)
+  using harmonic information (:py:func:`phasor_component_search`
+  and :py:func:`phasor_component_blind`)
 
 """
 
 from __future__ import annotations
 
 __all__ = [
-    'phasor_component_blind',
     'phasor_component_fit',
     'phasor_component_fraction',
     'phasor_component_graphical',
+    'phasor_component_search',
 ]
 
 import numbers
@@ -48,7 +49,7 @@ from .phasor import phasor_threshold
 from .utils import number_threads
 
 
-def phasor_component_blind(
+def phasor_component_search(
     real: ArrayLike,
     imag: ArrayLike,
     /,
@@ -60,9 +61,9 @@ def phasor_component_blind(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return lifetime components from multi-harmonic phasor coordinates.
 
-    Return phasor coordinates and fractional intensities of multiple single
-    lifetime components given a set of multi-harmonic phasor coordinates
-    using the graphical or minimization approaches described in [3]_.
+    Return phasor coordinates and fractional intensities of two or three
+    single lifetime components given a set of multi-harmonic phasor
+    coordinates using the graphical approach described in [3]_.
 
     Currently only the two component graphical method is implemented.
 
@@ -75,9 +76,9 @@ def phasor_component_blind(
         Imaginary component of phasor coordinates.
         Must contain `num_components` harmonics in the first dimension.
     num_components : int, optional
-        Number of components to resolve.
+        Number of components to resolve. Must be two or three.
     samples : int, optional
-        Number of first-component candidates to scan in graphical methods.
+        Number of first-component candidates to scan.
         The higher the number, the more accurate the result of the first
         component, but also the longer the calculation time.
         The default is 256.
@@ -103,7 +104,7 @@ def phasor_component_blind(
     ------
     ValueError
         The real or imaginary coordinates do not match in shape.
-        The number of components is less than 2.
+        The number of components is less than 2 or more than 3..
         The number of components does not match number of harmonics.
 
     References
@@ -119,7 +120,7 @@ def phasor_component_blind(
     Resolve two components from the phasor coordinates of a mixture of 4.2
     and 0.9 ns lifetimes with 70/30% fractions at 80 and 160 MHz:
 
-    >>> phasor_component_blind(
+    >>> phasor_component_search(
     ...     [0.3773104, 0.20213886],
     ...     [0.3834715, 0.30623315],
     ...     num_components=2,
@@ -154,17 +155,18 @@ def phasor_component_blind(
     fraction = numpy.zeros((num_components, size), dtype=dtype)
 
     if num_components == 2:
-        # resolve two components
         _component_search_2(
             component, fraction, real, imag, samples, num_threads
         )
-    else:
+    elif num_components == 3:
         raise NotImplementedError
+    else:
+        raise ValueError(f'{num_components=} not in (2, 3)')
 
     component = component.reshape(2, num_components, *shape)
     fraction = fraction.reshape(num_components, *shape)
 
-    return *component, fraction
+    return (*component, fraction)
 
 
 def phasor_component_fraction(

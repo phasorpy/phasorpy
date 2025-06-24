@@ -1836,8 +1836,8 @@ def _component_search_2(
                     s0 = s0h1
                     s1 = s1h1
                     f = t
-                elif d > dmin:
-                    break
+                # elif d > dmin:
+                #     break
 
             component[0, 0, i] = <float_t> g0
             component[0, 1, i] = <float_t> g1

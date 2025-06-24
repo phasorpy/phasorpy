@@ -6,10 +6,10 @@ from numpy.testing import assert_allclose
 
 from phasorpy._phasorpy import _is_near_semicircle
 from phasorpy.components import (
-    phasor_component_blind,
     phasor_component_fit,
     phasor_component_fraction,
     phasor_component_graphical,
+    phasor_component_search,
 )
 from phasorpy.phasor import phasor_from_lifetime, phasor_to_normal_lifetime
 
@@ -17,10 +17,10 @@ numpy.random.seed(42)
 
 
 @pytest.mark.parametrize('exact', [True, False])
-def test_phasor_component_blind_two(exact):
-    """Test phasor_component_blind function with two components."""
+def test_phasor_component_search_two(exact):
+    """Test phasor_component_search function with two components."""
     # scalar
-    component_real, component_imag, fractions = phasor_component_blind(
+    component_real, component_imag, fractions = phasor_component_search(
         [0.3773104, 0.20213886],
         [0.3834715, 0.30623315],
         num_components=2,
@@ -32,17 +32,17 @@ def test_phasor_component_blind_two(exact):
 
     # boundary conditions
     nan = numpy.nan
-    component_real, component_imag, fractions = phasor_component_blind(
+    component_real, component_imag, fractions = phasor_component_search(
         [[0.0, 0.5, 1.0, nan], [0.0, 0.2, 1.0, 0.0]],
         [[0.0, 0.5, 0.0, 0.0], [0.0, 0.4, 0.0, 0.0]],
         num_components=2,
         samples=255,
     )
     assert_allclose(
-        component_real, [[1.0, 1.0, 1.0, nan], [0.0, 0.5, 1.0, nan]], atol=1e-3
+        component_real, [[1.0, 0.5, 1.0, nan], [0.0, 0.5, 1.0, nan]], atol=1e-3
     )
     assert_allclose(
-        component_imag, [[0.0, 0.0, 0.0, nan], [0.0, 0.5, 0.0, nan]], atol=1e-3
+        component_imag, [[0.0, 0.5, 0.0, nan], [0.0, 0.5, 0.0, nan]], atol=1e-3
     )
     assert_allclose(
         fractions, [[0.0, 0.0, 0.0, nan], [1.0, 1.0, 1.0, nan]], atol=1e-3
@@ -68,7 +68,7 @@ def test_phasor_component_blind_two(exact):
     else:
         dtype = 'float64'
 
-    component_real, component_imag, fractions = phasor_component_blind(
+    component_real, component_imag, fractions = phasor_component_search(
         real, imag, 2, samples=255, dtype=dtype, num_threads=2
     )
 
@@ -84,37 +84,41 @@ def test_phasor_component_blind_two(exact):
     assert_allclose(fractions[1].mean(), 0.7, atol=1e-3)
 
 
-def test_phasor_component_blind_exceptions():
+def test_phasor_component_search_exceptions():
     real = [0.1, 0.2]
     imag = [0.4, 0.3]
-    phasor_component_blind(real, imag, 2)
+    phasor_component_search(real, imag, 2)
 
     # shape mismatch
     with pytest.raises(ValueError):
-        phasor_component_blind(real, imag[0], 2)
+        phasor_component_search(real, imag[0], 2)
 
     # no harmonics
     with pytest.raises(ValueError):
-        phasor_component_blind(real[0], imag[0], 2)
+        phasor_component_search(real[0], imag[0], 2)
 
     # number of components < 2
     with pytest.raises(ValueError):
-        phasor_component_blind(real, imag, 1)
+        phasor_component_search(real, imag, 1)
 
     # number of components does not match harmonics
     with pytest.raises(ValueError):
-        phasor_component_blind(real, imag, 3)
+        phasor_component_search(real, imag, 3)
 
     # samples < 1
     with pytest.raises(ValueError):
-        phasor_component_blind(real, imag, 2, samples=0)
+        phasor_component_search(real, imag, 2, samples=0)
 
     # dtype not float
     with pytest.raises(ValueError):
-        phasor_component_blind(real, imag, 2, dtype=numpy.int32)
+        phasor_component_search(real, imag, 2, dtype=numpy.int32)
+
+    # too many components
+    with pytest.raises(ValueError):
+        phasor_component_search([0.1, 0.2, 0.3, 0.4], [0.4, 0.3, 0.2, 0.1], 4)
 
     with pytest.raises(NotImplementedError):
-        phasor_component_blind([0.1, 0.2, 0.3, 0.4], [0.4, 0.3, 0.2, 0.1], 4)
+        phasor_component_search([0.1, 0.2, 0.3], [0.4, 0.3, 0.2], 3)
 
 
 def test_phasor_component_fraction():
