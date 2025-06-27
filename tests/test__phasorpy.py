@@ -20,6 +20,7 @@ from phasorpy._phasorpy import (
     _distance_from_point,
     _distance_from_segment,
     _distance_from_semicircle,
+    _fraction_in_triangle,
     _fraction_on_line,
     _fraction_on_segment,
     _intersect_circle_circle,
@@ -34,13 +35,47 @@ from phasorpy._phasorpy import (
     _is_inside_stadium,
     _is_near_line,
     _is_near_semicircle,
+    _phasor_to_single_lifetime,
     _point_on_line,
     _point_on_segment,
     _segment_direction_and_length,
 )
+from phasorpy.phasor import phasor_from_lifetime
 
 LINE = 0.2, 0.4, 0.9, 0.3
 POINTS = [0.4, 0.86, 0.82], [0.38, 0.4, 0.4]
+
+
+def test_phasor_to_single_lifetime():
+    """Test _phasor_to_single_lifetime function."""
+    lifetime = _phasor_to_single_lifetime(
+        [-0.1, 0.0, 0.5, 0.8, 1.0, 1.1, nan], 80.0 * math.pi * 2.0 * 1e-3
+    )
+    assert_allclose(
+        lifetime, [nan, numpy.inf, 1.98944, 0.99472, 0.0, nan, nan], atol=1e-4
+    )
+
+
+def test_fractions_in_triangle():
+    """Test _fraction_in_triangle function."""
+    frequency = 40.0
+    lifetime = [0.5, 4.2, 12.0]
+    fraction = [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+        [0.3, 0.5, 0.2],
+        [0.0, 0.6, 0.4],
+    ]
+    real, imag = phasor_from_lifetime(frequency, lifetime, fraction)
+
+    assert_allclose(
+        _fraction_in_triangle(
+            real, imag, real[0], imag[0], real[1], imag[1], real[2], imag[2]
+        ),
+        numpy.asarray(fraction).T,
+        atol=1e-6,
+    )
 
 
 def test_is_inside_circle():

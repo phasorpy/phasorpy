@@ -801,6 +801,22 @@ cdef float_t _phasor_to_normal_lifetime(
 
 
 @cython.ufunc
+cdef float_t _phasor_to_single_lifetime(
+    float_t real,
+    float_t omega,
+) noexcept nogil:
+    """Return single exponential lifetime from real coordinate."""
+    if isnan(real) or real < 0.0 or real > 1.0:
+        return <float_t> NAN
+
+    omega *= omega
+    if real * omega <= 0.0:
+        return <float_t> INFINITY
+
+    return <float_t> sqrt((1.0 - real) / (omega * real))
+
+
+@cython.ufunc
 cdef (float_t, float_t) _phasor_from_single_lifetime(
     float_t lifetime,
     float_t omega,
@@ -1706,24 +1722,63 @@ cdef (float_t, float_t, float_t, float_t) _intersect_semicircle_line(
     return x0, y0, x1, y1
 
 
+@cython.ufunc
+cdef (float_t, float_t, float_t) _fraction_in_triangle(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # first vertex
+    float_t y0,
+    float_t x1,  # second vertex
+    float_t y1,
+    float_t x2,  # third vertex
+    float_t y2,
+) noexcept nogil:
+    """Return barycentric coordinates of point in triangle."""
+    return fraction_in_triangle(x, y, x0, y0, x1, y1, x2, y2)
+
+
+cdef inline  (float_t, float_t, float_t) fraction_in_triangle(
+    float_t x,  # point
+    float_t y,
+    float_t x0,  # first vertex
+    float_t y0,
+    float_t x1,  # second vertex
+    float_t y1,
+    float_t x2,  # third vertex
+    float_t y2,
+) noexcept nogil:
+    """Return barycentric coordinates of point in triangle."""
+    cdef:
+        float_t t, f0, f1
+
+    t = (x0 - x2) * (y1 - y2) - (x1 - x2) * (y0 - y2)
+    if t == 0.0:
+        return 1.0, 0.0, 0.0
+    f0 = ((x - x2) * (y1 - y2) - (y - y2) * (x1 - x2)) / t
+    f1 = ((y - y2) * (x0 - x2) - (x - x2) * (y0 - y2)) / t
+
+    return <float_t> f0, <float_t> f1, <float_t> (1.0 - f0 - f1)
+
+
 ###############################################################################
 # Search functions
 
 def _component_search_2(
     float_t[:, :, ::] component,  # (re/im, num_components, pixels)
     float_t[:, ::] fraction,  # (num_components, pixels)
-    float_t[:, ::] real,  # (num_components, pixels)
-    float_t[:, ::] imag,  # (num_components, pixels)
-    ssize_t samples,
-    ssize_t num_threads
+    const float_t[:, ::] real,  # (num_components, pixels)
+    const float_t[:, ::] imag,  # (num_components, pixels)
+    const double[::] candidate,  # real coordinates to scan
+    const int num_threads
 ):
     """Find two lifetime components and fractions in harmonic coordinates."""
     cdef:
-        ssize_t i, j
+        ssize_t i, u
         double re1, im1, re2, im2
         double g0, g1, s0, s1, g0h1, s0h1, g1h1, s1h1, g0h2, s0h2, g1h2, s1h2
         double x, y, dx, dy, dr, dd, rdd
         double dmin, d, f, t
+        ssize_t samples
 
     if (
         component.shape[0] != 2
@@ -1734,29 +1789,30 @@ def _component_search_2(
     if fraction.shape[0] != 2 or fraction.shape[1] != real.shape[1]:
         raise ValueError('fraction shape invalid')
     if real.shape[0] != imag.shape[0] != 2:
-        raise ValueError('phasor array harmonics invalid')
+        raise ValueError('phasor harmonics invalid')
     if real.shape[1] != imag.shape[1]:
-        raise ValueError('phasor array size invalid')
-    if samples < 1:
-        raise ValueError('samples must be positive')
+        raise ValueError('phasor size invalid')
+    if candidate.shape[0] < 1:
+        raise ValueError('candidate size < 1')
+
+    samples = candidate.shape[0]
 
     with nogil, parallel(num_threads=num_threads):
 
-        for i in prange(real.shape[1]):
+        for u in prange(real.shape[1]):
             # loop over phasor coordinates
-
-            re1 = real[0, i]
-            im1 = imag[0, i]
-            re2 = real[1, i]
-            im2 = imag[1, i]
+            re1 = real[0, u]
+            re2 = real[1, u]
+            im1 = imag[0, u]
+            im2 = imag[1, u]
 
             if isnan(re1) or isnan(im1) or isnan(re2) or isnan(im2):
-                component[0, 0, i] = NAN
-                component[0, 1, i] = NAN
-                component[1, 0, i] = NAN
-                component[1, 1, i] = NAN
-                fraction[0, i] = NAN
-                fraction[1, i] = NAN
+                component[0, 0, u] = NAN
+                component[0, 1, u] = NAN
+                component[1, 0, u] = NAN
+                component[1, 1, u] = NAN
+                fraction[0, u] = NAN
+                fraction[1, u] = NAN
                 continue
 
             dmin = INFINITY
@@ -1766,11 +1822,10 @@ def _component_search_2(
             s1 = NAN
             f = NAN
 
-            for j in range(samples):
-                # scan first component on semicircle in equidistant steps
-                t = (j * M_PI) / (samples - 1)
-                g0h1 = cos(t) / 2.0 + 0.5
-                s0h1 = sin(t) / 2.0
+            for i in range(samples):
+                # scan first component
+                g0h1 = candidate[i]
+                s0h1 = sqrt(g0h1 - g0h1 * g0h1)
 
                 # second component is intersection of semicircle with line
                 # between first component and phasor coordinate
@@ -1806,9 +1861,9 @@ def _component_search_2(
                     continue
 
                 # second harmonic component coordinates on semicircle
-                g0h2 = g0h1 / (4.0 + (1.0 - 4.0) * g0h1)
+                g0h2 = g0h1 / (4.0 - 3.0 * g0h1)
                 s0h2 = sqrt(g0h2 - g0h2 * g0h2)
-                g1h2 = g1h1 / (4.0 + (1.0 - 4.0) * g1h1)
+                g1h2 = g1h1 / (4.0 - 3.0 * g1h1)
                 s1h2 = sqrt(g1h2 - g1h2 * g1h2)
 
                 # distance of phasor coordinates to line between
@@ -1824,7 +1879,7 @@ def _component_search_2(
                     continue
                 # projection of point on line using dot product
                 t = (x * dx + y * dy) / t
-                # add square of distance of point to line
+                # square of distance of point to line
                 dx = x - t * dx
                 dy = y - t * dy
                 d = dx * dx + dy * dy
@@ -1836,15 +1891,211 @@ def _component_search_2(
                     s0 = s0h1
                     s1 = s1h1
                     f = t
-                # elif d > dmin:
-                #     break
 
-            component[0, 0, i] = <float_t> g0
-            component[0, 1, i] = <float_t> g1
-            component[1, 0, i] = <float_t> s0
-            component[1, 1, i] = <float_t> s1
-            fraction[0, i] = <float_t> (1.0 - f)
-            fraction[1, i] = <float_t> f
+            component[0, 0, u] = <float_t> g0
+            component[0, 1, u] = <float_t> g1
+            component[1, 0, u] = <float_t> s0
+            component[1, 1, u] = <float_t> s1
+            fraction[0, u] = <float_t> (1.0 - f)
+            fraction[1, u] = <float_t> f
+
+
+def _component_search_3(
+    float_t[:, :, ::] component,  # (re/im, num_components, pixels)
+    float_t[:, ::] fraction,  # (num_components, pixels)
+    const float_t[:, ::] real,  # (num_components, pixels)
+    const float_t[:, ::] imag,  # (num_components, pixels)
+    const double[::] candidate,  # real coordinates to scan
+    const int num_threads
+):
+    """Find three lifetime components and fractions in harmonic coordinates.
+
+    This function searches for the optimal three-component decomposition by:
+    1. Scanning all possible combinations of three components on the semicircle
+    2. Calculating barycentric coordinates for each harmonic
+    3. Discarding fractions out of range [0, 1]
+    4. Minimizing the distance between predicted and actual coordinates
+
+    The search can be performed in parallel across all pixels.
+
+    """
+    cdef:
+        ssize_t i, j, k, u, samples
+        double re1, re2, re3, im1, im2, im3
+        double g0, g1, g2, s0, s1, s2
+        double g0h1, g1h1, g2h1, g0h2, g1h2, g2h2, g0h3, g1h3, g2h3
+        double s0h1, s1h1, s2h1, s0h2, s1h2, s2h2, s0h3, s1h3, s2h3
+        double f0h1, f1h1, _f2h1, f0h2, f1h2, f2h2, f0h3, f1h3, f2h3
+        double dist, dmin, t, f0, f1
+
+    if (
+        component.shape[0] != 2
+        or component.shape[1] != 3
+        or component.shape[2] != real.shape[1]
+    ):
+        raise ValueError('component shape invalid')
+    if fraction.shape[0] != 3 or fraction.shape[1] != real.shape[1]:
+        raise ValueError('fraction shape invalid')
+    if real.shape[0] != imag.shape[0] != 3:
+        raise ValueError('phasor harmonics invalid')
+    if real.shape[1] != imag.shape[1]:
+        raise ValueError('phasor size invalid')
+    if candidate.shape[0] < 3:
+        raise ValueError('candidate size < 3')
+
+    samples = candidate.shape[0]
+
+    with nogil, parallel(num_threads=num_threads):
+
+        for u in prange(real.shape[1]):
+            # loop over phasor coordinates
+            re1 = real[0, u]
+            re2 = real[1, u]
+            re3 = real[2, u]
+            im1 = imag[0, u]
+            im2 = imag[1, u]
+            im3 = imag[2, u]
+
+            if (
+                isnan(re1)
+                or isnan(im1)
+                or isnan(re2)
+                or isnan(im2)
+                or isnan(re3)
+                or isnan(im3)
+            ):
+                component[0, 0, u] = NAN
+                component[0, 1, u] = NAN
+                component[0, 2, u] = NAN
+                component[1, 0, u] = NAN
+                component[1, 1, u] = NAN
+                component[1, 2, u] = NAN
+                fraction[0, u] = NAN
+                fraction[1, u] = NAN
+                fraction[2, u] = NAN
+                continue
+
+            dmin = INFINITY
+            g0 = NAN
+            g1 = NAN
+            g2 = NAN
+            s0 = NAN
+            s1 = NAN
+            s2 = NAN
+            f0 = NAN
+            f1 = NAN
+
+            for i in range(samples - 2):
+                # scan first component
+                g0h1 = candidate[i]
+                s0h1 = sqrt(g0h1 - g0h1 * g0h1)
+                g0h2 = g0h1 / (4.0 - 3.0 * g0h1)
+                s0h2 = sqrt(g0h2 - g0h2 * g0h2)
+                g0h3 = g0h1 / (9.0 - 8.0 * g0h1)
+                s0h3 = sqrt(g0h3 - g0h3 * g0h3)
+
+                for j in range(i + 1, samples - 1):
+                    # scan second component
+                    g1h1 = candidate[j]
+                    s1h1 = sqrt(g1h1 - g1h1 * g1h1)
+                    g1h2 = g1h1 / (4.0 - 3.0 * g1h1)
+                    s1h2 = sqrt(g1h2 - g1h2 * g1h2)
+                    g1h3 = g1h1 / (9.0 - 8.0 * g1h1)
+                    s1h3 = sqrt(g1h3 - g1h3 * g1h3)
+
+                    for k in range(j + 1, samples):
+                        # scan third component
+                        g2h1 = candidate[k]
+                        s2h1 = sqrt(g2h1 - g2h1 * g2h1)
+                        g2h2 = g2h1 / (4.0 - 3.0 * g2h1)
+                        s2h2 = sqrt(g2h2 - g2h2 * g2h2)
+                        g2h3 = g2h1 / (9.0 - 8.0 * g2h1)
+                        s2h3 = sqrt(g2h3 - g2h3 * g2h3)
+
+                        # fractions in all harmonics
+                        f0h1, f1h1, _f2h1 = fraction_in_triangle(
+                            re1, im1, g0h1, s0h1, g1h1, s1h1, g2h1, s2h1
+                        )
+                        if (
+                            f0h1 < 0.0
+                            or f0h1 > 1.0
+                            or f1h1 < 0.0
+                            or f1h1 > 1.0
+                        ):
+                            continue  # outside triangle
+
+                        f0h2, f1h2, f2h2 = fraction_in_triangle(
+                            re2, im2, g0h2, s0h2, g1h2, s1h2, g2h2, s2h2
+                        )
+                        if (
+                            f0h2 < 0.0
+                            or f0h2 > 1.0
+                            or f1h2 < 0.0
+                            or f1h2 > 1.0
+                        ):
+                            continue  # outside triangle
+
+                        f0h3, f1h3, f2h3 = fraction_in_triangle(
+                            re3, im3, g0h3, s0h3, g1h3, s1h3, g2h3, s2h3
+                        )
+                        if (
+                            f0h3 < 0.0
+                            or f0h3 > 1.0
+                            or f1h3 < 0.0
+                            or f1h3 > 1.0
+                        ):
+                            continue  # outside triangle
+
+                        # distance from known coordinates in first harmonic
+                        # to coordinates calculated from second and third
+                        # harmonic fractions
+                        dist = 0.0
+                        t = g0h1 * f0h2 + g1h1 * f1h2 + g2h1 * f2h2 - re1
+                        dist = dist + t * t
+                        t = s0h1 * f0h2 + s1h1 * f1h2 + s2h1 * f2h2 - im1
+                        dist = dist + t * t
+                        t = g0h1 * f0h3 + g1h1 * f1h3 + g2h1 * f2h3 - re1
+                        dist = dist + t * t
+                        t = s0h1 * f0h3 + s1h1 * f1h3 + s2h1 * f2h3 - im1
+                        dist = dist + t * t
+
+                        # alternatively use distance of second and third
+                        # harmonic fractions to first harmonic fractions
+                        # f0h2 = f0h2 - f0h1
+                        # f0h3 = f0h3 - f0h1
+                        # f1h2 = f1h2 - f1h1
+                        # f1h3 = f1h3 - f1h1
+                        # f2h2 = f2h2 - f2h1
+                        # f2h3 = f2h3 - f2h1
+                        # dist = (
+                        #     f0h2 * f0h2
+                        #     + f1h2 * f1h2
+                        #     + f2h2 * f2h2
+                        #     + f0h3 * f0h3
+                        #     + f1h3 * f1h3
+                        #     + f2h3 * f2h3
+                        # )
+
+                        if dist < dmin:
+                            dmin = dist
+                            g0 = g0h1
+                            g1 = g1h1
+                            g2 = g2h1
+                            s0 = s0h1
+                            s1 = s1h1
+                            s2 = s2h1
+                            f0 = f0h1
+                            f1 = f1h1
+
+            component[0, 0, u] = <float_t> g0
+            component[0, 1, u] = <float_t> g1
+            component[0, 2, u] = <float_t> g2
+            component[1, 0, u] = <float_t> s0
+            component[1, 1, u] = <float_t> s1
+            component[1, 2, u] = <float_t> s2
+            fraction[0, u] = <float_t> f0
+            fraction[1, u] = <float_t> f1
+            fraction[2, u] = <float_t> (1.0 - f0 - f1)
 
 
 def _nearest_neighbor_2d(

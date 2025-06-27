@@ -40,12 +40,13 @@ import numpy
 from ._phasorpy import (
     _blend_and,
     _component_search_2,
+    _component_search_3,
     _fraction_on_segment,
     _is_inside_circle,
     _is_inside_stadium,
     _segment_direction_and_length,
 )
-from .phasor import phasor_threshold
+from .phasor import phasor_from_lifetime, phasor_threshold
 from .utils import number_threads
 
 
@@ -54,34 +55,44 @@ def phasor_component_search(
     imag: ArrayLike,
     /,
     num_components: int,
+    frequency: float,
     *,
-    samples: int = 256,
+    lifetime_range: tuple[float, float, float] | None = None,
+    unit_conversion: float = 1e-3,
     dtype: DTypeLike = None,
     num_threads: int | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return lifetime components from multi-harmonic phasor coordinates.
 
-    Return phasor coordinates and fractional intensities of two or three
-    single lifetime components given a set of multi-harmonic phasor
-    coordinates using the graphical approach described in [3]_.
-
-    Currently only the two component graphical method is implemented.
+    Return estimated phasor coordinates and fractional intensities of
+    two or three single-exponential lifetime components given a set of
+    multi-harmonic phasor coordinates using the graphical approach described
+    in [3]_.
 
     Parameters
     ----------
     real : array_like
         Real component of phasor coordinates.
-        Must contain `num_components` harmonics in the first dimension.
+        Must contain at least `num_components` linearly increasing harmonics
+        in the first dimension.
     imag : array_like
         Imaginary component of phasor coordinates.
-        Must contain `num_components` harmonics in the first dimension.
-    num_components : int, optional
+        Must have same shape as `real`.
+    num_components : int
         Number of components to resolve. Must be two or three.
-    samples : int, optional
-        Number of first-component candidates to scan.
-        The higher the number, the more accurate the result of the first
-        component, but also the longer the calculation time.
-        The default is 256.
+    frequency : float
+        Laser pulse or modulation frequency in MHz.
+    lifetime_range : tuple of float, optional
+        Start, stop, and step of lifetime range in ns to search for components.
+        For two components, this defines the search range for the first
+        lifetime component.
+        For three components, this defines the search range for all
+        lifetime components.
+        The default is ``(0.0, 20.0, 0.1)``.
+    unit_conversion : float, optional, default: 1e-3
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
     dtype : dtype_like, optional
         Floating point data type used for calculation and output values.
         Either `float32` or `float64`. The default is `float64`.
@@ -94,18 +105,19 @@ def phasor_component_search(
     Returns
     -------
     component_real : ndarray
-        Real coordinates of resolved components.
+        Real coordinates of resolved lifetime components.
     component_imag : ndarray
-        Imaginary coordinates of resolved components.
+        Imaginary coordinates of resolved lifetime components.
     fraction : ndarray
-        Fractional intensities of resolved components.
+        Fractional intensities of resolved lifetime components.
 
     Raises
     ------
     ValueError
-        The real or imaginary coordinates do not match in shape.
-        The number of components is less than 2 or more than 3..
-        The number of components does not match number of harmonics.
+        The shapes of real and imaginary coordinates do not match.
+        The number of components is less than 2 or more than 3.
+        The number of harmonics is less than the number of components.
+        The lifetime range is invalid.
 
     References
     ----------
@@ -121,16 +133,23 @@ def phasor_component_search(
     and 0.9 ns lifetimes with 70/30% fractions at 80 and 160 MHz:
 
     >>> phasor_component_search(
-    ...     [0.3773104, 0.20213886],
-    ...     [0.3834715, 0.30623315],
-    ...     num_components=2,
-    ...     samples=256,
+    ...     [0.3773104, 0.20213886], [0.3834715, 0.30623315], 2, frequency=80.0
     ... )
-    (array([0.83, 0.1832]), array([0.3757, 0.3868]), array([0.3002, 0.6998]))
+    (array([0.8301, 0.1833]), array([0.3755, 0.3869]), array([0.3, 0.7]))
 
     """
-    if num_components < 2:
-        raise ValueError(f'{num_components=} < 2')
+    if num_components not in {2, 3}:
+        raise ValueError(f'{num_components=} not in (2, 3)')
+
+    if lifetime_range is None:
+        lifetime_range = (0.0, 20.0, 0.1)
+    elif (
+        lifetime_range[0] < 0.0
+        or lifetime_range[1] <= lifetime_range[0]
+        or lifetime_range[2] <= 0.0
+        or lifetime_range[2] >= lifetime_range[1] - lifetime_range[0]
+    ):
+        raise ValueError(f'invalid {lifetime_range=}')
 
     num_threads = number_threads(num_threads)
 
@@ -143,25 +162,34 @@ def phasor_component_search(
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
-    if real.shape[0] != num_components:
-        raise ValueError(f'{real.shape[0]=} != {num_components=}')
+    if real.shape[0] < num_components:
+        raise ValueError(f'{real.shape[0]=} < {num_components=}')
 
     shape = real.shape[1:]
-    real = real.reshape((num_components, -1))
-    imag = imag.reshape((num_components, -1))
+    real = real[:num_components].reshape((num_components, -1))
+    imag = imag[:num_components].reshape((num_components, -1))
     size = real.shape[-1]
 
     component = numpy.zeros((2, num_components, size), dtype=dtype)
     fraction = numpy.zeros((num_components, size), dtype=dtype)
 
+    candidate = phasor_from_lifetime(
+        frequency,
+        numpy.arange(*lifetime_range, dtype=dtype),
+        unit_conversion=unit_conversion,
+    )[0]
+
     if num_components == 2:
         _component_search_2(
-            component, fraction, real, imag, samples, num_threads
+            component, fraction, real, imag, candidate, num_threads
         )
-    elif num_components == 3:
-        raise NotImplementedError
     else:
-        raise ValueError(f'{num_components=} not in (2, 3)')
+        if candidate.size < 3:
+            raise ValueError(f'invalid {lifetime_range=} number of steps')
+
+        _component_search_3(
+            component, fraction, real, imag, candidate, num_threads
+        )
 
     component = component.reshape(2, num_components, *shape)
     fraction = fraction.reshape(num_components, *shape)
