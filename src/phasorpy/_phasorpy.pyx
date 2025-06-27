@@ -1806,7 +1806,17 @@ def _component_search_2(
             im1 = imag[0, u]
             im2 = imag[1, u]
 
-            if isnan(re1) or isnan(im1) or isnan(re2) or isnan(im2):
+            if (
+                isnan(re1)
+                or isnan(im1)
+                or isnan(re2)
+                or isnan(im2)
+                # outside semicircle?
+                or im1 < 0.0
+                or im2 < 0.0
+                or im1 * im1 > re1 - re1 * re1 + 1e-9
+                or im2 * im2 > re2 - re2 * re2 + 1e-9
+            ):
                 component[0, 0, u] = NAN
                 component[0, 1, u] = NAN
                 component[1, 0, u] = NAN
@@ -1838,8 +1848,8 @@ def _component_search_2(
                     # no intersection
                     g0 = g0h1
                     s0 = s0h1
-                    g1 = g0h1
-                    s1 = s0h1
+                    g1 = g0h1  # NAN?
+                    s1 = s0h1  # NAN?
                     f = 1.0
                     break
                 rdd = sqrt(rdd)
@@ -1848,6 +1858,10 @@ def _component_search_2(
                 g1h1 = (dd * dy + copysign(1.0, dy) * dx * rdd) / dr + 0.5
                 s1h1 = (-dd * dx + fabs(dy) * rdd) / dr
 
+                if s0h1 < 0 or s1h1 < 0:
+                    # no other intersection with semicircle
+                    break
+
                 if g0h1 < g1h1:
                     t = g0h1
                     g0h1 = g1h1
@@ -1855,10 +1869,6 @@ def _component_search_2(
                     t = s0h1
                     s0h1 = s1h1
                     s1h1 = t
-
-                if s0h1 < 0 or s1h1 < 0:
-                    # no other intersection with semicircle
-                    continue
 
                 # second harmonic component coordinates on semicircle
                 g0h2 = g0h1 / (4.0 - 3.0 * g0h1)

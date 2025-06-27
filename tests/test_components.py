@@ -1,5 +1,7 @@
 """Tests for the phasorpy.components module."""
 
+from math import nan
+
 import numpy
 import pytest
 from numpy.testing import assert_allclose
@@ -37,38 +39,39 @@ def _plot(frequency, real, imag, component_real=None, component_imag=None):
     pp.show()
 
 
-def test_phasor_component_search_two():
+@pytest.mark.parametrize(
+    'real, imag, expected_real, expected_imag, expected_fraction',
+    [
+        # inside semicircle
+        (
+            *phasor_from_lifetime([80, 160], [0.5, 4.2], [0.3, 0.7]),
+            *phasor_from_lifetime(80, [0.5, 4.2]),
+            [0.3, 0.7],
+        ),
+        # infinite lifetime
+        ([0, 0], [0, 0], [1, 0], [0, 0], [0, 1]),
+        # zero lifetime
+        ([1, 1], [0, 0], [1, 1], [0, 0], [0, 1]),
+        # on semicircle
+        ([0.5, 0.2], [0.5, 0.4], [1, 0.5], [0, 0.5], [0, 1]),
+        # outside semicircle
+        ([0.5, 0.2], [0.6, 10], [nan, nan], [nan, nan], [nan, nan]),
+        ([0.5, 0.2], [0.5, -1], [nan, nan], [nan, nan], [nan, nan]),
+        # nan
+        ([nan, 0], [0, 0], [nan, nan], [nan, nan], [nan, nan]),
+        ([0, 0], [0, nan], [nan, nan], [nan, nan], [nan, nan]),
+    ],
+)
+def test_phasor_component_search_two(
+    real, imag, expected_real, expected_imag, expected_fraction
+):
     """Test phasor_component_search function with two components."""
-    # scalar
-    frequency = 60.0
-    lifetime = [0.5, 4.2]
-    fraction = [0.3, 0.7]
-    component_real, component_imag, fractions = phasor_component_search(
-        *phasor_from_lifetime([frequency, frequency * 2], lifetime, fraction),
-        frequency=frequency,
-        num_components=2,
-        lifetime_range=(0.4, 0.6, 0.1),
+    component_real, component_imag, fraction = phasor_component_search(
+        real, imag, num_components=2, frequency=80.0
     )
-    expected_real, expected_imag = phasor_from_lifetime(frequency, lifetime)
     assert_allclose(component_real, expected_real, atol=1e-6)
     assert_allclose(component_imag, expected_imag, atol=1e-6)
-    assert_allclose(fractions, fraction, atol=1e-6)
-
-    # boundary conditions
-    nan = numpy.nan
-    component_real, component_imag, fractions = phasor_component_search(
-        [[0.0, 1.0, nan], [0.0, 1.0, 0.0]],
-        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
-        num_components=2,
-        frequency=frequency,
-    )
-    assert_allclose(
-        component_real, [[1.0, 1.0, nan], [0.0, 1.0, nan]], atol=1e-3
-    )
-    assert_allclose(
-        component_imag, [[0.0, 0.0, nan], [0.0, 0.0, nan]], atol=1e-3
-    )
-    assert_allclose(fractions, [[0.0, 0.0, nan], [1.0, 1.0, nan]], atol=1e-3)
+    assert_allclose(fraction, expected_fraction, atol=1e-6)
 
 
 @pytest.mark.parametrize('exact', [True, False])
@@ -119,51 +122,93 @@ def test_phasor_component_search_two_distribution(exact):
     assert_allclose(fractions[1].mean(), 0.7, atol=1e-3)
 
 
-def test_phasor_component_search_three():
+@pytest.mark.parametrize(
+    'real, imag, expected_real, expected_imag, expected_fraction',
+    [
+        # inside semicircle
+        (
+            *phasor_from_lifetime(
+                [80, 160, 240], [0.5, 4.2, 12.0], [0.3, 0.5, 0.2]
+            ),
+            *phasor_from_lifetime(80, [0.5, 4.2, 12.0]),
+            [0.3, 0.5, 0.2],
+        ),
+        # on semicircle
+        (
+            *phasor_from_lifetime(
+                [80, 160, 240], [2.0, 1.0, 0.5], [1.0, 0.0, 0.0]
+            ),
+            [0.497352, 0.305441, 0.09614],  # only first component is relevant
+            [0.499993, 0.460594, 0.294783],
+            [1.0, 0.0, 0.0],
+        ),
+        # lifetime out of scan range cannot be resolved
+        (
+            *phasor_from_lifetime(
+                [80, 160, 240], [21, 22, 23], [0.5, 0.3, 0.3]
+            ),
+            [nan, nan, nan],
+            [nan, nan, nan],
+            [nan, nan, nan],
+        ),
+        # infinite lifetime cannot be resolved
+        (
+            [0, 0, 0],
+            [0, 0, 0],
+            [nan, nan, nan],
+            [nan, nan, nan],
+            [nan, nan, nan],
+        ),
+        # zero lifetime
+        (
+            [1, 1, 1],
+            [0, 0, 0],
+            [1, 0.99748, 0.989995],
+            [0, 0.050139, 0.099525],
+            [1, 0, 0],
+        ),
+        # outside semicircle
+        (
+            [0.5, 0.2, 0.1],
+            [0.6, 10, 0.3],
+            [nan, nan, nan],
+            [nan, nan, nan],
+            [nan, nan, nan],
+        ),
+        (
+            [0.5, 0.2, 0.1],
+            [0.5, -1, 0.3],
+            [nan, nan, nan],
+            [nan, nan, nan],
+            [nan, nan, nan],
+        ),
+        # nan
+        (
+            [nan, 0, 0],
+            [0, 0, 0],
+            [nan, nan, nan],
+            [nan, nan, nan],
+            [nan, nan, nan],
+        ),
+        (
+            [0, 0, 0],
+            [0, 0, nan],
+            [nan, nan, nan],
+            [nan, nan, nan],
+            [nan, nan, nan],
+        ),
+    ],
+)
+def test_phasor_component_search_three(
+    real, imag, expected_real, expected_imag, expected_fraction
+):
     """Test phasor_component_search function with three components."""
-    # scalar
-    frequency = 80.0
-    lifetime = [0.5, 4.2, 12.0]
-    fraction = [0.3, 0.5, 0.2]
-    real, imag = phasor_from_lifetime(
-        [frequency, frequency * 2, frequency * 3], lifetime, fraction
+    component_real, component_imag, fraction = phasor_component_search(
+        real, imag, num_components=3, frequency=80.0
     )
-    component_real, component_imag, fractions = phasor_component_search(
-        real,
-        imag,
-        frequency=frequency,
-        num_components=3,
-        lifetime_range=(0.4, 13, 0.1),
-    )
-    expected_real, expected_imag = phasor_from_lifetime(frequency, lifetime)
     assert_allclose(component_real, expected_real, atol=1e-6)
     assert_allclose(component_imag, expected_imag, atol=1e-6)
-    assert_allclose(fractions, fraction, atol=1e-6)
-
-    # boundary conditions
-    nan = numpy.nan
-    component_real, component_imag, fractions = phasor_component_search(
-        [[0.0, 1.0, nan], [0.0, 1.0, 0.0], [0.0, 1.0, 0.0]],
-        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],
-        num_components=3,
-        frequency=frequency,
-        lifetime_range=(0.0, 1.0, 0.01),
-    )
-    assert_allclose(
-        component_real,
-        [[nan, 1.0, nan], [nan, 1.0, nan], [nan, 1.0, nan]],
-        atol=1e-3,
-    )
-    assert_allclose(
-        component_imag,
-        [[nan, 0.0, nan], [nan, 0.005, nan], [nan, 0.01, nan]],
-        atol=1e-3,
-    )
-    assert_allclose(
-        fractions,
-        [[nan, 1.0, nan], [nan, 0.0, nan], [nan, 0.0, nan]],
-        atol=1e-3,
-    )
+    assert_allclose(fraction, expected_fraction, atol=1e-6)
 
 
 @pytest.mark.parametrize('exact', [True, False])
