@@ -187,6 +187,8 @@ def phasor_component_search(
         if candidate.size < 3:
             raise ValueError(f'invalid {lifetime_range=} number of steps')
 
+        # include infinite lifetime and pre-calculate all harmonics
+        candidate = numpy.pad(candidate, (0, 1))
         candidate = numpy.hstack(
             phasor_at_harmonic(candidate[:, None], 1, [1, 2, 3])
         )

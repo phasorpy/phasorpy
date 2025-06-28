@@ -151,13 +151,13 @@ def test_phasor_component_search_two_distribution(exact):
             [nan, nan, nan],
             [nan, nan, nan],
         ),
-        # infinite lifetime cannot be resolved
+        # infinite lifetime
         (
             [0, 0, 0],
             [0, 0, 0],
-            [nan, nan, nan],
-            [nan, nan, nan],
-            [nan, nan, nan],
+            [1, 0.99748, 0],
+            [0, 0.050139, 0],
+            [0, 0, 1],
         ),
         # zero lifetime
         (
