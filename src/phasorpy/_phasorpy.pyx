@@ -1915,7 +1915,7 @@ def _component_search_3(
     float_t[:, ::] fraction,  # (num_components, pixels)
     const float_t[:, ::] real,  # (num_components, pixels)
     const float_t[:, ::] imag,  # (num_components, pixels)
-    const double[::] candidate,  # real coordinates to scan
+    const double[:, ::] candidate,  # (sample, harmonic/phasor)
     const int num_threads
 ):
     """Find three lifetime components and fractions in harmonic coordinates.
@@ -1950,8 +1950,8 @@ def _component_search_3(
         raise ValueError('phasor harmonics invalid')
     if real.shape[1] != imag.shape[1]:
         raise ValueError('phasor size invalid')
-    if candidate.shape[0] < 3:
-        raise ValueError('candidate size < 3')
+    if candidate.shape[0] < 3 or candidate.shape[1] != 6:
+        raise ValueError('candidate shape invalid')
 
     samples = candidate.shape[0]
 
@@ -1997,30 +1997,30 @@ def _component_search_3(
 
             for i in range(samples - 2):
                 # scan first component
-                g0h1 = candidate[i]
-                s0h1 = sqrt(g0h1 - g0h1 * g0h1)
-                g0h2 = g0h1 / (4.0 - 3.0 * g0h1)
-                s0h2 = sqrt(g0h2 - g0h2 * g0h2)
-                g0h3 = g0h1 / (9.0 - 8.0 * g0h1)
-                s0h3 = sqrt(g0h3 - g0h3 * g0h3)
+                g0h1 = candidate[i, 0]
+                g0h2 = candidate[i, 1]
+                g0h3 = candidate[i, 2]
+                s0h1 = candidate[i, 3]
+                s0h2 = candidate[i, 4]
+                s0h3 = candidate[i, 5]
 
                 for j in range(i + 1, samples - 1):
                     # scan second component
-                    g1h1 = candidate[j]
-                    s1h1 = sqrt(g1h1 - g1h1 * g1h1)
-                    g1h2 = g1h1 / (4.0 - 3.0 * g1h1)
-                    s1h2 = sqrt(g1h2 - g1h2 * g1h2)
-                    g1h3 = g1h1 / (9.0 - 8.0 * g1h1)
-                    s1h3 = sqrt(g1h3 - g1h3 * g1h3)
+                    g1h1 = candidate[j, 0]
+                    g1h2 = candidate[j, 1]
+                    g1h3 = candidate[j, 2]
+                    s1h1 = candidate[j, 3]
+                    s1h2 = candidate[j, 4]
+                    s1h3 = candidate[j, 5]
 
                     for k in range(j + 1, samples):
                         # scan third component
-                        g2h1 = candidate[k]
-                        s2h1 = sqrt(g2h1 - g2h1 * g2h1)
-                        g2h2 = g2h1 / (4.0 - 3.0 * g2h1)
-                        s2h2 = sqrt(g2h2 - g2h2 * g2h2)
-                        g2h3 = g2h1 / (9.0 - 8.0 * g2h1)
-                        s2h3 = sqrt(g2h3 - g2h3 * g2h3)
+                        g2h1 = candidate[k, 0]
+                        g2h2 = candidate[k, 1]
+                        g2h3 = candidate[k, 2]
+                        s2h1 = candidate[k, 3]
+                        s2h2 = candidate[k, 4]
+                        s2h3 = candidate[k, 5]
 
                         # fractions in all harmonics
                         f0h1, f1h1, _f2h1 = fraction_in_triangle(

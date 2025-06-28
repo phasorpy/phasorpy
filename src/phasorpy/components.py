@@ -46,7 +46,7 @@ from ._phasorpy import (
     _is_inside_stadium,
     _segment_direction_and_length,
 )
-from .phasor import phasor_from_lifetime, phasor_threshold
+from .phasor import phasor_at_harmonic, phasor_from_lifetime, phasor_threshold
 from .utils import number_threads
 
 
@@ -186,6 +186,10 @@ def phasor_component_search(
     else:
         if candidate.size < 3:
             raise ValueError(f'invalid {lifetime_range=} number of steps')
+
+        candidate = numpy.hstack(
+            phasor_at_harmonic(candidate[:, None], 1, [1, 2, 3])
+        )
 
         _component_search_3(
             component, fraction, real, imag, candidate, num_threads
