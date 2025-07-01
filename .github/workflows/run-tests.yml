@@ -87,7 +87,7 @@ jobs:
         os: ["ubuntu-22.04", "windows-2022", "macos-13"]
     steps:
       - uses: actions/checkout@v4
-      - uses: pypa/cibuildwheel@v2.23.3
+      - uses: pypa/cibuildwheel@v3.0.0
         env:
           # CIBW_ENVIRONMENT: "PIP_PRE=1"
           CIBW_BUILD_VERBOSITY: 3
@@ -115,7 +115,7 @@ jobs:
   #        uses: docker/setup-qemu-action@v3
   #        with:
   #          platforms: all
-  #      - uses: pypa/cibuildwheel@v2.23.3
+  #      - uses: pypa/cibuildwheel@v3.0.0
   #        env:
   #          CIBW_ARCHS_LINUX: aarch64
   #          CIBW_BUILD_VERBOSITY: 2
