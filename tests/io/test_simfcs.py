@@ -187,7 +187,7 @@ def test_phasor_from_simfcs_referenced_ref():
     # empty file
     with TempFileName('empty.ref') as filename:
         with open(filename, 'wb') as fh:
-            fh.write(b'')
+            fh.write(b'0')
         with pytest.raises(ValueError):
             phasor_from_simfcs_referenced(filename)
 

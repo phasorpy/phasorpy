@@ -184,13 +184,13 @@ def phasor_from_simfcs_referenced(
     SimFCS referenced REF and R64 files contain square-shaped phasor
     coordinate images (encoded as phase and modulation) for two harmonics.
     Phasor coordinates from lifetime-resolved signals are calibrated.
-    Variants of referenced files (RE#) written by other software may contain
-    up to eight harmonics and may be uncalibrated.
+    Variants of referenced files (RE<n>) written by other software may
+    contain up to eight harmonics and may be uncalibrated.
 
     Parameters
     ----------
     filename : str or Path
-        Name of SimFCS REF, R64, or RE# file to read.
+        Name of SimFCS REF, R64, or RE<n> file to read.
     harmonic : int or sequence of int, optional
         Harmonic(s) to include in returned phasor coordinates.
         By default, only the first harmonic is returned.
@@ -214,7 +214,7 @@ def phasor_from_simfcs_referenced(
     Raises
     ------
     lfdfiles.LfdfileError
-        File is not a SimFCS REF, R64, or RE# file.
+        File is not a SimFCS REF, R64, or RE<n> file.
 
     See Also
     --------
@@ -241,7 +241,7 @@ def phasor_from_simfcs_referenced(
 
         with lfdfiles.SimfcsR64(filename) as r64:
             data = r64.asarray()
-    elif ext[:3] == '.re':
+    elif ext.startswith('.re') and len(ext) == 4:
         if ext[-1] == 'f':
             num_images = 5
         elif ext[-1].isdigit():
@@ -249,7 +249,7 @@ def phasor_from_simfcs_referenced(
             num_images = int(ext[-1]) * 2 + 1
         else:
             raise ValueError(
-                f'file extension must be .ref, .re#, .r64, not {ext!r}'
+                f'file extension must be .ref, .r64, or .re<n>, not {ext!r}'
             )
         size = os.path.getsize(filename)
         if (
@@ -262,7 +262,7 @@ def phasor_from_simfcs_referenced(
         data = numpy.fromfile(filename, dtype='<f4').reshape((-1, size, size))
     else:
         raise ValueError(
-            f'file extension must be .ref, .re#, .r64, not {ext!r}'
+            f'file extension must be .ref, .r64, or .re<n>, not {ext!r}'
         )
 
     harmonic, keep_harmonic_dim = parse_harmonic(harmonic, data.shape[0] // 2)
