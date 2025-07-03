@@ -19,6 +19,8 @@ Datasets from the following repositories are available:
   <https://zenodo.org/records/14026720>`_
 - `Convallaria FLIM dataset in FLIM LABS JSON format
   <https://zenodo.org/records/15007900>`_
+- `FLIM and spectral dataset for GSLab
+  <https://figshare.com/articles/dataset/FLIM_dataset_for_GSLab/28067108>`_
 
 The implementation is based on the `Pooch <https://www.fatiando.org/pooch>`_
 library.
@@ -397,6 +399,60 @@ FLIMLABS = pooch.create(
     },
 )
 
+FIGSHARE_28067108 = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/figshare_28067108'
+    ),
+    env=ENV,
+    registry={
+        '38_Hoechst_Golgi_Mito_Lyso_CellMask_mixture.lsm': (
+            'sha256:'
+            '092ac050edf55e26dcda8cba10122408c6f1b81d19accf07214385d6eebfcf3e'
+        ),
+        '38_Hoechst_Golgi_Mito_Lyso_CellMask_mixture.lsm.zip': (
+            'sha256:'
+            '19298d12b16a58c1de3f532398c154d89df3f2286a1a6ee38a29f1fbefac78fc'
+        ),
+        '40x800fov19LP500p30_4dyes_a1_$CG0T_ch1_h1_h2.R64': (
+            'sha256:'
+            'ad1bae8c3624eecb8927283e333ab5ea3fb864d6c5bb0f155da83c7a8aa40df3'
+        ),
+        '40x800fov19LP500p30_AcO_a4_$CG0T_ch1_h1_h2.R64': (
+            'sha256:'
+            'd1de46652fbed0626ae6ad6334c41baafb0a5ae9e0e15e49221eb540a666d7e7'
+        ),
+        '40x800fov19LP500p30_EtBr_a5_$CG0T_ch1_h1_h2.R64': (
+            'sha256:'
+            '9f4dd2d328877d2b18e064a3fb20d2a5318c833caa5a3cea15bafbf8df5d588a'
+        ),
+        '40x800fov19LP500p30_NucB_a6_$CG0T_ch1_h1_h2.R64': (
+            'sha256:'
+            '74e378ddae84f6532d7ac05f8639feb42541eecb278c842e9a18565c201242f8'
+        ),
+        '40x800fov19LP500p30_RoseBx100_a1_$CG0T_ch1_h1_h2.R64': (
+            'sha256:'
+            '898e0e7e96f8b6c2ee83940f94026dd9006e6fc46bb7e56c62dd22855079e279'
+        ),
+        'Coumarin6.txt': (
+            'sha256:'
+            '6a3ae0f886b512c26cea8bc4b4cd9027ee8d4b7dd437a1eeb9621947e19c3c88'
+        ),
+        'Hoechst_Lyso_Golgi_MitoTracker_CellMask.csv': (
+            'sha256:'
+            '1d000ae6268e6d290ab1cfdf2d31d840f27183cba75b380f116e1049696bb3a4'
+        ),
+        'Mosaic04_10x3_FOV600_z95_32A1_t06_uncalibrated.ref': (
+            'sha256:'
+            '3c23ca9a21a3ef762765fc81591dd0cf9bdaf3e77fa4faa3bf60da69e6ab1127'
+        ),
+        'Mosaic04_10x3_FOV600_z95_32A1_t06_uncalibrated.ref.zip': (
+            'sha256:'
+            '001a472d81b3d348ac4680c73de877ee809c2f229f882ef015225e208a7273fb'
+        ),
+    },
+)
+
 FIGSHARE_22336594 = pooch.create(
     path=pooch.os_cache('phasorpy'),
     base_url=(
@@ -469,6 +525,7 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'zenodo-14976703': ZENODO_14976703,
     'convallaria-fbd': CONVALLARIA_FBD,
     'flimlabs': FLIMLABS,
+    'figshare_28067108': FIGSHARE_28067108,
     'figshare_22336594': FIGSHARE_22336594,
     'figshare_22336594_exported': FIGSHARE_22336594_EXPORTED,
     'misc': MISC,
