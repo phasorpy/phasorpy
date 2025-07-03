@@ -12,6 +12,7 @@ __all__ = [
     'signal_from_z64',
 ]
 
+import math
 import os
 import struct
 import zlib
@@ -180,14 +181,16 @@ def phasor_from_simfcs_referenced(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
     """Return phasor coordinates and metadata from SimFCS REF or R64 file.
 
-    SimFCS referenced REF and R64 files contain phasor coordinate images
-    (encoded as phase and modulation) for two harmonics.
+    SimFCS referenced REF and R64 files contain square-shaped phasor
+    coordinate images (encoded as phase and modulation) for two harmonics.
     Phasor coordinates from lifetime-resolved signals are calibrated.
+    Variants of referenced files (RE<n>) written by other software may
+    contain up to eight harmonics and may be uncalibrated.
 
     Parameters
     ----------
     filename : str or Path
-        Name of SimFCS REF or R64 file to read.
+        Name of SimFCS REF, R64, or RE<n> file to read.
     harmonic : int or sequence of int, optional
         Harmonic(s) to include in returned phasor coordinates.
         By default, only the first harmonic is returned.
@@ -211,7 +214,7 @@ def phasor_from_simfcs_referenced(
     Raises
     ------
     lfdfiles.LfdfileError
-        File is not a SimFCS REF or R64 file.
+        File is not a SimFCS REF, R64, or RE<n> file.
 
     See Also
     --------
@@ -219,7 +222,7 @@ def phasor_from_simfcs_referenced(
 
     Notes
     -----
-    The implementation is based on the
+    The implementation for reading R64 files is based on the
     `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
 
     Examples
@@ -232,17 +235,35 @@ def phasor_from_simfcs_referenced(
     array([[...]], dtype=float32)
 
     """
-    import lfdfiles
-
     ext = os.path.splitext(filename)[-1].lower()
     if ext == '.r64':
+        import lfdfiles
+
         with lfdfiles.SimfcsR64(filename) as r64:
             data = r64.asarray()
-    elif ext == '.ref':
-        with lfdfiles.SimfcsRef(filename) as ref:
-            data = ref.asarray()
+    elif ext.startswith('.re') and len(ext) == 4:
+        if ext[-1] == 'f':
+            num_images = 5
+        elif ext[-1].isdigit():
+            # non-SimFCS referenced files containing other number of harmonics
+            num_images = int(ext[-1]) * 2 + 1
+        else:
+            raise ValueError(
+                f'file extension must be .ref, .r64, or .re<n>, not {ext!r}'
+            )
+        size = os.path.getsize(filename)
+        if (
+            size > 4294967295
+            or size % (num_images * 4)
+            or not math.sqrt(size // (num_images * 4)).is_integer()
+        ):
+            raise ValueError(f'{filename!r} is not a valid referenced file')
+        size = int(math.sqrt(size // (num_images * 4)))
+        data = numpy.fromfile(filename, dtype='<f4').reshape((-1, size, size))
     else:
-        raise ValueError(f'file extension must be .ref or .r64, not {ext!r}')
+        raise ValueError(
+            f'file extension must be .ref, .r64, or .re<n>, not {ext!r}'
+        )
 
     harmonic, keep_harmonic_dim = parse_harmonic(harmonic, data.shape[0] // 2)
 

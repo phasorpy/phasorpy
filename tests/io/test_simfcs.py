@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 import lfdfiles
 import numpy
 import pytest
-from _conftest import SKIP_FETCH, TempFileName
+from _conftest import SKIP_FETCH, SKIP_PRIVATE, TempFileName, private_file
 from numpy.testing import assert_allclose, assert_almost_equal
 
 from phasorpy.datasets import fetch
@@ -177,6 +177,20 @@ def test_phasor_from_simfcs_referenced_ref():
     with pytest.raises(ValueError):
         phasor_from_simfcs_referenced(filename)
 
+    # wrong extension
+    with TempFileName('empty.ret') as filename:
+        with open(filename, 'wb') as fh:
+            fh.write(b'')
+        with pytest.raises(ValueError):
+            phasor_from_simfcs_referenced(filename)
+
+    # empty file
+    with TempFileName('empty.ref') as filename:
+        with open(filename, 'wb') as fh:
+            fh.write(b'0')
+        with pytest.raises(ValueError):
+            phasor_from_simfcs_referenced(filename)
+
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_phasor_from_simfcs_referenced_r64():
@@ -205,6 +219,38 @@ def test_phasor_from_simfcs_referenced_r64():
     assert_allclose(
         numpy.nanmean(imag, axis=(1, 2)), [0.32413888, 0.38899058], atol=1e-3
     )
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_phasor_from_simfcs_referenced_re2():
+    """Test phasor_from_simfcs_referenced with RE2 file."""
+    filename = private_file(
+        'Mosaic04_10x3_FOV600_z95_32A1_t06_uncalibrated.re2'
+    )
+    mean, real, imag, attrs = phasor_from_simfcs_referenced(filename)
+    assert mean.dtype == numpy.float32
+    assert mean.shape == (1200, 1200)
+    assert real.shape == (1200, 1200)
+    assert imag.shape == (1200, 1200)
+    assert attrs['dims'] == ('Y', 'X')
+    assert_allclose(numpy.nanmean(mean), 93.36889, atol=1e-3)
+    assert_allclose(numpy.nanmean(real), 0.289324, atol=1e-3)
+    assert_allclose(numpy.nanmean(imag), 0.363937, atol=1e-3)
+
+    for harmonic in ('all', [1, 2]):
+        mean, real, imag, attrs = phasor_from_simfcs_referenced(
+            filename, harmonic=harmonic
+        )
+        assert mean.shape == (1200, 1200)
+        assert real.shape == (2, 1200, 1200)
+        assert imag.shape == (2, 1200, 1200)
+        assert_allclose(numpy.nanmean(mean), 93.36889)
+        assert_allclose(
+            numpy.nanmean(real, axis=(1, 2)), [0.289324, 0.119052], atol=1e-3
+        )
+        assert_allclose(
+            numpy.nanmean(imag, axis=(1, 2)), [0.363937, 0.293647], atol=1e-3
+        )
 
 
 def test_phasor_to_simfcs_referenced():
