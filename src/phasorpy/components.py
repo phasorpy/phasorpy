@@ -89,6 +89,7 @@ def phasor_component_search(
         For three components, this defines the search range for all
         lifetime components.
         The default is ``(0.0, 20.0, 0.1)``.
+        An infinite lifetime is included in the search.
     unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
