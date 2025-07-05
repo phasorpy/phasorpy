@@ -464,7 +464,9 @@ def phasor_component_fit(
     # [real coordinates (for each harmonic)] +
     # [imaginary coordinates (for each harmonic)] +
     # [ones for intensity constraint]
-    coords = numpy.ones((2 * num_harmonics + 1,) + real.shape[1:])
+    coords = numpy.ones(
+        (2 * num_harmonics + 1,) + real.shape[1:]  # type: ignore[union-attr]
+    )
     coords[:num_harmonics] = real
     coords[num_harmonics : 2 * num_harmonics] = imag
 

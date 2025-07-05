@@ -38,13 +38,13 @@ repos:
       - id: codespell
 
   - repo: https://github.com/MarcoGorelli/cython-lint
-    rev: v0.16.6
+    rev: v0.16.7
     hooks:
       - id: cython-lint
         args: []
 
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.5.3
+    rev: v3.6.2
     hooks:
       - id: prettier
         args: [--end-of-line=auto]
@@ -72,20 +72,20 @@ repos:
       - id: black
 
   - repo: https://github.com/keewis/blackdoc
-    rev: v0.4.0
+    rev: v0.4.1
     hooks:
       - id: blackdoc
         additional_dependencies: ["black==25.1.0"]
       - id: blackdoc-autoupdate-black
 
 # - repo: https://github.com/PyCQA/flake8
-#   rev: 7.2.0
+#   rev: 7.3.0
 #   hooks:
 #   - id: flake8
 #     additional_dependencies: [flake8-typing-imports, flake8-docstrings]
 
 # - repo: https://github.com/astral-sh/ruff-pre-commit
-#   rev: v0.12.0
+#   rev: v0.12.2
 #   hooks:
 #   - id: ruff
 #     args: [--show-fixes]
