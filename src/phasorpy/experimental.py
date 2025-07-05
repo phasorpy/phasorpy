@@ -306,7 +306,7 @@ def spectral_vector_denoise(
         denoised, integrated, signal, spectral_vector, sigma, vmin, num_threads
     )
 
-    denoised = denoised.reshape(shape)
+    denoised = denoised.reshape(shape)  # type: ignore[assignment]
     if axis != -1:
         denoised = numpy.moveaxis(denoised, -1, axis)
     return denoised
