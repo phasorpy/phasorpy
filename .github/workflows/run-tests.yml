@@ -90,6 +90,7 @@ jobs:
       - uses: pypa/cibuildwheel@v3.0.0
         env:
           # CIBW_ENVIRONMENT: "PIP_PRE=1"
+          SKIP_FETCH: 1
           CIBW_BUILD_VERBOSITY: 3
           CIBW_BUILD: "cp311-manylinux_x86_64 cp312-win_amd64 cp312-macosx_x86_64"
           CIBW_SKIP:
