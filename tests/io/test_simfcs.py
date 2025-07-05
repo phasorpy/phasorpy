@@ -150,9 +150,15 @@ def test_phasor_from_simfcs_referenced_ref():
     assert real.shape == (256, 256)
     assert imag.shape == (256, 256)
     assert attrs['dims'] == ('Y', 'X')
-    assert_allclose(numpy.nanmean(mean), 213.09485, atol=1e-3)
-    assert_allclose(numpy.nanmean(real), 0.40588844, atol=1e-3)
-    assert_allclose(numpy.nanmean(imag), 0.34678984, atol=1e-3)
+    assert_allclose(
+        numpy.nanmean(mean, dtype=numpy.float64), 213.09485, atol=1e-3
+    )
+    assert_allclose(
+        numpy.nanmean(real, dtype=numpy.float64), 0.40588844, atol=1e-3
+    )
+    assert_allclose(
+        numpy.nanmean(imag, dtype=numpy.float64), 0.34678984, atol=1e-3
+    )
 
     for harmonic in ('all', [1, 2]):
         mean, real, imag, attrs = phasor_from_simfcs_referenced(
@@ -161,14 +167,16 @@ def test_phasor_from_simfcs_referenced_ref():
         assert mean.shape == (256, 256)
         assert real.shape == (2, 256, 256)
         assert imag.shape == (2, 256, 256)
-        assert_allclose(numpy.nanmean(mean), 213.09485)
         assert_allclose(
-            numpy.nanmean(real, axis=(1, 2)),
+            numpy.nanmean(mean, dtype=numpy.float64), 213.09485, atol=1e-3
+        )
+        assert_allclose(
+            numpy.nanmean(real, axis=(1, 2), dtype=numpy.float64),
             [0.40588844, 0.21527097],
             atol=1e-3,
         )
         assert_allclose(
-            numpy.nanmean(imag, axis=(1, 2)),
+            numpy.nanmean(imag, axis=(1, 2), dtype=numpy.float64),
             [0.34678984, 0.26586965],
             atol=1e-3,
         )
@@ -202,9 +210,15 @@ def test_phasor_from_simfcs_referenced_r64():
     assert real.shape == (256, 256)
     assert imag.shape == (256, 256)
     assert attrs['dims'] == ('Y', 'X')
-    assert_allclose(numpy.nanmean(mean), 0.562504, atol=1e-3)
-    assert_allclose(numpy.nanmean(real), 0.48188266, atol=1e-3)
-    assert_allclose(numpy.nanmean(imag), 0.32413888, atol=1e-3)
+    assert_allclose(
+        numpy.nanmean(mean, dtype=numpy.float64), 0.562504, atol=1e-3
+    )
+    assert_allclose(
+        numpy.nanmean(real, dtype=numpy.float64), 0.48188266, atol=1e-3
+    )
+    assert_allclose(
+        numpy.nanmean(imag, dtype=numpy.float64), 0.32413888, atol=1e-3
+    )
 
     mean, real, imag, attrs = phasor_from_simfcs_referenced(
         filename, harmonic=[1, 2]
@@ -212,12 +226,18 @@ def test_phasor_from_simfcs_referenced_r64():
     assert mean.shape == (256, 256)
     assert real.shape == (2, 256, 256)
     assert imag.shape == (2, 256, 256)
-    assert_allclose(numpy.nanmean(mean), 0.562504, atol=1e-3)
     assert_allclose(
-        numpy.nanmean(real, axis=(1, 2)), [0.48188266, 0.13714617], atol=1e-3
+        numpy.nanmean(mean, dtype=numpy.float64), 0.562504, atol=1e-3
     )
     assert_allclose(
-        numpy.nanmean(imag, axis=(1, 2)), [0.32413888, 0.38899058], atol=1e-3
+        numpy.nanmean(real, axis=(1, 2), dtype=numpy.float64),
+        [0.48188266, 0.13714617],
+        atol=1e-3,
+    )
+    assert_allclose(
+        numpy.nanmean(imag, axis=(1, 2), dtype=numpy.float64),
+        [0.32413888, 0.38899058],
+        atol=1e-3,
     )
 
 
@@ -233,9 +253,15 @@ def test_phasor_from_simfcs_referenced_re2():
     assert real.shape == (1200, 1200)
     assert imag.shape == (1200, 1200)
     assert attrs['dims'] == ('Y', 'X')
-    assert_allclose(numpy.nanmean(mean), 93.36889, atol=1e-3)
-    assert_allclose(numpy.nanmean(real), 0.289324, atol=1e-3)
-    assert_allclose(numpy.nanmean(imag), 0.363937, atol=1e-3)
+    assert_allclose(
+        numpy.nanmean(mean, dtype=numpy.float64), 93.368903, atol=1e-3
+    )
+    assert_allclose(
+        numpy.nanmean(real, dtype=numpy.float64), 0.289324, atol=1e-3
+    )
+    assert_allclose(
+        numpy.nanmean(imag, dtype=numpy.float64), 0.363937, atol=1e-3
+    )
 
     for harmonic in ('all', [1, 2]):
         mean, real, imag, attrs = phasor_from_simfcs_referenced(
@@ -244,12 +270,18 @@ def test_phasor_from_simfcs_referenced_re2():
         assert mean.shape == (1200, 1200)
         assert real.shape == (2, 1200, 1200)
         assert imag.shape == (2, 1200, 1200)
-        assert_allclose(numpy.nanmean(mean), 93.36889)
         assert_allclose(
-            numpy.nanmean(real, axis=(1, 2)), [0.289324, 0.119052], atol=1e-3
+            numpy.nanmean(mean, dtype=numpy.float64), 93.368903, atol=1e-3
         )
         assert_allclose(
-            numpy.nanmean(imag, axis=(1, 2)), [0.363937, 0.293647], atol=1e-3
+            numpy.nanmean(real, axis=(1, 2), dtype=numpy.float64),
+            [0.289324, 0.119052],
+            atol=1e-3,
+        )
+        assert_allclose(
+            numpy.nanmean(imag, axis=(1, 2), dtype=numpy.float64),
+            [0.363937, 0.293647],
+            atol=1e-3,
         )
 
 
