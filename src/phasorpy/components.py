@@ -103,7 +103,7 @@ def phasor_from_component(
     if dtype.char not in {'f', 'd'}:
         raise ValueError(f'{dtype=} is not a floating point type')
 
-    fraction = numpy.asarray(fraction, dtype=dtype, copy=True)
+    fraction = numpy.array(fraction, dtype=dtype, copy=True)
     if fraction.ndim < 1:
         raise ValueError(f'{fraction.ndim=} < 1')
     if fraction.shape[axis] < 2:
