@@ -17,6 +17,9 @@ The ``phasorpy.components`` module provides functions to:
 - blindly resolve fractions of multiple components by using harmonic
   information (:py:func:`phasor_component_blind`, not implemented)
 
+- calculate phasor coordinates from fractional intensities of
+  components (:py:func:`phasor_from_component`)
+
 """
 
 from __future__ import annotations
@@ -26,13 +29,14 @@ __all__ = [
     'phasor_component_fit',
     'phasor_component_fraction',
     'phasor_component_graphical',
+    'phasor_from_component',
 ]
 
 import numbers
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, ArrayLike, NDArray
+    from ._typing import Any, ArrayLike, DTypeLike, NDArray
 
 import numpy
 
@@ -44,6 +48,82 @@ from ._phasorpy import (
     _segment_direction_and_length,
 )
 from .phasor import phasor_threshold
+
+
+def phasor_from_component(
+    component_real: ArrayLike,
+    component_imag: ArrayLike,
+    fraction: ArrayLike,
+    /,
+    axis: int = 0,
+    dtype: DTypeLike | None = None,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return phasor coordinates from fractional intensities of components.
+
+    Return the dot products of the fractional intensities of components
+    with the real and imaginary phasor coordinates of the components.
+
+    Multi-dimensional component arrays are currently not supported.
+
+    Parameters
+    ----------
+    component_real : array_like, shape (n,)
+        Real coordinates of components.
+        At least two components are required.
+    component_imag : array_like, shape (n,)
+        Imaginary coordinates of components.
+    fraction : array_like
+        Fractional intensities of components.
+        Fractions are normalized to sum to one along `axis`.
+    axis : int, optional, default: 0
+        Axis of components in `fraction`.
+    dtype : dtype_like, optional
+        Floating point data type used for calculation and output values.
+        Either `float32` or `float64`. The default is `float64`.
+
+    Returns
+    -------
+    real : ndarray
+        Real component of phasor coordinates.
+    imag : ndarray
+        Imaginary component of phasor coordinates.
+
+    Examples
+    --------
+    Calculate phasor coordinates from two components and their fractional
+    intensities:
+
+    >>> phasor_from_component(
+    ...     [0.6, 0.4], [0.3, 0.2], [[1.0, 0.2, 0.9], [0.0, 0.8, 0.1]]
+    ... )
+    (array([0.6, 0.44, 0.58]), array([0.3, 0.22, 0.29]))
+
+    """
+    dtype = numpy.dtype(dtype)
+    if dtype.char not in {'f', 'd'}:
+        raise ValueError(f'{dtype=} is not a floating point type')
+
+    fraction = numpy.asarray(fraction, dtype=dtype, copy=True)
+    if fraction.ndim < 1:
+        raise ValueError(f'{fraction.ndim=} < 1')
+    if fraction.shape[axis] < 2:
+        raise ValueError(f'{fraction.shape[axis]=} < 2')
+    with numpy.errstate(divide='ignore', invalid='ignore'):
+        fraction /= fraction.sum(axis=axis, keepdims=True)
+
+    component_real = numpy.asarray(component_real, dtype=dtype)
+    component_imag = numpy.asarray(component_imag, dtype=dtype)
+    if component_real.shape != component_imag.shape:
+        raise ValueError(f'{component_real.shape=} != {component_imag.shape=}')
+    if component_real.ndim != 1:
+        raise ValueError(f'{component_real.ndim=} != 1')
+    if component_real.size != fraction.shape[axis]:
+        raise ValueError(f'{component_real.size=} != {fraction.shape[axis]=}')
+
+    fraction = numpy.moveaxis(fraction, axis, -1)
+    real = numpy.dot(fraction, component_real)
+    imag = numpy.dot(fraction, component_imag)
+    return real, imag
 
 
 def phasor_component_fraction(
