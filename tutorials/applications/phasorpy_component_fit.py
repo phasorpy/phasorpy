@@ -187,5 +187,17 @@ plot_image(
 )
 
 # %%
+# Assert that the experimental phasor coordinates can approximately be
+# restored from the components' coordinates and fitted fractions:
+
+from phasorpy.components import phasor_from_component
+
+restored_real, restored_imag = phasor_from_component(
+    component_real[0], component_imag[0], fractions, axis=0
+)
+numpy.testing.assert_allclose(restored_real, real[0], atol=1e-3)
+numpy.testing.assert_allclose(restored_imag, imag[0], atol=1e-3)
+
+# %%
 # sphinx_gallery_thumbnail_number = -2
 # mypy: allow-untyped-defs, allow-untyped-calls

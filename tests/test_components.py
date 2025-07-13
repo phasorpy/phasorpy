@@ -8,9 +8,68 @@ from phasorpy.components import (
     phasor_component_fit,
     phasor_component_fraction,
     phasor_component_graphical,
+    phasor_from_component,
 )
+from phasorpy.phasor import phasor_from_lifetime
 
 numpy.random.seed(42)
+
+
+def test_phasor_from_component():
+    """Test phasor_from_component function."""
+    frequency = 40.0
+    lifetime = [0.5, 4.2, 12.0]
+    fraction = numpy.asarray(
+        [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+            [0.3, 0.5, 0.2],
+            [0.0, 0.6, 0.4],
+            [0.0, 0.0, 0.0],  # NaN
+        ]
+    )
+    known_real, known_imag = phasor_from_lifetime(
+        frequency, lifetime, fraction
+    )
+
+    real, imag = phasor_from_component(
+        known_real[:3], known_imag[:3], fraction, axis=-1
+    )
+    assert_allclose(real, known_real, atol=1e-6)
+    assert_allclose(imag, known_imag, atol=1e-6)
+
+    real, imag = phasor_from_component(
+        known_real[:3], known_imag[:3], fraction, axis=-1, dtype=numpy.float32
+    )
+    assert real.dtype == numpy.float32
+    assert_allclose(real, known_real, atol=1e-6)
+    assert_allclose(imag, known_imag, atol=1e-6)
+
+    with pytest.raises(ValueError):
+        real, imag = phasor_from_component(
+            known_real[:3], known_imag[:3], fraction, axis=-1, dtype='int32'
+        )
+    with pytest.raises(ValueError):
+        phasor_from_component(
+            numpy.ones((2, 2)), numpy.ones((2, 2)), numpy.ones((2, 2))
+        )
+    with pytest.raises(ValueError):
+        phasor_from_component(known_real[:3], known_imag[:3], fraction[0, 0])
+    with pytest.raises(ValueError):
+        phasor_from_component(
+            known_real[:3], known_imag[:3], fraction[:, :1], axis=-1
+        )
+    with pytest.raises(ValueError):
+        phasor_from_component(known_real[:3], known_imag[:3], fraction)
+    with pytest.raises(ValueError):
+        phasor_from_component(
+            known_real[:3], known_imag[:2], fraction, axis=-1
+        )
+    with pytest.raises(ValueError):
+        phasor_from_component(
+            known_real[:2], known_imag[:2], fraction, axis=-1
+        )
 
 
 def test_phasor_component_fraction():
