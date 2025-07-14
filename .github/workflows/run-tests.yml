@@ -92,6 +92,7 @@ jobs:
           # CIBW_ENVIRONMENT: "PIP_PRE=1"
           SKIP_FETCH: 1
           CIBW_BUILD_VERBOSITY: 3
+          CIBW_ARCHS_MACOS: x86_64
           CIBW_BUILD: "cp311-manylinux_x86_64 cp312-win_amd64 cp312-macosx_x86_64"
           CIBW_SKIP:
       - uses: actions/upload-artifact@v4
