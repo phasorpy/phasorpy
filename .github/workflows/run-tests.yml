@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-22.04"]
+        os: ["ubuntu-latest"]
         python-version: ["3.12", "3.13"]
         # 3.11 tested with cibuildwheel
     steps:
@@ -55,7 +55,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["windows-2022", "macos-13"]
+        os: ["windows-latest", "macos-latest"]
         python-version: ["3.11"]
         # 3.12 tested with cibuildwheel
     steps:
@@ -84,7 +84,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-22.04", "windows-2022", "macos-13"]
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
     steps:
       - uses: actions/checkout@v4
       - uses: pypa/cibuildwheel@v3.0.1
@@ -92,6 +92,7 @@ jobs:
           # CIBW_ENVIRONMENT: "PIP_PRE=1"
           SKIP_FETCH: 1
           CIBW_BUILD_VERBOSITY: 3
+          CIBW_ARCHS_MACOS: x86_64
           CIBW_BUILD: "cp311-manylinux_x86_64 cp312-win_amd64 cp312-macosx_x86_64"
           CIBW_SKIP:
       - uses: actions/upload-artifact@v4
