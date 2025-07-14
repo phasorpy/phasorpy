@@ -148,7 +148,7 @@ def test_phasor_component_fraction_channels():
             [0.4, 0.3],
             0.05,
             6,
-            ([0, 0, 1, 0, 0, 0],),
+            [0, 0, 1, 0, 0, 0],
         ),
         # Two components, phasors as list. Increase cursor radius.
         (
@@ -158,7 +158,7 @@ def test_phasor_component_fraction_channels():
             [0.4, 0.3],
             0.15,
             [0, 0.2, 0.4, 0.6, 0.8, 1],
-            ([0, 0, 1, 2, 1, 0],),
+            [0, 0, 1, 2, 1, 0],
         ),
         # Two components, phasors as list. Increase number of steps.
         (
@@ -168,7 +168,7 @@ def test_phasor_component_fraction_channels():
             [0.4, 0.3],
             0.05,
             11,
-            ([0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],),
+            [0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
         ),
         # Three components, phasor as scalar
         (
@@ -178,7 +178,7 @@ def test_phasor_component_fraction_channels():
             [0.0, 0.4, 0.3],
             0.05,
             [0, 0.2, 0.4, 0.6, 0.8, 1],
-            ([0, 0, 0, 1, 0, 0], [0, 0, 0, 1, 0, 0], [0, 0, 1, 1, 0, 0]),
+            [[0, 0, 0, 1, 0, 0], [0, 0, 0, 1, 0, 0], [0, 0, 1, 1, 0, 0]],
         ),
         # Three components, phasors as list
         (
@@ -188,7 +188,7 @@ def test_phasor_component_fraction_channels():
             [0.0, 0.4, 0.3],
             0.05,
             6,
-            ([0, 1, 1, 1, 0, 0], [0, 1, 0, 1, 0, 0], [0, 0, 2, 1, 0, 0]),
+            [[0, 1, 1, 1, 0, 0], [0, 1, 0, 1, 0, 0], [0, 0, 2, 1, 0, 0]],
         ),
         # Phasor outside semicircle but inside cursor of component 1
         (
@@ -198,7 +198,7 @@ def test_phasor_component_fraction_channels():
             [0.4, 0.4, 0.2],
             0.05,
             5,
-            ([0, 0, 1, 0, 1], [0, 0, 0, 1, 2], [1, 1, 2, 2, 2]),
+            [[0, 0, 1, 0, 1], [0, 0, 0, 1, 2], [1, 1, 2, 2, 2]],
         ),
         # Phasor outside semicircle and outside cursor of component 1
         (
@@ -208,7 +208,7 @@ def test_phasor_component_fraction_channels():
             [0.4, 0.4, 0.2],
             0.05,
             [0, 0.25, 0.5, 0.75, 1],
-            ([0, 0, 1, 0, 0], [0, 0, 0, 1, 1], [0, 0, 1, 1, 1]),
+            [[0, 0, 1, 0, 0], [0, 0, 0, 1, 1], [0, 0, 1, 1, 1]],
         ),
         # Two components no fractions provided
         (
@@ -218,7 +218,7 @@ def test_phasor_component_fraction_channels():
             [0, 0.2],
             0.05,
             None,
-            ([0, 0, 0, 0, 0, 0, 1, 1, 1],),
+            [0, 0, 0, 0, 0, 0, 1, 1, 1],
         ),
         # Three components no fractions provided
         (
@@ -228,11 +228,11 @@ def test_phasor_component_fraction_channels():
             [0, 0.1, 0.2],
             0.05,
             None,
-            (
+            [
                 [0, 0, 0, 0, 0, 0, 1, 1, 1],
                 [0, 0, 0, 0, 0, 0, 1, 1, 1],
                 [1, 1, 1, 1, 1, 1, 1, 1, 1],
-            ),
+            ],
         ),
     ],
 )
@@ -254,8 +254,7 @@ def test_phasor_component_graphical(
         radius=radius,
         fractions=fractions,
     )
-    for actual_count, expected_count in zip(actual_counts, expected_counts):
-        assert_allclose(actual_count, expected_count)
+    assert_allclose(actual_counts, expected_counts)
 
 
 @pytest.mark.parametrize(

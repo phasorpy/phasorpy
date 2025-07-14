@@ -177,7 +177,7 @@ def phasor_component_fraction(
     --------
     >>> phasor_component_fraction(
     ...     [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.9], [0.4, 0.3]
-    ... )  # doctest: +NUMBER
+    ... )
     array([0.44, 0.56, 0.68])
 
     """
@@ -212,7 +212,7 @@ def phasor_component_graphical(
     *,
     radius: float = 0.05,
     fractions: ArrayLike | None = None,
-) -> tuple[NDArray[Any], ...]:
+) -> NDArray[Any]:
     r"""Return fractions of two or three components from phasor coordinates.
 
     The graphical method is based on moving circular cursors along the line
@@ -242,9 +242,11 @@ def phasor_component_graphical(
 
     Returns
     -------
-    counts : tuple of ndarray
+    counts : ndarray
         Counts along each line segment connecting components.
         Ordered 0-1 (2 components) or 0-1, 0-2, 1-2 (3 components).
+        Shaped `(number fractions,)` (2 components) or
+        `(3, number fractions)` (3 components).
 
     Raises
     ------
@@ -295,8 +297,8 @@ def phasor_component_graphical(
 
     >>> phasor_component_graphical(
     ...     [0.6, 0.3], [0.35, 0.38], [0.2, 0.9], [0.4, 0.3], fractions=6
-    ... )  # doctest: +NUMBER
-    (array([0, 0, 1, 0, 1, 0], dtype=uint64),)
+    ... )
+    array([0, 0, 1, 0, 1, 0], dtype=uint8)
 
     Count the number of phasors between the combinations of three components:
 
@@ -306,10 +308,10 @@ def phasor_component_graphical(
     ...     [0.0, 0.2, 0.9],
     ...     [0.0, 0.4, 0.3],
     ...     fractions=6,
-    ... )  # doctest: +NUMBER +NORMALIZE_WHITESPACE
-    (array([0, 1, 1, 1, 1, 0], dtype=uint64),
-     array([0, 1, 0, 0, 0, 0], dtype=uint64),
-     array([0, 1, 2, 0, 0, 0], dtype=uint64))
+    ... )
+    array([[0, 1, 1, 1, 1, 0],
+           [0, 1, 0, 0, 0, 0],
+           [0, 1, 2, 0, 0, 0]], dtype=uint8)
 
     """
     real = numpy.asarray(real)
@@ -352,7 +354,12 @@ def phasor_component_graphical(
         if fractions.ndim != 1:
             raise ValueError('fractions is not a one-dimensional array')
 
-    counts = []
+    dtype = numpy.min_scalar_type(real.size)
+    counts = numpy.empty(
+        (1 if num_components == 2 else 3, fractions.size), dtype
+    )
+
+    c = 0
     for i in range(num_components):
         a_real = component_real[i]
         a_imag = component_imag[i]
@@ -362,8 +369,7 @@ def phasor_component_graphical(
             ab_real = a_real - b_real
             ab_imag = a_imag - b_imag
 
-            component_counts = []
-            for f in fractions:
+            for k, f in enumerate(fractions):
                 if f < 0.0 or f > 1.0:
                     raise ValueError(f'fraction {f} out of bounds [0.0, 1.0]')
                 if num_components == 2:
@@ -385,12 +391,10 @@ def phasor_component_graphical(
                         component_imag[3 - i - j],  # c_imag
                         radius,
                     )
-                fraction_counts = numpy.sum(mask, dtype=numpy.uint64)
-                component_counts.append(fraction_counts)
+                counts[c, k] = numpy.sum(mask, dtype=dtype)
+            c += 1
 
-            counts.append(numpy.asarray(component_counts))
-
-    return tuple(counts)
+    return counts[0] if num_components == 2 else counts
 
 
 def phasor_component_fit(
@@ -401,7 +405,7 @@ def phasor_component_fit(
     component_imag: ArrayLike,
     /,
     **kwargs: Any,
-) -> tuple[NDArray[Any], ...]:
+) -> NDArray[Any]:
     """Return fractions of multiple components from phasor coordinates.
 
     Component fractions are obtained from the least-squares solution of a
@@ -433,8 +437,8 @@ def phasor_component_fit(
 
     Returns
     -------
-    fractions : tuple of ndarray
-        Component fractions, one array per component.
+    fractions : ndarray
+        Component fractions.
         Fractions may not exactly add up to 1.0.
 
     Raises
@@ -476,8 +480,9 @@ def phasor_component_fit(
     -------
     >>> phasor_component_fit(
     ...     [1, 1, 1], [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.9], [0.4, 0.3]
-    ... )  # doctest: +NUMBER
-    (array([0.4644, 0.5356, 0.6068]), array([0.5559, 0.4441, 0.3322]))
+    ... )
+    array([[0.4644, 0.5356, 0.6068],
+           [0.5559, 0.4441, 0.3322]])
 
     """
     from scipy.linalg import lstsq
@@ -563,4 +568,4 @@ def phasor_component_fit(
     # restore NaN values in fractions from mean
     _blend_and(mean, fractions, out=fractions)
 
-    return tuple(fractions)
+    return numpy.asarray(fractions)

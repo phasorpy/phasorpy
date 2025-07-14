@@ -175,7 +175,7 @@ counts = phasor_component_graphical(
 )
 
 fig, ax = pyplot.subplots()
-ax.plot(fractions, counts[0], '-', label='A vs B')
+ax.plot(fractions, counts, '-', label='A vs B')
 ax.set_title('Graphical analysis of two components')
 ax.set_xlabel('Fraction')
 ax.set_ylabel('Count')
