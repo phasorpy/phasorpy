@@ -133,7 +133,7 @@ def sort_coordinates(
     real: ArrayLike,
     imag: ArrayLike,
     /,
-    origin: tuple[float, float] | None = None,
+    origin: ArrayLike | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return cartesian coordinates sorted counterclockwise around origin.
 
@@ -141,8 +141,9 @@ def sort_coordinates(
     ----------
     real, imag : array_like
         Coordinates to be sorted.
-    origin : (float, float)
+    origin : array_like, optional
         Coordinates around which to sort by angle.
+        By default, sort around the mean of `real` and `imag`.
 
     Returns
     -------
@@ -150,6 +151,7 @@ def sort_coordinates(
         Coordinates sorted by angle.
     indices : ndarray
         Indices used to reorder coordinates.
+        Use ``indices.argsort()`` to get original order.
 
     Examples
     --------
@@ -160,11 +162,15 @@ def sort_coordinates(
     x, y = numpy.atleast_1d(real, imag)
     if x.ndim != 1 or x.shape != y.shape:
         raise ValueError(f'invalid {x.shape=} or {y.shape=}')
-    if x.size < 4:
+    if x.size < 3:
         return x, y, numpy.arange(x.size)
     if origin is None:
-        origin = x.mean(), y.mean()
-    indices = numpy.argsort(numpy.arctan2(y - origin[1], x - origin[0]))
+        ox, oy = x.mean(), y.mean()
+    else:
+        origin = numpy.asarray(origin, dtype=numpy.float64)
+        ox = origin[0]
+        oy = origin[1]
+    indices = numpy.argsort(numpy.arctan2(y - oy, x - ox))
     return x[indices], y[indices], indices
 
 

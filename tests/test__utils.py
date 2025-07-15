@@ -108,9 +108,9 @@ def test_sort_coordinates():
     assert_allclose(i, [2, 3, 1, 0])
 
     x, y, i = sort_coordinates([0, 1, 2], [0, 1, -1])
-    assert_allclose(x, [0, 1, 2])
-    assert_allclose(y, [0, 1, -1])
-    assert_allclose(i, [0, 1, 2])
+    assert_allclose(x, [2, 1, 0])
+    assert_allclose(y, [-1, 1, 0])
+    assert_allclose(i, [2, 1, 0])
 
     with pytest.raises(ValueError):
         sort_coordinates([0, 1, 2, 3], [0, 1, -1])

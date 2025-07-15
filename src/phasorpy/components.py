@@ -14,6 +14,9 @@ The ``phasorpy.components`` module provides functions to:
 - calculate fractions of two or three known components by resolving
   graphically with histogram (:py:func:`phasor_component_graphical`)
 
+- calculate mean value coordinates of phasor coordinates with respect
+  to three or more components (:py:func:`phasor_component_mvc`)
+
 - blindly resolve fractions of multiple components by using harmonic
   information (:py:func:`phasor_component_blind`, not implemented)
 
@@ -29,6 +32,7 @@ __all__ = [
     'phasor_component_fit',
     'phasor_component_fraction',
     'phasor_component_graphical',
+    'phasor_component_mvc',
     'phasor_from_component',
 ]
 
@@ -45,9 +49,12 @@ from ._phasorpy import (
     _fraction_on_segment,
     _is_inside_circle,
     _is_inside_stadium,
+    _mean_value_coordinates,
     _segment_direction_and_length,
 )
+from ._utils import sort_coordinates
 from .phasor import phasor_threshold
+from .utils import number_threads
 
 
 def phasor_from_component(
@@ -569,3 +576,133 @@ def phasor_component_fit(
     _blend_and(mean, fractions, out=fractions)
 
     return numpy.asarray(fractions)
+
+
+def phasor_component_mvc(
+    real: ArrayLike,
+    imag: ArrayLike,
+    component_real: ArrayLike,
+    component_imag: ArrayLike,
+    /,
+    *,
+    dtype: DTypeLike = None,
+    num_threads: int | None = None,
+) -> NDArray[Any]:
+    """Return mean value coordinates of phasor coordinates from components.
+
+    The mean value coordinates of phasor coordinates with respect to three or
+    more components spanning an arbitrary simple polygon are computed using
+    the stable method described in [3]_.
+    For three components, mean value coordinates are equivalent to
+    barycentric coordinates.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    component_real : array_like
+        Real coordinates of at least three components.
+    component_imag : array_like
+        Imaginary coordinates of at least three components.
+    dtype : dtype_like, optional
+        Floating point data type used for calculation and output values.
+        Either `float32` or `float64`. The default is `float64`.
+    num_threads : int, optional
+        Number of OpenMP threads to use for parallelization.
+        By default, multi-threading is disabled.
+        If zero, up to half of logical CPUs are used.
+        OpenMP may not be available on all platforms.
+
+    Returns
+    -------
+    fractions : ndarray
+        Mean value coordinates for each phasor coordinate.
+
+    Raises
+    ------
+    ValueError
+        The array shapes of `real` and `imag` do not match.
+        The array shapes of `component_real` and `component_imag` do not match.
+
+    Notes
+    -----
+    Calculation of mean value coordinates for different channels,
+    frequencies, or harmonics is not supported. Only one set of components
+    can be analyzed and is broadcast to all channels/frequencies/harmonics.
+
+    For three components, this function returns the same result as
+    :py:func:`phasor_component_fit`. For more than three components,
+    the system is underdetermined and the mean value coordinates represent
+    one of multiple solutions. However, the special properties of the mean
+    value coordinates make them particularly useful for interpolating and
+    visualizing multi-component data.
+
+    References
+    ----------
+    .. [3] Fuda C and Hormann K.
+      `A new stable method to compute mean value coordinates
+      <https://doi.org/10.1016/j.cagd.2024.102310>`_.
+      *Computer Aided Geometric Design*, 111: 102310 (2024)
+
+    Example
+    -------
+    Calculate the barycentric coordinates of a phasor coordinate
+    in a triangle defined by three components:
+
+    >>> phasor_component_mvc(0.6, 0.3, [0.0, 1.0, 0.0], [1.0, 0.0, 0.0])
+    array([0.3, 0.6, 0.1])
+
+    The barycentric coordinates of phasor coordinates outside the polygon
+    defined by the components may be outside the range [0.0, 1.0]:
+
+    >>> phasor_component_mvc(0.6, 0.6, [0.0, 1.0, 0.0], [1.0, 0.0, 0.0])
+    array([0.6, 0.6, -0.2])
+
+    """
+    num_threads = number_threads(num_threads)
+
+    dtype = numpy.dtype(dtype)
+    if dtype.char not in {'f', 'd'}:
+        raise ValueError(f'{dtype=} is not a floating point type')
+
+    real = numpy.ascontiguousarray(real, dtype=dtype)
+    imag = numpy.ascontiguousarray(imag, dtype=dtype)
+    component_real = numpy.ascontiguousarray(component_real, dtype=dtype)
+    component_imag = numpy.ascontiguousarray(component_imag, dtype=dtype)
+
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if component_real.shape != component_imag.shape:
+        raise ValueError(f'{component_real.shape=} != {component_imag.shape=}')
+    if component_real.ndim != 1 or component_real.size < 3:
+        raise ValueError('number of components must be three or more')
+    if numpy.isnan(component_real).any() or numpy.isnan(component_imag).any():
+        raise ValueError('component coordinates must not contain NaN values')
+    if numpy.isinf(component_real).any() or numpy.isinf(component_imag).any():
+        raise ValueError(
+            'component coordinates must not contain infinite values'
+        )
+
+    # TODO:: sorting not strictly required for three components?
+    component_real, component_imag, indices = sort_coordinates(
+        component_real, component_imag
+    )
+
+    shape = real.shape
+    real = real.reshape(-1)
+    imag = imag.reshape(-1)
+    fraction = numpy.zeros((component_real.size, real.size), dtype=dtype)
+
+    _mean_value_coordinates(
+        fraction,
+        indices,
+        real,
+        imag,
+        component_real,
+        component_imag,
+        num_threads,
+    )
+
+    return numpy.asarray(fraction.reshape((-1, *shape)).squeeze())
