@@ -16,12 +16,12 @@ coordinate axes the phasor coordinates have the largest variations
 
 import numpy
 
-from phasorpy.phasor import (
+from phasorpy.lifetime import (
     phasor_from_lifetime,
     phasor_semicircle,
     phasor_to_apparent_lifetime,
-    phasor_to_principal_plane,
 )
+from phasorpy.phasor import phasor_to_principal_plane
 from phasorpy.plot import PhasorPlot
 
 

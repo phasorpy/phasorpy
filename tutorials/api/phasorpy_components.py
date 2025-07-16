@@ -20,7 +20,7 @@ from phasorpy.components import (
     phasor_component_fraction,
     phasor_component_graphical,
 )
-from phasorpy.phasor import phasor_from_lifetime
+from phasorpy.lifetime import phasor_from_lifetime
 from phasorpy.plot import PhasorPlot, plot_histograms
 
 numpy.random.seed(42)

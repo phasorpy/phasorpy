@@ -17,11 +17,13 @@ from matplotlib.lines import Line2D
 from matplotlib.widgets import Slider
 
 from .._utils import update_kwargs
-from ..phasor import (
+from ..lifetime import (
     phasor_from_fret_acceptor,
     phasor_from_fret_donor,
     phasor_from_lifetime,
     phasor_semicircle,
+)
+from ..phasor import (
     phasor_to_polar,
     phasor_transform,
 )

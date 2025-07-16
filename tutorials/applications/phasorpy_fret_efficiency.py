@@ -4,7 +4,7 @@ FRET efficiency image
 
 Estimate FRET efficiencies in an image using a phasor-based model.
 
-The :py:func:`phasorpy.phasor.phasor_from_fret_donor` function is used to
+The :py:func:`phasorpy.lifetime.phasor_from_fret_donor` function is used to
 calculate a theoretical FRET efficiency trajectory and the
 :py:func:`phasorpy.phasor.phasor_nearest_neighbor` function is then used
 to estimate the FRET efficiencies of measured phasor coordinates in an image
@@ -19,12 +19,14 @@ import numpy
 
 from phasorpy.datasets import fetch
 from phasorpy.io import phasor_from_simfcs_referenced
+from phasorpy.lifetime import (
+    phasor_from_fret_donor,
+    phasor_to_normal_lifetime,
+)
 from phasorpy.phasor import (
     phasor_filter_median,
-    phasor_from_fret_donor,
     phasor_nearest_neighbor,
     phasor_threshold,
-    phasor_to_normal_lifetime,
 )
 from phasorpy.plot import (
     PhasorPlot,
