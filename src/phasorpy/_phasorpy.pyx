@@ -1706,6 +1706,10 @@ cdef (float_t, float_t, float_t, float_t) _intersect_semicircle_line(
     return x0, y0, x1, y1
 
 
+###############################################################################
+# Special functions
+
+
 def _nearest_neighbor_2d(
     int_t[::1] indices,
     const float_t[::1] x0,
@@ -1753,6 +1757,116 @@ def _nearest_neighbor_2d(
                     dmin = x
                     index = j
             indices[i] = -1 if dmin > distance_max_squared else <int_t> index
+
+
+def _mean_value_coordinates(
+    float_t[:, ::1] fraction,  # vertices, points
+    const ssize_t[::1] order,
+    const float_t[::1] px,  # points
+    const float_t[::1] py,
+    const float_t[::1] vx,  # polygon vertices
+    const float_t[::1] vy,
+    const int num_threads
+):
+    """Calculate mean value coordinates of points in polygon.
+
+    https://doi.org/10.1016/j.cagd.2024.102310
+
+    """
+    cdef:
+        ssize_t i, j, k, p, nv
+        double x, y, alpha, weight, weight_sum
+        double* weights = NULL
+        double* sigma = NULL
+        double* length = NULL
+
+    if px.shape[0] != py.shape[0]:
+        raise ValueError('px and py shape mismatch')
+    if vx.shape[0] != vy.shape[0]:
+        raise ValueError('vx and vy shape mismatch')
+    if fraction.shape[0] != vx.shape[0] or fraction.shape[1] != px.shape[0]:
+        raise ValueError('fraction, vx or px shape mismatch')
+    if fraction.shape[0] != order.shape[0]:
+        raise ValueError('fraction and order shape mismatch')
+    if fraction.shape[0] < 3:
+        raise ValueError('not a polygon')
+
+    nv = fraction.shape[0]
+
+    with nogil, parallel(num_threads=num_threads):
+        weights = <double *> malloc(3 * nv * sizeof(double))
+        if weights == NULL:
+            with gil:
+                raise MemoryError('failed to allocate thread-local buffer')
+        sigma = &weights[nv]
+        length = &weights[nv * 2]
+
+        for p in prange(px.shape[0]):
+            x = px[p]
+            y = py[p]
+
+            if isnan(x) or isnan(y):
+                for i in range(nv):
+                    fraction[i, p] = <float_t> NAN
+                continue
+
+            for i in range(nv):
+                j = (i + 1) % nv  # next vertex, wrapped around
+                sigma[i] = (
+                    angle(vx[j], vy[j], vx[i], vy[i], x, y)  # beta
+                    - angle(vx[i], vy[i], vx[j], vy[j], x, y)  # gamma
+                )
+                length[i] = hypot(vx[i] - x, vy[i] - y)
+
+            weight_sum = 0.0
+            for i in range(nv):
+                j = (i + 1) % nv  # next vertex, wrapped around
+                k = (i - 1 + nv) % nv  # previous vertex, wrapped around
+
+                alpha = angle(vx[k], vy[k], x, y, vx[j], vy[j])
+                if sign(alpha) != sign(
+                    M_PI * (sign(sigma[k]) + sign(sigma[i]))
+                    - sigma[k] - sigma[i]
+                ):
+                    alpha = -alpha
+                weight = length[k] * sin(alpha * 0.5)
+                for j in range(nv):
+                    if j != k and j != i:
+                        weight = weight * length[j] * sin(fabs(sigma[j]) * 0.5)
+                weight_sum = weight_sum + weight
+                weights[i] = weight
+
+            if fabs(weight_sum) > 1e-12:
+                for i in range(nv):
+                    fraction[order[i], p] = <float_t> (weights[i] / weight_sum)
+            else:
+                for i in range(nv):
+                    fraction[i, p] = <float_t> NAN
+
+        free(weights)
+
+
+cdef inline int sign(const double x) noexcept nogil:
+    """Return sign of x."""
+    return 0 if fabs(x) < 1e-12 else (1 if x > 0.0 else -1)
+
+
+cdef inline double angle(
+    const double x0,
+    const double y0,
+    const double x1,
+    const double y1,
+    const double x2,
+    const double y2,
+) noexcept nogil:
+    """Return angle at (x1, y1)."""
+    cdef:
+        double ax = x0 - x1
+        double ay = y0 - y1
+        double bx = x2 - x1
+        double by = y2 - y1
+
+    return atan2(ax * by - ay * bx, ax * bx + ay * by)
 
 
 ###############################################################################

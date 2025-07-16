@@ -2420,7 +2420,7 @@ def phasor_from_lifetime(
         fraction = numpy.ones_like(lifetime)  # not really used
     else:
         fraction = numpy.atleast_1d(
-            numpy.asarray(fraction, dtype=numpy.float64)
+            numpy.ascontiguousarray(fraction, dtype=numpy.float64)
         )
         if fraction.ndim > 2:
             raise ValueError('fraction must be one- or two-dimensional array')

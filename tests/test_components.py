@@ -8,11 +8,161 @@ from phasorpy.components import (
     phasor_component_fit,
     phasor_component_fraction,
     phasor_component_graphical,
+    phasor_component_mvc,
     phasor_from_component,
 )
 from phasorpy.phasor import phasor_from_lifetime
 
 numpy.random.seed(42)
+
+
+@pytest.mark.parametrize('swap', [False, True])
+@pytest.mark.parametrize('func', [phasor_component_mvc, phasor_component_fit])
+def test_three_components(swap, func):
+    """Test functions can calculate barycentric coordinates within triangle."""
+    frequency = 40.0
+    lifetime = [0.5, 4.2, 12.0]
+    fraction = [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+        [0.0, 0.6, 0.4],
+        [0.6, 0.0, 0.4],
+        [0.6, 0.4, 0.0],
+        [0.3, 0.5, 0.2],
+        [1 / 3, 1 / 3, 1 / 3],
+        [numpy.nan, numpy.nan, numpy.nan],
+    ]
+    if swap:
+        lifetime = [lifetime[i] for i in (1, 0, 2)]
+    real, imag = phasor_from_lifetime(frequency, lifetime, fraction)
+
+    if func is phasor_component_fit:
+        result = phasor_component_fit(
+            numpy.ones_like(real), real, imag, real[:3], imag[:3]
+        )
+    elif func is phasor_component_mvc:
+        result = phasor_component_mvc(real, imag, real[:3], imag[:3])
+    assert_allclose(result, numpy.asarray(fraction).T, atol=1e-6)
+
+
+def test_phasor_component_mvc():
+    """Test phasor_component_mvc function."""
+    component_real = [1.0, 0.0, 0.0, -0.5]
+    component_imag = [0.0, -0.5, 1.0, 0.0]
+    fraction = [
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1],
+        [0.6, 0.4, 0.0, 0.0],
+        [0.6, 0.0, 0.4, 0.0],
+        [0.6, 0.0, 0.0, 0.4],
+        [0.0, 0.6, 0.4, 0.0],
+        [0.0, 0.6, 0.0, 0.4],
+        [0.0, 0.0, 0.6, 0.4],
+        [0.6, 0.3, 0.1, 0.0],
+        [0.6, 0.3, 0.0, 0.1],
+        [0.6, 0.0, 0.3, 0.1],
+        [0.0, 0.6, 0.3, 0.1],
+        [0.3, 0.4, 0.2, 0.1],
+        [-0.1, 0.4, -0.2, 0.9],
+        [1 / 4, 1 / 4, 1 / 4, 1 / 4],
+        [numpy.nan, numpy.nan, numpy.nan, numpy.nan],
+    ]
+
+    real, imag = phasor_from_component(
+        component_real, component_imag, fraction, axis=-1
+    )
+
+    result = phasor_component_mvc(real, imag, component_real, component_imag)
+
+    # a four component system is underdetermined and fractions cannot
+    # be restored unambiguously
+    # assert_allclose(result, numpy.asarray(fraction).T, atol=1e-6)
+
+    # instead verify that phasor coordinates can be restored from result
+    real_restored, imag_restored = phasor_from_component(
+        component_real, component_imag, result, axis=0
+    )
+    assert_allclose(real_restored, real, atol=1e-6)
+    assert_allclose(imag_restored, imag, atol=1e-6)
+
+    with pytest.raises(ValueError):
+        phasor_component_mvc(
+            real, imag, component_real[:2], component_imag[:2]
+        )
+
+    with pytest.raises(ValueError):
+        phasor_component_mvc(real, imag, component_real, component_imag[:3])
+
+    with pytest.raises(ValueError):
+        phasor_component_mvc(real[:4], imag, component_real, component_imag)
+
+    with pytest.raises(ValueError):
+        phasor_component_mvc(real, imag, [numpy.nan, 1, 1, 1], component_imag)
+
+    with pytest.raises(ValueError):
+        phasor_component_mvc(real, imag, [numpy.inf, 1, 1, 1], component_imag)
+
+    with pytest.raises(ValueError):
+        phasor_component_mvc(
+            real, imag, component_real, component_imag, dtype=numpy.int32
+        )
+
+
+@pytest.mark.parametrize('num_components', [3, 4, 5])
+def test_phasor_component_mvc_plot(num_components):
+    """Test phasor_component_mvc function visually."""
+    from matplotlib import pyplot
+
+    show = False  # enable to see figure
+
+    coords = numpy.linspace(-0.05, 1.05, 501)
+    real, imag = numpy.meshgrid(coords, coords)
+
+    dtype = numpy.float32
+    angles = numpy.linspace(0, 2 * numpy.pi, num_components, endpoint=False)
+    component_real = 0.5 + 0.5 * numpy.cos(angles)
+    component_imag = 0.5 + 0.5 * numpy.sin(angles)
+    component_real[0] = 0.500001  # numerical instabilities with 0.5, float32
+
+    fraction = phasor_component_mvc(
+        real,
+        imag,
+        component_real,
+        component_imag,
+        num_threads=3,
+        dtype=dtype,
+    )
+
+    assert fraction.dtype == dtype
+
+    real_restored, imag_restored = phasor_from_component(
+        component_real, component_imag, fraction, axis=0
+    )
+    assert_allclose(real_restored, real, atol=1e-6)
+    assert_allclose(imag_restored, imag, atol=1e-6)
+
+    _, axs = pyplot.subplots(
+        1,
+        num_components,
+        figsize=(4 * num_components, 4),
+        layout='constrained',
+    )
+    for i, ax in enumerate(axs):
+        ax.imshow(fraction[i], vmin=0.0, vmax=1.0)
+        ax.plot(
+            component_real * 455 + 23,
+            component_imag * 455 + 23,
+            'r.',
+            markersize=10,
+        )
+        ax.set(xticks=[], yticks=[])
+    if show:
+        pyplot.show()
+    else:
+        pyplot.close()
 
 
 def test_phasor_from_component():
