@@ -164,7 +164,7 @@ numpy.testing.assert_allclose(
 # The :py:mod:`phasorpy.lifetime` module provides functions to calculate,
 # convert, and calibrate phasor coordinates of fluorescence lifetimes.
 #
-# The signals from time-resolved measurements are convolved with an
+# The signals from time-resolved measurements are convoluted with an
 # instrument response function, causing the phasor-coordinates to be
 # phase-shifted and modulated (scaled) by unknown amounts.
 # The phasor coordinates must therefore be calibrated with coordinates
