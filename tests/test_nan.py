@@ -17,28 +17,30 @@ from phasorpy.cursors import (
     mask_from_elliptic_cursor,
     mask_from_polar_cursor,
 )
-from phasorpy.phasor import (
+from phasorpy.lifetime import (
     phasor_at_harmonic,
     phasor_calibrate,
-    phasor_center,
-    phasor_divide,
-    phasor_filter_median,
     phasor_from_apparent_lifetime,
-    phasor_from_polar,
-    phasor_from_signal,
-    phasor_multiply,
-    phasor_threshold,
     phasor_to_apparent_lifetime,
-    phasor_to_complex,
     phasor_to_normal_lifetime,
-    phasor_to_polar,
-    phasor_to_principal_plane,
-    phasor_to_signal,
-    phasor_transform,
     polar_from_apparent_lifetime,
     polar_from_reference,
     polar_from_reference_phasor,
     polar_to_apparent_lifetime,
+)
+from phasorpy.phasor import (
+    phasor_center,
+    phasor_divide,
+    phasor_filter_median,
+    phasor_from_polar,
+    phasor_from_signal,
+    phasor_multiply,
+    phasor_threshold,
+    phasor_to_complex,
+    phasor_to_polar,
+    phasor_to_principal_plane,
+    phasor_to_signal,
+    phasor_transform,
 )
 from phasorpy.plot import PhasorPlot, plot_phasor_image
 

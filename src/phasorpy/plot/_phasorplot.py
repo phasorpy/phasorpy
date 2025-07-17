@@ -32,12 +32,12 @@ from .._utils import (
     sort_coordinates,
     update_kwargs,
 )
-from ..phasor import (
+from ..lifetime import (
     phasor_from_lifetime,
     phasor_semicircle,
     phasor_to_apparent_lifetime,
-    phasor_transform,
 )
+from ..phasor import phasor_transform
 
 GRID_COLOR = '0.5'
 GRID_LINESTYLE = ':'

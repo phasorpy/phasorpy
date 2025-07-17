@@ -4,7 +4,7 @@ Synthesize signals from lifetimes
 
 An introduction to the `lifetime_to_signal` function.
 
-The :py:func:`phasorpy.phasor.lifetime_to_signal` function is used
+The :py:func:`phasorpy.lifetime.lifetime_to_signal` function is used
 to synthesize time- and frequency-domain signals as a function of
 fundamental frequency, single or multiple lifetime components,
 lifetime fractions, mean and background intensity, and instrument
@@ -18,12 +18,12 @@ response function (IRF) peak location and width.
 import numpy
 from matplotlib import pyplot
 
-from phasorpy.phasor import (
+from phasorpy.lifetime import (
     lifetime_to_signal,
     phasor_calibrate,
     phasor_from_lifetime,
-    phasor_from_signal,
 )
+from phasorpy.phasor import phasor_from_signal
 
 # %%
 # Define common parameters used throughout the tutorial:

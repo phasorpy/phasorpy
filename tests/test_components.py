@@ -11,7 +11,7 @@ from phasorpy.components import (
     phasor_component_mvc,
     phasor_from_component,
 )
-from phasorpy.phasor import phasor_from_lifetime
+from phasorpy.lifetime import phasor_from_lifetime
 
 numpy.random.seed(42)
 

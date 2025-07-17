@@ -110,7 +110,7 @@ plot_signal_image(signal, axis='H', xlabel='delay-time (ns)')
 # ----------------------------
 #
 # The :py:mod:`phasorpy.phasor` module provides functions to calculate,
-# calibrate, filter, and convert phasor coordinates.
+# filter, and convert phasor coordinates.
 #
 # Phasor coordinates are the real and imaginary components of the complex
 # numbers returned by a real forward Digital Fourier Transform (DFT)
@@ -161,6 +161,9 @@ numpy.testing.assert_allclose(
 # Calibrate phasor coordinates
 # ----------------------------
 #
+# The :py:mod:`phasorpy.lifetime` module provides functions to calculate,
+# convert, and calibrate phasor coordinates of fluorescence lifetimes.
+#
 # The signals from time-resolved measurements are convoluted with an
 # instrument response function, causing the phasor-coordinates to be
 # phase-shifted and modulated (scaled) by unknown amounts.
@@ -194,7 +197,7 @@ plot_phasor_image(
 # Calibrate the raw phasor coordinates with the reference coordinates of known
 # lifetime (Fluorescein, 4.2 ns):
 
-from phasorpy.phasor import phasor_calibrate
+from phasorpy.lifetime import phasor_calibrate
 
 real, imag = phasor_calibrate(
     real,

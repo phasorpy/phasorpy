@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 import math
 
 import numpy
-from sklearn.mixture import GaussianMixture
 
 
 def phasor_cluster_gmm(
@@ -123,6 +122,8 @@ def phasor_cluster_gmm(
     (0.2, 0.4)
 
     """
+    from sklearn.mixture import GaussianMixture
+
     coords = numpy.stack((real, imag), axis=-1).reshape(-1, 2)
 
     valid_data = ~numpy.isnan(coords).any(axis=1)

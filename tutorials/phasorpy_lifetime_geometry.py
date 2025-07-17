@@ -22,12 +22,12 @@ of fluorescence lifetimes and other quantities in the phasor plot:
 
 import numpy
 
-from phasorpy.phasor import (
+from phasorpy.lifetime import (
     phasor_from_lifetime,
     phasor_to_apparent_lifetime,
     phasor_to_normal_lifetime,
-    phasor_to_polar,
 )
+from phasorpy.phasor import phasor_to_polar
 from phasorpy.plot import PhasorPlot
 
 # %%

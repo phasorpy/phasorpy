@@ -22,8 +22,8 @@ from phasorpy.io import (
     phasor_to_ometiff,
     signal_from_imspector_tiff,
 )
+from phasorpy.lifetime import phasor_calibrate
 from phasorpy.phasor import (
-    phasor_calibrate,
     phasor_filter_median,
     phasor_from_signal,
     phasor_threshold,

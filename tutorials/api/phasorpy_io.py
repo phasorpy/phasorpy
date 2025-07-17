@@ -23,12 +23,14 @@ from tempfile import TemporaryDirectory
 import numpy
 from numpy.testing import assert_allclose
 
-from phasorpy.phasor import (
+from phasorpy.lifetime import (
     phasor_calibrate,
+    phasor_to_apparent_lifetime,
+)
+from phasorpy.phasor import (
     phasor_filter_median,
     phasor_from_signal,
     phasor_threshold,
-    phasor_to_apparent_lifetime,
     phasor_transform,
 )
 from phasorpy.plot import (
