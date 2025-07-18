@@ -347,18 +347,18 @@ plot_phasor(
 # Select phasor coordinates
 # -------------------------
 #
-# The :py:mod:`phasorpy.cursors` module provides functions for selecting phasor
+# The :py:mod:`phasorpy.cursor` module provides functions for selecting phasor
 # coordinates to define and mask regions of interest within the phasor space.
 #
 # Mask regions of interest in the phasor space using circular cursors:
 
 from phasorpy.color import CATEGORICAL
-from phasorpy.cursors import mask_from_circular_cursor
+from phasorpy.cursor import mask_from_circular_cursor
 
 cursor_real = 0.69, 0.59
 cursor_imag = 0.32, 0.33
 radius = 0.05, 0.05
-cursors_masks = mask_from_circular_cursor(
+cursor_masks = mask_from_circular_cursor(
     real, imag, cursor_real, cursor_imag, radius=radius
 )
 
@@ -384,10 +384,10 @@ phasorplot.show()
 # Blend the cursor masks with the mean intensity image to produce a
 # pseudo-colored image:
 
-from phasorpy.cursors import pseudo_color
+from phasorpy.cursor import pseudo_color
 from phasorpy.plot import plot_image
 
-pseudo_color_image = pseudo_color(*cursors_masks, intensity=mean)
+pseudo_color_image = pseudo_color(*cursor_masks, intensity=mean)
 
 plot_image(
     pseudo_color_image, title='Pseudo-color image from circular cursors'
@@ -463,7 +463,7 @@ phasorplot.show()
 # %%
 # Use the elliptic clusters to mask regions of interest in the phasor space:
 
-from phasorpy.cursors import mask_from_elliptic_cursor
+from phasorpy.cursor import mask_from_elliptic_cursor
 
 elliptic_masks = mask_from_elliptic_cursor(
     real,

@@ -4,7 +4,7 @@ import numpy
 import pytest
 from numpy.testing import assert_allclose
 
-from phasorpy.components import (
+from phasorpy.component import (
     phasor_component_fit,
     phasor_component_fraction,
     phasor_component_graphical,

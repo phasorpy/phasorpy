@@ -15,7 +15,7 @@ import matplotlib.animation as animation
 import numpy
 from matplotlib import pyplot
 
-from phasorpy.components import (
+from phasorpy.component import (
     phasor_component_fit,
     phasor_component_fraction,
     phasor_component_graphical,
@@ -99,7 +99,7 @@ plot.show()
 # their fractional contributions to phasor coordinates can be calculated by
 # projecting the phasor coordinate onto the line connecting the components.
 # Fractions are calculated using
-# :py:func:`phasorpy.components.phasor_component_fraction`
+# :py:func:`phasorpy.component.phasor_component_fraction`
 # and plotted as histograms:
 
 fraction_of_first_component = phasor_component_fraction(
@@ -128,7 +128,7 @@ plot_histograms(
 # solving a linear system of equations, using multiple harmonics if necessary.
 #
 # Fractions of 2 components are fitted using
-# :py:func:`phasorpy.components.phasor_component_fit`
+# :py:func:`phasorpy.component.phasor_component_fit`
 # and plotted as histograms:
 
 fraction1, fraction2 = phasor_component_fit(
@@ -156,7 +156,7 @@ plot_histograms(
 # Graphical analysis of two components
 # ------------------------------------
 #
-# The :py:func:`phasorpy.components.phasor_component_graphical`
+# The :py:func:`phasorpy.component.phasor_component_graphical`
 # function for two components counts the number of phasor coordinates
 # that fall within a radius at given fractions along the line between
 # the components.
