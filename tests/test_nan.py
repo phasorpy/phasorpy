@@ -8,11 +8,11 @@ from matplotlib import pyplot
 from numpy import nan
 from numpy.testing import assert_allclose, assert_array_equal
 
-from phasorpy.components import (
+from phasorpy.component import (
     phasor_component_fraction,
     phasor_component_graphical,
 )
-from phasorpy.cursors import (
+from phasorpy.cursor import (
     mask_from_circular_cursor,
     mask_from_elliptic_cursor,
     mask_from_polar_cursor,

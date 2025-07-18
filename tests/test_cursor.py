@@ -1,11 +1,11 @@
-"""Tests for the phasorpy.cursors module."""
+"""Tests for the phasorpy.cursor module."""
 
 import numpy
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
 from phasorpy.color import CATEGORICAL
-from phasorpy.cursors import (
+from phasorpy.cursor import (
     mask_from_circular_cursor,
     mask_from_elliptic_cursor,
     mask_from_polar_cursor,

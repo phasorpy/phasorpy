@@ -10,7 +10,7 @@ An introduction to selecting phasor coordinates using cursors.
 # Import required modules, functions, and classes:
 
 from phasorpy.color import CATEGORICAL
-from phasorpy.cursors import (
+from phasorpy.cursor import (
     mask_from_circular_cursor,
     mask_from_elliptic_cursor,
     mask_from_polar_cursor,
@@ -36,12 +36,12 @@ mean_thresholded, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 #
 # Use circular cursors to mask regions of interest in the phasor space:
 
-cursors_real = [-0.33, 0.54]
-cursors_imag = [-0.72, -0.74]
+cursor_real = [-0.33, 0.54]
+cursor_imag = [-0.72, -0.74]
 radius = [0.2, 0.22]
 
 circular_mask = mask_from_circular_cursor(
-    real, imag, cursors_real, cursors_imag, radius=radius
+    real, imag, cursor_real, cursor_imag, radius=radius
 )
 
 # %%
@@ -49,10 +49,10 @@ circular_mask = mask_from_circular_cursor(
 
 plot = PhasorPlot(allquadrants=True, title='Circular cursors')
 plot.hist2d(real, imag, cmap='Greys')
-for i in range(len(cursors_real)):
+for i in range(len(cursor_real)):
     plot.cursor(
-        cursors_real[i],
-        cursors_imag[i],
+        cursor_real[i],
+        cursor_imag[i],
         radius=radius[i],
         color=CATEGORICAL[i],
         linestyle='-',
@@ -82,8 +82,8 @@ radius_minor = [0.3, 0.25]
 elliptic_mask = mask_from_elliptic_cursor(
     real,
     imag,
-    cursors_real,
-    cursors_imag,
+    cursor_real,
+    cursor_imag,
     radius=radius,
     radius_minor=radius_minor,
 )
@@ -93,10 +93,10 @@ elliptic_mask = mask_from_elliptic_cursor(
 
 plot = PhasorPlot(allquadrants=True, title='Elliptic cursors')
 plot.hist2d(real, imag, cmap='Greys')
-for i in range(len(cursors_real)):
+for i in range(len(cursor_real)):
     plot.cursor(
-        cursors_real[i],
-        cursors_imag[i],
+        cursor_real[i],
+        cursor_imag[i],
         radius=radius[i],
         radius_minor=radius_minor[i],
         color=CATEGORICAL[i],

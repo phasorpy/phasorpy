@@ -14,9 +14,9 @@ PhasorPy library version |version|.
     phasorpy
     phasor
     lifetime
-    components
+    component
     cluster
-    cursors
+    cursor
     plot
     io
     color

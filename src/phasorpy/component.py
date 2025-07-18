@@ -1,6 +1,6 @@
 """Component analysis of phasor coordinates.
 
-The ``phasorpy.components`` module provides functions to:
+The ``phasorpy.component`` module provides functions to:
 
 - calculate fractions of two known components by projecting onto the
   line between the components (:py:func:`phasor_component_fraction`)
@@ -170,7 +170,7 @@ def phasor_component_fraction(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_api_phasorpy_components.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_component.py`
 
     Notes
     -----
@@ -265,7 +265,7 @@ def phasor_component_graphical(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_api_phasorpy_components.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_component.py`
 
     Notes
     -----
@@ -460,7 +460,7 @@ def phasor_component_fit(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_api_phasorpy_components.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_component.py`
     :ref:`sphx_glr_tutorials_applications_phasorpy_component_fit.py`
 
     Notes

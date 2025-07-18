@@ -32,7 +32,7 @@ coordinates at two harmonics.
 import numpy
 from matplotlib import pyplot
 
-from phasorpy.components import phasor_component_fit
+from phasorpy.component import phasor_component_fit
 from phasorpy.datasets import fetch
 from phasorpy.io import signal_from_lsm
 from phasorpy.phasor import (
@@ -190,7 +190,7 @@ plot_image(
 # Assert that the experimental phasor coordinates can approximately be
 # restored from the components' coordinates and fitted fractions:
 
-from phasorpy.components import phasor_from_component
+from phasorpy.component import phasor_from_component
 
 restored_real, restored_imag = phasor_from_component(
     component_real[0], component_imag[0], fractions, axis=0

@@ -1,6 +1,6 @@
 """Select regions of interest (cursors) from phasor coordinates.
 
-The ``phasorpy.cursors`` module provides functions to:
+The ``phasorpy.cursor`` module provides functions to:
 
 - create masks for regions of interests in the phasor space:
 
@@ -85,7 +85,7 @@ def mask_from_circular_cursor(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_cursor.py`
 
     Examples
     --------
@@ -186,7 +186,7 @@ def mask_from_elliptic_cursor(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_cursor.py`
 
     Examples
     --------
@@ -320,7 +320,7 @@ def mask_from_polar_cursor(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_cursor.py`
 
     Example
     -------
@@ -423,7 +423,7 @@ def pseudo_color(
 
     See Also
     --------
-    :ref:`sphx_glr_tutorials_api_phasorpy_cursors.py`
+    :ref:`sphx_glr_tutorials_api_phasorpy_cursor.py`
 
     Example
     -------
