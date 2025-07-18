@@ -86,6 +86,13 @@ def fret(hide: bool) -> None:
 
 
 @main.command(help='Start interactive lifetime plots.')
+@click.argument(
+    'number_lifetimes',
+    default=2,
+    type=click.IntRange(1, 5),
+    required=False,
+    # help='Number of preconfigured lifetimes.',
+)
 @click.option(
     '-f',
     '--frequency',
@@ -96,7 +103,7 @@ def fret(hide: bool) -> None:
 @click.option(
     '-l',
     '--lifetime',
-    default=(4.0, 1.0),
+    # default=(4.0, 1.0),
     type=float,
     multiple=True,
     required=False,
@@ -118,13 +125,24 @@ def fret(hide: bool) -> None:
     help='Do not show interactive plot.',
 )
 def lifetime(
+    number_lifetimes: int,
     frequency: float | None,
     lifetime: tuple[float, ...],
     fraction: tuple[float, ...],
     hide: bool,
 ) -> None:
     """Lifetime command group."""
+    from .lifetime import phasor_semicircle, phasor_to_normal_lifetime
     from .plot import LifetimePlots
+
+    if not lifetime:
+        if number_lifetimes == 2:
+            lifetime = (4.0, 1.0)
+        else:
+            real, imag = phasor_semicircle(number_lifetimes + 2)
+            lifetime = phasor_to_normal_lifetime(
+                real[1:-1], imag[1:-1], frequency if frequency else 80.0
+            )  # type: ignore[assignment]
 
     plot = LifetimePlots(
         frequency,

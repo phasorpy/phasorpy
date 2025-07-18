@@ -43,6 +43,8 @@ def test_lifetime():
     runner = CliRunner()
     result = runner.invoke(main, ['lifetime', '--hide'])
     assert result.exit_code == 0
+    result = runner.invoke(main, ['lifetime', '5', '--hide'])
+    assert result.exit_code == 0
     result = runner.invoke(main, ['lifetime', '-f 60', '-l 4.2', '--hide'])
     assert result.exit_code == 0
     result = runner.invoke(
