@@ -1730,7 +1730,6 @@ def _lifetime_search_2(
         double g0, g1, g0h1, s0h1, g1h1, s1h1, g0h2, s0h2, g1h2, s1h2
         double x, y, dx, dy, dr, dd, rdd
         double dmin, d, f, t
-        ssize_t samples
 
     if lifetime.shape[0] != 2 or lifetime.shape[1] != real.shape[1]:
         raise ValueError('lifetime shape invalid')
@@ -1742,8 +1741,6 @@ def _lifetime_search_2(
         raise ValueError('phasor size invalid')
     if candidate.shape[0] < 1:
         raise ValueError('candidate size < 1')
-
-    samples = candidate.shape[0]
 
     with nogil, parallel(num_threads=num_threads):
 
@@ -1760,6 +1757,10 @@ def _lifetime_search_2(
                 or isnan(re2)
                 or isnan(im2)
                 # outside semicircle?
+                or re1 < 0.0
+                or re2 < 0.0
+                or re1 > 1.0
+                or re2 > 1.0
                 or im1 < 0.0
                 or im2 < 0.0
                 or im1 * im1 > re1 - re1 * re1 + 1e-9
@@ -1776,7 +1777,7 @@ def _lifetime_search_2(
             g1 = NAN
             f = NAN
 
-            for i in range(samples):
+            for i in range(candidate.shape[0]):
                 # scan first component
                 g0h1 = candidate[i]
                 s0h1 = sqrt(g0h1 - g0h1 * g0h1)
