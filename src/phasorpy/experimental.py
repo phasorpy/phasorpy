@@ -170,7 +170,7 @@ def spectral_vector_denoise(
 ) -> NDArray[Any]:
     """Return spectral-vector-denoised signal.
 
-    The spectral vector denoising algorithm is based on an Gaussian weighted
+    The spectral vector denoising algorithm is based on a Gaussian weighted
     average calculation, with weights obtained in n-dimensional Chebyshev or
     Fourier space [4]_.
 
