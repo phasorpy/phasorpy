@@ -24,8 +24,8 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.12", "3.13"]
-        # 3.11 tested with cibuildwheel
+        python-version: ["3.12"]
+        # 3.11, 3.13 tested with cibuildwheel, code_coverage
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -57,7 +57,7 @@ jobs:
       matrix:
         os: ["windows-latest", "macos-latest"]
         python-version: ["3.11"]
-        # 3.12 tested with cibuildwheel
+        # 3.13 tested with cibuildwheel
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -93,7 +93,7 @@ jobs:
           SKIP_FETCH: 1
           CIBW_BUILD_VERBOSITY: 3
           CIBW_ARCHS_MACOS: x86_64
-          CIBW_BUILD: "cp311-manylinux_x86_64 cp312-win_amd64 cp312-macosx_x86_64"
+          CIBW_BUILD: "cp311-manylinux_x86_64 cp313-win_amd64 cp313-macosx_x86_64"
           CIBW_SKIP:
       - uses: actions/upload-artifact@v4
         with:
@@ -134,7 +134,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.13"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
