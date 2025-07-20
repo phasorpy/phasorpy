@@ -1,6 +1,6 @@
 # Minimum version requirements for the PhasorPy library
 #
-numpy==1.25.2; python_version == "3.11"
+numpy==1.26.4; python_version == "3.11"
 matplotlib==3.8.4; python_version == "3.11"
 pandas==2.1.4; python_version == "3.11"
 scipy==1.11.4; python_version == "3.11"
