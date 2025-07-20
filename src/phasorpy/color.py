@@ -1,4 +1,4 @@
-"""Color palettes and manipulation."""
+"""Color palettes and color manipulation utilities."""
 
 from __future__ import annotations
 
@@ -19,20 +19,22 @@ def wavelength2rgb(
 ) -> tuple[float, float, float] | NDArray[Any]:
     """Return approximate sRGB color components of visible wavelength(s).
 
-    Wavelengths are clipped to range [360, 750] nm, rounded, and used to
+    Wavelengths are clipped to the range [360, 750] nm, rounded, and used to
     index the :py:attr:`SRGB_SPECTRUM` palette.
 
     Parameters
     ----------
     wavelength : array_like
         Scalar or array of wavelengths in nm.
-    dtype : data-type, optional
+    dtype : dtype_like, optional
         Data-type of return value. The default is ``float32``.
 
     Returns
     -------
-    ndarray or tuple
-        Approximate sRGB color components of visible wavelength.
+    ndarray or tuple of float
+        Approximate sRGB color components of visible wavelength(s).
+        If input is scalar, return tuple of three floats.
+        If input is array, return ndarray with shape (..., 3).
         Floating-point values are in range [0.0, 1.0].
         Integer values are scaled to the dtype's maximum value.
 
@@ -74,7 +76,7 @@ def float2int(
     ----------
     rgb : array_like
         Scalar or array of normalized floating-point color components.
-    dtype : data-type, optional
+    dtype : dtype_like, optional
         Data type of return value. The default is ``uint8``.
 
     Returns
@@ -169,7 +171,7 @@ CATEGORICAL: NDArray[numpy.float32] = numpy.array([
 ], dtype=numpy.float32)
 """Categorical sRGB color palette inspired by C. Glasbey.
 
-Contains 64 maximally distinct colours for visualization.
+Contains 64 maximally distinct colors for visualization.
 
 Generated using the `glasbey <https://glasbey.readthedocs.io>`_ package::
 
@@ -575,6 +577,8 @@ SRGB_SPECTRUM: NDArray[numpy.float32] = numpy.array([
 ], dtype=numpy.float32)
 """sRGB color components for wavelengths of visible light (360-750 nm).
 
+Array of shape (391, 3) containing normalized sRGB color components
+for wavelengths from 360 to 750 nm in 1 nm increments.
 Based on the CIE 1931 2° Standard Observer.
 
 Generated using the `colour <https://colour.readthedocs.io>`_ package::

@@ -33,8 +33,7 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_filter_pawflim`
   - :py:func:`phasor_threshold`
 
-- find nearest neighbor phasor coordinates from another set of phasor
-  coordinates:
+- find nearest neighbor phasor coordinates from other phasor coordinates:
 
   - :py:func:`phasor_nearest_neighbor`
 
@@ -207,8 +206,8 @@ def phasor_from_signal(
         \sin{\left (2 \pi h \frac{k}{K} \right )} \cdot \frac{1}{F_{DC}}
 
     If :math:`F_{DC} = 0`, the phasor coordinates are undefined
-    (resulting in :math:`NaN` or :math:`\infty`).
-    Use `NaN`-aware software to further process the phasor coordinates.
+    (resulting in NaN or infinity).
+    Use NaN-aware software to further process the phasor coordinates.
 
     The phasor coordinates may be zero, for example, in case of only constant
     background in time-resolved signals, or as the result of linear
@@ -402,7 +401,7 @@ def phasor_to_signal(
     Notes
     -----
     The reconstructed signal may be undefined if the input phasor coordinates,
-    or signal mean contain `NaN` values.
+    or signal mean contain NaN values.
 
     Examples
     --------
@@ -725,7 +724,7 @@ def phasor_normalize(
         S &= S' / F
 
     If :math:`F = 0`, the normalized phasor coordinates (:math:`G`)
-    and (:math:`S`) are undefined (:math:`NaN` or :math:`\infty`).
+    and (:math:`S`) are undefined (NaN or infinity).
 
     Examples
     --------
@@ -964,7 +963,7 @@ def phasor_to_principal_plane(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return multi-harmonic phasor coordinates projected onto principal plane.
 
-    Principal Component Analysis (PCA) is used to project
+    Principal component analysis (PCA) is used to project
     multi-harmonic phasor coordinates onto a plane, along which
     coordinate axes the phasor coordinates have the largest variations.
 
@@ -1009,7 +1008,7 @@ def phasor_to_principal_plane(
     -----
 
     This implementation does not work with coordinates containing
-    undefined `NaN` values.
+    undefined NaN values.
 
     The transformation matrix can be used to project multi-harmonic phasor
     coordinates, where the first axis is the frequency:
@@ -1029,7 +1028,6 @@ def phasor_to_principal_plane(
 
     References
     ----------
-
     .. [1] Franssen WMJ, Vergeldt FJ, Bader AN, van Amerongen H, and Terenzi C.
       `Full-harmonics phasor analysis: unravelling multiexponential trends
       in magnetic resonance imaging data
@@ -1162,7 +1160,7 @@ def phasor_filter_median(
     use_scipy : bool, optional
         Use :py:func:`scipy.ndimage.median_filter`.
         This function has undefined behavior if the input arrays contain
-        `NaN` values but is faster when filtering more than 2 dimensions.
+        NaN values but is faster when filtering more than 2 dimensions.
         See `issue #87 <https://github.com/phasorpy/phasorpy/issues/87>`_.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
@@ -1384,7 +1382,6 @@ def phasor_filter_pawflim(
 
     References
     ----------
-
     .. [2] Silberberg M, and Grecco H. `pawFLIM: reducing bias and
       uncertainty to enable lower photon count in FLIM experiments
       <https://doi.org/10.1088/2050-6120/aa72ab>`_.

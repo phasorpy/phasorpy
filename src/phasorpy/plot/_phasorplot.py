@@ -57,7 +57,7 @@ class PhasorPlot:
     allquadrants : bool, optional
         Show all quadrants of phasor space.
         By default, only the first quadrant with universal semicircle is shown.
-    ax : matplotlib axes, optional
+    ax : matplotlib.axes.Axes, optional
         Matplotlib axes used for plotting.
         By default, a new subplot axes is created.
     frequency : float, optional
@@ -368,6 +368,8 @@ class PhasorPlot:
         **kwargs: Any,
     ) -> None:
         """Plot an image, for example, a 2D histogram (not implemented).
+
+        This method is not yet implemented and raises NotImplementedError.
 
         Parameters
         ----------

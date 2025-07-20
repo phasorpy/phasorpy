@@ -67,10 +67,13 @@ def phasor_from_flimlabs_json(
 
         - ``'dims'`` (tuple of str):
           :ref:`Axes codes <axes>` for `mean` image dimensions.
-        - ``'harmonic'`` (int):
-          Harmonic of `real` and `imag`.
+        - ``'samples'`` (int):
+          Number of time bins (always 256).
+        - ``'harmonic'`` (int or list of int):
+          Harmonic(s) of `real` and `imag`.
+          Single int if one harmonic, list if multiple harmonics.
         - ``'frequency'`` (float):
-          Fundamental frequency of time-resolved phasor coordinates in MHz.
+          Laser repetition frequency in MHz.
         - ``'flimlabs_header'`` (dict):
           FLIM LABS file header.
 
@@ -231,27 +234,34 @@ def signal_from_flimlabs_json(
         Index of channel to return.
         By default, return the first channel.
         If None, return all channels.
-    dtype : dtype-like, optional, default: uint16
+    dtype : dtype_like, optional, default: uint16
         Unsigned integer type of TCSPC histogram.
         Increase the bit-depth for high photon counts.
 
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'CYXH'`` and
-        type specified in ``dtype``:
+        TCSPC histogram with :ref:`axes codes <axes>` depending on
+        `channel` parameter:
+
+        - Single channel: axes ``'YXH'``
+        - Multiple channels: axes ``'CYXH'``
+
+        Type specified by ``dtype`` parameter.
 
         - ``coords['H']``: delay-times of histogram bins in ns.
+        - ``coords['C']``: channel indices (if multiple channels).
         - ``attrs['frequency']``: laser repetition frequency in MHz.
         - ``attrs['flimlabs_header']``: FLIM LABS file header.
 
     Raises
     ------
     ValueError
-        File is not a FLIM LABS JSON file containing TCSPC histogram.
-        `dtype` is not an unsigned integer.
+        If file is not a valid JSON file.
+        If file is not a FLIM LABS JSON file containing TCSPC histogram.
+        If `dtype` is not an unsigned integer type.
     IndexError
-        Channel out of range.
+        If `channel` is out of range.
 
     See Also
     --------
@@ -271,7 +281,7 @@ def signal_from_flimlabs_json(
     >>> signal.coords['H'].data
     array(...)
     >>> signal.attrs['frequency']  # doctest: +NUMBER
-    40.00
+    40.0
 
     """
     with open(filename, 'rb') as fh:

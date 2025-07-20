@@ -2,7 +2,7 @@
 
 The ``phasorpy.cursor`` module provides functions to:
 
-- create masks for regions of interests in the phasor space:
+- create masks for regions of interest in the phasor space:
 
   - :py:func:`mask_from_circular_cursor`
   - :py:func:`mask_from_elliptic_cursor`
@@ -80,8 +80,8 @@ def mask_from_circular_cursor(
     ------
     ValueError
         The array shapes of `real` and `imag` do not match.
-        The array shapes of `center_*` or `radius` have more than
-        one dimension.
+        The array shapes of `center_real`, `center_imag`, or `radius` have
+        more than one dimension.
 
     See Also
     --------
@@ -172,8 +172,8 @@ def mask_from_elliptic_cursor(
     -------
     masks : ndarray
         Boolean array of shape `(n, *real.shape)`.
-        The first dimension is omitted if `center*`, `radius*`, and `angle`
-        are scalars.
+        The first dimension is omitted if `center_real`, `center_imag`,
+        `radius`, `radius_minor`, and `angle` are scalars.
         Values are True if phasor coordinates are inside elliptic cursor,
         else False.
 
@@ -181,8 +181,8 @@ def mask_from_elliptic_cursor(
     ------
     ValueError
         The array shapes of `real` and `imag` do not match.
-        The array shapes of `center*`, `radius*`, or `angle` have more than
-        one dimension.
+        The array shapes of `center_real`, `center_imag`, `radius`,
+        `radius_minor`, or `angle` have more than one dimension.
 
     See Also
     --------
@@ -322,8 +322,8 @@ def mask_from_polar_cursor(
     --------
     :ref:`sphx_glr_tutorials_api_phasorpy_cursor.py`
 
-    Example
-    -------
+    Examples
+    --------
     Create mask from a single polar cursor:
 
     >>> mask_from_polar_cursor([0.2, 0.5], [0.4, 0.5], 1.1, 1.2, 0.4, 0.5)
@@ -425,8 +425,8 @@ def pseudo_color(
     --------
     :ref:`sphx_glr_tutorials_api_phasorpy_cursor.py`
 
-    Example
-    -------
+    Examples
+    --------
     Create pseudo-color image from single mask:
 
     >>> pseudo_color([True, False, True])  # doctest: +NUMBER

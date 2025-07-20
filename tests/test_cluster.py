@@ -20,17 +20,17 @@ def test_phasor_cluster_gmm_basic(clusters, sort):
     ).T
     real = numpy.concatenate([real1, real2])
     imag = numpy.concatenate([imag1, imag2])
-    centers_real, centers_imag, radius_major, radius_minor, angle = (
+    center_real, center_imag, radius_major, radius_minor, angle = (
         phasor_cluster_gmm(real, imag, clusters=clusters, sort=sort)
     )
-    assert len(centers_real) == clusters
-    assert len(centers_imag) == clusters
+    assert len(center_real) == clusters
+    assert len(center_imag) == clusters
     assert len(radius_major) == clusters
     assert len(radius_minor) == clusters
     assert len(angle) == clusters
     if clusters == 2:
-        assert_allclose(centers_real, [0.2, 0.3], atol=0.01)
-        assert_allclose(centers_imag, [0.3, 0.5], atol=0.01)
+        assert_allclose(center_real, [0.2, 0.3], atol=0.01)
+        assert_allclose(center_imag, [0.3, 0.5], atol=0.01)
         assert_allclose(radius_major, [0.165, 0.108], atol=0.02)
         assert_allclose(radius_minor, [0.068, 0.063], atol=0.02)
         assert_allclose(angle, [0.396, 2.369], atol=0.2)
@@ -48,7 +48,7 @@ def test_phasor_cluster_gmm_invalid_shapes():
     'covariance_type', ['full', 'tied', 'diag', 'spherical']
 )
 def test_phasor_cluster_gmm_covariance(covariance_type):
-    centers_real, centers_imag, radius_major, radius_minor, angles = (
+    center_real, center_imag, radius_major, radius_minor, angles = (
         phasor_cluster_gmm(
             [0.1, 0.2, 0.3],
             [0.1, 0.2, 0.3],
@@ -56,8 +56,8 @@ def test_phasor_cluster_gmm_covariance(covariance_type):
             covariance_type=covariance_type,
         )
     )
-    assert len(centers_real) == 2
-    assert len(centers_imag) == 2
+    assert len(center_real) == 2
+    assert len(center_imag) == 2
     if covariance_type == 'full':
         assert isinstance(radius_major, tuple) and len(radius_major) == 2
     elif covariance_type == 'tied':
@@ -89,9 +89,9 @@ def test_phasor_cluster_gmm_exceptions(real, imag):
     ],
 )
 def test_phasor_cluster_gmm_column_stack(real, imag):
-    centers_real, centers_imag, *_ = phasor_cluster_gmm(real, imag, clusters=1)
-    assert len(centers_real) == 1
-    assert len(centers_imag) == 1
+    center_real, center_imag, *_ = phasor_cluster_gmm(real, imag, clusters=1)
+    assert len(center_real) == 1
+    assert len(center_imag) == 1
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

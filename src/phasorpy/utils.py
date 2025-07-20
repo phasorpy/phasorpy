@@ -1,7 +1,7 @@
 """Utility functions.
 
 The ``phasorpy.utils`` module provides auxiliary and convenience functions
-that do not naturally fit into other modules.
+that do not fit naturally into other modules.
 
 """
 
@@ -18,7 +18,18 @@ import os
 
 
 def logger() -> logging.Logger:
-    """Return ``logging.getLogger('phasorpy')``."""
+    """Return PhasorPy logger instance.
+
+    Returns
+    -------
+    logging.Logger
+        Logger instance for 'phasorpy' namespace.
+
+    Examples
+    --------
+    >>> logger().info('This is a log message')
+
+    """
     return logging.getLogger('phasorpy')
 
 
@@ -52,7 +63,7 @@ def number_threads(
     >>> number_threads()
     1
     >>> number_threads(0)  # doctest: +SKIP
-    8
+    8  # actual value depends on system
 
     """
     if num_threads is None or num_threads < 0:
@@ -101,14 +112,14 @@ def versions(
     -------
     str
         Formatted string containing version information.
-        Format: "<package><dash><version>[<space>(<path>)]<sep>"
+        Format: ``"<package><dash><version>[<space>(<path>)]<sep>"``
 
-    Example
-    -------
-    >>> print(versions())
-    Python-3...
-    phasorpy-0...
-    numpy-...
+    Examples
+    --------
+    >>> print(versions())  # doctest: +SKIP
+    Python-3.13.5
+    phasorpy-0.6
+    numpy-2.3.1
     ...
 
     """

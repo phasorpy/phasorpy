@@ -2,7 +2,7 @@
 
 The `phasorpy.cluster` module provides functions to:
 
-- fit elliptic clusters to phasor coordinates using
+- fit elliptic clusters to phasor coordinates using a
   Gaussian Mixture Model (GMM):
 
   - :py:func:`phasor_cluster_gmm`
@@ -51,14 +51,14 @@ def phasor_cluster_gmm(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    sigma: float, default = 2.0
+    sigma : float, optional
         Scaling factor for radii of major and minor axes.
-        Defaults to 2, which corresponds to the scaling of eigenvalues for a
-        95% confidence ellipse.
+        Defaults to 2.0, which corresponds to the scaling of eigenvalues for
+        a 95% confidence ellipse.
     clusters : int, optional
         Number of Gaussian distributions to fit to phasor coordinates.
         Defaults to 1.
-    sort: {'polar', 'phasor', 'area'}, optional
+    sort : {'polar', 'phasor', 'area'}, optional
         Sorting method for output clusters. Defaults to 'polar'.
 
         - 'polar': Sort by polar coordinates (phase, then modulation).
@@ -88,19 +88,12 @@ def phasor_cluster_gmm(
     angle : tuple of float
         Rotation angles of major axes in radians, within range [0, pi].
 
-    Raises
-    ------
-    ValueError
-        If the array shapes of `real` and `imag` do not match.
-        If `clusters` is not a positive integer.
-
-
     References
     ----------
     .. [1] Vallmitjana A, Torrado B, and Gratton E.
       `Phasor-based image segmentation: machine learning clustering techniques
       <https://doi.org/10.1364/BOE.422766>`_.
-      *Biomed Opt Express*, 12(6): 3410-3422 (2021).
+      *Biomed Opt Express*, 12(6): 3410-3422 (2021)
 
     Examples
     --------
@@ -118,7 +111,7 @@ def phasor_cluster_gmm(
     >>> center_real, center_imag, radius_major, radius_minor, angle = (
     ...     phasor_cluster_gmm(real, imag, clusters=2)
     ... )
-    >>> centers_real  # doctest: +SKIP
+    >>> center_real  # doctest: +SKIP
     (0.2, 0.4)
 
     """
