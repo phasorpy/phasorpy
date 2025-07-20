@@ -14,7 +14,7 @@ dynamic = ["version"]
 dependencies = [
     # sync with requirements_min.txt
     # https://scientific-python.org/specs/spec-0000/
-    "numpy>=1.25.0",
+    "numpy>=1.26.0",
     "matplotlib>=3.8.0",
     "scipy>=1.11.0",
     "click",
