@@ -3,7 +3,7 @@
 import numpy
 import pytest
 import tifffile
-from _conftest import TempFileName
+from _conftest import SKIP_FETCH, TempFileName
 from numpy.testing import assert_almost_equal
 
 from phasorpy.datasets import fetch
@@ -295,9 +295,10 @@ def test_phasor_from_ometiff_exceptions(caplog):
         mean, real, imag, attrs = phasor_from_ometiff(filename)
         assert attrs['harmonic'] == 1
 
-    filename = fetch('paramecium.lsm')
-    with pytest.raises(ValueError):
-        phasor_from_ometiff(filename)
+    if not SKIP_FETCH:
+        filename = fetch('paramecium.lsm')
+        with pytest.raises(ValueError):
+            phasor_from_ometiff(filename)
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

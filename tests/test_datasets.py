@@ -6,6 +6,9 @@ import pytest
 
 from phasorpy.datasets import DATA_ON_GITHUB, fetch
 
+if os.environ.get('SKIP_FETCH', False):
+    pytest.skip('fetch is disabled', allow_module_level=True)
+
 # skip large downloads by default
 SKIP_LARGE = bool(int(os.environ.get('SKIP_LARGE', 1)))
 
