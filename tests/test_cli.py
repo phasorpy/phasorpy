@@ -1,10 +1,15 @@
 """Tests for the phasorpy command line interface."""
 
+import os
+
+import pytest
 from click.testing import CliRunner
 
 from phasorpy import __version__
 from phasorpy.cli import main
 from phasorpy.utils import versions
+
+SKIP_FETCH = os.environ.get('SKIP_FETCH', False)
 
 
 def test_version():
@@ -23,6 +28,7 @@ def test_versions():
     assert result.output.strip() == versions(verbose=True)
 
 
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_fetch():
     """Test ``python -m phasorpy fetch``."""
     runner = CliRunner()

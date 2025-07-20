@@ -19,6 +19,7 @@ from phasorpy.io import (
 )
 
 
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
 def test_signal_from_lsm_non_hyperspectral():
     """Test read non-hyperspectral LSM image fails."""

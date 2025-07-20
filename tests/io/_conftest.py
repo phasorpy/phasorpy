@@ -9,8 +9,6 @@ import os
 import tempfile
 from typing import Any
 
-import numpy
-
 HERE = os.path.dirname(__file__)
 TEMP_DIR = os.path.normpath(
     os.environ.get('PHASORPY_TEMP', tempfile.gettempdir())
@@ -22,8 +20,6 @@ PRIVATE_DIR = os.path.join(DATA_DIR, 'private')
 
 SKIP_PRIVATE = not os.path.exists(PRIVATE_DIR)
 SKIP_FETCH = os.environ.get('SKIP_FETCH', False)
-
-numpy.random.seed(42)
 
 
 class TempFileName:
