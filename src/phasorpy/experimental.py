@@ -68,7 +68,6 @@ def anscombe_transform(
 
     References
     ----------
-
     .. [1] Anscombe FJ.
        `The transformation of Poisson, binomial and negative-binomial data
        <https://doi.org/10.2307/2332343>`_.
@@ -124,19 +123,18 @@ def anscombe_transform_inverse(
         x = 1/4 \cdot z^2
           + 1/4 \cdot \sqrt{3/2} \cdot z^{-1}
           - 11/8 \cdot z^{-2}
-          + 5/8 \cdot \sqrt(3/2) \cdot z^{-3}
+          + 5/8 \cdot \sqrt{3/2} \cdot z^{-3}
           - 1/8
 
     References
     ----------
-
     .. [2] Makitalo M, and Foi A.
        `A closed-form approximation of the exact unbiased inverse of the
        Anscombe variance-stabilizing transformation
        <https://doi.org/10.1109/TIP.2011.2121085>`_.
-       *IEEE Trans Image Process*, 20(9): 2697-8 (2011).
+       *IEEE Trans Image Process*, 20(9): 2697-8 (2011)
 
-    .. [3] Makitalo M, and Foi A
+    .. [3] Makitalo M, and Foi A.
        `Optimal inversion of the generalized Anscombe transformation for
        Poisson-Gaussian noise
        <https://doi.org/10.1109/TIP.2012.2202675>`_,
@@ -172,7 +170,7 @@ def spectral_vector_denoise(
 ) -> NDArray[Any]:
     """Return spectral-vector-denoised signal.
 
-    The spectral vector denoising algorithm is based on a Gaussian weighted
+    The spectral vector denoising algorithm is based on an Gaussian weighted
     average calculation, with weights obtained in n-dimensional Chebyshev or
     Fourier space [4]_.
 
@@ -186,7 +184,7 @@ def spectral_vector_denoise(
         Spectral vector.
         For example, phasor coordinates, PCA projected phasor coordinates,
         or Chebyshev coefficients.
-        Must be of same shape as `signal` with `axis` removed and axis
+        Must be of the same shape as `signal` with `axis` removed and an axis
         containing spectral space appended.
         If None (default), phasor coordinates are calculated at specified
         `harmonic`.
@@ -204,10 +202,11 @@ def spectral_vector_denoise(
     sigma : float, default: 0.05
         Width of Gaussian filter in spectral vector space.
         Weighted averages are calculated using the spectra of signal items
-        within an spectral vector Euclidean distance of `3 * sigma` and
+        within a spectral vector Euclidean distance of `3 * sigma` and
         intensity above `vmin`.
     vmin : float, optional
-        Signal intensity along `axis` below which not to include in denoising.
+        Signal intensity along `axis` below which spectra are excluded from
+        denoising.
     dtype : dtype_like, optional
         Data type of output arrays. Either float32 or float64.
         The default is float64 unless the `signal` is float32.
@@ -225,7 +224,6 @@ def spectral_vector_denoise(
 
     References
     ----------
-
     .. [4] Harman RC, Lang RT, Kercher EM, Leven P, and Spring BQ.
        `Denoising multiplexed microscopy images in n-dimensional spectral space
        <https://doi.org/10.1364/BOE.463979>`_.

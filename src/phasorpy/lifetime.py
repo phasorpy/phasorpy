@@ -41,7 +41,7 @@ The ``phasorpy.lifetime`` module provides functions to:
   - :py:func:`lifetime_fraction_from_amplitude`
   - :py:func:`lifetime_fraction_to_amplitude`
 
-- calculate phasor coordinates on universal semicircle:
+- calculate phasor coordinates on the universal semicircle:
 
   - :py:func:`phasor_semicircle`
   - :py:func:`phasor_semicircle_intersect`
@@ -272,10 +272,14 @@ def phasor_from_lifetime(
     """
     if unit_conversion < 1e-16:
         raise ValueError(f'{unit_conversion=} < 1e-16')
-    frequency = numpy.atleast_1d(numpy.asarray(frequency, dtype=numpy.float64))
+    frequency = numpy.atleast_1d(
+        numpy.ascontiguousarray(frequency, dtype=numpy.float64)
+    )
     if frequency.ndim != 1:
         raise ValueError('frequency is not one-dimensional array')
-    lifetime = numpy.atleast_1d(numpy.asarray(lifetime, dtype=numpy.float64))
+    lifetime = numpy.atleast_1d(
+        numpy.ascontiguousarray(lifetime, dtype=numpy.float64)
+    )
     if lifetime.ndim > 2:
         raise ValueError('lifetime must be one- or two-dimensional array')
 
@@ -403,13 +407,13 @@ def lifetime_to_signal(
 
     See Also
     --------
-    phasorpy.phasor.phasor_from_lifetime
+    phasorpy.lifetime.phasor_from_lifetime
     phasorpy.phasor.phasor_to_signal
     :ref:`sphx_glr_tutorials_api_phasorpy_lifetime_to_signal.py`
 
     Notes
     -----
-    This implementation is based on an inverse Discrete Fourier transform
+    This implementation is based on an inverse discrete Fourier transform
     (DFT). Because DFT cannot be used on signals with discontinuities
     (for example, an exponential decay starting at zero) without producing
     strong artifacts (ripples), the signal is convolved with a continuous
@@ -439,7 +443,7 @@ def lifetime_to_signal(
     """
     if harmonic is None:
         harmonic = 'all'
-    all_hamonics = harmonic == 'all'
+    all_harmonics = harmonic == 'all'
     harmonic, _ = parse_harmonic(harmonic, samples // 2)
 
     if samples < 16:
@@ -499,7 +503,7 @@ def lifetime_to_signal(
         # make broadcastable with real and imag
         zero_real = zero_real[:, None]
         zero_imag = zero_imag[:, None]
-    if not all_hamonics:
+    if not all_harmonics:
         zero = phasor_to_signal(
             zero_mean, zero_real, zero_imag, samples=samples, harmonic=harmonic
         )
@@ -619,9 +623,9 @@ def phasor_calibrate(
     See Also
     --------
     phasorpy.phasor.phasor_transform
-    phasorpy.phasor.polar_from_reference_phasor
     phasorpy.phasor.phasor_center
-    phasorpy.phasor.phasor_from_lifetime
+    phasorpy.lifetime.polar_from_reference_phasor
+    phasorpy.lifetime.phasor_from_lifetime
 
     Notes
     -----
@@ -832,7 +836,7 @@ def polar_from_reference_phasor(
 
     See Also
     --------
-    phasorpy.phasor.polar_from_reference
+    phasorpy.lifetime.polar_from_reference
 
     Notes
     -----
@@ -893,7 +897,7 @@ def polar_from_reference(
 
     See Also
     --------
-    phasorpy.phasor.polar_from_reference_phasor
+    phasorpy.lifetime.polar_from_reference_phasor
 
     Examples
     --------
@@ -946,7 +950,7 @@ def phasor_to_apparent_lifetime(
 
     See Also
     --------
-    phasorpy.phasor.phasor_from_apparent_lifetime
+    phasorpy.lifetime.phasor_from_apparent_lifetime
     :ref:`sphx_glr_tutorials_phasorpy_lifetime_geometry.py`
 
     Notes
@@ -1032,7 +1036,7 @@ def phasor_from_apparent_lifetime(
 
     See Also
     --------
-    phasorpy.phasor.phasor_to_apparent_lifetime
+    phasorpy.lifetime.phasor_to_apparent_lifetime
 
     Notes
     -----
@@ -1096,7 +1100,7 @@ def phasor_to_normal_lifetime(
 
     The normal lifetime of phasor coordinates represents the single lifetime
     equivalent corresponding to the perpendicular projection of the coordinates
-    onto the universal semicircle, as defined in [3]_.
+    onto the universal semicircle, as defined in [2]_.
 
     Parameters
     ----------
@@ -1139,9 +1143,9 @@ def phasor_to_normal_lifetime(
 
     References
     ----------
-
-    .. [3] Silberberg M, and Grecco H. `pawFLIM: reducing bias and
-      uncertainty to enable lower photon count in FLIM experiments
+    .. [2] Silberberg M, and Grecco H.
+      `pawFLIM: reducing bias and uncertainty to enable lower photon
+      count in FLIM experiments
       <https://doi.org/10.1088/2050-6120/aa72ab>`_.
       *Methods Appl Fluoresc*, 5(2): 024016 (2017)
 
@@ -1280,7 +1284,7 @@ def lifetime_fraction_to_amplitude(
 
     See Also
     --------
-    phasorpy.phasor.lifetime_fraction_from_amplitude
+    phasorpy.lifetime.lifetime_fraction_from_amplitude
 
     Notes
     -----
@@ -1327,7 +1331,7 @@ def lifetime_fraction_from_amplitude(
 
     See Also
     --------
-    phasorpy.phasor.lifetime_fraction_to_amplitude
+    phasorpy.lifetime.lifetime_fraction_to_amplitude
 
     Notes
     -----
@@ -1475,7 +1479,7 @@ def phasor_at_harmonic(
 ) -> tuple[NDArray[numpy.float64], NDArray[numpy.float64]]:
     r"""Return phasor coordinates on universal semicircle at other harmonics.
 
-    Return phasor coordinates at any harmonic, given the real component of
+    Return phasor coordinates at any harmonic from the real component of
     phasor coordinates of a single exponential lifetime at a certain harmonic.
     The input and output phasor coordinates lie on the universal semicircle.
 
@@ -1561,7 +1565,7 @@ def polar_to_apparent_lifetime(
     ----------
     phase : array_like
         Angular component of polar coordinates.
-    imag : array_like
+    modulation : array_like
         Radial component of polar coordinates.
     frequency : array_like
         Laser pulse or modulation frequency in MHz.
@@ -1582,7 +1586,7 @@ def polar_to_apparent_lifetime(
 
     See Also
     --------
-    phasorpy.phasor.polar_from_apparent_lifetime
+    phasorpy.lifetime.polar_from_apparent_lifetime
 
     Notes
     -----
@@ -1655,7 +1659,7 @@ def polar_from_apparent_lifetime(
 
     See Also
     --------
-    phasorpy.phasor.polar_to_apparent_lifetime
+    phasorpy.lifetime.polar_to_apparent_lifetime
 
     Notes
     -----
@@ -1756,7 +1760,7 @@ def phasor_from_fret_donor(
 
     See Also
     --------
-    phasorpy.phasor.phasor_from_fret_acceptor
+    phasorpy.lifetime.phasor_from_fret_acceptor
     :ref:`sphx_glr_tutorials_api_phasorpy_fret.py`
     :ref:`sphx_glr_tutorials_applications_phasorpy_fret_efficiency.py`
 
@@ -1872,7 +1876,7 @@ def phasor_from_fret_acceptor(
 
     See Also
     --------
-    phasorpy.phasor.phasor_from_fret_donor
+    phasorpy.lifetime.phasor_from_fret_donor
     :ref:`sphx_glr_tutorials_api_phasorpy_fret.py`
 
     Examples

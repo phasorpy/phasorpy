@@ -41,6 +41,7 @@ from phasorpy.phasor import (
     phasor_transform,
 )
 
+NAN = math.nan
 SYNTH_DATA_ARRAY = numpy.array([[50, 1], [1, 1]])
 SYNTH_DATA_ARRAY_3D = numpy.stack(
     (
@@ -50,7 +51,7 @@ SYNTH_DATA_ARRAY_3D = numpy.stack(
     ),
     axis=0,
 )
-SYNTH_DATA_NAN = numpy.array([[50, numpy.nan], [1, 1]])
+SYNTH_DATA_NAN = numpy.array([[50, NAN], [1, 1]])
 SYNTH_DATA_LIST = [1, 2, 4]
 SYNTH_PHI = numpy.array([[0.5, 0.5], [0.5, 0.5]])
 SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
@@ -117,7 +118,7 @@ def test_phasor_from_signal(use_fft):
     # zero signal
     assert_allclose(
         phasor_from_signal(numpy.zeros(256), use_fft=use_fft),
-        (0.0, numpy.nan, numpy.nan),
+        (0.0, NAN, NAN),
         atol=1e-6,
     )
 
@@ -351,7 +352,7 @@ def test_phasor_normalization(harmonics, normalize):
     signal += 1.1
     if normalize:
         # TODO: NaN handling seems to differ with FFT in unnormalized case
-        signal[0, 0, 0, 0] = numpy.nan
+        signal[0, 0, 0, 0] = NAN
         signal[0, :, 1, 1] = 0.0
 
     harmonic = [1, 2] if harmonics else None
@@ -721,8 +722,8 @@ def test_phasor_to_polar_more():
 
 def test_phasor_to_complex():
     """Test phasor_to_complex function."""
-    real = [numpy.nan, 0.1, 0.2]
-    imag = [numpy.nan, 0.3, 0.4]
+    real = [NAN, 0.1, 0.2]
+    imag = [NAN, 0.3, 0.4]
     assert_allclose(phasor_to_complex(real, imag).real, real)
     assert_allclose(phasor_to_complex(real, imag).imag, imag)
     assert_allclose(phasor_to_complex(0, imag).real, 0)
@@ -778,8 +779,8 @@ def test_phasor_divide():
     imag1 = [0.0, 0.22, 0.4]
     real2 = [0.0, 0.5, 0.6]
     imag2 = [0.0, 0.7, 0.8]
-    real = [numpy.nan, 0.1, 0.2]
-    imag = [numpy.nan, 0.3, 0.4]
+    real = [NAN, 0.1, 0.2]
+    imag = [NAN, 0.3, 0.4]
 
     assert_allclose(
         phasor_to_complex(*phasor_divide(real1, imag1, real2, imag2)),
@@ -1958,7 +1959,6 @@ def test_phasor_filter_pawflim_errors():
 
 def test_phasor_threshold():
     """Test phasor_threshold function."""
-    nan = numpy.nan
     # no threshold
     assert_allclose(
         phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, 0.5]),
@@ -1967,22 +1967,22 @@ def test_phasor_threshold():
     # lower mean threshold
     assert_allclose(
         phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, 0.5], 0.5),
-        ([0.5, nan], [0.2, nan], [0.3, nan]),
+        ([0.5, NAN], [0.2, NAN], [0.3, NAN]),
     )
-    # nan in mean propagated to real and imag
+    # NAN in mean propagated to real and imag
     assert_allclose(
-        phasor_threshold([0.5, nan], [0.2, 0.5], [0.3, 0.5], 0.5),
-        ([0.5, nan], [0.2, nan], [0.3, nan]),
+        phasor_threshold([0.5, NAN], [0.2, 0.5], [0.3, 0.5], 0.5),
+        ([0.5, NAN], [0.2, NAN], [0.3, NAN]),
     )
-    # nan in real propagated to mean and imag
+    # NAN in real propagated to mean and imag
     assert_allclose(
-        phasor_threshold([0.5, 0.4], [0.2, nan], [0.3, 0.5], 0.5),
-        ([0.5, nan], [0.2, nan], [0.3, nan]),
+        phasor_threshold([0.5, 0.4], [0.2, NAN], [0.3, 0.5], 0.5),
+        ([0.5, NAN], [0.2, NAN], [0.3, NAN]),
     )
-    # nan in imag propagated to real and mean
+    # NAN in imag propagated to real and mean
     assert_allclose(
-        phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, nan], 0.5),
-        ([0.5, nan], [0.2, nan], [0.3, nan]),
+        phasor_threshold([0.5, 0.4], [0.2, 0.5], [0.3, NAN], 0.5),
+        ([0.5, NAN], [0.2, NAN], [0.3, NAN]),
     )
     # 2D array with lower mean threshold
     assert_allclose(
@@ -1993,9 +1993,9 @@ def test_phasor_threshold():
             0.5,
         ),
         (
-            [[0.5, nan], [0.8, 0.6]],
-            [[0.1, nan], [0.3, 0.4]],
-            [[0.5, nan], [0.7, 0.8]],
+            [[0.5, NAN], [0.8, 0.6]],
+            [[0.1, NAN], [0.3, 0.4]],
+            [[0.5, NAN], [0.7, 0.8]],
         ),
     )
     # 2D array with lower and upper mean threshold
@@ -2008,9 +2008,9 @@ def test_phasor_threshold():
             0.7,
         ),
         (
-            [[0.5, nan], [nan, 0.6]],
-            [[0.1, nan], [nan, 0.4]],
-            [[0.5, nan], [nan, 0.8]],
+            [[0.5, NAN], [NAN, 0.6]],
+            [[0.1, NAN], [NAN, 0.4]],
+            [[0.5, NAN], [NAN, 0.8]],
         ),
     )
     # 2D array with lower mean and real threshold
@@ -2024,9 +2024,9 @@ def test_phasor_threshold():
             real_max=0.35,
         ),
         (
-            [[nan, nan], [0.8, nan]],
-            [[nan, nan], [0.3, nan]],
-            [[nan, nan], [0.7, nan]],
+            [[NAN, NAN], [0.8, NAN]],
+            [[NAN, NAN], [0.3, NAN]],
+            [[NAN, NAN], [0.7, NAN]],
         ),
     )
     # 2D array with lower mean and imag threshold
@@ -2040,9 +2040,9 @@ def test_phasor_threshold():
             imag_max=0.75,
         ),
         (
-            [[nan, nan], [0.8, nan]],
-            [[nan, nan], [0.3, nan]],
-            [[nan, nan], [0.7, nan]],
+            [[NAN, NAN], [0.8, NAN]],
+            [[NAN, NAN], [0.3, NAN]],
+            [[NAN, NAN], [0.7, NAN]],
         ),
     )
     # 3D array with different real threshold for first dimension
@@ -2054,9 +2054,9 @@ def test_phasor_threshold():
             real_min=[[[0.2]], [[0.6]]],
         ),
         (
-            [[[nan, 0.5]], [[nan, 0.9]]],
-            [[[nan, 0.2]], [[nan, 0.6]]],
-            [[[nan, 0.3]], [[nan, 0.7]]],
+            [[[NAN, 0.5]], [[NAN, 0.9]]],
+            [[[NAN, 0.2]], [[NAN, 0.6]]],
+            [[[NAN, 0.3]], [[NAN, 0.7]]],
         ),
     )
     # 2D array with lower and upper phase threshold
@@ -2069,9 +2069,9 @@ def test_phasor_threshold():
             phase_max=1.3,
         ),
         (
-            [[nan, 0.4], [nan, nan]],
-            [[nan, 0.2], [nan, nan]],
-            [[nan, 0.6], [nan, nan]],
+            [[NAN, 0.4], [NAN, NAN]],
+            [[NAN, 0.2], [NAN, NAN]],
+            [[NAN, 0.6], [NAN, NAN]],
         ),
     )
     # 2D array with lower and upper modulation threshold
@@ -2084,9 +2084,9 @@ def test_phasor_threshold():
             modulation_max=0.8,
         ),
         (
-            [[nan, nan], [0.8, nan]],
-            [[nan, nan], [0.3, nan]],
-            [[nan, nan], [0.7, nan]],
+            [[NAN, NAN], [0.8, NAN]],
+            [[NAN, NAN], [0.3, NAN]],
+            [[NAN, NAN], [0.7, NAN]],
         ),
     )
     # 2D array with lower and upper phase and modulation threshold
@@ -2101,9 +2101,9 @@ def test_phasor_threshold():
             modulation_max=0.8,
         ),
         (
-            [[nan, nan], [nan, nan]],
-            [[nan, nan], [nan, nan]],
-            [[nan, nan], [nan, nan]],
+            [[NAN, NAN], [NAN, NAN]],
+            [[NAN, NAN], [NAN, NAN]],
+            [[NAN, NAN], [NAN, NAN]],
         ),
     )
     # 2D array with open interval, lower and upper mean threshold
@@ -2117,9 +2117,9 @@ def test_phasor_threshold():
             open_interval=True,
         ),
         (
-            [[nan, nan], [nan, 0.6]],
-            [[nan, nan], [nan, 0.4]],
-            [[nan, nan], [nan, 0.8]],
+            [[NAN, NAN], [NAN, 0.6]],
+            [[NAN, NAN], [NAN, 0.4]],
+            [[NAN, NAN], [NAN, 0.8]],
         ),
     )
     # 2D array with open interval, lower and upper real threshold
@@ -2133,9 +2133,9 @@ def test_phasor_threshold():
             open_interval=True,
         ),
         (
-            [[nan, nan], [0.8, nan]],
-            [[nan, nan], [0.3, nan]],
-            [[nan, nan], [0.7, nan]],
+            [[NAN, NAN], [0.8, NAN]],
+            [[NAN, NAN], [0.3, NAN]],
+            [[NAN, NAN], [0.7, NAN]],
         ),
     )
     # 2D array with open interval, lower and upper imag threshold
@@ -2149,9 +2149,9 @@ def test_phasor_threshold():
             open_interval=True,
         ),
         (
-            [[nan, nan], [0.8, nan]],
-            [[nan, nan], [0.3, nan]],
-            [[nan, nan], [0.7, nan]],
+            [[NAN, NAN], [0.8, NAN]],
+            [[NAN, NAN], [0.3, NAN]],
+            [[NAN, NAN], [0.7, NAN]],
         ),
     )
     # 2D array with open interval, lower and upper phase threshold
@@ -2168,9 +2168,9 @@ def test_phasor_threshold():
             open_interval=True,
         ),
         (
-            [[nan, nan], [0.8, nan]],
-            [[nan, nan], [real[1][0], nan]],
-            [[nan, nan], [imag[1][0], nan]],
+            [[NAN, NAN], [0.8, NAN]],
+            [[NAN, NAN], [real[1][0], NAN]],
+            [[NAN, NAN], [imag[1][0], NAN]],
         ),
     )
     # 2D array with open interval, lower and upper modulation threshold
@@ -2184,9 +2184,9 @@ def test_phasor_threshold():
             open_interval=True,
         ),
         (
-            [[nan, nan], [0.8, nan]],
-            [[nan, nan], [real[1][0], nan]],
-            [[nan, nan], [imag[1][0], nan]],
+            [[NAN, NAN], [0.8, NAN]],
+            [[NAN, NAN], [real[1][0], NAN]],
+            [[NAN, NAN], [imag[1][0], NAN]],
         ),
     )
 
@@ -2215,19 +2215,18 @@ def test_phasor_threshold_dtype(dtype, kwargs):
 
 def test_phasor_threshold_harmonic():
     """Test phasor_threshold function with multiple harmonics."""
-    nan = numpy.nan
     data = numpy.random.random((3, 2, 8))
-    data[0, 0, 0] = nan
-    data[1, 0, 1] = nan
-    data[1, 1, 2] = nan
-    data[2, 0, 3] = nan
-    data[2, 1, 4] = nan
+    data[0, 0, 0] = NAN
+    data[1, 0, 1] = NAN
+    data[1, 1, 2] = NAN
+    data[2, 0, 3] = NAN
+    data[2, 1, 4] = NAN
     mean, real, imag = data
     mean_copy, real_copy, imag_copy = data.copy()
 
     # NaNs should propagate to all dimensions
     result = data.copy()
-    result[:, :, :5] = nan
+    result[:, :, :5] = NAN
     mean_, real_, imag_ = result
 
     # detect harmonic axis
@@ -2252,18 +2251,18 @@ def test_phasor_threshold_harmonic():
     mean, real, imag = data
     result = data.copy()
     result[0, 1, :] = result[0, 0, :]
-    result[0, 0, 1] = nan
-    result[0, 1, 2] = nan
-    result[0, 0, 3] = nan
-    result[0, 1, 4] = nan
-    result[1, 0, 0] = nan
-    result[1, 0, 3] = nan
-    result[1, 1, 0] = nan
-    result[1, 1, 4] = nan
-    result[2, 0, 0] = nan
-    result[2, 0, 1] = nan
-    result[2, 1, 0] = nan
-    result[2, 1, 2] = nan
+    result[0, 0, 1] = NAN
+    result[0, 1, 2] = NAN
+    result[0, 0, 3] = NAN
+    result[0, 1, 4] = NAN
+    result[1, 0, 0] = NAN
+    result[1, 0, 3] = NAN
+    result[1, 1, 0] = NAN
+    result[1, 1, 4] = NAN
+    result[2, 0, 0] = NAN
+    result[2, 0, 1] = NAN
+    result[2, 1, 0] = NAN
+    result[2, 1, 2] = NAN
     mean_, real_, imag_ = result
 
     mean1, real1, imag1 = phasor_threshold(
@@ -2276,16 +2275,14 @@ def test_phasor_threshold_harmonic():
 
 def test_phasor_nearest_neighbor():
     """Test phasor_nearest_neighbor function."""
-    nan = numpy.nan
-
     # test scalar inputs
     assert_array_equal(phasor_nearest_neighbor(1, 1, 1, 1), 0)
     assert_array_equal(phasor_nearest_neighbor(1, 1, 1, 1, values=1), 1.0)
-    assert_array_equal(phasor_nearest_neighbor(nan, 1, 1, 1), -1)
-    assert_array_equal(phasor_nearest_neighbor(nan, 1, 1, 1, values=1), nan)
+    assert_array_equal(phasor_nearest_neighbor(NAN, 1, 1, 1), -1)
+    assert_array_equal(phasor_nearest_neighbor(NAN, 1, 1, 1, values=1), NAN)
 
     # Test input arrays are not modified, no values
-    arr = numpy.array([[nan, 2], [3, 4]])
+    arr = numpy.array([[NAN, 2], [3, 4]])
     original_arr = arr.copy()
     result = phasor_nearest_neighbor(arr, arr, arr, arr)
     assert result.dtype == numpy.int8
@@ -2298,20 +2295,20 @@ def test_phasor_nearest_neighbor():
     result = phasor_nearest_neighbor(arr, arr, arr / 2, arr / 2, values=values)
     assert_array_equal(arr, original_arr)
     assert_array_equal(values, original_values)
-    assert_array_equal(result, [[nan, 8], [8, 8]])
+    assert_array_equal(result, [[NAN, 8], [8, 8]])
 
     # test dtype parameter
     result = phasor_nearest_neighbor(
         arr, arr, arr / 2, arr / 2, values=values, dtype=numpy.float32
     )
     assert result.dtype == numpy.float32
-    assert_array_equal(result, [[nan, 8], [8, 8]])
+    assert_array_equal(result, [[NAN, 8], [8, 8]])
 
     # test num_threads parameter
     result = phasor_nearest_neighbor(
         arr, arr, arr / 2, arr / 2, values=values, num_threads=2
     )
-    assert_array_equal(result, [[nan, 8], [8, 8]])
+    assert_array_equal(result, [[NAN, 8], [8, 8]])
 
     # Test distance_max parameter
     result = phasor_nearest_neighbor(arr, arr, [2], [2], distance_max=2)
@@ -2321,12 +2318,12 @@ def test_phasor_nearest_neighbor():
     result = phasor_nearest_neighbor(
         arr, arr, [2, 2], [2, 2], values=[10, 20], distance_max=2
     )
-    assert_array_equal(result, [[nan, 10], [10, nan]])
+    assert_array_equal(result, [[NAN, 10], [10, NAN]])
 
     # Test multi-dimensional inputs
     # TODO: modify this when multiple dimensions are supported
     arr = numpy.array(
-        [[[1, 1], [1, nan]], [[2, 2], [2, 2]], [[3, 3], [nan, 3]]]
+        [[[1, 1], [1, NAN]], [[2, 2], [2, 2]], [[3, 3], [NAN, 3]]]
     )
     neighbor_arr = numpy.array(
         [[[1, 2], [3, 4]], [[2, 3], [4, 5]], [[3, 4], [5, 6]]]
@@ -2338,16 +2335,15 @@ def test_phasor_nearest_neighbor():
         arr, arr, neighbor_arr, neighbor_arr, values=values
     )
     assert_array_equal(
-        result, [[[0, 0], [0, nan]], [[1, 1], [1, 1]], [[2, 2], [nan, 2]]]
+        result, [[[0, 0], [0, NAN]], [[1, 1], [1, 1]], [[2, 2], [NAN, 2]]]
     )
 
 
 @pytest.mark.xfail(reason='Multiple harmonics not yet supported')
 def test_phasor_nearest_neighbor_harmonics():
     """Test phasor_nearest_neighbor function with multiple harmonics."""
-    nan = numpy.nan
     arr = numpy.array(
-        [[[1, 1], [1, nan]], [[2, 2], [2, 2]], [[3, 3], [nan, 3]]]
+        [[[1, 1], [1, NAN]], [[2, 2], [2, 2]], [[3, 3], [NAN, 3]]]
     )
     neighbor_arr = numpy.array(
         [[[1, 2], [3, 4]], [[2, 3], [4, 5]], [[3, 4], [5, 6]]]
@@ -2358,7 +2354,7 @@ def test_phasor_nearest_neighbor_harmonics():
     )
     assert_array_equal(
         result,
-        [[[0, 0], [nan, nan]], [[0, 0], [nan, nan]], [[0, 0], [nan, nan]]],
+        [[[0, 0], [NAN, NAN]], [[0, 0], [NAN, NAN]], [[0, 0], [NAN, NAN]]],
     )
 
 

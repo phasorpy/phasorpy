@@ -2,14 +2,13 @@
 
 The ``phasorpy.datasets`` module provides a :py:func:`fetch` function to
 download data files from remote repositories and cache them in a local
-directory. The cache location can be changed by setting the
-``PHASORPY_DATA_DIR`` environment variable.
+directory.
 
 Datasets from the following repositories are available:
 
-- `PhasorPy tests <https://zenodo.org/record/8417894>`_
-- `LFD Workshop <https://zenodo.org/record/8411056>`_
-- `FLUTE <https://zenodo.org/record/8046636>`_
+- `PhasorPy tests <https://zenodo.org/records/8417894>`_
+- `LFD Workshop <https://zenodo.org/records/8411056>`_
+- `FLUTE <https://zenodo.org/records/8046636>`_
 - `napari-flim-phasor-plotter
   <https://github.com/zoccoler/napari-flim-phasor-plotter/tree/0.0.6/src/napari_flim_phasor_plotter/data>`_
 - `Phasor-based multi-harmonic unmixing for in-vivo hyperspectral imaging
@@ -24,6 +23,10 @@ Datasets from the following repositories are available:
 
 The implementation is based on the `Pooch <https://www.fatiando.org/pooch>`_
 library.
+
+The default cache location is determined by the Pooch library, but can be
+overridden by setting the ``PHASORPY_DATA_DIR`` environment variable to
+a custom directory path.
 
 """
 
@@ -530,7 +533,12 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'figshare_22336594_exported': FIGSHARE_22336594_EXPORTED,
     'misc': MISC,
 }
-"""Pooch repositories."""
+"""Dictionary mapping repository names to Pooch repository objects.
+
+Each repository provides access to a specific collection of sample data files
+that can be fetched using the :py:func:`fetch` function.
+
+"""
 
 
 def fetch(
@@ -546,8 +554,15 @@ def fetch(
 
     Parameters
     ----------
-    *args : str or iterable of str, optional
+    *args : str, iterable of str, or pooch.Pooch
         Name(s) of file(s) or repositories to fetch from local storage.
+        Can be:
+
+        - File names (for example, 'simfcs.r64')
+        - Repository names (for example, 'tests', 'flute')
+        - Pooch repository objects
+        - Iterables of the above
+
         If omitted, return files in all repositories.
     extract_dir : str or None, optional
         Path, relative to cache location, where ZIP files will be unpacked.
@@ -561,6 +576,13 @@ def fetch(
     -------
     str or tuple of str
         Absolute path(s) of file(s) in local storage.
+        Returns a single string if only one file and `return_scalar=True`,
+        otherwise returns a tuple of strings.
+
+    Raises
+    ------
+    ValueError
+        If specified file is not found in any repository.
 
     Examples
     --------

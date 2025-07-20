@@ -48,7 +48,7 @@ def signal_from_sdt(
     filename : str or Path
         Name of Becker & Hickl SDT file to read.
     index : int, optional, default: 0
-        Index of dataset to read in case the file contains multiple datasets.
+        Index of dataset to read if the file contains multiple datasets.
 
     Returns
     -------
@@ -63,7 +63,7 @@ def signal_from_sdt(
     Raises
     ------
     ValueError
-        File is not a SDT file containing TCSPC histogram.
+        File is not an SDT file containing TCSPC histogram.
 
     Notes
     -----
@@ -141,7 +141,7 @@ def signal_from_ptu(
         Indices for all dimensions of image mode files:
 
         - ``None``: return all items along axis (default).
-        - ``Ellipsis``: return all items along multiple axes.
+        - ``Ellipsis`` (``...``): return all items along multiple axes.
         - ``int``: return single item along axis.
         - ``slice``: return chunk of axis.
           ``slice.step`` is a binning factor.
@@ -149,7 +149,7 @@ def signal_from_ptu(
 
     trimdims : str, optional, default: 'TCH'
         Axes to trim.
-    dtype : dtype-like, optional, default: uint16
+    dtype : dtype_like, optional, default: uint16
         Unsigned integer type of TCSPC histogram.
         Increase the bit depth to avoid overflows when integrating.
     frame : int, optional
@@ -263,7 +263,7 @@ def signal_from_lsm(
 ) -> DataArray:
     """Return hyperspectral image and metadata from Zeiss LSM file.
 
-    LSM files contain multi-dimensional images and metadata from laser
+    Zeiss LSM files contain multi-dimensional images and metadata from laser
     scanning microscopy measurements. The file format is based on TIFF.
 
     Parameters
@@ -542,7 +542,7 @@ def phasor_from_ifli(
         Index of channel to return.
         By default, return the first channel.
         If None, return all channels.
-    harmonic : int, sequence of int, or 'all', optional
+    harmonic : int, sequence of int, 'any', or 'all', optional
         Harmonic(s) to return from file.
         If None (default), return the first harmonic stored in file.
         If `'all'`, return all harmonics of first frequency stored in file.

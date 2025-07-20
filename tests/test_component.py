@@ -1,5 +1,7 @@
 """Tests for the phasorpy.components module."""
 
+from math import nan as NAN
+
 import numpy
 import pytest
 from numpy.testing import assert_allclose
@@ -31,7 +33,7 @@ def test_three_components(swap, func):
         [0.6, 0.4, 0.0],
         [0.3, 0.5, 0.2],
         [1 / 3, 1 / 3, 1 / 3],
-        [numpy.nan, numpy.nan, numpy.nan],
+        [NAN, NAN, NAN],
     ]
     if swap:
         lifetime = [lifetime[i] for i in (1, 0, 2)]
@@ -68,7 +70,7 @@ def test_phasor_component_mvc():
         [0.3, 0.4, 0.2, 0.1],
         [-0.1, 0.4, -0.2, 0.9],
         [1 / 4, 1 / 4, 1 / 4, 1 / 4],
-        [numpy.nan, numpy.nan, numpy.nan, numpy.nan],
+        [NAN, NAN, NAN, NAN],
     ]
 
     real, imag = phasor_from_component(
@@ -100,7 +102,7 @@ def test_phasor_component_mvc():
         phasor_component_mvc(real[:4], imag, component_real, component_imag)
 
     with pytest.raises(ValueError):
-        phasor_component_mvc(real, imag, [numpy.nan, 1, 1, 1], component_imag)
+        phasor_component_mvc(real, imag, [NAN, 1, 1, 1], component_imag)
 
     with pytest.raises(ValueError):
         phasor_component_mvc(real, imag, [numpy.inf, 1, 1, 1], component_imag)
@@ -519,10 +521,10 @@ def test_phasor_component_fit():
     )
 
     # NaN handling
-    mean[0] = numpy.nan
-    real[1] = numpy.nan
-    fractions[0][:2] = numpy.nan
-    fractions[1][:2] = numpy.nan
+    mean[0] = NAN
+    real[1] = NAN
+    fractions[0][:2] = NAN
+    fractions[1][:2] = NAN
     assert_allclose(
         phasor_component_fit(mean, real, imag, component_real, component_imag),
         fractions,
@@ -577,7 +579,7 @@ def test_phasor_component_fit():
             mean, real, imag, component_real[:-1], component_imag
         )
 
-    component_real[0] = numpy.nan
+    component_real[0] = NAN
     with pytest.raises(ValueError):
         phasor_component_fit(mean, real, imag, component_real, component_real)
 

@@ -81,15 +81,14 @@ def phasor_to_ometiff(
     harmonic : int or sequence of int, optional
         Harmonics present in the first dimension of `real` and `imag`, if any.
         Write to image series named 'Phasor harmonic'.
-        It is only needed if harmonics are not starting at and increasing by
-        one.
+        Only needed if harmonics are not starting at and increasing by one.
     dims : sequence of str, optional
         Character codes for `mean` image dimensions.
         By default, the last dimensions are assumed to be 'TZCYX'.
         If harmonics are present in `real` and `imag`, an "other" (``Q``)
         dimension is prepended to axes for those arrays.
         Refer to the OME-TIFF model for allowed axes and their order.
-    dtype : dtype-like, optional
+    dtype : dtype_like, optional
         Floating point data type used to store phasor coordinates.
         The default is ``float32``, which has 6 digits of precision
         and maximizes compatibility with other software.

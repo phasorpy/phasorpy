@@ -34,6 +34,7 @@ from phasorpy.lifetime import (
 )
 from phasorpy.phasor import phasor_from_polar, phasor_to_polar
 
+NAN = math.nan
 SYNTH_DATA_ARRAY = numpy.array([[50, 1], [1, 1]])
 SYNTH_DATA_ARRAY_3D = numpy.stack(
     (
@@ -43,7 +44,7 @@ SYNTH_DATA_ARRAY_3D = numpy.stack(
     ),
     axis=0,
 )
-SYNTH_DATA_NAN = numpy.array([[50, numpy.nan], [1, 1]])
+SYNTH_DATA_NAN = numpy.array([[50, NAN], [1, 1]])
 SYNTH_DATA_LIST = [1, 2, 4]
 SYNTH_PHI = numpy.array([[0.5, 0.5], [0.5, 0.5]])
 SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
@@ -165,39 +166,39 @@ def test_phasor_semicircle_intersect():
     """Test phasor_semicircle_intersect function."""
     assert_allclose(
         phasor_semicircle_intersect(
-            [0.2, 0.2, math.nan], [0.25, 0.0, 0.25], 0.6, 0.25
+            [0.2, 0.2, NAN], [0.25, 0.0, 0.25], 0.6, 0.25
         ),
         (
-            [0.066, numpy.nan, numpy.nan],
-            [0.25, numpy.nan, numpy.nan],
-            [0.933, 0.817, numpy.nan],
-            [0.25, 0.386, numpy.nan],
+            [0.066, NAN, NAN],
+            [0.25, NAN, NAN],
+            [0.933, 0.817, NAN],
+            [0.25, 0.386, NAN],
         ),
         atol=1e-3,
     )
     # reverse order
     assert_allclose(
         phasor_semicircle_intersect(
-            0.6, 0.25, [0.2, 0.2, math.nan], [0.25, 0.0, 0.25]
+            0.6, 0.25, [0.2, 0.2, NAN], [0.25, 0.0, 0.25]
         ),
         (
-            [0.933, numpy.nan, numpy.nan],
-            [0.25, numpy.nan, numpy.nan],
-            [0.066, 0.817, numpy.nan],
-            [0.25, 0.386, numpy.nan],
+            [0.933, NAN, NAN],
+            [0.25, NAN, NAN],
+            [0.066, 0.817, NAN],
+            [0.25, 0.386, NAN],
         ),
         atol=1e-3,
     )
     # no intersection
     assert_allclose(
         phasor_semicircle_intersect(0.1, -0.1, 0.9, -0.1),
-        (numpy.nan, numpy.nan, numpy.nan, numpy.nan),
+        (NAN, NAN, NAN, NAN),
         atol=1e-3,
     )
     # no line
     assert_allclose(
         phasor_semicircle_intersect(0.25, 0.25, 0.25, 0.25),
-        (numpy.nan, numpy.nan, numpy.nan, numpy.nan),
+        (NAN, NAN, NAN, NAN),
         atol=1e-3,
     )
     # tangent
@@ -383,7 +384,7 @@ def test_polar_from_reference_functions():
         ((80.0, [0.0, 1.9894368, 1e9], [0, 1, 0]), {}, (0.5, 0.5)),
         ((80.0, [0.0, 1.9894368, 1e9], [1, 1, 0]), {}, (0.75, 0.5 / 2)),
         ((80.0, [0.0, 1.9894368, 1e9], [0, 1, 1]), {}, (0.25, 0.5 / 2)),
-        ((80.0, [0.0, 1.9894368, 1e9], [0, 0, 0]), {}, (numpy.nan, numpy.nan)),
+        ((80.0, [0.0, 1.9894368, 1e9], [0, 0, 0]), {}, (NAN, NAN)),
         (
             (80.0, [3.9788735, 1.9894368, 0.9947183], [1.0, 1.0, 1.0]),
             {},
@@ -1462,7 +1463,7 @@ def test_lifetime_fraction_to_amplitude():
     with pytest.warns(RuntimeWarning):
         assert_allclose(
             lifetime_fraction_to_amplitude([4.0, 1.0], [0.0, 0.0]),
-            [numpy.nan, numpy.nan],
+            [NAN, NAN],
             atol=1e-3,
         )
 
@@ -1496,13 +1497,13 @@ def test_lifetime_fraction_from_amplitude():
     with pytest.warns(RuntimeWarning):
         assert_allclose(
             lifetime_fraction_from_amplitude([0.0, 0.0], [0.4, 0.4]),
-            [numpy.nan, numpy.nan],
+            [NAN, NAN],
             atol=1e-3,
         )
     with pytest.warns(RuntimeWarning):
         assert_allclose(
             lifetime_fraction_from_amplitude([4.0, 1.0], [0.0, 0.0]),
-            [numpy.nan, numpy.nan],
+            [NAN, NAN],
             atol=1e-3,
         )
 

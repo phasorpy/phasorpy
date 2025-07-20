@@ -291,7 +291,6 @@ def phasor_component_graphical(
 
     References
     ----------
-
     .. [1] Ranjit S, Datta R, Dvornikov A, and Gratton E.
       `Multicomponent analysis of phasor plot in a single pixel to
       calculate changes of metabolic trajectory in biological systems
@@ -483,8 +482,8 @@ def phasor_component_fit(
       imaging <https://doi.org/10.1088/2050-6120/ac9ae9>`_.
       *Methods Appl Fluoresc*, 11(1): 014001 (2022)
 
-    Example
-    -------
+    Examples
+    --------
     >>> phasor_component_fit(
     ...     [1, 1, 1], [0.6, 0.5, 0.4], [0.4, 0.3, 0.2], [0.2, 0.9], [0.4, 0.3]
     ... )
@@ -646,8 +645,8 @@ def phasor_component_mvc(
       <https://doi.org/10.1016/j.cagd.2024.102310>`_.
       *Computer Aided Geometric Design*, 111: 102310 (2024)
 
-    Example
-    -------
+    Examples
+    --------
     Calculate the barycentric coordinates of a phasor coordinate
     in a triangle defined by three components:
 

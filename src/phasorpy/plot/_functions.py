@@ -66,9 +66,14 @@ def plot_phasor(
     show : bool, optional, default: True
         Display figure.
     **kwargs
-        Additional parguments passed to :py:class:`PhasorPlot`,
+        Additional arguments passed to :py:class:`PhasorPlot`,
         :py:meth:`PhasorPlot.plot`, :py:meth:`PhasorPlot.hist2d`, or
         :py:meth:`PhasorPlot.contour` depending on `style`.
+
+    Raises
+    ------
+    ValueError
+        If style is not one of 'plot', 'hist2d', or 'contour'.
 
     See Also
     --------
@@ -619,7 +624,7 @@ def plot_histograms(
 
     Parameters
     ----------
-    data: array_like
+    *data : array_like
         Data arrays to be plotted as histograms.
     title : str, optional
         Figure title.

@@ -76,9 +76,11 @@ def phasor_to_simfcs_referenced(
         Harmonics must be starting at and increasing by one.
     size : int, optional
         Size of X and Y dimensions of square-sized images stored in file.
+        Must be in range [4, 65535].
         By default, ``size = min(256, max(4, sizey, sizex))``.
     dims : sequence of str, optional
         Character codes for `mean` dimensions used to format file names.
+        Only used when chunking multi-dimensional data into multiple files.
 
     See Also
     --------
@@ -191,9 +193,11 @@ def phasor_from_simfcs_referenced(
     ----------
     filename : str or Path
         Name of SimFCS REF, R64, or RE<n> file to read.
-    harmonic : int or sequence of int, optional
+    harmonic : int, sequence of int, or 'all', optional
         Harmonic(s) to include in returned phasor coordinates.
         By default, only the first harmonic is returned.
+        If 'all', return all available harmonics.
+        If int or sequence, return specified harmonic(s).
 
     Returns
     -------
@@ -206,7 +210,7 @@ def phasor_from_simfcs_referenced(
         Image of imaginary component of phasor coordinates.
         Multiple harmonics, if any, are in the first axis.
     attrs : dict
-        Select metadata:
+        Select metadata containing:
 
         - ``'dims'`` (tuple of str):
           :ref:`Axes codes <axes>` for `mean` image dimensions.
@@ -310,7 +314,7 @@ def signal_from_fbd(
     frame : int, optional
         If None (default), return all frames.
         If < 0, integrate time axis, else return specified frame.
-    channel : int, optional
+    channel : int or None, optional
         Index of channel to return.
         By default, return the first channel.
         If None, return all channels.
@@ -551,7 +555,7 @@ def signal_from_bh(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with ref:`axes codes <axes>` ``'HYX'``,
+        TCSPC histogram with :ref:`axes codes <axes>` ``'HYX'``,
         shape ``(256, 256, 256)``, and type ``float32``.
 
     Raises
@@ -608,7 +612,7 @@ def signal_from_bhz(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with ref:`axes codes <axes>` ``'HYX'``,
+        TCSPC histogram with :ref:`axes codes <axes>` ``'HYX'``,
         shape ``(256, 256, 256)``, and type ``float32``.
 
     Raises

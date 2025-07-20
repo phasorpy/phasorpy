@@ -52,6 +52,23 @@ def parse_kwargs(
 
     If `_del` is true (default), existing keys are deleted from `kwargs`.
 
+    Parameters
+    ----------
+    kwargs : dict
+        Source dictionary to extract keys from.
+    *keys : str
+        Keys to extract from kwargs if present.
+    _del : bool, default: True
+        If True, remove extracted keys from kwargs.
+    **keyvalues : Any
+        Key-value pairs. If key exists in kwargs, use kwargs value,
+        otherwise use provided default value.
+
+    Returns
+    -------
+    dict
+        Dictionary containing extracted keys and values.
+
     >>> kwargs = {'one': 1, 'two': 2, 'four': 4}
     >>> kwargs2 = parse_kwargs(kwargs, 'two', 'three', four=None, five=5)
     >>> kwargs == {'one': 1}
@@ -105,14 +122,14 @@ def scale_matrix(factor: float, origin: Sequence[float]) -> NDArray[Any]:
 
     Parameters
     ----------
-    factor: float
+    factor : float
         Scale factor.
-    origin: (float, float)
+    origin : (float, float)
         Coordinates of point around which to scale.
 
     Returns
     -------
-    matrix: ndarray
+    matrix : ndarray
         A 3x3 homogeneous transformation matrix.
 
     Examples
@@ -147,8 +164,10 @@ def sort_coordinates(
 
     Returns
     -------
-    real, imag : ndarray
-        Coordinates sorted by angle.
+    real : ndarray
+        Sorted real coordinates.
+    imag : ndarray
+        Sorted imaginary coordinates.
     indices : ndarray
         Indices used to reorder coordinates.
         Use ``indices.argsort()`` to get original order.
@@ -191,8 +210,10 @@ def dilate_coordinates(
 
     Returns
     -------
-    real, imag : ndarray
-        Coordinates dilated by offset.
+    real : ndarray
+        Dilated real coordinates.
+    imag : ndarray
+        Dilated imaginary coordinates.
 
     Examples
     --------
@@ -231,8 +252,28 @@ def phasor_to_polar_scalar(
 ) -> tuple[float, float]:
     """Return polar from scalar phasor coordinates.
 
-    >>> phasor_to_polar_scalar(1.0, 0.0, degree=True, percent=True)
-    (0.0, 100.0)
+    Parameters
+    ----------
+    real : float
+        Real component of phasor coordinate.
+    imag : float
+        Imaginary component of phasor coordinate.
+    degree : bool, optional
+        If true, return phase in degrees instead of radians.
+    percent : bool, optional
+        If true, return modulation as percentage instead of fraction.
+
+    Returns
+    -------
+    phase : float
+        Phase angle in radians (or degrees if degree=True).
+    modulation : float
+        Modulation depth as fraction (or percentage if percent=True).
+
+    Examples
+    --------
+    >>> phasor_to_polar_scalar(0.0, 1.0, degree=True, percent=True)
+    (90.0, 100.0)
 
     """
     phi = math.atan2(imag, real)
@@ -254,6 +295,26 @@ def phasor_from_polar_scalar(
 ) -> tuple[float, float]:
     """Return phasor from scalar polar coordinates.
 
+    Parameters
+    ----------
+    phase : float
+        Phase angle in radians (or degrees if degree=True).
+    modulation : float
+        Modulation depth as fraction (or percentage if percent=True).
+    degree : bool, optional
+        If true, phase is in degrees instead of radians.
+    percent : bool, optional
+        If true, modulation is as percentage instead of fraction.
+
+    Returns
+    -------
+    real : float
+        Real component of phasor coordinate.
+    imag : float
+        Imaginary component of phasor coordinate.
+
+    Examples
+    --------
     >>> phasor_from_polar_scalar(0.0, 100.0, degree=True, percent=True)
     (1.0, 0.0)
 
@@ -279,23 +340,27 @@ def parse_signal_axis(
     Parameters
     ----------
     signal : array_like
-        Image stack.
-    axis : int or str, optional
-        Axis over which phasor coordinates are computed.
-        By default, the 'H' or 'C' axes if `signal` contains such
-        dimension names, else the last axis (-1).
+        Signal array.
+        Axis names are used if it has a `dims` attribute.
+    axis : int, str, or None, default: None
+        Axis over which to compute phasor coordinates.
+        If None, automatically selects 'H' or 'C' axis if available,
+        otherwise uses the last axis (-1).
+        If int, specifies axis index.
+        If str, specifies axis name (requires `signal.dims`).
 
     Returns
     -------
     axis : int
-        Axis over which phasor coordinates are computed.
+        Index of axis over which phasor coordinates are computed.
     axis_label : str
-        Axis label from `signal.dims` if any.
+        Label of axis from `signal.dims` if available, empty string otherwise.
 
     Raises
     ------
     ValueError
-        Axis not found in signal.dims or invalid for signal type.
+        If axis string is not found in signal.dims.
+        If axis string is provided but signal has no dims attribute.
 
     Examples
     --------
@@ -362,6 +427,8 @@ def parse_skip_axis(
 
     Raises
     ------
+    ValueError
+        If ndim is negative.
     IndexError
         If any `skip_axis` value is out of bounds of `ndim`.
 
@@ -407,7 +474,7 @@ def parse_harmonic(
     harmonic : int, sequence of int, 'all', or None
         Harmonic parameter to parse.
     harmonic_max : int, optional
-        Maximum value allowed in `hamonic`. Must be one or greater.
+        Maximum value allowed in `harmonic`. Must be one or greater.
         To verify against known number of signal samples,
         pass ``samples // 2``.
         If `harmonic='all'`, a range of harmonics from one to `harmonic_max`
@@ -493,11 +560,11 @@ def chunk_iter(
     pattern : str, optional
         String to format chunk indices.
         If None, use ``_[{dims[index]}{chunk_index[index]}]`` for each axis.
-    squeeze : bool
+    squeeze : bool, optional
         If true, do not include length-1 chunked dimensions in label
         unless dimensions are part of `chunk_shape`.
         Applies only if `pattern` is None.
-    use_index : bool
+    use_index : bool, optional
         If true, use indices of chunks in `shape` instead of chunk indices to
         format pattern.
 
