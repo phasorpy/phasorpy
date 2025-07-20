@@ -13,6 +13,7 @@ The ``phasorpy.lifetime`` module provides functions to:
   - :py:func:`phasor_from_apparent_lifetime`
   - :py:func:`phasor_to_apparent_lifetime`
   - :py:func:`phasor_to_normal_lifetime`
+  - :py:func:`phasor_to_lifetime_search`
 
 - convert to and from polar coordinates (phase and modulation):
 
@@ -66,6 +67,7 @@ __all__ = [
     'phasor_semicircle',
     'phasor_semicircle_intersect',
     'phasor_to_apparent_lifetime',
+    'phasor_to_lifetime_search',
     'phasor_to_normal_lifetime',
     'polar_from_apparent_lifetime',
     'polar_from_reference',
@@ -78,13 +80,14 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, NDArray, ArrayLike, Literal
+    from ._typing import Any, NDArray, ArrayLike, DTypeLike, Literal
 
 import numpy
 
 from ._phasorpy import (
     _gaussian_signal,
     _intersect_semicircle_line,
+    _lifetime_search_2,
     _phasor_at_harmonic,
     _phasor_from_apparent_lifetime,
     _phasor_from_fret_acceptor,
@@ -107,6 +110,7 @@ from .phasor import (
     phasor_to_signal,
     phasor_transform,
 )
+from .utils import number_threads
 
 
 def phasor_from_lifetime(
@@ -912,6 +916,144 @@ def polar_from_reference(
         known_modulation,
         **kwargs,
     )
+
+
+def phasor_to_lifetime_search(
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    frequency: float,
+    *,
+    lifetime_range: tuple[float, float, float] | None = None,
+    unit_conversion: float = 1e-3,
+    dtype: DTypeLike = None,
+    num_threads: int | None = None,
+) -> tuple[NDArray[Any], NDArray[Any]]:
+    """Return two lifetime components from multi-harmonic phasor coordinates.
+
+    Return estimated lifetimes and fractional intensities of two
+    single-exponential components from a set of multi-harmonic
+    phasor coordinates using the graphical approach described
+    in [1]_.
+
+    Return NaN for coordinates outside the universal semicircle.
+
+    Parameters
+    ----------
+    real : array_like
+        Real component of phasor coordinates.
+        Must contain at least two linearly increasing harmonics
+        in the first dimension.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+        Must have same shape as `real`.
+    frequency : float
+        Laser pulse or modulation frequency in MHz.
+    lifetime_range : tuple of float, optional
+        Start, stop, and step of lifetime range in ns to search for components.
+        Defines the search range for the first lifetime component.
+        The default is ``(0.0, 20.0, 0.1)``.
+    unit_conversion : float, optional, default: 1e-3
+        Product of `frequency` and `lifetime` units' prefix factors.
+        The default is 1e-3 for MHz and ns, or Hz and ms.
+        Use 1.0 for Hz and s.
+    dtype : dtype_like, optional
+        Floating point data type used for calculation and output values.
+        Either `float32` or `float64`. The default is `float64`.
+    num_threads : int, optional
+        Number of OpenMP threads to use for parallelization.
+        By default, multi-threading is disabled.
+        If zero, up to half of logical CPUs are used.
+        OpenMP may not be available on all platforms.
+
+    Returns
+    -------
+    lifetime : ndarray
+        Lifetime components, shaped ``(2, *real.shape[1:])``.
+    fraction : ndarray
+        Fractional intensities of resolved lifetime components.
+
+    Raises
+    ------
+    ValueError
+        The shapes of real and imaginary coordinates do not match.
+        The number of harmonics is less than the number of components.
+        The lifetime range is invalid.
+
+    References
+    ----------
+    .. [1] Vallmitjana A, Torrado B, Dvornikov A, Ranjit S, and Gratton E.
+      `Blind resolution of lifetime components in individual pixels of
+      fluorescence lifetime images using the phasor approach
+      <https://doi.org/10.1021/acs.jpcb.0c06946>`_.
+      *J Phys Chem B*, 124(45): 10126-10137 (2020)
+
+    Notes
+    -----
+    This function currently supports only two lifetime components.
+
+    Examples
+    --------
+    Resolve two lifetime components from the phasor coordinates of a mixture
+    of 4.2 and 0.9 ns lifetimes with 70/30% fractions at 80 and 160 MHz:
+
+    >>> phasor_to_lifetime_search(
+    ...     [0.3773104, 0.20213886], [0.3834715, 0.30623315], frequency=80.0
+    ... )
+    (array([0.9, 4.2]), array([0.3, 0.7]))
+
+    """
+    num_components = 2
+
+    if lifetime_range is None:
+        lifetime_range = (0.0, 20.0, 0.1)
+    elif (
+        lifetime_range[0] < 0.0
+        or lifetime_range[1] <= lifetime_range[0]
+        or lifetime_range[2] <= 0.0
+        or lifetime_range[2] >= lifetime_range[1] - lifetime_range[0]
+    ):
+        raise ValueError(f'invalid {lifetime_range=}')
+
+    num_threads = number_threads(num_threads)
+
+    dtype = numpy.dtype(dtype)
+    if dtype.char not in {'f', 'd'}:
+        raise ValueError(f'{dtype=} is not a floating point type')
+
+    real = numpy.ascontiguousarray(real, dtype)
+    imag = numpy.ascontiguousarray(imag, dtype)
+
+    if real.shape != imag.shape:
+        raise ValueError(f'{real.shape=} != {imag.shape=}')
+    if real.shape[0] < num_components:
+        raise ValueError(f'{real.shape[0]=} < {num_components=}')
+
+    shape = real.shape[1:]
+    real = real[:num_components].reshape((num_components, -1))
+    imag = imag[:num_components].reshape((num_components, -1))
+    size = real.shape[-1]
+
+    lifetime = numpy.zeros((num_components, size), dtype=dtype)
+    fraction = numpy.zeros((num_components, size), dtype=dtype)
+
+    candidate = phasor_from_lifetime(
+        frequency,
+        numpy.arange(*lifetime_range, dtype=dtype),
+        unit_conversion=unit_conversion,
+    )[0]
+
+    omega = frequency * math.pi * 2.0 * unit_conversion
+    omega *= omega
+
+    _lifetime_search_2(
+        lifetime, fraction, real, imag, candidate, omega, num_threads
+    )
+
+    lifetime = lifetime.reshape(num_components, *shape)
+    fraction = fraction.reshape(num_components, *shape)
+
+    return lifetime, fraction
 
 
 def phasor_to_apparent_lifetime(

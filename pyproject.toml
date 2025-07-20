@@ -181,3 +181,4 @@ norecursedirs = [
 skip = "pp* cp37* cp38* cp39* cp310* *musllinux* *i686 *ppc64le *s390x cp39*win*arm64"
 test-requires = ["scikit-learn", "lfdfiles", "sdtfile", "ptufile", "liffile", "pawflim", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage"]
 test-command = "pytest {project}/tests"
+test-environment = "SKIP_FETCH=1"
