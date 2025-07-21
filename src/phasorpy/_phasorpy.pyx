@@ -1849,7 +1849,7 @@ def _lifetime_search_2(
             fraction[1, u] = <float_t> f
 
 
-cdef double phasor_to_single_lifetime(
+cdef inline double phasor_to_single_lifetime(
     const double real,
     const double omega_sqr,
 ) noexcept nogil:
