@@ -1637,10 +1637,8 @@ def test_phasor_to_lifetime_search_two(
         expected_real, expected_imag, frequency=80.0
     )
     lifetime, fraction = phasor_to_lifetime_search(real, imag, 80.0)
-    print(lifetime)
-    print(fraction)
-    assert_allclose(fraction, expected_fraction, atol=1e-6)
     assert_allclose(lifetime, expected_lifetime, atol=1e-6)
+    assert_allclose(fraction, expected_fraction, atol=1e-6)
 
 
 @pytest.mark.parametrize('exact', [True, False])
