@@ -72,7 +72,7 @@ jobs:
           python -m pip install -r requirements_min.txt
       - name: Test with pytest
         run: |
-          python -X dev -m pytest tests/test_lifetime.py
+          python -X dev -m pytest
       - name: Build docs
         run: |
           cd docs
