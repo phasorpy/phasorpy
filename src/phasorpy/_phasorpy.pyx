@@ -1763,8 +1763,8 @@ def _lifetime_search_2(
                 or re2 > 1.0
                 or im1 < 0.0
                 or im2 < 0.0
-                or im1 * im1 > re1 - re1 * re1 + 1e-6
-                or im2 * im2 > re2 - re2 * re2 + 1e-6
+                or im1 * im1 > re1 - re1 * re1 + 1e-9
+                or im2 * im2 > re2 - re2 * re2 + 1e-9
             ):
                 lifetime[0, u] = NAN
                 lifetime[1, u] = NAN
