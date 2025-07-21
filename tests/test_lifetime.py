@@ -1609,12 +1609,6 @@ def test_phasor_component_search_exceptions():
 @pytest.mark.parametrize(
     'real, imag, expected_real, expected_imag, expected_fraction',
     [
-        # inside semicircle
-        (
-            *phasor_from_lifetime([80, 160], [0.5, 4.2], [0.3, 0.7]),
-            *phasor_from_lifetime(80, [0.5, 4.2]),
-            [0.3, 0.7],
-        ),
         # infinite lifetime
         ([0, 0], [0, 0], [1, 0], [0, 0], [0, 1]),
         # zero lifetime
@@ -1627,6 +1621,12 @@ def test_phasor_component_search_exceptions():
         # NAN
         ([NAN, 0], [0, 0], [NAN, NAN], [NAN, NAN], [NAN, NAN]),
         ([0, 0], [0, NAN], [NAN, NAN], [NAN, NAN], [NAN, NAN]),
+        # inside semicircle
+        (
+            *phasor_from_lifetime([80, 160], [0.5, 4.2], [0.3, 0.7]),
+            *phasor_from_lifetime(80, [0.5, 4.2]),
+            [0.3, 0.7],
+        ),
     ],
 )
 def test_phasor_to_lifetime_search_two(
