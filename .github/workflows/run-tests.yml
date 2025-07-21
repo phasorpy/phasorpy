@@ -56,7 +56,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["windows-latest", "macos-latest"]
-        python-version: ["3.12"]
+        python-version: ["3.13"]
         # 3.13 tested with cibuildwheel
     steps:
       - uses: actions/checkout@v4
