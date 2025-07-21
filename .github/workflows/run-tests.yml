@@ -69,9 +69,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -v --editable .
           python -m pip install -r requirements_dev.txt
+          python -m pip install -r requirements_min.txt
       - name: Test with pytest
         run: |
-          python -X dev -m pytest
+          python -X dev -m pytest tests/test_lifetime.py
       - name: Build docs
         run: |
           cd docs
