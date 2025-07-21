@@ -1,6 +1,6 @@
 # distutils: language = c
 # cython: language_level = 3
-# cython: boundscheck = False
+# cython: boundscheck = True
 # cython: wraparound = False
 # cython: cdivision = True
 # cython: nonecheck = False
@@ -1801,7 +1801,7 @@ def _lifetime_search_2(
                 g1h1 = (dd * dy + copysign(1.0, dy) * dx * rdd) / dr + 0.5
                 s1h1 = (-dd * dx + fabs(dy) * rdd) / dr
 
-                if s0h1 < 0 or s1h1 < 0:
+                if s0h1 < 0.0 or s1h1 < 0.0:
                     # no other intersection with semicircle
                     break
 
