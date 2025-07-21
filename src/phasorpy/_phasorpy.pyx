@@ -1,6 +1,6 @@
 # distutils: language = c
 # cython: language_level = 3
-# cython: boundscheck = True
+# cython: boundscheck = False
 # cython: wraparound = False
 # cython: cdivision = True
 # cython: nonecheck = False
@@ -1849,7 +1849,7 @@ def _lifetime_search_2(
             fraction[1, u] = <float_t> f
 
 
-cdef inline double phasor_to_single_lifetime(
+cdef double phasor_to_single_lifetime(
     const double real,
     const double omega_sqr,
 ) noexcept nogil:
