@@ -1641,6 +1641,73 @@ def test_phasor_to_lifetime_search_two(
     assert_allclose(fraction, expected_fraction, atol=1e-6)
 
 
+def test_phasor_to_lifetime_search_two_range():
+    """Test phasor_to_lifetime_search function, two components with range."""
+    lifetime = [0.5, 4.2]
+    fraction = [0.3, 0.7]
+    frequency = 80.0
+    real, imag = phasor_from_lifetime(
+        [frequency, frequency * 2], lifetime, fraction
+    )
+    phase_lifetime = phasor_to_apparent_lifetime(real[0], imag[0], frequency)[
+        0
+    ]
+    phase_lifetime = numpy.round(phase_lifetime + 0.01, 2)
+    normal_lifetime = phasor_to_normal_lifetime(real[0], imag[0], frequency)
+    normal_lifetime = numpy.round(normal_lifetime - 0.01, 2)
+    print(phase_lifetime, normal_lifetime)
+
+    # lower lifetime is out of range
+    lifetimes, fractions = phasor_to_lifetime_search(
+        real,
+        imag,
+        frequency,
+        lifetime_range=(phase_lifetime, lifetime[1] + 1.0, 0.01),
+    )
+    assert_allclose(lifetimes, lifetime, atol=1e-6)
+    assert_allclose(fractions, fraction, atol=1e-6)
+
+    # upper lifetime is out of range
+    lifetimes, fractions = phasor_to_lifetime_search(
+        real,
+        imag,
+        frequency,
+        lifetime_range=(lifetime[0] - 0.1, normal_lifetime, 0.01),
+    )
+    assert_allclose(lifetimes, lifetime, atol=1e-6)
+    assert_allclose(fractions, fraction, atol=1e-6)
+
+    # exact upper range
+    lifetimes, fractions = phasor_to_lifetime_search(
+        real,
+        imag,
+        frequency,
+        lifetime_range=(phase_lifetime, lifetime[1] + 0.01, 0.01),
+    )
+    assert_allclose(lifetimes, lifetime, atol=1e-6)
+    assert_allclose(fractions, fraction, atol=1e-6)
+
+    # both lifetimes are out of range
+    lifetimes, fractions = phasor_to_lifetime_search(
+        real,
+        imag,
+        frequency,
+        lifetime_range=(lifetime[0] + 0.1, lifetime[1] - 0.1, 0.01),
+    )
+    with pytest.raises(AssertionError):
+        assert_allclose(lifetimes, lifetime, atol=1e-6)
+
+    # both lifetimes are out of range, no solution
+    lifetimes, fractions = phasor_to_lifetime_search(
+        real,
+        imag,
+        frequency,
+        lifetime_range=(phase_lifetime, normal_lifetime, 0.01),
+    )
+    assert_allclose(lifetimes, [NAN, NAN], atol=1e-6)
+    assert_allclose(fractions, [NAN, NAN], atol=1e-6)
+
+
 @pytest.mark.parametrize('exact', [True, False])
 def test_phasor_to_lifetime_search_two_distribution(exact):
     """Test phasor_to_lifetime_search function with two components."""

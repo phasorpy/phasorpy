@@ -1802,9 +1802,9 @@ def _lifetime_search_2(
                 s1h1 = (-dd * dx + fabs(dy) * rdd) / dr
 
                 # this check is numerically unstable if candidate=1.0
-                # if s0h1 < 0.0 or s1h1 < 0.0:
-                #     # no other intersection with semicircle
-                #     break
+                if s0h1 < 0.0 or s1h1 < 0.0:
+                    # no other intersection with semicircle
+                    continue
 
                 if g0h1 < g1h1:
                     t = g0h1
