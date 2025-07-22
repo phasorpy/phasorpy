@@ -26,6 +26,7 @@ from phasorpy.lifetime import (
     phasor_semicircle,
     phasor_semicircle_intersect,
     phasor_to_apparent_lifetime,
+    phasor_to_lifetime_search,
     phasor_to_normal_lifetime,
     polar_from_apparent_lifetime,
     polar_from_reference,
@@ -1553,6 +1554,227 @@ def test_phasor_at_harmonic():
         phasor_at_harmonic(0.5, 0, 1)
     with pytest.raises(ValueError):
         phasor_at_harmonic(0.5, 1, 0)
+
+
+def test_phasor_component_search_exceptions():
+    """Test exceptions in phasor_to_lifetime_search function."""
+    real = [0.1, 0.2]
+    imag = [0.4, 0.3]
+    frequency = 60.0
+    phasor_to_lifetime_search(real, imag, frequency)
+
+    # shape mismatch
+    with pytest.raises(ValueError):
+        phasor_to_lifetime_search(real, imag[0], frequency)
+
+    # no harmonics
+    with pytest.raises(ValueError):
+        phasor_to_lifetime_search(real[0], imag[0], frequency)
+
+    # number of components < 2
+    # with pytest.raises(ValueError):
+    #     phasor_to_lifetime_search(real, imag, 1, frequency)
+
+    # number of components does not match harmonics
+    # with pytest.raises(ValueError):
+    #     phasor_to_lifetime_search(real, imag, 3, frequency)
+
+    # samples < 1
+    with pytest.raises(ValueError):
+        phasor_to_lifetime_search(
+            real, imag, frequency, lifetime_range=(0, 1, 2)
+        )
+
+    # samples < 3 for 3 components
+    # with pytest.raises(ValueError):
+    #     phasor_to_lifetime_search(
+    #         [0.1, 0.2, 0.3],
+    #         [0.1, 0.2, 0.3],
+    #         3,
+    #         frequency,
+    #         lifetime_range=(0, 1, 0.5),
+    #     )
+
+    # dtype not float
+    with pytest.raises(ValueError):
+        phasor_to_lifetime_search(real, imag, frequency, dtype=numpy.int32)
+
+    # too many components
+    # with pytest.raises(ValueError):
+    #     phasor_to_lifetime_search(
+    #         [0.1, 0.2, 0.3, 0.4], [0.4, 0.3, 0.2, 0.1], 4, frequency
+    #     )
+
+
+@pytest.mark.parametrize(
+    'real, imag, expected_real, expected_imag, expected_fraction',
+    [
+        # inside semicircle
+        (
+            *phasor_from_lifetime([80, 160], [0.5, 4.2], [0.3, 0.7]),
+            *phasor_from_lifetime(80, [0.5, 4.2]),
+            [0.3, 0.7],
+        ),
+        # infinite lifetime
+        ([0, 0], [0, 0], [1, 0], [0, 0], [0, 1]),
+        # zero lifetime
+        ([1, 1], [0, 0], [1, 1], [0, 0], [0, 1]),
+        # on semicircle
+        ([0.5, 0.2], [0.5, 0.4], [1, 0.5], [0, 0.5], [0, 1]),
+        # outside semicircle
+        ([0.5, 0.2], [0.6, 10], [NAN, NAN], [NAN, NAN], [NAN, NAN]),
+        ([0.5, 0.2], [0.5, -1], [NAN, NAN], [NAN, NAN], [NAN, NAN]),
+        # NAN
+        ([NAN, 0], [0, 0], [NAN, NAN], [NAN, NAN], [NAN, NAN]),
+        ([0, 0], [0, NAN], [NAN, NAN], [NAN, NAN], [NAN, NAN]),
+    ],
+)
+def test_phasor_to_lifetime_search_two(
+    real, imag, expected_real, expected_imag, expected_fraction
+):
+    """Test phasor_to_lifetime_search function with two components."""
+    expected_lifetime = phasor_to_normal_lifetime(
+        expected_real, expected_imag, frequency=80.0
+    )
+    lifetime, fraction = phasor_to_lifetime_search(real, imag, 80.0)
+    assert_allclose(lifetime, expected_lifetime, atol=1e-6)
+    assert_allclose(fraction, expected_fraction, atol=1e-6)
+
+
+def test_phasor_to_lifetime_search_two_range():
+    """Test phasor_to_lifetime_search function, two components with range."""
+    lifetime = [0.5, 4.2]
+    fraction = [0.3, 0.7]
+    frequency = 80.0
+    real, imag = phasor_from_lifetime(
+        [frequency, frequency * 2], lifetime, fraction
+    )
+    phase_lifetime = phasor_to_apparent_lifetime(real[0], imag[0], frequency)[
+        0
+    ]
+    phase_lifetime = numpy.round(phase_lifetime + 0.01, 2)
+    normal_lifetime = phasor_to_normal_lifetime(real[0], imag[0], frequency)
+    normal_lifetime = numpy.round(normal_lifetime - 0.01, 2)
+    print(phase_lifetime, normal_lifetime)
+
+    # lower lifetime is out of range
+    lifetimes, fractions = phasor_to_lifetime_search(
+        real,
+        imag,
+        frequency,
+        lifetime_range=(phase_lifetime, lifetime[1] + 1.0, 0.01),
+    )
+    assert_allclose(lifetimes, lifetime, atol=1e-6)
+    assert_allclose(fractions, fraction, atol=1e-6)
+
+    # upper lifetime is out of range
+    lifetimes, fractions = phasor_to_lifetime_search(
+        real,
+        imag,
+        frequency,
+        lifetime_range=(lifetime[0] - 0.1, normal_lifetime, 0.01),
+    )
+    assert_allclose(lifetimes, lifetime, atol=1e-6)
+    assert_allclose(fractions, fraction, atol=1e-6)
+
+    # exact upper range
+    lifetimes, fractions = phasor_to_lifetime_search(
+        real,
+        imag,
+        frequency,
+        lifetime_range=(phase_lifetime, lifetime[1] + 0.01, 0.01),
+    )
+    assert_allclose(lifetimes, lifetime, atol=1e-6)
+    assert_allclose(fractions, fraction, atol=1e-6)
+
+    # both lifetimes are out of range
+    lifetimes, fractions = phasor_to_lifetime_search(
+        real,
+        imag,
+        frequency,
+        lifetime_range=(lifetime[0] + 0.1, lifetime[1] - 0.1, 0.01),
+    )
+    with pytest.raises(AssertionError):
+        assert_allclose(lifetimes, lifetime, atol=1e-6)
+
+    # both lifetimes are out of range, no solution
+    lifetimes, fractions = phasor_to_lifetime_search(
+        real,
+        imag,
+        frequency,
+        lifetime_range=(phase_lifetime, normal_lifetime, 0.01),
+    )
+    assert_allclose(lifetimes, [NAN, NAN], atol=1e-6)
+    assert_allclose(fractions, [NAN, NAN], atol=1e-6)
+
+
+@pytest.mark.parametrize('exact', [True, False])
+def test_phasor_to_lifetime_search_two_distribution(exact):
+    """Test phasor_to_lifetime_search function with two components."""
+    # test that two lifetime components can be recovered from a distribution
+    shape = (256, 256)
+    frequency = 60.0
+    lifetime = [0.5, 4.2]
+    fraction = numpy.empty((*shape, 2))
+    fraction[..., 0] = numpy.random.normal(0.3, 0.01, shape)
+    fraction[..., 1] = 1.0 - fraction[..., 0]
+    fraction = numpy.clip(fraction, 0.0, 1.0)
+
+    real, imag = phasor_from_lifetime(
+        [frequency, 2 * frequency], lifetime, fraction.reshape(-1, 2)
+    )
+    real = real.reshape(2, *shape)
+    imag = imag.reshape(2, *shape)
+    if not exact:
+        # add noise to the imaginary parts
+        imag += numpy.random.normal(0.0, 0.005, (2, *shape))
+        dtype = 'float32'
+        atol = 5e-2
+    else:
+        dtype = 'float64'
+        atol = 1e-3
+
+    lifetimes, fractions = phasor_to_lifetime_search(
+        real,
+        imag,
+        frequency=frequency,
+        lifetime_range=(0.4, 2.0, 0.01),
+        dtype=dtype,
+        num_threads=2,
+    )
+
+    component_real, component_imag = phasor_from_lifetime(
+        frequency, lifetimes.reshape(-1)
+    )
+    component_real = component_real.reshape(2, *shape)
+    component_imag = component_imag.reshape(2, *shape)
+    # _plot(frequency, real, imag, component_real, component_imag)
+
+    assert_allclose(lifetimes[0].mean(), lifetime[0], atol=atol)
+    assert_allclose(lifetimes[1].mean(), lifetime[1], atol=atol)
+    assert_allclose(fractions[0].mean(), 0.3, atol=1e-3)
+    assert_allclose(fractions[1].mean(), 0.7, atol=1e-3)
+
+
+def _plot(frequency, real, imag, component_real=None, component_imag=None):
+    # helper function to visualize lifetime component distribution results
+    from phasorpy.plot import PhasorPlot
+
+    pp = PhasorPlot(frequency=frequency, allquadrants=False)
+    if real.size > 100:
+        for i in range(real.shape[0]):
+            pp.hist2d(real[i], imag[i], cmap='Greys')
+    else:
+        pp.plot(real, imag)
+    if component_real is not None and component_imag is not None:
+        cmap = 'Reds', 'Greens', 'Blues'
+        for i in range(component_real.shape[0]):
+            pp.hist2d(component_real[i], component_imag[i], cmap=cmap[i])
+            pp.plot(
+                numpy.nanmean(component_real[i]),
+                numpy.nanmean(component_imag[i]),
+            )
+    pp.show()
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

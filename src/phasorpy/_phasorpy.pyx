@@ -488,10 +488,10 @@ cdef (double, double) _phasor_from_fret_donor(
         return 1.0, 0.0
 
     # phasor of pure donor at frequency
-    real, imag = phasor_from_lifetime(donor_lifetime, omega)
+    real, imag = phasor_from_single_lifetime(donor_lifetime, omega)
 
     # phasor of quenched donor
-    quenched_real, quenched_imag = phasor_from_lifetime(
+    quenched_real, quenched_imag = phasor_from_single_lifetime(
         donor_lifetime * (1.0 - fret_efficiency), omega
     )
 
@@ -555,14 +555,14 @@ cdef (double, double) _phasor_from_fret_acceptor(
         acceptor_background = 0.0
 
     # phasor of pure donor at frequency
-    donor_real, donor_imag = phasor_from_lifetime(donor_lifetime, omega)
+    donor_real, donor_imag = phasor_from_single_lifetime(donor_lifetime, omega)
 
     if fret_efficiency == 0.0:
         quenched_real = donor_real
         quenched_imag = donor_imag
     else:
         # phasor of quenched donor
-        quenched_real, quenched_imag = phasor_from_lifetime(
+        quenched_real, quenched_imag = phasor_from_single_lifetime(
             donor_lifetime * (1.0 - fret_efficiency), omega
         )
 
@@ -580,7 +580,7 @@ cdef (double, double) _phasor_from_fret_acceptor(
         )
 
     # phasor of acceptor at frequency
-    acceptor_real, acceptor_imag = phasor_from_lifetime(
+    acceptor_real, acceptor_imag = phasor_from_single_lifetime(
         acceptor_lifetime, omega
     )
 
@@ -646,9 +646,9 @@ cdef inline (double, double) linear_combination(
     )
 
 
-cdef inline (float_t, float_t) phasor_from_lifetime(
-    float_t lifetime,
-    float_t omega,
+cdef inline (double, double) phasor_from_single_lifetime(
+    const double lifetime,
+    const double omega,
 ) noexcept nogil:
     """Return phasor coordinates from single lifetime component."""
     cdef:
@@ -656,7 +656,7 @@ cdef inline (float_t, float_t) phasor_from_lifetime(
         double mod = 1.0 / sqrt(1.0 + t * t)
         double phi = atan(t)
 
-    return <float_t> (mod * cos(phi)), <float_t> (mod * sin(phi))
+    return mod * cos(phi), mod * sin(phi)
 
 
 ###############################################################################
@@ -1707,7 +1707,161 @@ cdef (float_t, float_t, float_t, float_t) _intersect_semicircle_line(
 
 
 ###############################################################################
-# Special functions
+# Search functions
+
+
+def _lifetime_search_2(
+    float_t[:, ::] lifetime,  # (num_components, pixels)
+    float_t[:, ::] fraction,  # (num_components, pixels)
+    const float_t[:, ::] real,  # (num_components, pixels)
+    const float_t[:, ::] imag,  # (num_components, pixels)
+    const double[::] candidate,  # real coordinates to scan
+    const double omega_sqr,
+    const int num_threads
+):
+    """Find two lifetime components and fractions in harmonic coordinates.
+
+    https://doi.org/10.1021/acs.jpcb.0c06946
+
+    """
+    cdef:
+        ssize_t i, u
+        double re1, im1, re2, im2
+        double g0, g1, g0h1, s0h1, g1h1, s1h1, g0h2, s0h2, g1h2, s1h2
+        double x, y, dx, dy, dr, dd, rdd
+        double dmin, d, f, t
+
+    if lifetime.shape[0] != 2 or lifetime.shape[1] != real.shape[1]:
+        raise ValueError('lifetime shape invalid')
+    if fraction.shape[0] != 2 or fraction.shape[1] != real.shape[1]:
+        raise ValueError('fraction shape invalid')
+    if real.shape[0] != imag.shape[0] != 2:
+        raise ValueError('phasor harmonics invalid')
+    if real.shape[1] != imag.shape[1]:
+        raise ValueError('phasor size invalid')
+    if candidate.shape[0] < 1:
+        raise ValueError('candidate size < 1')
+
+    with nogil, parallel(num_threads=num_threads):
+
+        for u in prange(real.shape[1]):
+            # loop over phasor coordinates
+            re1 = real[0, u]
+            re2 = real[1, u]
+            im1 = imag[0, u]
+            im2 = imag[1, u]
+
+            if (
+                isnan(re1)
+                or isnan(im1)
+                or isnan(re2)
+                or isnan(im2)
+                # outside semicircle?
+                or re1 < 0.0
+                or re2 < 0.0
+                or re1 > 1.0
+                or re2 > 1.0
+                or im1 < 0.0
+                or im2 < 0.0
+                or im1 * im1 > re1 - re1 * re1 + 1e-9
+                or im2 * im2 > re2 - re2 * re2 + 1e-9
+            ):
+                lifetime[0, u] = NAN
+                lifetime[1, u] = NAN
+                fraction[0, u] = NAN
+                fraction[1, u] = NAN
+                continue
+
+            dmin = INFINITY
+            g0 = NAN
+            g1 = NAN
+            f = NAN
+
+            for i in range(candidate.shape[0]):
+                # scan first component
+                g0h1 = candidate[i]
+                s0h1 = sqrt(g0h1 - g0h1 * g0h1)
+
+                # second component is intersection of semicircle with line
+                # between first component and phasor coordinate
+                dx = re1 - g0h1
+                dy = im1 - s0h1
+                dr = dx * dx + dy * dy
+                dd = (g0h1 - 0.5) * im1 - (re1 - 0.5) * s0h1
+                rdd = 0.25 * dr - dd * dd  # discriminant
+                if rdd < 0.0 or dr <= 0.0:
+                    # no intersection
+                    g0 = g0h1
+                    g1 = g0h1  # NAN?
+                    f = 1.0
+                    break
+                rdd = sqrt(rdd)
+                g0h1 = (dd * dy - copysign(1.0, dy) * dx * rdd) / dr + 0.5
+                s0h1 = (-dd * dx - fabs(dy) * rdd) / dr
+                g1h1 = (dd * dy + copysign(1.0, dy) * dx * rdd) / dr + 0.5
+                s1h1 = (-dd * dx + fabs(dy) * rdd) / dr
+
+                # this check is numerically unstable if candidate=1.0
+                if s0h1 < 0.0 or s1h1 < 0.0:
+                    # no other intersection with semicircle
+                    continue
+
+                if g0h1 < g1h1:
+                    t = g0h1
+                    g0h1 = g1h1
+                    g1h1 = t
+                    t = s0h1
+                    s0h1 = s1h1
+                    s1h1 = t
+
+                # second harmonic component coordinates on semicircle
+                g0h2 = g0h1 / (4.0 - 3.0 * g0h1)
+                s0h2 = sqrt(g0h2 - g0h2 * g0h2)
+                g1h2 = g1h1 / (4.0 - 3.0 * g1h1)
+                s1h2 = sqrt(g1h2 - g1h2 * g1h2)
+
+                # distance of phasor coordinates to line between
+                # components at second harmonic
+                # normalize line coordinates
+                dx = g1h2 - g0h2
+                dy = s1h2 - s0h2
+                x = re2 - g0h2
+                y = im2 - s0h2
+                # square of line length
+                t = dx * dx + dy * dy
+                if t == 0.0:
+                    continue
+                # projection of point on line using dot product
+                t = (x * dx + y * dy) / t
+                # square of distance of point to line
+                dx = x - t * dx
+                dy = y - t * dy
+                d = dx * dx + dy * dy
+
+                if d < dmin:
+                    dmin = d
+                    g0 = g0h1
+                    g1 = g1h1
+                    f = t
+
+            lifetime[0, u] = <float_t> phasor_to_single_lifetime(g0, omega_sqr)
+            lifetime[1, u] = <float_t> phasor_to_single_lifetime(g1, omega_sqr)
+            fraction[0, u] = <float_t> (1.0 - f)
+            fraction[1, u] = <float_t> f
+
+
+cdef inline double phasor_to_single_lifetime(
+    const double real,
+    const double omega_sqr,
+) noexcept nogil:
+    """Return single exponential lifetime from real coordinate."""
+    cdef:
+        double t
+
+    if isnan(real) or real < 0.0 or real > 1.0:
+        return NAN
+    t = real * omega_sqr
+    return sqrt((1.0 - real) / t) if t > 0.0 else INFINITY
 
 
 def _nearest_neighbor_2d(
@@ -1757,6 +1911,10 @@ def _nearest_neighbor_2d(
                     dmin = x
                     index = j
             indices[i] = -1 if dmin > distance_max_squared else <int_t> index
+
+
+###############################################################################
+# Interpolation functions
 
 
 def _mean_value_coordinates(
