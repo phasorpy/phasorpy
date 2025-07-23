@@ -206,10 +206,10 @@ plot_phasor(
 # The :py:func:`phasorpy.io.signal_from_ptu` function is used to read
 # the TCSPC histogram from a PTU file exported from the `FLIM_testdata LIF
 # dataset <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_.
-# For phasor analysis, all photons in periods with multiple photons must
-# be discarded before exporting to PTU format. In the Leica LAS X software,
-# select the "FLIM" tab, click on the "Phasor" button, and under
-# "Specialist Settings" select the option "Standard (High Speed)".
+# For phasor analysis, periods containing multiple photons must have all
+# their photons discarded before exporting to PTU format. In the Leica
+# LAS X software, select the "FLIM" tab, click on the "Phasor" button,
+# and under "Specialist Settings" select the option "Standard (High Speed)".
 # The first channel in the first frame is read from the PTU file:
 
 from phasorpy.io import signal_from_ptu
@@ -327,8 +327,8 @@ plot_phasor(
 # They may contain TCSPC histograms and metadata from laser-scanning
 # microscopy.
 #
-# PhasorPy supports reading TCSPC histograms from FBD files via the
-# `lfdfiles <https://github.com/cgohlke/lfdfiles/>`_ library.
+# PhasorPy supports reading TCSPC histograms from SDT files via the
+# `sdtfile <https://github.com/cgohlke/sdtfile/>`_ library.
 #
 # The :py:func:`phasorpy.io.signal_from_sdt` function is used to read a
 # TCSPC histogram from a SDT file:
@@ -368,8 +368,8 @@ plot_phasor(
 # Newer file versions also contain metadata.
 #
 # The FBD file format is undocumented, not standardized, and files are
-# frequently found corrupted. It is recommended to export FLIMbox data to
-# another format from the software used to acquire the data.
+# frequently found corrupted. Therefore, it is recommended to export FLIMbox
+# files to another format from the software used to acquire the data.
 #
 # PhasorPy supports reading some FLIMbox FBD files via the
 # `lfdfiles <https://github.com/cgohlke/lfdfiles/>`_ library.
@@ -592,8 +592,8 @@ plot_phasor(
 )
 
 # %%
-# Three main lifetime components are expected in the sample:
-# free NADH (~0.4 ns), bound NADH (3.4 ns) and a long lifetime species (~8 ns).
+# Three main lifetime components are expected in the sample: free
+# NADH (~0.4 ns), bound NADH (3.4 ns), and a long lifetime species (~8 ns).
 # It appears the calibration is off in this sample.
 
 # %%
@@ -679,9 +679,9 @@ with TemporaryDirectory() as tmpdir:
 # software. The implementation is based on the
 # `tifffile <https://github.com/cgohlke/tifffile/>`_ library.
 #
-# In comparison with the SimFCS R64 format, OME-TIFF can store higher
-# dimensional, higher precision images of any size, any number of harmonics,
-# and select metadata.
+# Compared to the SimFCS R64 format, OME-TIFF offers several advantages.
+# It can store higher-dimensional, higher-precision images of any size,
+# any number of harmonics, and selected metadata.
 #
 # PhasorPy OME-TIFF files are intended for temporarily exchanging phasor
 # coordinates with other software, not as a long-term storage solution.
@@ -693,9 +693,9 @@ with TemporaryDirectory() as tmpdir:
 
 from phasorpy.io import phasor_from_ometiff, phasor_to_ometiff
 
-filename = f'{filename}.ome.tiff'
-
 with TemporaryDirectory() as tmpdir:
+
+    filename = os.path.join(tmpdir, 'capillaries1001.ome.tif')
 
     phasor_to_ometiff(
         filename,
