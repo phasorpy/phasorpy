@@ -4,13 +4,13 @@ Multi-component fit
 
 Spectral unmixing using multi-component analysis in phasor space.
 
-The fluorescent components comprising a fluorescence spectrum can be unmixed
+Fluorescent components in a fluorescence spectrum can be unmixed
 if the spectra of the individual components are known.
-This can be achieved by solving a system of linear equations, fitting
-the fractional contributions of the phasor coordinates of the component spectra
-to the phasor coordinates of the mixture spectrum. Phasor coordinates
-at multiple harmonics may be used to ensure the linear system is not
-underdetermined.
+This can be achieved by solving a system of linear equations that fits
+the fractional contributions of the phasor coordinates of the component
+spectra to the phasor coordinates of the mixture spectrum.
+Phasor coordinates at multiple harmonics may be used to ensure the
+linear system is not underdetermined.
 
 This analysis method is demonstrated using a hyperspectral imaging dataset
 containing five fluorescent markers as presented in:
@@ -46,7 +46,7 @@ from phasorpy.plot import PhasorPlot, plot_image, plot_signal_image
 # %%
 # Define dataset and processing parameters:
 
-# hyperspectral image containing of all five components
+# hyperspectral image containing all five components
 samplefile = '38_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm'
 
 # hyperspectral images of individual components
@@ -86,6 +86,10 @@ component_mean = []
 fig, axs = pyplot.subplots(
     num_harmonics, 1, figsize=(4.8, num_harmonics * 4.8)
 )
+plots = [
+    PhasorPlot(ax=axs[i], allquadrants=True, title=f'Harmonic {harmonic[i]}')
+    for i in range(num_harmonics)
+]
 fig.suptitle('Components')
 
 for i, (name, filename) in enumerate(components.items()):
@@ -103,10 +107,7 @@ for i, (name, filename) in enumerate(components.items()):
     component_real[:, i] = center_real
     component_imag[:, i] = center_imag
 
-    for j in range(num_harmonics):
-        plot = PhasorPlot(
-            ax=axs[j], allquadrants=True, title=f'Harmonic {harmonic[j]}'
-        )
+    for j, plot in enumerate(plots):
         plot.hist2d(real[j], imag[j], cmap='Greys')
         plot.plot(center_real[j], center_imag[j], label=name, markersize=10)
         plot.ax.legend(loc='right').set_visible(j == 0)
@@ -125,7 +126,7 @@ signal = signal_from_lsm(fetch(samplefile))
 plot_signal_image(signal, title='Component mixture')
 
 # %%
-# Calculate and plot phasor coordinates for the component mixture:
+# Calculate and plot phasor coordinates of the component mixture:
 
 mean, real, imag = phasor_from_signal(signal, axis=0, harmonic=harmonic)
 mean, real, imag = phasor_filter_median(
@@ -138,6 +139,7 @@ fig, axs = pyplot.subplots(
     num_harmonics, 1, figsize=(4.8, num_harmonics * 4.8)
 )
 fig.suptitle('Component mixture')
+
 for i in range(num_harmonics):
     plot = PhasorPlot(
         ax=axs[i], allquadrants=True, title=f'Harmonic {harmonic[i]}'
@@ -187,7 +189,7 @@ plot_image(
 )
 
 # %%
-# Assert that the experimental phasor coordinates can approximately be
+# Assert that the experimental phasor coordinates can be approximately
 # restored from the components' coordinates and fitted fractions:
 
 from phasorpy.component import phasor_from_component
