@@ -42,9 +42,10 @@ from ..phasor import phasor_transform
 GRID_COLOR = '0.5'
 GRID_LINESTYLE = ':'
 GRID_LINESTYLE_MAJOR = '-'
-GRID_LINEWIDH = 1.0
-GRID_LINEWIDH_MINOR = 0.5
+GRID_LINEWIDTH = 1.0
+GRID_LINEWIDTH_MINOR = 0.6
 GRID_FILL = False
+GRID_ZORDER = 2
 
 
 class PhasorPlot:
@@ -62,8 +63,13 @@ class PhasorPlot:
         By default, a new subplot axes is created.
     frequency : float, optional
         Laser pulse or modulation frequency in MHz.
-    grid : bool, optional, default: True
-        Display polar grid or universal semicircle.
+    pad : float, optional
+        Padding around the plot. The default is 0.05.
+    grid : dict or bool, optional
+        Display universal semicircle (default) or polar grid (allquadrants).
+        If False, no grid is displayed.
+        If a dictionary, it is passed to :py:meth:`PhasorPlot.polar_grid`
+        or :py:meth:`PhasorPlot.semicircle`.
     **kwargs
         Additional properties to set on `ax`.
 
@@ -83,8 +89,11 @@ class PhasorPlot:
     _full: bool
     """Show all quadrants of phasor space."""
 
-    _semicircle_ticks: SemicircleTicks | None
-    """Last SemicircleTicks instance created."""
+    _semicircle_ticks: CircleTicks | None
+    """Last CircleTicks instance created for semicircle."""
+
+    _unitcircle_ticks: CircleTicks | None
+    """Last CircleTicks instance created for unit circle."""
 
     _frequency: float
     """Laser pulse or modulation frequency in MHz."""
@@ -96,7 +105,8 @@ class PhasorPlot:
         ax: Axes | None = None,
         *,
         frequency: float | None = None,
-        grid: bool = True,
+        grid: dict[str, Any] | bool | None = None,
+        pad: float | None = None,
         **kwargs: Any,
     ) -> None:
         # initialize empty phasor plot
@@ -105,23 +115,36 @@ class PhasorPlot:
             self._on_format_coord
         )
 
+        if grid is None:
+            grid_kwargs = {}
+            grid = True
+        if isinstance(grid, dict):
+            grid_kwargs = grid
+            grid = True
+        else:
+            grid_kwargs = {}
+            grid = bool(grid)
+
         self._semicircle_ticks = None
+        self._unitcircle_ticks = None
 
         self._full = bool(allquadrants)
         if self._full:
-            xlim = (-1.05, 1.05)
-            ylim = (-1.05, 1.05)
+            pad = 0.1 if pad is None else float(abs(pad))
+            xlim = (-1.0 - pad, 1.0 + pad)
+            ylim = (-1.0 - pad, 1.0 + pad)
             xticks: tuple[float, ...] = (-1.0, -0.5, 0.0, 0.5, 1.0)
             yticks: tuple[float, ...] = (-1.0, -0.5, 0.0, 0.5, 1.0)
             if grid:
-                self.polar_grid()
+                self.polar_grid(**grid_kwargs)
         else:
-            xlim = (-0.05, 1.05)
-            ylim = (-0.05, 0.7)
+            pad = 0.05 if pad is None else float(abs(pad))
+            xlim = (-pad, 1.0 + pad)
+            ylim = (-pad, 0.65 + pad)
             xticks = (0.0, 0.2, 0.4, 0.6, 0.8, 1.0)
             yticks = (0.0, 0.2, 0.4, 0.6)
             if grid:
-                self.semicircle(frequency=frequency)
+                self.semicircle(frequency=frequency, **grid_kwargs)
 
         title = 'Phasor plot'
         if frequency is not None:
@@ -458,7 +481,7 @@ class PhasorPlot:
                 kwargs,
                 edgecolor=GRID_COLOR if color is None else color,
                 linestyle=GRID_LINESTYLE,
-                linewidth=GRID_LINEWIDH,
+                linewidth=GRID_LINEWIDTH,
                 fill=GRID_FILL,
             )
             self._ax.add_patch(Polygon(numpy.vstack((real, imag)).T, **kwargs))
@@ -480,7 +503,7 @@ class PhasorPlot:
             kwargs,
             color=GRID_COLOR if color is None else color,
             linestyle=GRID_LINESTYLE,
-            linewidth=GRID_LINEWIDH,
+            linewidth=GRID_LINEWIDTH,
         )
         center_re, center_im = numpy.average(
             numpy.vstack((real, imag)), axis=-1, weights=fraction
@@ -531,7 +554,7 @@ class PhasorPlot:
             kwargs,
             color=GRID_COLOR,
             linestyle=GRID_LINESTYLE,
-            linewidth=GRID_LINEWIDH,
+            linewidth=GRID_LINEWIDTH,
         )
         return [self._ax.add_line(Line2D(real, imag, **kwargs))]
 
@@ -562,7 +585,7 @@ class PhasorPlot:
             kwargs,
             color=GRID_COLOR,
             linestyle=GRID_LINESTYLE,
-            linewidth=GRID_LINEWIDH,
+            linewidth=GRID_LINEWIDTH,
             fill=GRID_FILL,
         )
         self._ax.add_patch(Circle((real, imag), radius, **kwargs))
@@ -739,7 +762,7 @@ class PhasorPlot:
             kwargs,
             color=GRID_COLOR,
             linestyle=GRID_LINESTYLE,
-            linewidth=GRID_LINEWIDH,
+            linewidth=GRID_LINEWIDTH,
             fill=GRID_FILL,
         )
         _circle_only = kwargs.pop('_circle_only', False)
@@ -822,45 +845,147 @@ class PhasorPlot:
                 )
         return None
 
-    def polar_grid(self, **kwargs: Any) -> None:
+    def polar_grid(
+        self,
+        radii: int | Sequence[float] | None = None,
+        angles: int | Sequence[float] | None = None,
+        samples: int | None = None,
+        labels: Sequence[str] | None = None,
+        ticks: ArrayLike | None = None,
+        tick_limits: tuple[float, float] | None = None,
+        tick_format: str | None = None,
+        **kwargs: Any,
+    ) -> None:
         """Draw polar coordinate system.
 
         Parameters
         ----------
+        radii : int or sequence of float, optional
+            Radial gridlines in range ]0, 1].
+            If an integer, the number of equidistant radial gridlines.
+            By default, three equidistant radial gridlines are drawn.
+            The unit circle (radius 1), if included, is drawn in major style.
+        angles : int or sequence of float, optional
+            Angular gridlines in range [0, 2 pi].
+            If an integer, the number of equidistant angular gridlines.
+            By default, 12 equidistant angular gridlines are drawn.
+        samples : int, optional
+            Number of vertices of polygon inscribed in unit circle.
+            By default, no inscribed polygon is drawn.
+        labels : sequence of str, optional
+            Tick labels on unit circle.
+            If None, `ticks` are used as labels using `format`.
+            If `ticks` are not provided, labels are placed at equidistant
+            angles.
+        ticks : array_like, optional
+            Value at which to place tick labels on unit circle.
+            If `labels` is not None, `ticks` values are used as labels.
+        tick_limits : (float, float), optional
+            Minimum and maximum values to scale `ticks` to range [0, 2 pi].
+        tick_format : str, optional
+            Format string for tick values if `labels` is None.
+            By default, the tick format is "{}".
         **kwargs
             Parameters passed to
             :py:class:`matplotlib.patches.Circle` and
             :py:class:`matplotlib.lines.Line2D`.
 
+        Raises
+        ------
+        ValueError
+            If number of ticks doesn't match number of labels.
+
+        Notes
+        -----
+        Use ``radii=1, angles=4`` to draw major gridlines only.
+
         """
         ax = self._ax
-        # major gridlines
-        kwargs_copy = kwargs.copy()
+        minor_kwargs = kwargs.copy()
+        update_kwargs(
+            minor_kwargs,
+            color=GRID_COLOR,
+            linestyle=GRID_LINESTYLE,
+            linewidth=GRID_LINEWIDTH_MINOR,
+            zorder=GRID_ZORDER,
+        )
         update_kwargs(
             kwargs,
             color=GRID_COLOR,
             linestyle=GRID_LINESTYLE_MAJOR,
-            linewidth=GRID_LINEWIDH,
+            linewidth=GRID_LINEWIDTH,
+            zorder=GRID_ZORDER,
             # fill=GRID_FILL,
         )
-        ax.add_line(Line2D([-1, 1], [0, 0], **kwargs))
-        ax.add_line(Line2D([0, 0], [-1, 1], **kwargs))
-        ax.add_patch(Circle((0, 0), 1, fill=False, **kwargs))
-        # minor gridlines
-        kwargs = kwargs_copy
-        update_kwargs(
-            kwargs,
-            color=GRID_COLOR,
-            linestyle=GRID_LINESTYLE,
-            linewidth=GRID_LINEWIDH_MINOR,
-        )
-        for r in (1 / 3, 2 / 3):
-            ax.add_patch(Circle((0, 0), r, fill=False, **kwargs))
-        for a in (3, 6):
-            x = math.cos(math.pi / a)
-            y = math.sin(math.pi / a)
-            ax.add_line(Line2D([-x, x], [-y, y], **kwargs))
-            ax.add_line(Line2D([-x, x], [y, -y], **kwargs))
+
+        if samples is not None and samples > 1:
+            angle = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
+            xy = numpy.vstack((numpy.cos(angle), numpy.sin(angle))).T
+            ax.add_patch(Polygon(xy, fill=False, **kwargs))
+
+        if radii is None:
+            radii = [1 / 3, 2 / 3, 1.0]
+        elif isinstance(radii, int):
+            radii = numpy.linspace(0, 1, radii + 1, endpoint=True)[1:].tolist()
+        for r in radii:  # type: ignore[union-attr]
+            if r < 1e-3:
+                # skip zero radius
+                continue
+            if abs(r - 1.0) < 1e-3:
+                # unit circle
+                circle = Circle((0, 0), 1, fill=False, **kwargs)
+            elif r > 1.0:
+                continue
+            else:
+                # minor circle
+                circle = Circle((0, 0), r, fill=False, **minor_kwargs)
+            ax.add_patch(circle)
+
+        if angles is None:
+            angles = 12
+        if isinstance(angles, int):
+            angles = numpy.linspace(
+                0, 2 * math.pi, angles, endpoint=False
+            ).tolist()
+        for a in angles:  # type: ignore[union-attr]
+            if a < 0 or a > 2 * math.pi:
+                # skip angles out of range
+                continue
+            x = math.cos(a)
+            y = math.sin(a)
+            ax.add_line(Line2D([0.0, x], [0.0, y], **minor_kwargs))
+
+        if labels is None and ticks is None:
+            # no labels
+            return
+        if ticks is None:
+            # equidistant labels
+            assert labels is not None
+            ticks = numpy.linspace(0, 2 * math.pi, len(labels), endpoint=False)
+            tick_limits = None
+        elif labels is None:
+            # use tick values as labels
+            assert ticks is not None
+            ticks = numpy.asarray(ticks, copy=True)
+            if tick_format is None:
+                tick_format = '{}'
+            labels = [tick_format.format(t) for t in ticks]
+            ticks = ticks.astype(numpy.float64)
+        else:
+            ticks = numpy.asarray(ticks, dtype=numpy.float64, copy=True)
+            if ticks.size != len(labels):
+                raise ValueError(f'{ticks.size=} != {len(labels)=}')
+
+        if tick_limits is not None:
+            ticks -= tick_limits[0]
+            ticks /= tick_limits[1] - tick_limits[0]
+            ticks = numpy.clip(ticks, 0.0, 1.0)
+            ticks *= 2 * math.pi
+
+        real = numpy.cos(ticks)
+        imag = numpy.sin(ticks)
+        self._unitcircle_ticks = CircleTicks(labels=labels)
+        ax.plot(real, imag, path_effects=[self._unitcircle_ticks], **kwargs)
 
     def semicircle(
         self,
@@ -903,7 +1028,7 @@ class PhasorPlot:
 
         Returns
         -------
-        list[matplotlib.lines.Line2D]
+        list of matplotlib.lines.Line2D
             Lines representing plotted semicircle and ticks.
 
         """
@@ -914,7 +1039,8 @@ class PhasorPlot:
             kwargs,
             color=GRID_COLOR,
             linestyle=GRID_LINESTYLE_MAJOR,
-            linewidth=GRID_LINEWIDH,
+            linewidth=GRID_LINEWIDTH,
+            zorder=GRID_ZORDER,
         )
         if phasor_reference is not None:
             polar_reference = phasor_to_polar_scalar(*phasor_reference)
@@ -954,7 +1080,7 @@ class PhasorPlot:
         if frequency is not None and polar_reference == (0.0, 1.0):
             # draw ticks and labels
             lifetime, labels = _semicircle_ticks(frequency, lifetime, labels)
-            self._semicircle_ticks = SemicircleTicks(labels=labels)
+            self._semicircle_ticks = CircleTicks((0.5, 0.0), labels=labels)
             lines.extend(
                 ax.plot(
                     *phasor_transform(
@@ -981,11 +1107,13 @@ class PhasorPlot:
         return '  '.join(reversed(ret))
 
 
-class SemicircleTicks(AbstractPathEffect):
-    """Draw ticks on universal semicircle.
+class CircleTicks(AbstractPathEffect):
+    """Draw ticks on unit circle or universal semicircle.
 
     Parameters
     ----------
+    origin : (float, float), optional
+        Origin of circle.
     size : float, optional
         Length of tick in dots.
         The default is ``rcParams['xtick.major.size']``.
@@ -997,23 +1125,31 @@ class SemicircleTicks(AbstractPathEffect):
 
     """
 
+    _origin: tuple[float, float]  # origin of the semicircle
     _size: float  # tick length
     _labels: tuple[str, ...]  # tick labels
     _gc: dict[str, Any]  # keywords passed to _update_gc
 
     def __init__(
         self,
+        origin: tuple[float, float] | None = None,
+        /,
         size: float | None = None,
         labels: Sequence[str] | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__((0.0, 0.0))
 
+        if origin is None:
+            self._origin = 0.0, 0.0
+        else:
+            self._origin = float(origin[0]), float(origin[1])
+
         if size is None:
             self._size = pyplot.rcParams['xtick.major.size']
         else:
             self._size = size
-        if labels is None or not labels:
+        if labels is None or len(labels) == 0:
             self._labels = ()
         else:
             self._labels = tuple(labels)
@@ -1026,7 +1162,7 @@ class SemicircleTicks(AbstractPathEffect):
 
     @labels.setter
     def labels(self, value: Sequence[str] | None, /) -> None:
-        if value is None or not value:
+        if value is None:
             self._labels = ()
         else:
             self._labels = tuple(value)
@@ -1052,7 +1188,7 @@ class SemicircleTicks(AbstractPathEffect):
         # approximate half size of 'x'
         fontsize = renderer.points_to_pixels(font.get_size_in_points()) / 4
         size = renderer.points_to_pixels(self._size)
-        origin = affine.transform([[0.5, 0.0]])
+        origin = affine.transform([self._origin])
 
         transpath = affine.transform_path(tpath)
         polys = transpath.to_polygons(closed_only=False)
@@ -1090,6 +1226,8 @@ class SemicircleTicks(AbstractPathEffect):
                 # TODO: get rendered text size from matplotlib.text.Text?
                 # this did not work:
                 # Text(d[i,0], h - d[i,1], label, ha='center', va='center')
+                if not s:
+                    continue
                 x = x + fontsize * len(s.split()[0]) * (dx - 1.0)
                 y = h - y + fontsize
                 renderer.draw_text(gc0, x, y, s, font, 0.0)

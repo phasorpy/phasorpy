@@ -189,6 +189,27 @@ plot.show()
 plot = PhasorPlot(allquadrants=True, title='All quadrants')
 plot.show()
 
+
+# %%
+# Custom grid
+# -----------
+#
+# Customize the grid of an all-quadrants plot:
+
+plot = PhasorPlot(
+    allquadrants=True,
+    title='Custom grid',
+    grid={
+        'labels': ['450', '500 nm', '550', '600', '650', '700'],
+        'ticks': [450, 500, 550, 600, 650, 700],
+        'tick_limits': (420, 720),
+        'angles': 8,
+        'radii': 2,
+    },
+    pad=0.15,  # make space for labels
+)
+plot.show()
+
 # %%
 # Matplotlib axes
 # ---------------
