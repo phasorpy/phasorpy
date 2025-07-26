@@ -966,13 +966,13 @@ class PhasorPlot:
         elif labels is None:
             # use tick values as labels
             assert ticks is not None
-            ticks = numpy.asarray(ticks, copy=True)
+            ticks = numpy.array(ticks, copy=True, ndmin=1)
             if tick_format is None:
                 tick_format = '{}'
             labels = [tick_format.format(t) for t in ticks]
             ticks = ticks.astype(numpy.float64)
         else:
-            ticks = numpy.asarray(ticks, dtype=numpy.float64, copy=True)
+            ticks = numpy.array(ticks, dtype=numpy.float64, copy=True, ndmin=1)
             if ticks.size != len(labels):
                 raise ValueError(f'{ticks.size=} != {len(labels)=}')
 
@@ -1125,7 +1125,7 @@ class CircleTicks(AbstractPathEffect):
 
     """
 
-    _origin: tuple[float, float]  # origin of the semicircle
+    _origin: tuple[float, float]  # origin of circle
     _size: float  # tick length
     _labels: tuple[str, ...]  # tick labels
     _gc: dict[str, Any]  # keywords passed to _update_gc
