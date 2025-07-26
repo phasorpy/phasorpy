@@ -27,8 +27,8 @@ from ..phasor import (
     phasor_transform,
 )
 from ..plot._phasorplot import (
+    CircleTicks,
     PhasorPlot,
-    SemicircleTicks,
     _semicircle_ticks,
 )
 
@@ -93,7 +93,7 @@ class LifetimePlots:
     _modulation_lines: list[Line2D]
 
     _semicircle_line: Line2D
-    _semicircle_ticks: SemicircleTicks | None
+    _semicircle_ticks: CircleTicks | None
 
     _component_colors = (
         # 'tab:blue',  # main
