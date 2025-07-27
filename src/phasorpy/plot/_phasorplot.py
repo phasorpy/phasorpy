@@ -852,11 +852,11 @@ class PhasorPlot:
         samples: int | None = None,
         labels: Sequence[str] | None = None,
         ticks: ArrayLike | None = None,
-        tick_limits: tuple[float, float] | None = None,
+        tick_space: ArrayLike | None = None,
         tick_format: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Draw polar coordinate system.
+        r"""Draw polar coordinate system.
 
         Parameters
         ----------
@@ -874,14 +874,16 @@ class PhasorPlot:
             By default, no inscribed polygon is drawn.
         labels : sequence of str, optional
             Tick labels on unit circle.
-            If None, `ticks` are used as labels using `format`.
+            If None, `ticks` are used as labels using `tick_format`.
             If `ticks` are not provided, labels are placed at equidistant
             angles.
         ticks : array_like, optional
             Value at which to place tick labels on unit circle.
             If `labels` is not None, `ticks` values are used as labels.
-        tick_limits : (float, float), optional
-            Minimum and maximum values to scale `ticks` to range [0, 2 pi].
+            If `tick_space` is None, tick values are angles in radians.
+        tick_space : array_like, optional
+            Values used to convert `ticks` to angles.
+            For example, the wavelengths used to calculate spectral phasors.
         tick_format : str, optional
             Format string for tick values if `labels` is None.
             By default, the tick format is "{}".
@@ -894,10 +896,17 @@ class PhasorPlot:
         ------
         ValueError
             If number of ticks doesn't match number of labels.
+            If `tick_space` has less than two values.
 
         Notes
         -----
         Use ``radii=1, angles=4`` to draw major gridlines only.
+
+        The values of ticks (:math:`v`) are converted to angles
+        (:math:`\theta`) using `tick_space` (:math:`s`) according to:
+
+        .. math::
+            \theta = \frac{v - s_0}{s_{-1} + s_1 - 2 s_0} \cdot 2 \pi
 
         """
         ax = self._ax
@@ -962,7 +971,7 @@ class PhasorPlot:
             # equidistant labels
             assert labels is not None
             ticks = numpy.linspace(0, 2 * math.pi, len(labels), endpoint=False)
-            tick_limits = None
+            tick_space = None
         elif labels is None:
             # use tick values as labels
             assert ticks is not None
@@ -972,14 +981,25 @@ class PhasorPlot:
             labels = [tick_format.format(t) for t in ticks]
             ticks = ticks.astype(numpy.float64)
         else:
+            # ticks and labels
             ticks = numpy.array(ticks, dtype=numpy.float64, copy=True, ndmin=1)
             if ticks.size != len(labels):
                 raise ValueError(f'{ticks.size=} != {len(labels)=}')
+            if tick_space is None:
+                # equidistant ticks
+                tick_space = numpy.linspace(
+                    0, 2 * math.pi, ticks.size, endpoint=False
+                )
 
-        if tick_limits is not None:
-            ticks -= tick_limits[0]
-            ticks /= tick_limits[1] - tick_limits[0]
-            ticks = numpy.clip(ticks, 0.0, 1.0)
+        if tick_space is not None:
+            tick_space = numpy.asarray(tick_space, dtype=numpy.float64)
+            if tick_space.ndim != 1 or tick_space.size < 2:
+                raise ValueError(
+                    f'invalid {tick_space.ndim=} or {tick_space.size=} < 2'
+                )
+            assert isinstance(ticks, numpy.ndarray)  # for mypy
+            ticks -= tick_space[0]
+            ticks /= tick_space[-1] + tick_space[1] - 2 * tick_space[0]
             ticks *= 2 * math.pi
 
         real = numpy.cos(ticks)

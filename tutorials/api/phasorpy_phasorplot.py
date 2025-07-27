@@ -200,13 +200,13 @@ plot = PhasorPlot(
     allquadrants=True,
     title='Custom grid',
     grid={
-        'labels': ['450', '500 nm', '550', '600', '650', '700'],
-        'ticks': [450, 500, 550, 600, 650, 700],
-        'tick_limits': (420, 720),
+        'labels': ['', '450', '500 nm', '550', '600', '650', '700', ''],
+        'ticks': [430, 450, 500, 550, 600, 650, 700, 730],
+        'tick_space': numpy.linspace(430, 730, 16),
         'angles': 8,
         'radii': 2,
     },
-    pad=0.15,  # make space for labels
+    pad=0.2,  # make space for labels
 )
 plot.show()
 

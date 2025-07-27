@@ -288,7 +288,7 @@ class TestPhasorPlot:
         self.show(plot)
 
         plot = PhasorPlot(
-            grid=False, allquadrants=True, pad=0.3, title='ticks'
+            grid=False, allquadrants=True, pad=0.3, title='labels'
         )
         plot.polar_grid(
             labels=[str(i) for i in range(0, 360, 45)], angles=0, radii=1
@@ -296,14 +296,22 @@ class TestPhasorPlot:
         self.show(plot)
 
         plot = PhasorPlot(
-            grid=False, allquadrants=True, pad=0.3, title='labels'
+            grid=False, allquadrants=True, pad=0.3, title='ticks'
         )
         plot.polar_grid(
-            ticks=[430, 450, 500, 550, 600, 650, 700, 750],
-            tick_limits=(430, 780),
-            # tick_format='{:.0f}',
-            angles=0,
-            radii=1,
+            ticks=numpy.linspace(0, 2 * math.pi, 8, endpoint=False),
+            tick_format='{:.2f}',
+            angles=8,
+        )
+        self.show(plot)
+
+        plot = PhasorPlot(
+            grid=False, allquadrants=True, pad=0.3, title='tick_space'
+        )
+        plot.polar_grid(
+            ticks=[430, 450, 500, 550, 600, 650, 700, 730],
+            tick_space=numpy.linspace(430, 730, 16),
+            angles=8,
         )
         self.show(plot)
 
@@ -311,9 +319,10 @@ class TestPhasorPlot:
             grid=False, allquadrants=True, pad=0.25, title='ticks and labels'
         )
         plot.polar_grid(
-            labels=['', '450', '500 nm', '550', '600', '650', '700', '750'],
-            ticks=[430, 450, 500, 550, 600, 650, 700, 750],
-            tick_limits=(430, 780),
+            labels=['', '450', '500 nm', '550', '600', '650', '700', '730'],
+            ticks=[430, 450, 500, 550, 600, 650, 700, 730],
+            tick_space=[430, 430 + (730 - 430) / 16, 730],
+            angles=8,
         )
         self.show(plot)
 

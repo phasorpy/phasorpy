@@ -438,10 +438,7 @@ plot_phasor(
     title='Hyperspectral phasor plot',
     allquadrants=True,
     pad=0.2,  # make space for labels
-    grid={
-        'ticks': [450, 500, 550, 600, 650, 700],
-        'tick_limits': (wavelengths[0], wavelengths[-1]),
-    },
+    grid={'ticks': [450, 500, 550, 600, 650, 700], 'tick_space': wavelengths},
 )
 
 # %%
