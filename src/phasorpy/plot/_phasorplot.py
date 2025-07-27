@@ -874,16 +874,17 @@ class PhasorPlot:
             By default, no inscribed polygon is drawn.
         labels : sequence of str, optional
             Tick labels on unit circle.
-            If None, `ticks` are used as labels using `tick_format`.
-            If `ticks` are not provided, labels are placed at equidistant
-            angles.
+            Labels are placed at equidistant angles if `ticks` are not
+            provided.
         ticks : array_like, optional
-            Value at which to place tick labels on unit circle.
-            If `labels` is not None, `ticks` values are used as labels.
-            If `tick_space` is None, tick values are angles in radians.
+            Values at which to place tick labels on unit circle.
+            If `labels` are not provided, `ticks` values formatted with
+            `tick_format` are used as labels.
+            If `tick_space` is not provided, tick values are angles in radians.
         tick_space : array_like, optional
             Values used to convert `ticks` to angles.
-            For example, the wavelengths used to calculate spectral phasors.
+            For example, the wavelengths used to calculate spectral phasors
+            or the minimum and maximum wavelengths of a sine-cosine filter.
         tick_format : str, optional
             Format string for tick values if `labels` is None.
             By default, the tick format is "{}".
@@ -985,11 +986,6 @@ class PhasorPlot:
             ticks = numpy.array(ticks, dtype=numpy.float64, copy=True, ndmin=1)
             if ticks.size != len(labels):
                 raise ValueError(f'{ticks.size=} != {len(labels)=}')
-            if tick_space is None:
-                # equidistant ticks
-                tick_space = numpy.linspace(
-                    0, 2 * math.pi, ticks.size, endpoint=False
-                )
 
         if tick_space is not None:
             tick_space = numpy.asarray(tick_space, dtype=numpy.float64)

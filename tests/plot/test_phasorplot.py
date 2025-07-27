@@ -258,6 +258,8 @@ class TestPhasorPlot:
 
     def test_polar_grid(self):
         """Test polar_grid method."""
+        phase_angles = numpy.linspace(0, 2 * math.pi, 8, endpoint=False)
+
         plot = PhasorPlot(grid=False, allquadrants=True, title='default')
         plot.polar_grid()
         self.show(plot)
@@ -288,25 +290,35 @@ class TestPhasorPlot:
         self.show(plot)
 
         plot = PhasorPlot(
-            grid=False, allquadrants=True, pad=0.3, title='labels'
+            grid=False, allquadrants=True, pad=0.3, title='labels, no ticks'
         )
         plot.polar_grid(
-            labels=[str(i) for i in range(0, 360, 45)], angles=0, radii=1
+            labels=[f'{i:.2f}' for i in range(0, 360, 45)], angles=8
         )
         self.show(plot)
 
         plot = PhasorPlot(
-            grid=False, allquadrants=True, pad=0.3, title='ticks'
+            grid=False, allquadrants=True, pad=0.3, title='ticks, no labels'
         )
         plot.polar_grid(
-            ticks=numpy.linspace(0, 2 * math.pi, 8, endpoint=False),
+            ticks=phase_angles,
             tick_format='{:.2f}',
             angles=8,
         )
         self.show(plot)
 
         plot = PhasorPlot(
-            grid=False, allquadrants=True, pad=0.3, title='tick_space'
+            grid=False, allquadrants=True, pad=0.3, title='ticks and labels'
+        )
+        plot.polar_grid(
+            ticks=phase_angles,
+            labels=[f'{i:.2f}' for i in phase_angles],
+            angles=8,
+        )
+        self.show(plot)
+
+        plot = PhasorPlot(
+            grid=False, allquadrants=True, pad=0.3, title='ticks and space'
         )
         plot.polar_grid(
             ticks=[430, 450, 500, 550, 600, 650, 700, 730],
@@ -316,7 +328,10 @@ class TestPhasorPlot:
         self.show(plot)
 
         plot = PhasorPlot(
-            grid=False, allquadrants=True, pad=0.25, title='ticks and labels'
+            grid=False,
+            allquadrants=True,
+            pad=0.25,
+            title='ticks, labels, and space',
         )
         plot.polar_grid(
             labels=['', '450', '500 nm', '550', '600', '650', '700', '730'],
@@ -332,6 +347,11 @@ class TestPhasorPlot:
 
         with pytest.raises(ValueError):
             plot.polar_grid(labels=['1', '2'], ticks=[1, 2, 3])
+
+        with pytest.raises(ValueError):
+            plot.polar_grid(
+                labels=['1', '2'], ticks=[1, 2], tick_space=[[1, 2, 3]]
+            )
 
     def test_semicircle(self):
         """Test semicircle method."""
