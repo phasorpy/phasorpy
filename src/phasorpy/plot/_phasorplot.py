@@ -861,12 +861,12 @@ class PhasorPlot:
         Parameters
         ----------
         radii : int or sequence of float, optional
-            Radial gridlines in range ]0, 1].
+            Position of radial gridlines in range (0, 1].
             If an integer, the number of equidistant radial gridlines.
             By default, three equidistant radial gridlines are drawn.
             The unit circle (radius 1), if included, is drawn in major style.
         angles : int or sequence of float, optional
-            Angular gridlines in range [0, 2 pi].
+            Position of angular gridlines in range [0, 2 pi].
             If an integer, the number of equidistant angular gridlines.
             By default, 12 equidistant angular gridlines are drawn.
         samples : int, optional
