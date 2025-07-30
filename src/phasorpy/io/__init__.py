@@ -8,6 +8,7 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`signal_from_lif` - Leica LIF and XLEF
   - :py:func:`signal_from_lsm` - Zeiss LSM
   - :py:func:`signal_from_ptu` - PicoQuant PTU
+  - :py:func:`signal_from_pqbin` - PicoQuant BIN
   - :py:func:`signal_from_sdt` - Becker & Hickl SDT
   - :py:func:`signal_from_fbd` - FLIMbox FBD
   - :py:func:`signal_from_flimlabs_json` - FLIM LABS JSON
