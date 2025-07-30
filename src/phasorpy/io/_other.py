@@ -127,6 +127,7 @@ def signal_from_ptu(
     channel: int | None = 0,
     dtime: int | None = 0,
     keepdims: bool = False,
+    **kwargs: Any,
 ) -> DataArray:
     """Return TCSPC histogram and metadata from PicoQuant PTU T3 mode file.
 
@@ -168,6 +169,8 @@ def signal_from_ptu(
         Overrides `selection` for axis ``H``.
     keepdims : bool, optional, default: False
         If true, return reduced axes as size-one dimensions.
+    **kwargs
+        Additional arguments passed to :py:meth:`PtuFile.decode_image`.
 
     Returns
     -------
@@ -214,6 +217,9 @@ def signal_from_ptu(
     import ptufile
     from xarray import DataArray
 
+    for key in {'pixel_time', 'bishift'}:
+        kwargs.pop(key, None)
+
     with ptufile.PtuFile(filename, trimdims=trimdims) as ptu:
         if not ptu.is_t3:
             raise ValueError(f'{ptu.filename!r} is not a T3 mode PTU file')
@@ -226,6 +232,7 @@ def signal_from_ptu(
                 dtime=dtime,
                 keepdims=keepdims,
                 asxarray=True,
+                **kwargs,
             )
             assert isinstance(data, DataArray)
         elif ptu.measurement_submode == 1:
