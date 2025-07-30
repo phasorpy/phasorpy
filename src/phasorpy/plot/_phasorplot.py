@@ -791,6 +791,8 @@ class PhasorPlot:
             ax.add_patch(Circle((x, y), radius, **kwargs))
             if _circle_only:
                 return None
+            if abs(x) < 1e-6 and abs(y) < 1e-6:
+                return None
             del kwargs['fill']
             x0, y0, x1, y1 = _intersect_circle_line(x, y, radius, 0, 0, x, y)
             ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
