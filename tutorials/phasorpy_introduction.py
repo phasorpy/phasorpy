@@ -413,6 +413,7 @@ plot_image(
 from phasorpy.io import signal_from_lsm
 
 hyperspectral_signal = signal_from_lsm(fetch('paramecium.lsm'))
+wavelengths = hyperspectral_signal.coords['C'].values
 
 plot_signal_image(
     hyperspectral_signal,
@@ -431,7 +432,14 @@ _, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 # %%
 # Plot the phasor coordinates as a two-dimensional histogram:
 
-plot_phasor(real, imag, allquadrants=True, title='Hyperspectral phasor plot')
+plot_phasor(
+    real,
+    imag,
+    title='Hyperspectral phasor plot',
+    allquadrants=True,
+    pad=0.2,  # make space for labels
+    grid={'ticks': [450, 500, 550, 600, 650, 700], 'tick_space': wavelengths},
+)
 
 # %%
 # Find clusters

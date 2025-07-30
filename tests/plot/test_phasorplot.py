@@ -35,6 +35,9 @@ class TestPhasorPlot:
         plot = PhasorPlot(allquadrants=True, title='allquadrants')
         self.show(plot)
 
+        plot = PhasorPlot(title='pad', pad=0.1)
+        self.show(plot)
+
         plot = PhasorPlot(title='kwargs', xlim=(-0.1, 1.1), ylim=(-0.1, 0.9))
         self.show(plot)
 
@@ -255,9 +258,100 @@ class TestPhasorPlot:
 
     def test_polar_grid(self):
         """Test polar_grid method."""
-        plot = PhasorPlot(grid=False, allquadrants=True, title='polar_grid')
-        plot.polar_grid(color='tab:red', linestyle='-')
+        phase_angles = numpy.linspace(0, 2 * math.pi, 8, endpoint=False)
+
+        plot = PhasorPlot(grid=False, allquadrants=True, title='default')
+        plot.polar_grid()
         self.show(plot)
+
+        plot = PhasorPlot(
+            grid=dict(radii=0, angles=0), allquadrants=True, title='empty'
+        )
+        self.show(plot)
+
+        plot = PhasorPlot(grid=False, allquadrants=True, title='major axes')
+        plot.polar_grid(radii=1, angles=4)
+        self.show(plot)
+
+        plot = PhasorPlot(grid=False, allquadrants=True, title='custom angles')
+        plot.polar_grid(
+            radii=2, angles=[-1, 0, math.pi / 2, 1, 2, 3, 4, 5, 6, 7]
+        )
+        self.show(plot)
+
+        plot = PhasorPlot(grid=False, allquadrants=True, title='custom radii')
+        plot.polar_grid(radii=[-0.1, 0.25, 0.75, 1.0, 1.1], angles=4)
+        self.show(plot)
+
+        plot = PhasorPlot(
+            grid=False, pad=0.2, allquadrants=True, title='polygon'
+        )
+        plot.polar_grid(labels=['B', 'G', 'R'], samples=3, angles=3, radii=1)
+        self.show(plot)
+
+        plot = PhasorPlot(
+            grid=False, allquadrants=True, pad=0.3, title='labels, no ticks'
+        )
+        plot.polar_grid(
+            labels=[f'{i:.2f}' for i in range(0, 360, 45)], angles=8
+        )
+        self.show(plot)
+
+        plot = PhasorPlot(
+            grid=False, allquadrants=True, pad=0.3, title='ticks, no labels'
+        )
+        plot.polar_grid(
+            ticks=phase_angles,
+            tick_format='{:.2f}',
+            angles=8,
+        )
+        self.show(plot)
+
+        plot = PhasorPlot(
+            grid=False, allquadrants=True, pad=0.3, title='ticks and labels'
+        )
+        plot.polar_grid(
+            ticks=phase_angles,
+            labels=[f'{i:.2f}' for i in phase_angles],
+            angles=8,
+        )
+        self.show(plot)
+
+        plot = PhasorPlot(
+            grid=False, allquadrants=True, pad=0.3, title='ticks and space'
+        )
+        plot.polar_grid(
+            ticks=[430, 450, 500, 550, 600, 650, 700, 730],
+            tick_space=numpy.linspace(430, 730, 16),
+            angles=8,
+        )
+        self.show(plot)
+
+        plot = PhasorPlot(
+            grid=False,
+            allquadrants=True,
+            pad=0.25,
+            title='ticks, labels, and space',
+        )
+        plot.polar_grid(
+            labels=['', '450', '500 nm', '550', '600', '650', '700', '730'],
+            ticks=[430, 450, 500, 550, 600, 650, 700, 730],
+            tick_space=[430, 430 + (730 - 430) / 16, 730],
+            angles=8,
+        )
+        self.show(plot)
+
+        plot = PhasorPlot(grid=False, allquadrants=True, title='styled')
+        plot.polar_grid(color='tab:red', linestyle='-', samples=0)
+        self.show(plot)
+
+        with pytest.raises(ValueError):
+            plot.polar_grid(labels=['1', '2'], ticks=[1, 2, 3])
+
+        with pytest.raises(ValueError):
+            plot.polar_grid(
+                labels=['1', '2'], ticks=[1, 2], tick_space=[[1, 2, 3]]
+            )
 
     def test_semicircle(self):
         """Test semicircle method."""
@@ -291,12 +385,12 @@ class TestPhasorPlot:
         )
         self.show(plot)
 
-        plot = PhasorPlot(title='polar_reference', xlim=(-0.2, 1.05))
+        plot = PhasorPlot(title='polar_reference', xlim=(-0.2, 1.1))
         plot.semicircle(polar_reference=(0.9852, 0.5526))
         self.show(plot)
 
         plot = PhasorPlot(
-            frequency=80.0, title='phasor_reference', xlim=(-0.2, 1.05)
+            frequency=80.0, title='phasor_reference', xlim=(-0.2, 1.1)
         )
         plot.semicircle(frequency=80.0, phasor_reference=(0.2, 0.4))
         self.show(plot)

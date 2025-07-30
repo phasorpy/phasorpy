@@ -27,7 +27,7 @@ from ..phasor import (
     phasor_to_polar,
     phasor_transform,
 )
-from ._phasorplot import PhasorPlot, SemicircleTicks, _semicircle_ticks
+from ._phasorplot import CircleTicks, PhasorPlot, _semicircle_ticks
 
 
 class PhasorPlotFret(PhasorPlot):
@@ -120,7 +120,7 @@ class PhasorPlotFret(PhasorPlot):
     _acceptor_background_line: Line2D
     _background_line: Line2D
 
-    _donor_semicircle_ticks: SemicircleTicks | None
+    _donor_semicircle_ticks: CircleTicks | None
 
     def __init__(
         self,

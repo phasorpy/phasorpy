@@ -92,6 +92,7 @@ def plot_phasor(
         'xticks',
         'yticks',
         'grid',
+        'pad',
     )
 
     real = numpy.asanyarray(real)
