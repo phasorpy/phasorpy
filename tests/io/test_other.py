@@ -314,9 +314,13 @@ def test_signal_from_pqbin():
     assert signal.attrs['frequency'] == pytest.approx(19.999999, abs=1e-6)
     assert signal.attrs['pixel_resolution'] == 0.078125
     assert signal.attrs['tcspc_resolution'] == pytest.approx(0.025, abs=1e-6)
-    assert_almost_equal(signal.coords['H'][[0, -1]], [0.0, 50.0], decimal=4)
-    assert_almost_equal(signal.coords['X'][[0, -1]], [0.0, 2.0e-05], decimal=9)
-    assert_almost_equal(signal.coords['Y'][[0, -1]], [0.0, 2.0e-05], decimal=9)
+    assert_almost_equal(signal.coords['H'][[0, -1]], [0.0, 49.975], decimal=4)
+    assert_almost_equal(
+        signal.coords['X'][[0, -1]], [0.0, 1.9921875e-05], decimal=9
+    )
+    assert_almost_equal(
+        signal.coords['Y'][[0, -1]], [0.0, 1.9921875e-05], decimal=9
+    )
 
     filename = fetch('simfcs.r64')
     with pytest.raises(ValueError):

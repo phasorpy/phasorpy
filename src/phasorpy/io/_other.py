@@ -831,7 +831,7 @@ def signal_from_pqbin(
     >>> signal.dims  # doctest: +SKIP
     ('Y', 'X', 'H')
     >>> signal.coords['H'].data  # doctest: +SKIP
-    array([0, ..., 50.0])
+    array([0, ..., 49.975])
     >>> signal.attrs['frequency']  # doctest: +SKIP
     19.99
 
@@ -876,9 +876,13 @@ def signal_from_pqbin(
             'pixel_resolution': pixel_resolution,  # um
             'tcspc_resolution': tcspc_resolution,  # ns
         },
-        Y=numpy.linspace(0, size_y * pixel_resolution * 1e-6, size_y),  # m
-        X=numpy.linspace(0, size_x * pixel_resolution * 1e-6, size_x),  # m
-        H=numpy.linspace(0, size_h * tcspc_resolution, size_h),  # ns
+        Y=numpy.linspace(
+            0, size_y * pixel_resolution * 1e-6, size_y, endpoint=False
+        ),
+        X=numpy.linspace(
+            0, size_x * pixel_resolution * 1e-6, size_x, endpoint=False
+        ),
+        H=numpy.linspace(0, size_h * tcspc_resolution, size_h, endpoint=False),
     )
 
     from xarray import DataArray
