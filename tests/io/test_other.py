@@ -14,6 +14,7 @@ from phasorpy.io import (
     signal_from_flif,
     signal_from_imspector_tiff,
     signal_from_lsm,
+    signal_from_pqbin,
     signal_from_ptu,
     signal_from_sdt,
 )
@@ -299,6 +300,31 @@ def test_signal_from_ptu_irf():
     assert_almost_equal(
         signal.coords['H'].data[[1, -1]], [0.007999, 32.759999], decimal=4
     )
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_signal_from_pqbin():
+    """Test read PicoQuant BIN file."""
+    filename = private_file('picoquant.bin')
+    signal = signal_from_pqbin(filename)
+    assert signal.values.sum(dtype=numpy.uint64) == 43071870
+    assert signal.dtype == numpy.uint32
+    assert signal.shape == (256, 256, 2000)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert signal.attrs['frequency'] == pytest.approx(19.999999, abs=1e-6)
+    assert signal.attrs['pixel_resolution'] == 0.078125
+    assert signal.attrs['tcspc_resolution'] == pytest.approx(0.025, abs=1e-6)
+    assert_almost_equal(signal.coords['H'][[0, -1]], [0.0, 49.975], decimal=4)
+    assert_almost_equal(
+        signal.coords['X'][[0, -1]], [0.0, 1.9921875e-05], decimal=9
+    )
+    assert_almost_equal(
+        signal.coords['Y'][[0, -1]], [0.0, 1.9921875e-05], decimal=9
+    )
+
+    filename = fetch('simfcs.r64')
+    with pytest.raises(ValueError):
+        signal_from_pqbin(filename)
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

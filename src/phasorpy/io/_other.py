@@ -8,11 +8,13 @@ __all__ = [
     'phasor_from_ifli',
     'signal_from_imspector_tiff',
     'signal_from_lsm',
+    'signal_from_pqbin',
     'signal_from_ptu',
     'signal_from_sdt',
 ]
 
 import os
+import struct
 from typing import TYPE_CHECKING
 from xml.etree import ElementTree
 
@@ -783,6 +785,105 @@ def signal_from_flif(
         attrs['ref_mod'] = float(flif.header.measured_mod)
         attrs['ref_tauphase'] = float(flif.header.ref_tauphase)
         attrs['ref_taumod'] = float(flif.header.ref_taumod)
+
+    from xarray import DataArray
+
+    return DataArray(data, **metadata)
+
+
+def signal_from_pqbin(
+    filename: str | PathLike[Any],
+    /,
+) -> DataArray:
+    """Return TCSPC histogram and metadata from PicoQuant BIN file.
+
+    PicoQuant BIN files contain TCSPC histograms with limited metadata.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of PicoQuant BIN file to read.
+
+    Returns
+    -------
+    xarray.DataArray
+        TCSPC histogram with :ref:`axes codes <axes>` ``'YXH'``,
+        and type ``uint32``.
+
+        - ``coords['H']``: delay-times of histogram bins in ns.
+        - ``attrs['frequency']``: repetition frequency in MHz.
+          This assumes that the histogram contains exactly one period.
+
+    Raises
+    ------
+    ValueError
+        File is not a PicoQuant BIN file.
+
+    Examples
+    --------
+    >>> signal = signal_from_pqbin('picoquant.bin')  # doctest: +SKIP
+    >>> signal.values  # doctest: +SKIP
+    array(...)
+    >>> signal.dtype  # doctest: +SKIP
+    dtype('uint32')
+    >>> signal.shape  # doctest: +SKIP
+    (256, 256, 2000)
+    >>> signal.dims  # doctest: +SKIP
+    ('Y', 'X', 'H')
+    >>> signal.coords['H'].data  # doctest: +SKIP
+    array([0, ..., 49.975])
+    >>> signal.attrs['frequency']  # doctest: +SKIP
+    19.99
+
+    """
+    with open(filename, 'rb') as fh:
+        header = fh.read(20)
+        if len(header) != 20:
+            raise ValueError(
+                f'invalid PicoQuant BIN header length {len(header)} != 20'
+            )
+        (size_x, size_y, pixel_resolution, size_h, tcspc_resolution) = (
+            struct.unpack('<IIfIf', header)
+        )
+        size = size_y * size_x * size_h * 4
+
+        # check the header values against arbitrary but reasonable limits
+        # to detect invalid files and prevent memory errors
+        if (
+            size <= 0
+            or size > 2**35 - 1  # 32 GiB
+            or size_x > 16384
+            or size_y > 16384
+            or size_h > 16384
+            or pixel_resolution < 0.0
+            or pixel_resolution > 1.0
+            or tcspc_resolution <= 0.0
+            or tcspc_resolution > 1.0
+        ):
+            raise ValueError('invalid PicoQuant BIN file header')
+
+        shape = size_y, size_x, size_h
+        data = numpy.empty(shape, '<u4')
+        if fh.readinto(data) != size:
+            raise ValueError('invalid PicoQuant BIN data size')
+
+    metadata = xarray_metadata(
+        ('Y', 'X', 'H'),
+        shape,
+        filename,
+        attrs={
+            'frequency': 1000.0 / (size_h * tcspc_resolution),  # MHz
+            'pixel_resolution': pixel_resolution,  # um
+            'tcspc_resolution': tcspc_resolution,  # ns
+        },
+        Y=numpy.linspace(
+            0, size_y * pixel_resolution * 1e-6, size_y, endpoint=False
+        ),
+        X=numpy.linspace(
+            0, size_x * pixel_resolution * 1e-6, size_x, endpoint=False
+        ),
+        H=numpy.linspace(0, size_h * tcspc_resolution, size_h, endpoint=False),
+    )
 
     from xarray import DataArray
 
