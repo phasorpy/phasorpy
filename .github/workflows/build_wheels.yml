@@ -36,7 +36,7 @@ jobs:
           CIBW_ARCHS_LINUX: auto
           CIBW_ARCHS_MACOS: x86_64 arm64
           CIBW_ARCHS_WINDOWS: AMD64 ARM64
-          CIBW_TEST_SKIP: "cp314-*"
+          CIBW_TEST_SKIP: "cp314*"
           CIBW_BUILD_VERBOSITY: 2
       - uses: actions/upload-artifact@v4
         with:
