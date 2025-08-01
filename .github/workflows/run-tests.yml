@@ -87,7 +87,7 @@ jobs:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
     steps:
       - uses: actions/checkout@v4
-      - uses: pypa/cibuildwheel@v3.1.1
+      - uses: pypa/cibuildwheel@v3.1.2
         env:
           # CIBW_ENVIRONMENT: "PIP_PRE=1"
           SKIP_FETCH: 1
@@ -117,7 +117,7 @@ jobs:
   #        uses: docker/setup-qemu-action@v3
   #        with:
   #          platforms: all
-  #      - uses: pypa/cibuildwheel@v3.1.1
+  #      - uses: pypa/cibuildwheel@v3.1.2
   #        env:
   #          CIBW_ARCHS_LINUX: aarch64
   #          CIBW_BUILD_VERBOSITY: 2
@@ -126,7 +126,7 @@ jobs:
   #      - uses: actions/upload-artifact@v4
   #        with:
   #          path: ./wheelhouse/*.whl
-  #          name: wheels-aarch64
+  #          name: wheels-${{ matrix.os }}
 
   static_analysis:
     name: Static code analysis
