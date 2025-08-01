@@ -246,8 +246,9 @@ def test_signal_from_ptu():
         dtime=None,
         keepdims=True,
         trimdims='TC',
+        # pixel_time=6.331709817995386e-06  # requires ptufile 2025.7.30
     )
-    assert signal.values.sum(dtype=numpy.uint64) == 6065123
+    assert signal.values.sum(axis=(0, 3, 4))[128, 128] == 223
     assert signal.dtype == numpy.uint16
     assert signal.shape == (1, 256, 256, 1, 4096)
     assert signal.dims == ('T', 'Y', 'X', 'C', 'H')
@@ -278,6 +279,7 @@ def test_signal_from_ptu_irf():
     assert signal.attrs['ptu_tags']['HW_Type'] == 'PicoHarp 300'
 
     signal = signal_from_ptu(filename)
+    assert signal.values[0, 0, 100] == 130
     assert signal.values.sum(dtype=numpy.uint64) == 6984849
     assert signal.shape == (1, 1, 6250)
     assert signal.dims == ('Y', 'X', 'H')

@@ -172,7 +172,8 @@ def signal_from_ptu(
     keepdims : bool, optional, default: False
         If true, return reduced axes as size-one dimensions.
     **kwargs
-        Additional arguments passed to :py:meth:`PtuFile.decode_image`.
+        Additional arguments passed to :py:meth:`PtuFile.decode_image`
+        or :py:meth:`PtuFile.decode_histogram`.
 
     Returns
     -------
@@ -219,8 +220,7 @@ def signal_from_ptu(
     import ptufile
     from xarray import DataArray
 
-    for key in {'pixel_time', 'bishift'}:
-        kwargs.pop(key, None)
+    kwargs.pop('records', None)
 
     with ptufile.PtuFile(filename, trimdims=trimdims) as ptu:
         if not ptu.is_t3:
@@ -242,7 +242,7 @@ def signal_from_ptu(
             if dtime == -1:
                 raise ValueError(f'{dtime=} not supported for point mode')
             data = ptu.decode_histogram(
-                dtype=dtype, dtime=dtime, asxarray=True
+                dtype=dtype, dtime=dtime, asxarray=True, **kwargs
             )
             assert isinstance(data, DataArray)
             if channel is not None:
