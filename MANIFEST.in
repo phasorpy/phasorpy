@@ -14,6 +14,10 @@ recursive-include tutorials *.rst
 exclude *.cmd
 exclude docs/sg_execution_times.rst
 
+include tools/*.py
+include tools/*.sh
+include tools/*.cmd
+
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 recursive-exclude * *Copy*
