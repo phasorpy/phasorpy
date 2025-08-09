@@ -4,6 +4,8 @@ testdata/*
 test_data/*
 tests/data/*
 tutorials/data/*
+*.png
+*.svg
 *.tif
 *.tiff
 *.lsm

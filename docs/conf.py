@@ -60,7 +60,7 @@ html_static_path = ['_static']
 html_js_files = ['custom-icons.js']
 html_show_sourcelink = False
 
-html_logo = '_static/logo.png'
+html_logo = '_static/phasorpy_logo.svg'
 # html_favicon = ''
 
 pygments_style = 'sphinx'
@@ -149,8 +149,9 @@ class TutorialOrder:
         # applications
         'component_fit',
         'fret_efficiency',
-        # benchmarks
+        # misc
         'phasor_from_signal',
+        'logo',
     ]
 
     def __init__(self, srcdir: str): ...
