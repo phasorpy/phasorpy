@@ -186,7 +186,7 @@ def phasor_from_signal(
     --------
     phasorpy.phasor.phasor_to_signal
     phasorpy.phasor.phasor_normalize
-    :ref:`sphx_glr_tutorials_benchmarks_phasorpy_phasor_from_signal.py`
+    :ref:`sphx_glr_tutorials_misc_phasorpy_phasor_from_signal.py`
 
     Notes
     -----
