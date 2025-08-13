@@ -2,14 +2,20 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
+      - id: check-builtin-literals
       - id: check-case-conflict
       # - id: check-docstring-first
+      - id: check-executables-have-shebangs
+      - id: check-illegal-windows-names
       - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
       - id: check-symlinks
+      - id: check-toml
       - id: check-json
+      - id: check-xml
       - id: check-yaml
         args: [--allow-multiple-documents]
       - id: name-tests-test
@@ -21,6 +27,9 @@ repos:
       # - id: requirements-txt-fixer
       - id: trailing-whitespace
       - id: double-quote-string-fixer
+      - id: detect-private-key
+      - id: detect-aws-credentials
+      - id: forbid-submodules
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
