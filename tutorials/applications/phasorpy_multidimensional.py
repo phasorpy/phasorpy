@@ -1,5 +1,5 @@
 """
-Multidimensional phasor analysis
+Multidimensional phasor approach
 ================================
 
 Simultaneous analysis of multiple phasor dimensions.
@@ -51,87 +51,79 @@ from phasorpy.phasor import (
 from phasorpy.plot import PhasorPlot, plot_image, plot_phasor
 
 # %%
-# Load multidimensional phasor data
-# ----------------------------------
+# Load hyperspectral and FLIM data
+# --------------------------------
 #
-# Load FLIM phasor coordinates from two detection channels and spectral
-# phasor coordinates. The data comes from LAURDAN fluorescence measurements
-# in SimFCS R64 format.
+# Load hyperspectral and FLIM signals from Zenodo dataset. This data
+# includes LAURDAN fluorescence measurements. Spectral signal data is
+# stored in LSM format, while FLIM data is in FBD format.
 
 frequency = 80.0  # MHz
 reference_lifetime = 2.5  # Coumarin 6 in ethanol lifetime in ns
+laser_factor = 0.99168
 
 # Read spectral signal
-signal_spectral = signal_from_lsm(fetch('04 NIH3T3LAURDAN8meanspectra.lsm'))
+spectral_signal = signal_from_lsm(fetch('04 NIH3T3LAURDAN8meanspectra.lsm'))
 
-# Read FLIM signals from first channel
-signal_flim_ch1 = signal_from_fbd(
-    fetch('04NIH3T3_LAURDAN_000$CC0Z.fbd'),
-    frame=-1,
-    channel=0,
-    laser_factor=0.99168,
-)
-calibration_signal_ch1 = signal_from_fbd(
-    fetch('cumarinech1_780LAURDAN_000$CC0Z.fbd'),
-    frame=1,
-    channel=0,
-    laser_factor=0.99168,
-)
+# Read FLIM signals from both channels and stack them
+flim_signal = numpy.stack(
+    [
+        signal_from_fbd(
+            fetch('04NIH3T3_LAURDAN_000$CC0Z.fbd'),
+            frame=-1,
+            channel=0,
+            laser_factor=laser_factor,
+        ),
+        signal_from_fbd(
+            fetch('04NIH3T3_LAURDAN_000$CC0Z.fbd'),
+            frame=-1,
+            channel=1,
+            laser_factor=laser_factor,
+        ),
+    ],
+    axis=0,
+)  # Shape: (channels, height, width, time)
 
-# Read FLIM signals from second channel
-signal_flim_ch2 = signal_from_fbd(
-    fetch('04NIH3T3_LAURDAN_000$CC0Z.fbd'),
-    frame=-1,
-    channel=1,
-    laser_factor=0.99168,
-)
-calibration_signal_ch2 = signal_from_fbd(
-    fetch('cumarinech2_780LAURDAN_000$CC0Z.fbd'),
-    frame=1,
-    channel=1,
-    laser_factor=0.99168,
-)
+calibration_signal = numpy.stack(
+    [
+        signal_from_fbd(
+            fetch('cumarinech1_780LAURDAN_000$CC0Z.fbd'),
+            frame=-1,
+            channel=0,
+            laser_factor=laser_factor,
+        ),
+        signal_from_fbd(
+            fetch('cumarinech2_780LAURDAN_000$CC0Z.fbd'),
+            frame=-1,
+            channel=1,
+            laser_factor=laser_factor,
+        ),
+    ],
+    axis=0,
+)  # Shape: (channels, height, width, time)
 
 # %%
 # Compute phasor coordinates from spectral signal
-mean_spectral, real_spectral, imag_spectral = phasor_from_signal(
-    signal_spectral, axis=0
+spectral_mean, spectral_real, spectral_imag = phasor_from_signal(
+    spectral_signal, axis=0
 )
 
-# Compute phasor coordinates from FLIM signals of first channel
-mean_flim_ch1, real_flim_ch1, imag_flim_ch1 = phasor_from_signal(
-    signal_flim_ch1
-)
-mean_calibration_ch1, real_calibration_ch1, imag_calibration_ch1 = (
-    phasor_from_signal(calibration_signal_ch1)
-)
-
-# Compute phasor coordinates from FLIM signals of second channel
-mean_flim_ch2, real_flim_ch2, imag_flim_ch2 = phasor_from_signal(
-    signal_flim_ch2
-)
-mean_calibration_ch2, real_calibration_ch2, imag_calibration_ch2 = (
-    phasor_from_signal(calibration_signal_ch2)
+# Compute phasor coordinates for both FLIM
+flim_mean, flim_real, flim_imag = phasor_from_signal(flim_signal)
+calibration_mean, calibration_real, calibration_imag = phasor_from_signal(
+    calibration_signal
 )
 
 # Calibrate FLIM signals from both channels
-real_flim_ch1, imag_flim_ch1 = phasor_calibrate(
-    real_flim_ch1,
-    imag_flim_ch1,
-    mean_calibration_ch1,
-    real_calibration_ch1,
-    imag_calibration_ch1,
+flim_real, flim_imag = phasor_calibrate(
+    flim_real,
+    flim_imag,
+    calibration_mean,
+    calibration_real,
+    calibration_imag,
     frequency=frequency,
     lifetime=reference_lifetime,
-)
-real_flim_ch2, imag_flim_ch2 = phasor_calibrate(
-    real_flim_ch2,
-    imag_flim_ch2,
-    mean_calibration_ch2,
-    real_calibration_ch2,
-    imag_calibration_ch2,
-    frequency=frequency,
-    lifetime=reference_lifetime,
+    skip_axis=0,
 )
 
 # %%
@@ -142,28 +134,23 @@ real_flim_ch2, imag_flim_ch2 = phasor_calibrate(
 # intensity to remove low signal pixels. Different thresholds are used
 # for FLIM and spectral data due to their different intensity ranges.
 
-# Filter and threshold spectral data (higher threshold due to higher intensities)
-mean_spectral, real_spectral, imag_spectral = phasor_filter_median(
-    mean_spectral, real_spectral, imag_spectral, repeat=3
+# Filter and threshold spectral data
+spectral_mean, spectral_real, spectral_imag = phasor_filter_median(
+    spectral_mean,
+    spectral_real,
+    spectral_imag,
+    repeat=3,
 )
-mean_spectral, real_spectral, imag_spectral = phasor_threshold(
-    mean_spectral, real_spectral, imag_spectral, mean_min=18
-)
-
-# Filter and threshold FLIM channel 1
-mean_flim_ch1, real_flim_ch1, imag_flim_ch1 = phasor_filter_median(
-    mean_flim_ch1, real_flim_ch1, imag_flim_ch1, repeat=3
-)
-mean_flim_ch1, real_flim_ch1, imag_flim_ch1 = phasor_threshold(
-    mean_flim_ch1, real_flim_ch1, imag_flim_ch1, mean_min=0.5
+spectral_mean, spectral_real, spectral_imag = phasor_threshold(
+    spectral_mean, spectral_real, spectral_imag, mean_min=18
 )
 
-# Filter and threshold FLIM channel 2
-mean_flim_ch2, real_flim_ch2, imag_flim_ch2 = phasor_filter_median(
-    mean_flim_ch2, real_flim_ch2, imag_flim_ch2, repeat=3
-)
-mean_flim_ch2, real_flim_ch2, imag_flim_ch2 = phasor_threshold(
-    mean_flim_ch2, real_flim_ch2, imag_flim_ch2, mean_min=0.5
+# Filter and threshold both FLIM channels
+flim_mean, flim_real, flim_imag = phasor_threshold(
+    *phasor_filter_median(
+        flim_mean, flim_real, flim_imag, repeat=3, skip_axis=0
+    ),
+    mean_min=0.5,
 )
 
 # %%
@@ -173,8 +160,8 @@ mean_flim_ch2, real_flim_ch2, imag_flim_ch2 = phasor_threshold(
 # Display the spectral phasor coordinates:
 
 plot_phasor(
-    real_spectral,
-    imag_spectral,
+    spectral_real,
+    spectral_imag,
     title='Spectral phasor coordinates',
     allquadrants=True,
 )
@@ -182,13 +169,15 @@ plot_phasor(
 # %%
 # Display the FLIM phasor coordinates for first channel:
 plot_phasor(
-    real_flim_ch1, imag_flim_ch1, title='FLIM phasor coordinates (channel 1)'
+    flim_real[0], flim_imag[0], title='FLIM phasor coordinates (First Channel)'
 )
 
 # %%
 # Display the FLIM phasor coordinates for second channel:
 plot_phasor(
-    real_flim_ch2, imag_flim_ch2, title='FLIM phasor coordinates (channel 2)'
+    flim_real[1],
+    flim_imag[1],
+    title='FLIM phasor coordinates (Second Channel)',
 )
 
 # %%
@@ -210,30 +199,29 @@ radius = 0.07
 
 # Create circular masks for each spectral region
 spectral_masks = mask_from_circular_cursor(
-    real_spectral,
-    imag_spectral,
+    spectral_real,
+    spectral_imag,
     spectral_centers_real,
     spectral_centers_imag,
     radius=radius,
 )
 
 # %%
-# Visualize spectral phasor plot with selection regions
-# -----------------------------------------------------
+# Spectral phasor plot with master cursors
+# ----------------------------------------
 #
 # Display the spectral phasor coordinates as a 2D histogram and overlay
 # the circular selection regions. These master cursors define the
 # classification scheme for the multidimensional analysis.
 
 spectral_phasor_plot = PhasorPlot(
-    title='Spectral phasor coordinates',
+    title='Spectral phasor plot with master cursors',
     allquadrants=True,
 )
 spectral_phasor_plot.hist2d(
-    real_spectral, imag_spectral, cmap='rainbow', bins=200
+    spectral_real, spectral_imag, cmap='Grays', bins=200
 )
 
-# Draw circular selection regions
 for i in range(len(spectral_centers_real)):
     spectral_phasor_plot.circle(
         spectral_centers_real[i],
@@ -246,8 +234,8 @@ for i in range(len(spectral_centers_real)):
 spectral_phasor_plot.show()
 
 # %%
-# Generate spectral pseudo-color image
-# -----------------------------------
+# Spectral pseudo-color image
+# ---------------------------
 #
 # Create a pseudo-colored image where each pixel is colored according to
 # its spectral classification based on the master dimension cursors.
@@ -259,8 +247,8 @@ plot_image(
 )
 
 # %%
-# Cross-correlate spectral masks with FLIM data
-# ---------------------------------------------
+# First FLIM channel phasor coordinates (spectrally classified)
+# -------------------------------------------------------------
 #
 # Apply the spectral classification masks (from the master dimension) to
 # the FLIM phasor coordinates to examine how pixels with different spectral
@@ -268,21 +256,20 @@ plot_image(
 # between spectral and lifetime characteristics.
 
 flim_ch1_phasor_plot = PhasorPlot(
-    title='FLIM channel 1 phasor coordinates (spectrally classified)',
+    title='First FLIM channel phasor coordinates (spectrally classified)',
 )
 
 # Plot FLIM coordinates for each spectral class
 for i in range(spectral_masks.shape[0]):
     flim_ch1_phasor_plot.plot(
-        real_flim_ch1[spectral_masks[i]],
-        imag_flim_ch1[spectral_masks[i]],
+        flim_real[0][spectral_masks[i]],
+        flim_imag[0][spectral_masks[i]],
         color=CATEGORICAL[i],
         alpha=0.05,
         markersize=0.5,
     )
 
 flim_ch1_phasor_plot.show()
-
 
 # %%
 # Define FLIM first channel as master dimension
@@ -297,34 +284,29 @@ flim_ch1_phasor_plot.show()
 flim_centers_real = numpy.array([0.35, 0.19, 0.27])
 flim_centers_imag = numpy.array([0.44, 0.38, 0.41])
 
-# Define radius for the circular masks in FLIM space
 flim_radius = 0.07
 
-# Create circular masks for each FLIM region
 flim_ch1_masks = mask_from_circular_cursor(
-    real_flim_ch1,
-    imag_flim_ch1,
+    flim_real[0],
+    flim_imag[0],
     flim_centers_real,
     flim_centers_imag,
     radius=flim_radius,
 )
 
 # %%
-# Visualize FLIM phasor plot with selection regions
-# -------------------------------------------------
+# First FLIM channel phasor plot with master cursors
+# --------------------------------------------------
 #
 # Display the FLIM phasor coordinates as a 2D histogram and overlay
 # the circular selection regions. FLIM channel 1 now serves as the master
 # dimension, with cursors defining the classification scheme.
 
 flim_selection_plot = PhasorPlot(
-    title='FLIM channel 1 phasor coordinates with selections',
+    title='First FLIM channel phasor plot with master cursors',
 )
-flim_selection_plot.hist2d(
-    real_flim_ch1, imag_flim_ch1, cmap='rainbow', bins=200
-)
+flim_selection_plot.hist2d(flim_real[0], flim_imag[0], cmap='Grays', bins=200)
 
-# Draw circular selection regions
 for i in range(len(flim_centers_real)):
     flim_selection_plot.circle(
         flim_centers_real[i],
@@ -337,8 +319,8 @@ for i in range(len(flim_centers_real)):
 flim_selection_plot.show()
 
 # %%
-# Generate FLIM pseudo-color image
-# -------------------------------
+# First FLIM channel pseudo-color image
+# -------------------------------------
 #
 # Create a pseudo-colored image where each pixel is colored according to
 # its FLIM classification based on the new master dimension cursors.
@@ -346,11 +328,11 @@ flim_selection_plot.show()
 flim_pseudo_color = pseudo_color(*flim_ch1_masks)
 plot_image(
     flim_pseudo_color,
-    title='FLIM pseudo-color image (channel 1)',
+    title='First FLIM channel pseudo-color image',
 )
 
 # %%
-# Cross-correlate FLIM masks with spectral data
+# Spectral phasor coordinates (FLIM classified)
 # ---------------------------------------------
 #
 # Apply the FLIM classification masks (from the new master dimension) to
@@ -358,27 +340,9 @@ plot_image(
 # lifetime properties distribute in the spectral phasor space. This shows
 # the correlation from the lifetime perspective.
 
+# Plot zoomed spectral coordinates defined by FLIM master cursors
 spectral_correlation_plot = PhasorPlot(
     title='Spectral phasor coordinates (FLIM classified)',
-    allquadrants=True,
-)
-
-# Plot spectral coordinates for each FLIM class defined by master cursors
-for i in range(flim_ch1_masks.shape[0]):
-    spectral_correlation_plot.plot(
-        real_spectral[flim_ch1_masks[i]],
-        imag_spectral[flim_ch1_masks[i]],
-        color=CATEGORICAL[i],
-        alpha=0.05,
-        markersize=0.5,
-    )
-
-spectral_correlation_plot.show()
-
-# %%
-# Zoomed section of the spectral phasor plot
-spectral_correlation_plot_zoom = PhasorPlot(
-    title='Zoomed spectral phasor coordinates (FLIM classified)',
     allquadrants=True,
     xlim=(-0.1, 0.4),
     ylim=(0.6, 0.8),
@@ -386,19 +350,19 @@ spectral_correlation_plot_zoom = PhasorPlot(
     yticks=[0.6, 0.7, 0.8],
 )
 for i in range(flim_ch1_masks.shape[0]):
-    spectral_correlation_plot_zoom.plot(
-        real_spectral[flim_ch1_masks[i]],
-        imag_spectral[flim_ch1_masks[i]],
+    spectral_correlation_plot.plot(
+        spectral_real[flim_ch1_masks[i]],
+        spectral_imag[flim_ch1_masks[i]],
         color=CATEGORICAL[i],
         alpha=0.05,
         markersize=1,
     )
 
-spectral_correlation_plot_zoom.show()
+spectral_correlation_plot.show()
 
 # %%
-# Compare both channels of FLIM data
-# ---------------------------------
+# Second FLIM channel phasor coordinates classified by first FLIM channel
+# -----------------------------------------------------------------------
 #
 # Analyze how the same spectral regions (defined by the original spectral
 # master cursors) appear in both FLIM detection channels to understand
@@ -406,14 +370,16 @@ spectral_correlation_plot_zoom.show()
 # classification as the reference.
 
 flim_ch2_phasor_plot = PhasorPlot(
-    title='FLIM channel 2 phasor coordinates (spectrally classified)',
+    title=(
+        'Second FLIM channel phasor coordinates classified by first FLIM channel'
+    ),
 )
 
 # Plot FLIM channel 2 coordinates using spectral master classification
 for i in range(spectral_masks.shape[0]):
     flim_ch2_phasor_plot.plot(
-        real_flim_ch2[spectral_masks[i]],
-        imag_flim_ch2[spectral_masks[i]],
+        flim_real[1][spectral_masks[i]],
+        flim_imag[1][spectral_masks[i]],
         color=CATEGORICAL[i],
         alpha=0.05,
         markersize=0.5,
@@ -422,6 +388,5 @@ for i in range(spectral_masks.shape[0]):
 flim_ch2_phasor_plot.show()
 
 # %%
-# sphinx_gallery_thumbnail_number = -5
+# sphinx_gallery_thumbnail_number = 5
 # mypy: allow-untyped-defs, allow-untyped-calls
-# %%
