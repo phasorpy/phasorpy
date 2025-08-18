@@ -20,6 +20,8 @@ Datasets from the following repositories are available:
   <https://zenodo.org/records/15007900>`_
 - `FLIM and spectral dataset for GSLab
   <https://figshare.com/articles/dataset/FLIM_dataset_for_GSLab/28067108>`_
+- `Hyperspectral and FLIM dataset of LAURDAN-Stained NIH-3T3 Cells
+  <https://zenodo.org/records/16894639>`_
 
 The implementation is based on the `Pooch <https://www.fatiando.org/pooch>`_
 library.
@@ -506,6 +508,34 @@ FIGSHARE_22336594_EXPORTED = pooch.create(
     },
 )
 
+ZENODO_16894639 = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/zenodo_16894639'
+        if DATA_ON_GITHUB
+        else 'doi:10.5281/zenodo.16894639'
+    ),
+    env=ENV,
+    registry={
+        '04 NIH3T3LAURDAN8meanspectra.lsm': (
+            'sha256:'
+            '27173be5b57a1a0f40ad6e89df1fd1d6d20bdd1e0a80e469acb47cf0bc103a1c'
+        ),
+        '04NIH3T3_LAURDAN_000$CC0Z.fbd': (
+            'sha256:'
+            '9c8e7d79ef6ce4cce7366c843d34f5b4544f4123fe88307b8df5954a1fe4a799'
+        ),
+        'cumarinech1_780LAURDAN_000$CC0Z.fbd': (
+            'sha256:'
+            '1b7b513680973c79df697b9cefdf2104f5d32346e24c9071336f76a7b82e9313'
+        ),
+        'cumarinech2_780LAURDAN_000$CC0Z.fbd': (
+            'sha256:'
+            '5c9cf9694652cc9c344e67b5650fd49683fa7fdcec39e56ccbf0bdd2f7dadf15'
+        ),
+    },
+)
+
 MISC = pooch.create(
     path=pooch.os_cache('phasorpy'),
     base_url='https://github.com/phasorpy/phasorpy-data/raw/main/misc',
@@ -531,6 +561,7 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'figshare_28067108': FIGSHARE_28067108,
     'figshare_22336594': FIGSHARE_22336594,
     'figshare_22336594_exported': FIGSHARE_22336594_EXPORTED,
+    'zenodo-16894639': ZENODO_16894639,
     'misc': MISC,
 }
 """Dictionary mapping repository names to Pooch repository objects.
