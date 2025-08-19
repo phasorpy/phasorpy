@@ -291,7 +291,7 @@ def test_cursors_on_grid():
 
     from matplotlib import pyplot
 
-    show = True  # enable to see figure
+    show = False  # enable to see figure
 
     def plot_mask(real, imag, mask, **kwargs):
         show = 'ax' not in kwargs
