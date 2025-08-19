@@ -171,6 +171,7 @@ class PhasorPlot:
             ylim=ylim,
             xticks=xticks,
             yticks=yticks,
+            aspect='equal',
         )
         for key in ('xlim', 'ylim', 'xticks', 'yticks', 'title'):
             if kwargs[key] is None:
@@ -181,7 +182,6 @@ class PhasorPlot:
             self._ax.set_xlim(kwargs['xlim'])
         if 'ylim' in kwargs:
             self._ax.set_ylim(kwargs['ylim'])
-        self.ax.set_aspect('equal', adjustable='box')
 
     @property
     def ax(self) -> Axes:
