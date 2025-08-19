@@ -173,7 +173,7 @@ plot_phasor(real, imag, fmt='o-', frequency=frequency)
 
 frequency = 80.0  # MHz
 mean, real, imag, attrs = phasor_from_simfcs_referenced(
-    fetch('capillaries1001.ref'), harmonic=[1, 2]
+    fetch('capillaries1001.ref'), harmonic=(1, 2)
 )
 
 # %%
@@ -344,8 +344,8 @@ plot.plot(
 plot.plot(
     *phasor_from_lifetime(
         frequency,
-        lifetime=[4.0, 0.5],
-        fraction=[1.0, -1.0],
+        lifetime=(4.0, 0.5),
+        fraction=(1.0, -1.0),
         preexponential=True,
     ),
     label='Acceptor sensitized',
@@ -363,7 +363,7 @@ plot = PhasorPlot(frequency=frequency, title='Donors fretting')
 plot.plot(*phasor_from_lifetime(frequency, lifetime=4.0), label='no FRET')
 plot.plot(*phasor_from_lifetime(frequency, lifetime=2.0), label='50% FRET')
 plot.plot(
-    *phasor_from_lifetime(frequency, lifetime=[4.0, 2.0], fraction=[0.5, 0.5]),
+    *phasor_from_lifetime(frequency, lifetime=(4.0, 2.0), fraction=(0.5, 0.5)),
     label='50% FRET, 50% fretting',
 )
 plot.show()
@@ -397,7 +397,7 @@ plot_phasor_image(mean2, real2, imag2, title='1011rac1002.ref')
 frequency = 80.0  # MHz
 
 plot = PhasorPlot(frequency=frequency, title='CFPpax8651866 and 1011rac1002')
-plot.hist2d([real1, real2], [imag1, imag2], cmap='Blues', cmin=4)
+plot.hist2d((real1, real2), (imag1, imag2), cmap='Blues', cmin=4)
 plot.show()
 
 # %%
@@ -484,8 +484,8 @@ donor_lifetime = numpy.mean(
 plot = PhasorPlot(
     frequency=frequency,
     title='FRET Donor (green) and background (black)',
-    xlim=[0.45, 0.94],
-    ylim=[0.15, 0.55],
+    xlim=(0.45, 0.94),
+    ylim=(0.15, 0.55),
 )
 plot.hist2d(real, imag)
 plot.circle(*donor_phasor, radius=0.03, linestyle='-', color='tab:green')
@@ -523,18 +523,18 @@ fretting2_trajectory = phasor_from_fret_donor(**settings, fret_efficiency=0.32)
 plot = PhasorPlot(
     frequency=frequency,
     title='FRET trajectories',
-    xlim=[0.45, 0.94],
-    ylim=[0.15, 0.55],
+    xlim=(0.45, 0.94),
+    ylim=(0.15, 0.55),
 )
 plot.hist2d(real, imag)
-plot.circle(*donor_phasor, radius=0.03, linestyle='-', color='tab:green')
-plot.circle(*background_phasor, radius=0.03, linestyle='-', color='dimgrey')
+plot.cursor(*donor_phasor, radius=0.03, color='tab:green')
+plot.cursor(*background_phasor, radius=0.03, color='dimgrey')
 plot.plot(*quenching_trajectory, fmt='-', color='tab:grey')
 plot.plot(*fretting1_trajectory, fmt='-', color='tab:grey')
 plot.plot(*fretting2_trajectory, fmt='-', color='tab:grey')
 plot.line(
-    [background_phasor[0], donor_phasor[0]],
-    [background_phasor[1], donor_phasor[1]],
+    (background_phasor[0], donor_phasor[0]),
+    (background_phasor[1], donor_phasor[1]),
     linestyle='-',
     color='tab:green',
 )

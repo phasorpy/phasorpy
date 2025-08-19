@@ -36,8 +36,8 @@ from phasorpy.plot import PhasorPlot
 # frequency:
 
 frequency = 80.0  # MHz
-lifetime = (0.4, 4.0)  # ns
-fraction = (0.6, 0.4)
+lifetime = 0.4, 4.0  # ns
+fraction = 0.6, 0.4
 
 real, imag = phasor_from_lifetime(frequency, lifetime, fraction)
 phase, modulation = phasor_to_polar(real, imag)
@@ -62,15 +62,14 @@ textoffset = 0.01
 
 plot = PhasorPlot(
     title='Geometrical interpretation of lifetimes in the phasor plot',
-    frequency=frequency,
-    xlabel='',
-    ylabel='',
-    xticks=[0, 0.5, 1],
-    yticks=[0, 0.5],
-    xticklabels=['0', '1/2', '1'],
-    yticklabels=['0', '1/2'],
     xlim=(0.0, 1.01),
     ylim=(0.0, 0.6),
+    xticks=(0, 0.5, 1),
+    yticks=(0, 0.5),
+    xticklabels=('0', '1/2', '1'),
+    yticklabels=('0', '1/2'),
+    xlabel=None,
+    ylabel=None,
     grid=False,
 )
 plot.ax.tick_params(axis='both', which='major', labelsize=fontsize * 2 / 3)
@@ -79,13 +78,9 @@ plot.ax.spines['right'].set_visible(False)
 # plot.ax.spines['left'].set_linewidth(linewidth)
 # plot.ax.spines['bottom'].set_linewidth(linewidth)
 
-plot.semicircle(
-    # frequency,
-    linewidth=linewidth,
-    color='tab:gray',
-    zorder=0,
-)
+plot.semicircle(color='tab:gray', linewidth=linewidth, zorder=0)
 
+# line to G coordinate
 plot.line(
     (real, real),
     (0.0, imag),
@@ -95,6 +90,7 @@ plot.line(
     zorder=0,
 )
 
+# line to S coordinate
 plot.line(
     (real, 0),
     (imag, imag),
@@ -107,14 +103,7 @@ plot.line(
 component_real = numpy.atleast_1d(component_real)
 component_imag = numpy.atleast_1d(component_imag)
 
-for i in range(len(lifetime)):
-    plot.arrow(
-        (real, imag),
-        (component_real[i], component_imag[i]),
-        color=color_component,
-        linewidth=linewidth,
-    )
-
+# arc indicating phase angle
 plot.arrow(
     (modulation / 4, 0.0),
     (real / 4, imag / 4),
@@ -124,45 +113,7 @@ plot.arrow(
     linewidth=linewidth,
 )
 
-plot.arrow(
-    (0.5, 0.0),
-    (real, imag),
-    color=color_normal,
-    arrowstyle='-',
-    linewidth=linewidth,
-)
-
-plot.arrow(
-    (modulation, 0.0),
-    (real, imag),
-    angle=phase,
-    color=color_modulation,
-    arrowstyle='-',
-    linewidth=linewidth,
-)
-
-plot.arrow(
-    (real, imag),
-    (tau_phi_re, tau_phi_im),
-    color=color_phase,
-    linewidth=linewidth,
-)
-
-plot.arrow(
-    (real, imag),
-    (tau_mod_re, tau_mod_im),
-    angle=phase,
-    color=color_modulation,
-    linewidth=linewidth,
-)
-
-plot.arrow(
-    (real, imag),
-    (tau_norm_re, tau_norm_im),
-    color=color_normal,
-    linewidth=linewidth,
-)
-
+# phase line
 plot.arrow(
     (0, 0),
     (real, imag),
@@ -172,6 +123,60 @@ plot.arrow(
     # zorder=1,
 )
 
+# modulation arc
+plot.arrow(
+    (modulation, 0.0),
+    (real, imag),
+    angle=phase,
+    color=color_modulation,
+    arrowstyle='-',
+    linewidth=linewidth,
+)
+
+# normal lifetime line
+plot.arrow(
+    (0.5, 0.0),
+    (real, imag),
+    color=color_normal,
+    arrowstyle='-',
+    linewidth=linewidth,
+)
+
+# arrows to single lifetimes
+for i in range(len(lifetime)):
+    plot.arrow(
+        (real, imag),
+        (component_real[i], component_imag[i]),
+        color=color_component,
+        linewidth=linewidth,
+    )
+
+# arrow to phase lifetime
+plot.arrow(
+    (real, imag),
+    (tau_phi_re, tau_phi_im),
+    color=color_phase,
+    linewidth=linewidth,
+)
+
+# arced arrow to modulation lifetime
+plot.arrow(
+    (real, imag),
+    (tau_mod_re, tau_mod_im),
+    angle=phase,
+    color=color_modulation,
+    linewidth=linewidth,
+)
+
+# arrow to normal lifetime
+plot.arrow(
+    (real, imag),
+    (tau_norm_re, tau_norm_im),
+    color=color_normal,
+    linewidth=linewidth,
+)
+
+# mark phasor coordinate
 plot.plot(
     real,
     imag,
@@ -183,68 +188,75 @@ plot.plot(
     zorder=1,
 )
 
-plot.ax.text(
-    -textoffset,
-    imag,
-    '$S$',
-    fontsize=fontsize,
-    ha='right',
-    va='center',
-    color=color_phasor,
-)
-
+# label G
 plot.ax.text(
     real,
     -textoffset,
     '$G$',
+    color=color_phasor,
     fontsize=fontsize,
     ha='center',
     va='top',
-    color=color_phasor,
 )
 
+# label S
+plot.ax.text(
+    -textoffset,
+    imag,
+    '$S$',
+    color=color_phasor,
+    fontsize=fontsize,
+    ha='right',
+    va='center',
+)
+
+# label phase
 plot.ax.text(
     modulation / 4 + textoffset,
     imag / 8,
     '$\\varphi$',
+    color=color_phase,
     fontsize=fontsize,
     ha='left',
     va='center',
-    color=color_phase,
 )
 
+# label modulation
 plot.ax.text(
     modulation,
     -textoffset,
     '$M$',
+    color=color_modulation,
     fontsize=fontsize,
     ha='center',
     va='top',
-    color=color_modulation,
 )
 
+# label single lifetimes
+plot.components(
+    component_real,
+    component_imag,
+    fraction=fraction,
+    labels=['$\\tau_{%d}$' % i for i in range(len(lifetime))],
+    color=color_component,
+    fontsize=fontsize,
+    linestyle=' ',
+)
+
+# label fractions of single lifetimes
 if len(lifetime) == 2:
     for i in range(len(lifetime)):
         plot.ax.text(
             real + (component_real[i] - real) / 2,
             imag + (component_imag[i] - imag) / 2 - textoffset,
             '$\\alpha_{%i}$' % i,
+            color=color_component,
             fontsize=fontsize,
             ha='center',
             va='top',
-            color=color_component,
         )
 
-plot.components(
-    component_real,
-    component_imag,
-    fraction=fraction,
-    labels=['$\\tau_{%d}$' % i for i in range(len(lifetime))],
-    fontsize=fontsize,
-    ls=' ',
-    color=color_component,
-)
-
+# label phase lifetime
 plot.components(
     tau_phi_re,
     tau_phi_im,
@@ -253,20 +265,22 @@ plot.components(
     color=color_phase,
 )
 
+# label modulation lifetime
 plot.components(
     tau_mod_re,
     tau_mod_im,
     labels=['$\\tau_{M}$'],
-    fontsize=fontsize,
     color=color_modulation,
+    fontsize=fontsize,
 )
 
+# label normal lifetime
 plot.components(
     tau_norm_re,
     tau_norm_im,
     labels=['$\\tau_{N}$'],
-    fontsize=fontsize,
     color=color_normal,
+    fontsize=fontsize,
 )
 
 plot.show()

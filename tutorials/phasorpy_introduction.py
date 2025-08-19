@@ -368,17 +368,10 @@ cursor_masks = mask_from_circular_cursor(
 
 from phasorpy.plot import PhasorPlot
 
-phasorplot = PhasorPlot(frequency=frequency, title='Cursors')
-phasorplot.hist2d(real, imag)
-for i in range(len(cursor_real)):
-    phasorplot.circle(
-        cursor_real[i],
-        cursor_imag[i],
-        radius=radius[i],
-        color=CATEGORICAL[i],
-        linestyle='-',
-    )
-phasorplot.show()
+plot = PhasorPlot(frequency=frequency, title='Cursors')
+plot.hist2d(real, imag)
+plot.cursor(cursor_real, cursor_imag, radius=radius, color=CATEGORICAL[:2])
+plot.show()
 
 # %%
 # Blend the cursor masks with the mean intensity image to produce a
@@ -438,7 +431,7 @@ plot_phasor(
     title='Hyperspectral phasor plot',
     allquadrants=True,
     pad=0.2,  # make space for labels
-    grid={'ticks': [450, 500, 550, 600, 650, 700], 'tick_space': wavelengths},
+    grid={'ticks': (450, 500, 550, 600, 650, 700), 'tick_space': wavelengths},
 )
 
 # %%
@@ -454,19 +447,17 @@ center_real, center_imag, radius, radius_minor, angle = phasor_cluster_gmm(
     real, imag, clusters=2
 )
 
-phasorplot = PhasorPlot(allquadrants=True, title='Elliptical clusters')
-phasorplot.hist2d(real, imag, cmap='Greys')
-for i in range(len(center_real)):
-    phasorplot.cursor(
-        center_real[i],
-        center_imag[i],
-        radius=radius[i],
-        radius_minor=radius_minor[i],
-        angle=angle[i],
-        color=CATEGORICAL[i],
-        linestyle='-',
-    )
-phasorplot.show()
+plot = PhasorPlot(allquadrants=True, title='Elliptical clusters')
+plot.hist2d(real, imag, cmap='Greys')
+plot.cursor(
+    center_real,
+    center_imag,
+    radius=radius,
+    radius_minor=radius_minor,
+    angle=angle,
+    color=CATEGORICAL[:2],
+)
+plot.show()
 
 # %%
 # Use the elliptic clusters to mask regions of interest in the phasor space:

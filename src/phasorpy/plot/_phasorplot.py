@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .._typing import Any, ArrayLike, NDArray, IO
+    from .._typing import Any, ArrayLike, Literal, NDArray, IO
 
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
@@ -18,8 +18,16 @@ if TYPE_CHECKING:
 import numpy
 from matplotlib import pyplot
 from matplotlib.font_manager import FontProperties
+from matplotlib.legend import Legend
 from matplotlib.lines import Line2D
-from matplotlib.patches import Arc, Circle, Ellipse, FancyArrowPatch, Polygon
+from matplotlib.patches import (
+    Arc,
+    Circle,
+    Ellipse,
+    FancyArrowPatch,
+    Polygon,
+    Rectangle,
+)
 from matplotlib.path import Path
 from matplotlib.patheffects import AbstractPathEffect
 
@@ -37,7 +45,7 @@ from ..lifetime import (
     phasor_semicircle,
     phasor_to_apparent_lifetime,
 )
-from ..phasor import phasor_transform
+from ..phasor import phasor_to_polar, phasor_transform
 
 GRID_COLOR = '0.5'
 GRID_LINESTYLE = ':'
@@ -83,11 +91,11 @@ class PhasorPlot:
     _ax: Axes
     """Matplotlib axes."""
 
-    _limits: tuple[tuple[float, float], tuple[float, float]]
-    """Axes limits (xmin, xmax), (ymin, ymax)."""
-
     _full: bool
     """Show all quadrants of phasor space."""
+
+    _labels: bool
+    """Plot has labels attached."""
 
     _semicircle_ticks: CircleTicks | None
     """Last CircleTicks instance created for semicircle."""
@@ -114,6 +122,7 @@ class PhasorPlot:
         self._ax.format_coord = (  # type: ignore[method-assign]
             self._on_format_coord
         )
+        self._labels = False
 
         if grid is None:
             grid_kwargs = {}
@@ -158,14 +167,21 @@ class PhasorPlot:
             title=title,
             xlabel='G, real',
             ylabel='S, imag',
-            aspect='equal',
             xlim=xlim,
             ylim=ylim,
             xticks=xticks,
             yticks=yticks,
         )
-        self._limits = (kwargs['xlim'], kwargs['ylim'])
+        for key in ('xlim', 'ylim', 'xticks', 'yticks', 'title'):
+            if kwargs[key] is None:
+                del kwargs[key]
         self._ax.set(**kwargs)
+        # set axis limits after ticks
+        if 'xlim' in kwargs:
+            self._ax.set_xlim(kwargs['xlim'])
+        if 'ylim' in kwargs:
+            self._ax.set_ylim(kwargs['ylim'])
+        self.ax.set_aspect('equal', adjustable='box')
 
     @property
     def ax(self) -> Axes:
@@ -192,8 +208,21 @@ class PhasorPlot:
 
     def show(self) -> None:
         """Display all open figures. Call :py:func:`matplotlib.pyplot.show`."""
+        if self._labels:
+            self._ax.legend()
         # self.fig.show()
         pyplot.show()
+
+    def legend(self, **kwargs: Any) -> Legend:
+        """Add legend to plot.
+
+        Parameters
+        ----------
+        **kwargs
+            Keyword arguments passed to :py:func:`matplotlib.axes.Axes.legend`.
+
+        """
+        return self._ax.legend(**kwargs)
 
     def save(
         self,
@@ -274,12 +303,11 @@ class PhasorPlot:
             if label is not None:
                 try:
                     lbl = label[i]
+                    if lbl is not None:
+                        self._labels = True
                 except IndexError:
                     pass
             lines = ax.plot(re, im, *args, label=lbl, **kwargs)
-        if label is not None:
-            ax.legend()
-        self._reset_limits()
         return lines
 
     def _histogram2d(
@@ -290,7 +318,7 @@ class PhasorPlot:
         **kwargs: Any,
     ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
         """Return two-dimensional histogram of imag versus real coordinates."""
-        update_kwargs(kwargs, range=self._limits)
+        update_kwargs(kwargs, range=(self._ax.get_xlim(), self._ax.get_ylim()))
         (xmin, xmax), (ymin, ymax) = kwargs['range']
         assert xmax > xmin and ymax > ymin
         bins = kwargs.get('bins', 128)
@@ -307,13 +335,6 @@ class PhasorPlot:
             numpy.asanyarray(imag).reshape(-1),
             **kwargs,
         )
-
-    def _reset_limits(self) -> None:
-        """Reset axes limits."""
-        try:
-            self._ax.set(xlim=self._limits[0], ylim=self._limits[1])
-        except AttributeError:
-            pass
 
     def hist2d(
         self,
@@ -349,7 +370,10 @@ class PhasorPlot:
         if cmax is not None:
             h[h > cmax] = None
         self._ax.pcolormesh(xedges, yedges, h.T, **kwargs)
-        self._reset_limits()
+
+        # TODO: create custom labels for pcolormesh?
+        # if 'label' in kwargs:
+        #     self._labels = True
 
     def contour(
         self,
@@ -382,7 +406,10 @@ class PhasorPlot:
         xedges = xedges[:-1] + ((xedges[1] - xedges[0]) / 2.0)
         yedges = yedges[:-1] + ((yedges[1] - yedges[0]) / 2.0)
         self._ax.contour(xedges, yedges, h.T, **kwargs)
-        self._reset_limits()
+
+        # TODO: create custom labels for contour?
+        # if 'label' in kwargs:
+        #     self._labels = True
 
     def imshow(
         self,
@@ -477,11 +504,13 @@ class PhasorPlot:
                 )
 
         if fraction is None:
+            linestyle = kwargs.pop('ls', GRID_LINESTYLE)
+            linewidth = kwargs.pop('lw', GRID_LINEWIDTH)
             update_kwargs(
                 kwargs,
                 edgecolor=GRID_COLOR if color is None else color,
-                linestyle=GRID_LINESTYLE,
-                linewidth=GRID_LINEWIDTH,
+                linestyle=linestyle,
+                linewidth=linewidth,
                 fill=GRID_FILL,
             )
             self._ax.add_patch(Polygon(numpy.vstack((real, imag)).T, **kwargs))
@@ -495,22 +524,24 @@ class PhasorPlot:
                     label=label_,
                 )
                 if label_ is not None:
-                    self._ax.legend()
+                    self._labels = True
             return
 
         fraction = numpy.asarray(fraction)[indices]
+        linestyle = kwargs.pop('ls', GRID_LINESTYLE)
+        linewidth = kwargs.pop('lw', GRID_LINEWIDTH)
         update_kwargs(
             kwargs,
             color=GRID_COLOR if color is None else color,
-            linestyle=GRID_LINESTYLE,
-            linewidth=GRID_LINEWIDTH,
+            linestyle=linestyle,
+            linewidth=linewidth,
         )
         center_re, center_im = numpy.average(
             numpy.vstack((real, imag)), axis=-1, weights=fraction
         )
         for re, im in zip(real, imag):
             self._ax.add_line(
-                Line2D([center_re, re], [center_im, im], **kwargs)
+                Line2D((center_re, re), (center_im, im), **kwargs)
             )
         if marker is not None:
             self._ax.plot(real, imag, marker=marker, linestyle='', color=color)
@@ -523,7 +554,7 @@ class PhasorPlot:
                 label=label_,
             )
             if label_ is not None:
-                self._ax.legend()
+                self._labels = True
 
     def line(
         self,
@@ -550,11 +581,10 @@ class PhasorPlot:
             List containing plotted line.
 
         """
+        linestyle = kwargs.pop('ls', GRID_LINESTYLE)
+        linewidth = kwargs.pop('lw', GRID_LINEWIDTH)
         update_kwargs(
-            kwargs,
-            color=GRID_COLOR,
-            linestyle=GRID_LINESTYLE,
-            linewidth=GRID_LINEWIDTH,
+            kwargs, color=GRID_COLOR, linestyle=linestyle, linewidth=linewidth
         )
         return [self._ax.add_line(Line2D(real, imag, **kwargs))]
 
@@ -581,11 +611,13 @@ class PhasorPlot:
             :py:class:`matplotlib.patches.Circle`.
 
         """
+        linestyle = kwargs.pop('ls', GRID_LINESTYLE)
+        linewidth = kwargs.pop('lw', GRID_LINEWIDTH)
         update_kwargs(
             kwargs,
             color=GRID_COLOR,
-            linestyle=GRID_LINESTYLE,
-            linewidth=GRID_LINEWIDTH,
+            linestyle=linestyle,
+            linewidth=linewidth,
             fill=GRID_FILL,
         )
         self._ax.add_patch(Circle((real, imag), radius, **kwargs))
@@ -601,7 +633,7 @@ class PhasorPlot:
     ) -> None:
         """Draw arrow between points.
 
-        By default, draw a straight arrow with a `'-|>'` style, a mutation
+        By default, draw a straight arrow with a ``'-|>'`` style, a mutation
         scale of 20, and a miter join style.
 
         Parameters
@@ -637,43 +669,55 @@ class PhasorPlot:
 
     def cursor(
         self,
-        real: float,
-        imag: float,
+        real: ArrayLike,
+        imag: ArrayLike,
+        real_limit: ArrayLike | None = None,
+        imag_limit: ArrayLike | None = None,
         /,
-        real_limit: float | None = None,
-        imag_limit: float | None = None,
-        radius: float | None = None,
-        radius_minor: float | None = None,
-        angle: float | None = None,
-        align_semicircle: bool = False,
+        *,
+        radius: ArrayLike | None = None,
+        radius_minor: ArrayLike | None = None,
+        angle: ArrayLike | Literal['phase', 'semicircle'] | str | None = None,
+        color: ArrayLike | None = None,
+        label: ArrayLike | None = None,
+        crosshair: bool = False,
+        polar: bool = False,
         **kwargs: Any,
     ) -> None:
-        """Plot phase and modulation grid lines and arcs at phasor coordinates.
+        """Draw cursor(s) at phasor coordinates.
 
         Parameters
         ----------
-        real : float
+        real : array_like
             Real component of phasor coordinate.
-        imag : float
+        imag : array_like
             Imaginary component of phasor coordinate.
-        real_limit : float, optional
+        real_limit : array_like, optional
             Real component of limiting phasor coordinate.
-        imag_limit : float, optional
+        imag_limit : array_like, optional
             Imaginary component of limiting phasor coordinate.
-        radius : float, optional
-            Radius of circle limiting phase and modulation grid lines and arcs.
-        radius_minor : float, optional
+        radius : array_like, optional
+            Radius of circular cursor.
+        radius_minor : array_like, optional
             Radius of elliptic cursor along semi-minor axis.
             By default, `radius_minor` is equal to `radius`, that is,
             the ellipse is circular.
-        angle : float, optional
+        angle : array_like or {'phase', 'semicircle'}, optional
             Rotation angle of semi-major axis of elliptic cursor in radians.
-            If None (default), orient ellipse cursor according to
-            `align_semicircle`.
-        align_semicircle : bool, optional
-            Determines elliptic cursor orientation if `angle` is not provided.
-            If true, align the minor axis of the ellipse with the closest
-            tangent on the universal semicircle, else align to the unit circle.
+            If None or 'phase', align the minor axis of the ellipse with
+            the closest tangent on the unit circle.
+            If 'semicircle', align the ellipse with the universal semicircle.
+        color : array_like, optional
+            Color of cursor.
+        label : array_like, optional
+            String label for cursor.
+        crosshair : bool, optional
+            If true, draw polar or Cartesian lines or arcs limited by radius.
+            Else, draw circle or ellipse (default).
+            Only applies if `radius` is provided.
+        polar : bool, optional
+            If true, draw phase line and modulation arc.
+            Else, draw Cartesian lines.
         **kwargs
             Additional parameters passed to
             :py:class:`matplotlib.lines.Line2D`,
@@ -688,64 +732,83 @@ class PhasorPlot:
         """
         if real_limit is not None and imag_limit is not None:
             return self.polar_cursor(
-                *phasor_to_polar_scalar(real, imag),
-                *phasor_to_polar_scalar(real_limit, imag_limit),
+                *phasor_to_polar(real, imag),
+                *phasor_to_polar(real_limit, imag_limit),
                 radius=radius,
                 radius_minor=radius_minor,
                 angle=angle,
-                align_semicircle=align_semicircle,
+                color=color,
+                label=label,
+                crosshair=crosshair,
+                polar=polar,
                 **kwargs,
             )
         return self.polar_cursor(
-            *phasor_to_polar_scalar(real, imag),
+            *phasor_to_polar(real, imag),
             radius=radius,
             radius_minor=radius_minor,
             angle=angle,
-            align_semicircle=align_semicircle,
-            # _circle_only=True,
+            color=color,
+            label=label,
+            crosshair=crosshair,
+            polar=polar,
             **kwargs,
         )
 
     def polar_cursor(
         self,
-        phase: float | None = None,
-        modulation: float | None = None,
-        phase_limit: float | None = None,
-        modulation_limit: float | None = None,
-        radius: float | None = None,
-        radius_minor: float | None = None,
-        angle: float | None = None,
-        align_semicircle: bool = False,
+        phase: ArrayLike | None = None,
+        modulation: ArrayLike | None = None,
+        phase_limit: ArrayLike | None = None,
+        modulation_limit: ArrayLike | None = None,
+        *,
+        radius: ArrayLike | None = None,
+        radius_minor: ArrayLike | None = None,
+        angle: ArrayLike | Literal['phase', 'semicircle'] | str | None = None,
+        color: ArrayLike | None = None,
+        label: ArrayLike | None = None,
+        crosshair: bool = False,
+        polar: bool = True,
         **kwargs: Any,
     ) -> None:
-        """Plot phase and modulation grid lines and arcs.
+        """Draw cursor(s) at polar coordinates.
 
         Parameters
         ----------
-        phase : float, optional
+        phase : array_like, optional
             Angular component of polar coordinate in radians.
-        modulation : float, optional
+        modulation : array_like, optional
             Radial component of polar coordinate.
-        phase_limit : float, optional
+        phase_limit : array_like, optional
             Angular component of limiting polar coordinate (in radians).
-            Modulation grid arcs are drawn between `phase` and `phase_limit`.
-        modulation_limit : float, optional
+            Modulation arcs are drawn between `phase` and `phase_limit`
+            if `polar` is true.
+        modulation_limit : array_like, optional
             Radial component of limiting polar coordinate.
-            Phase grid lines are drawn from `modulation` to `modulation_limit`.
-        radius : float, optional
-            Radius of circle limiting phase and modulation grid lines and arcs.
-        radius_minor : float, optional
+            Phase lines are drawn from `modulation` to `modulation_limit`
+            if `polar` is true.
+        radius : array_like, optional
+            Radius of circular cursor.
+        radius_minor : array_like, optional
             Radius of elliptic cursor along semi-minor axis.
             By default, `radius_minor` is equal to `radius`, that is,
             the ellipse is circular.
-        angle : float, optional
+        angle : array_like or {'phase', 'semicircle'}, optional
             Rotation angle of semi-major axis of elliptic cursor in radians.
-            If None (default), orient ellipse cursor according to
-            `align_semicircle`.
-        align_semicircle : bool, optional
-            Determines elliptic cursor orientation if `angle` is not provided.
-            If true, align the minor axis of the ellipse with the closest
-            tangent on the universal semicircle, else align to the unit circle.
+            If None or 'phase', align the minor axis of the ellipse with
+            the closest tangent on the unit circle.
+            If 'semicircle', align the ellipse with the universal semicircle.
+        color : array_like, optional
+            Color of cursor.
+        label : array_like, optional
+            String label for cursor.
+        crosshair : bool, optional
+            If true, draw polar or Cartesian lines or arcs limited by radius.
+            Else, draw circle or ellipse (default).
+            Only applies if `radius` is provided.
+        polar : bool, optional
+            If true, draw phase line and modulation arc.
+            Else, draw Cartesian lines.
         **kwargs
             Additional parameters passed to
             :py:class:`matplotlib.lines.Line2D`,
@@ -758,44 +821,169 @@ class PhasorPlot:
         phasorpy.plot.PhasorPlot.cursor
 
         """
+        shape = None
+        if phase is not None:
+            phase = numpy.atleast_1d(phase)
+            if phase.ndim != 1:
+                raise ValueError(f'invalid {phase.ndim=} != 1')
+            shape = phase.shape
+        if modulation is not None:
+            if shape is not None:
+                modulation = numpy.broadcast_to(modulation, shape)
+            else:
+                modulation = numpy.atleast_1d(modulation)
+                if modulation.ndim != 1:
+                    raise ValueError(f'invalid {modulation.ndim=} != 1')
+                shape = modulation.shape
+        if shape is None:
+            return
+
+        if phase_limit is not None:
+            phase_limit = numpy.broadcast_to(phase_limit, shape)
+        if modulation_limit is not None:
+            modulation_limit = numpy.broadcast_to(modulation_limit, shape)
+        if radius is not None:
+            radius = numpy.broadcast_to(radius, shape)
+        if radius_minor is not None:
+            radius_minor = numpy.broadcast_to(radius_minor, shape)
+        if angle is not None and not isinstance(angle, str):
+            angle = numpy.broadcast_to(angle, shape)
+        if label is not None:
+            label = numpy.broadcast_to(label, shape)
+            label = [str(c) for c in label]
+        if color is not None:
+            color = numpy.atleast_1d(color)
+            if color.dtype.kind == 'U':
+                color = numpy.broadcast_to(color, shape)
+                color = [str(c) for c in color]
+            else:
+                color = numpy.broadcast_to(color, (shape[0], color.shape[-1]))
+
+        for i in range(shape[0]):
+
+            if color is not None:
+                kwargs['color'] = color[i]
+            if label is not None:
+                kwargs['label'] = label[i]
+
+            self._cursor(
+                phase if phase is None else float(phase[i]),
+                modulation if modulation is None else float(modulation[i]),
+                phase_limit if phase_limit is None else float(phase_limit[i]),
+                (
+                    modulation_limit
+                    if modulation_limit is None
+                    else float(modulation_limit[i])
+                ),
+                radius=radius if radius is None else float(radius[i]),
+                radius_minor=(
+                    radius_minor
+                    if radius_minor is None
+                    else float(radius_minor[i])
+                ),
+                angle=(
+                    angle
+                    if (angle is None or isinstance(angle, str))
+                    else float(angle[i])
+                ),
+                crosshair=crosshair,
+                polar=polar,
+                **kwargs,
+            )
+
+    def _cursor(
+        self,
+        phase: float | None = None,
+        modulation: float | None = None,
+        phase_limit: float | None = None,
+        modulation_limit: float | None = None,
+        *,
+        radius: float | None = None,
+        radius_minor: float | None = None,
+        angle: float | Literal['phase', 'semicircle'] | str | None = None,
+        crosshair: bool = False,
+        polar: bool = True,
+        **kwargs: Any,
+    ) -> None:
+        """Draw single cursor at polar coordinate."""
+        linestyle = kwargs.pop('ls', GRID_LINESTYLE_MAJOR)
+        linewidth = kwargs.pop('lw', GRID_LINEWIDTH)
         update_kwargs(
             kwargs,
             color=GRID_COLOR,
-            linestyle=GRID_LINESTYLE,
-            linewidth=GRID_LINEWIDTH,
+            linestyle=linestyle,
+            linewidth=linewidth,
             fill=GRID_FILL,
+            zorder=GRID_ZORDER,
         )
-        _circle_only = kwargs.pop('_circle_only', False)
+
         ax = self._ax
         if radius is not None and phase is not None and modulation is not None:
             x = modulation * math.cos(phase)
             y = modulation * math.sin(phase)
             if radius_minor is not None and radius_minor != radius:
                 if angle is None:
-                    if align_semicircle:
+                    angle = phase
+                elif isinstance(angle, str):
+                    if angle == 'phase':
+                        angle = phase
+                    elif angle == 'semicircle':
                         angle = math.atan2(y, x - 0.5)
                     else:
-                        angle = phase
+                        raise ValueError(f'invalid {angle=}')
                 angle = math.degrees(angle)
-                ax.add_patch(
-                    Ellipse(
-                        (x, y),
-                        radius * 2,
-                        radius_minor * 2,
-                        angle=angle,
-                        **kwargs,
+
+                if not crosshair:
+                    # draw elliptical cursor
+                    ax.add_patch(
+                        Ellipse(
+                            (x, y),
+                            radius * 2,
+                            radius_minor * 2,
+                            angle=angle,
+                            **kwargs,
+                        )
                     )
-                )
-                # TODO: implement gridlines intersecting with ellipse
+                    if 'label' in kwargs:
+                        self._labels = True
+                    return None
+
+                # TODO: implement crosshair intersecting with ellipse?
+                raise ValueError('crosshair not implemented with ellipse')
+
+            if not crosshair:
+                # draw circlar cursor
+                ax.add_patch(Circle((x, y), radius, **kwargs))
+                if 'label' in kwargs:
+                    self._labels = True
                 return None
-            ax.add_patch(Circle((x, y), radius, **kwargs))
-            if _circle_only:
-                return None
-            if abs(x) < 1e-6 and abs(y) < 1e-6:
-                return None
+
             del kwargs['fill']
+            if not polar:
+                # draw Cartesian crosshair lines limited by radius
+                x0, y0, x1, y1 = _intersect_circle_line(
+                    x, y, radius, x, y, x + 1, y
+                )
+                ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
+                if 'label' in kwargs:
+                    self._labels = True
+                    del kwargs['label']
+                x0, y0, x1, y1 = _intersect_circle_line(
+                    x, y, radius, x, y, x, y + 1
+                )
+                ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
+                return None
+
+            if abs(x) < 1e-6 and abs(y) < 1e-6:
+                # phase and modulation not defined at origin
+                return None
+
+            # draw crosshair phase line and modulation arc limited by circle
             x0, y0, x1, y1 = _intersect_circle_line(x, y, radius, 0, 0, x, y)
             ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
+            if 'label' in kwargs:
+                self._labels = True
+                del kwargs['label']
             x0, y0, x1, y1 = _intersect_circle_circle(
                 0, 0, modulation, x, y, radius
             )
@@ -812,6 +1000,30 @@ class PhasorPlot:
             )
             return None
 
+        if not polar:
+            if phase is None or modulation is None:
+                return None
+
+            x0 = modulation * math.cos(phase)
+            y0 = modulation * math.sin(phase)
+            if phase_limit is None or modulation_limit is None:
+                # draw Cartesian crosshair lines
+                del kwargs['fill']
+                ax.add_line(Line2D((x0, x0), (-2, 2), **kwargs))
+                if 'label' in kwargs:
+                    self._labels = True
+                    del kwargs['label']
+                ax.add_line(Line2D((-2, 2), (y0, y0), **kwargs))
+            else:
+                # draw rectangle
+                x1 = modulation_limit * math.cos(phase_limit)
+                y1 = modulation_limit * math.sin(phase_limit)
+                ax.add_patch(Rectangle((x0, y0), x1 - x0, y1 - y0, **kwargs))
+                if 'label' in kwargs:
+                    self._labels = True
+            return None
+
+        # TODO: implement filled polar region/rectangle
         del kwargs['fill']
         for phi in (phase, phase_limit):
             if phi is not None:
@@ -823,9 +1035,12 @@ class PhasorPlot:
                 else:
                     x0 = 0
                     y0 = 0
-                    x1 = math.cos(phi)
-                    y1 = math.sin(phi)
+                    x1 = math.cos(phi) * 2
+                    y1 = math.sin(phi) * 2
                 ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
+                if 'label' in kwargs:
+                    self._labels = True
+                    del kwargs['label']
         for mod in (modulation, modulation_limit):
             if mod is not None:
                 if phase is not None and phase_limit is not None:
@@ -833,7 +1048,8 @@ class PhasorPlot:
                     theta2 = math.degrees(max(phase, phase_limit))
                 else:
                     theta1 = 0.0
-                    theta2 = 360.0 if self._full else 90.0
+                    theta2 = 360.0  # if self._full else 90.0
+                # TODO: filling arc objects is not supported
                 ax.add_patch(
                     Arc(
                         (0, 0),
@@ -841,10 +1057,13 @@ class PhasorPlot:
                         mod * 2,
                         theta1=theta1,
                         theta2=theta2,
-                        fill=False,  # filling arc objects is not supported
+                        fill=False,
                         **kwargs,
                     )
                 )
+                if 'label' in kwargs:
+                    self._labels = True
+                    del kwargs['label']
         return None
 
     def polar_grid(
@@ -914,18 +1133,22 @@ class PhasorPlot:
         """
         ax = self._ax
         minor_kwargs = kwargs.copy()
+        linestyle = minor_kwargs.pop('ls', GRID_LINESTYLE)
+        linewidth = minor_kwargs.pop('lw', GRID_LINEWIDTH_MINOR)
         update_kwargs(
             minor_kwargs,
             color=GRID_COLOR,
-            linestyle=GRID_LINESTYLE,
-            linewidth=GRID_LINEWIDTH_MINOR,
+            linestyle=linestyle,
+            linewidth=linewidth,
             zorder=GRID_ZORDER,
         )
+        linestyle = kwargs.pop('ls', GRID_LINESTYLE_MAJOR)
+        linewidth = kwargs.pop('lw', GRID_LINEWIDTH)
         update_kwargs(
             kwargs,
             color=GRID_COLOR,
-            linestyle=GRID_LINESTYLE_MAJOR,
-            linewidth=GRID_LINEWIDTH,
+            linestyle=linestyle,
+            linewidth=linewidth,
             zorder=GRID_ZORDER,
             # fill=GRID_FILL,
         )
@@ -965,7 +1188,7 @@ class PhasorPlot:
                 continue
             x = math.cos(a)
             y = math.sin(a)
-            ax.add_line(Line2D([0.0, x], [0.0, y], **minor_kwargs))
+            ax.add_line(Line2D((0.0, x), (0.0, y), **minor_kwargs))
 
         if labels is None and ticks is None:
             # no labels
@@ -1003,7 +1226,7 @@ class PhasorPlot:
         real = numpy.cos(ticks)
         imag = numpy.sin(ticks)
         self._unitcircle_ticks = CircleTicks(labels=labels)
-        ax.plot(real, imag, path_effects=[self._unitcircle_ticks], **kwargs)
+        ax.plot(real, imag, path_effects=(self._unitcircle_ticks,), **kwargs)
 
     def semicircle(
         self,
@@ -1053,13 +1276,18 @@ class PhasorPlot:
         if frequency is not None:
             self._frequency = float(frequency)
 
+        linestyle = kwargs.pop('ls', GRID_LINESTYLE_MAJOR)
+        linewidth = kwargs.pop('lw', GRID_LINEWIDTH)
         update_kwargs(
             kwargs,
+            linestyle=linestyle,
+            linewidth=linewidth,
             color=GRID_COLOR,
-            linestyle=GRID_LINESTYLE_MAJOR,
-            linewidth=GRID_LINEWIDTH,
             zorder=GRID_ZORDER,
         )
+        if 'label' in kwargs:
+            self._labels = True
+
         if phasor_reference is not None:
             polar_reference = phasor_to_polar_scalar(*phasor_reference)
         if polar_reference is None:
@@ -1095,6 +1323,9 @@ class PhasorPlot:
                     )
                 )
 
+        kwargs.pop('label', None)  # don't pass label to ticks
+        kwargs.pop('capstyle', None)
+
         if frequency is not None and polar_reference == (0.0, 1.0):
             # draw ticks and labels
             lifetime, labels = _semicircle_ticks(frequency, lifetime, labels)
@@ -1105,11 +1336,10 @@ class PhasorPlot:
                         *phasor_from_lifetime(frequency, lifetime),
                         *polar_reference,
                     ),
-                    path_effects=[self._semicircle_ticks],
+                    path_effects=(self._semicircle_ticks,),
                     **kwargs,
                 )
             )
-        self._reset_limits()
         return lines
 
     def _on_format_coord(self, x: float, y: float) -> str:
@@ -1206,7 +1436,7 @@ class CircleTicks(AbstractPathEffect):
         # approximate half size of 'x'
         fontsize = renderer.points_to_pixels(font.get_size_in_points()) / 4
         size = renderer.points_to_pixels(self._size)
-        origin = affine.transform([self._origin])
+        origin = affine.transform((self._origin,))
 
         transpath = affine.transform_path(tpath)
         polys = transpath.to_polygons(closed_only=False)
@@ -1225,7 +1455,7 @@ class CircleTicks(AbstractPathEffect):
 
             renderer.draw_path(
                 gc0,
-                Path(xyt, numpy.tile([Path.MOVETO, Path.LINETO], p.shape[0])),
+                Path(xyt, numpy.tile((Path.MOVETO, Path.LINETO), p.shape[0])),
                 affine.inverted() + trans,
                 rgbFace,
             )

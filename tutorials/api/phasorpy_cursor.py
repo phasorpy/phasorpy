@@ -49,14 +49,13 @@ circular_mask = mask_from_circular_cursor(
 
 plot = PhasorPlot(allquadrants=True, title='Circular cursors')
 plot.hist2d(real, imag, cmap='Greys')
-for i in range(len(cursor_real)):
-    plot.cursor(
-        cursor_real[i],
-        cursor_imag[i],
-        radius=radius[i],
-        color=CATEGORICAL[i],
-        linestyle='-',
-    )
+plot.cursor(
+    cursor_real,
+    cursor_imag,
+    radius=radius,
+    color=CATEGORICAL[:2],
+    label=('cursor 0', 'cursor 1'),
+)
 plot.show()
 
 # %%
@@ -93,15 +92,14 @@ elliptic_mask = mask_from_elliptic_cursor(
 
 plot = PhasorPlot(allquadrants=True, title='Elliptic cursors')
 plot.hist2d(real, imag, cmap='Greys')
-for i in range(len(cursor_real)):
-    plot.cursor(
-        cursor_real[i],
-        cursor_imag[i],
-        radius=radius[i],
-        radius_minor=radius_minor[i],
-        color=CATEGORICAL[i],
-        linestyle='-',
-    )
+plot.cursor(
+    cursor_real,
+    cursor_imag,
+    radius=radius,
+    radius_minor=radius_minor,
+    color=CATEGORICAL[:2],
+    label=('cursor 0', 'cursor 1'),
+)
 plot.show()
 
 # %%
@@ -136,15 +134,14 @@ polar_mask = mask_from_polar_cursor(
 
 plot = PhasorPlot(allquadrants=True, title='Polar cursors')
 plot.hist2d(real, imag, cmap='Greys')
-for i in range(len(phase_min)):
-    plot.polar_cursor(
-        phase=phase_min[i],
-        phase_limit=phase_max[i],
-        modulation=modulation_min[i],
-        modulation_limit=modulation_max[i],
-        color=CATEGORICAL[i + 2],
-        linestyle='-',
-    )
+plot.polar_cursor(
+    phase=phase_min,
+    phase_limit=phase_max,
+    modulation=modulation_min,
+    modulation_limit=modulation_max,
+    color=CATEGORICAL[2:4],
+    label=('cursor 0', 'cursor 1'),
+)
 plot.show()
 
 # %%

@@ -107,25 +107,27 @@ def test_mask_from_circular_cursor_errors(
 
 
 @pytest.mark.parametrize(
-    'radius, radius_minor, angle, align_semicircle, expected',
+    'radius, radius_minor, angle, expected',
     [
-        ([0.1, 0.05], 0.15, None, None, [[True, False], [False, True]]),
-        (0.1, [0.15, 0.1], None, None, [[True, False], [False, True]]),
-        ([0.1, 0.05], [0.15, 0.1], None, True, [[True, False], [False, True]]),
-        ([0.1, 0.05], [0.15, 0.1], 3.1, None, [[True, False], [False, True]]),
+        ([0.1, 0.05], 0.15, None, [[True, False], [False, True]]),
+        (0.1, [0.15, 0.1], 'phase', [[True, False], [False, True]]),
+        (
+            [0.1, 0.05],
+            [0.15, 0.1],
+            'semicircle',
+            [[True, False], [False, True]],
+        ),
+        ([0.1, 0.05], [0.15, 0.1], 3.1, [[True, False], [False, True]]),
         (
             [0.1, 0.05],
             [0.15, 0.1],
             [3.1, 1.6],
-            None,
             [[True, False], [False, True]],
         ),
-        (0.5, 0.5, 0.0, None, [[True, True], [True, True]]),
+        (0.5, 0.5, 0.0, [[True, True], [True, True]]),
     ],
 )
-def test_mask_from_elliptic_cursor(
-    radius, radius_minor, angle, align_semicircle, expected
-):
+def test_mask_from_elliptic_cursor(radius, radius_minor, angle, expected):
     """Test mask_from_elliptic_cursor function."""
     # the function is also tested in test_mask_from_circular_cursor
     mask = mask_from_elliptic_cursor(
@@ -136,9 +138,22 @@ def test_mask_from_elliptic_cursor(
         radius=radius,
         radius_minor=radius_minor,
         angle=angle,
-        align_semicircle=align_semicircle,
     )
     assert_array_equal(mask, expected)
+
+
+def test_mask_from_elliptic_cursor_error():
+    """Test mask_from_elliptic_cursor function error."""
+    with pytest.raises(ValueError):
+        mask_from_elliptic_cursor(
+            [0.2, 0.5],
+            [0.4, 0.5],
+            [0.2, 0.5],
+            [0.4, 0.5],
+            radius=0.2,
+            radius_minor=0.1,
+            angle='invalid',
+        )
 
 
 @pytest.mark.parametrize(
@@ -276,7 +291,7 @@ def test_cursors_on_grid():
 
     from matplotlib import pyplot
 
-    show = False  # enable to see figure
+    show = True  # enable to see figure
 
     def plot_mask(real, imag, mask, **kwargs):
         show = 'ax' not in kwargs
@@ -329,9 +344,9 @@ def test_cursors_on_grid():
         0.5,
         radius=0.15,
         radius_minor=0.05,
-        align_semicircle=True,
+        angle='semicircle',
     )
-    plot_mask(real, imag, mask, title='align_semicircle=True', ax=ax[2])
+    plot_mask(real, imag, mask, title='align_semicircle', ax=ax[2])
     assert_array_equal(
         mask,
         mask_from_elliptic_cursor(

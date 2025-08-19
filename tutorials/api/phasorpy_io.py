@@ -388,7 +388,6 @@ filename = 'Convallaria_$EI0S.fbd'
 signal = signal_from_fbd(fetch(filename), frame=-1, channel=0)
 
 frequency = signal.attrs['frequency'] * signal.attrs['harmonic']
-print(signal.sizes)
 
 plot_signal_image(
     signal, title=filename, xlabel='cross-correlation phase (rad)'

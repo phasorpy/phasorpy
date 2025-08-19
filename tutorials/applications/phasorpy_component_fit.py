@@ -59,7 +59,7 @@ components = {
 }
 
 # analysis parameters
-harmonic = [1, 2]  # which harmonics to use for analysis
+harmonic = 1, 2  # which harmonics to use for analysis
 median_size = 5  # size of median filter window
 median_repeat = 3  # number of times to apply median filter
 threshold = 3  # minimum signal threshold
@@ -110,7 +110,7 @@ for i, (name, filename) in enumerate(components.items()):
     for j, plot in enumerate(plots):
         plot.hist2d(real[j], imag[j], cmap='Greys')
         plot.plot(center_real[j], center_imag[j], label=name, markersize=10)
-        plot.ax.legend(loc='right').set_visible(j == 0)
+        plot.legend(loc='right').set_visible(j == 0)
 fig.tight_layout()
 fig.show()
 
@@ -152,7 +152,7 @@ for i in range(num_harmonics):
             label=name,
             markersize=10,
         )
-    plot.ax.legend(loc='right').set_visible(i == 0)
+    plot.legend(loc='right').set_visible(i == 0)
 fig.tight_layout()
 fig.show()
 

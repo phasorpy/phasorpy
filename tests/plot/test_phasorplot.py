@@ -38,7 +38,18 @@ class TestPhasorPlot:
         plot = PhasorPlot(title='pad', pad=0.1)
         self.show(plot)
 
-        plot = PhasorPlot(title='kwargs', xlim=(-0.1, 1.1), ylim=(-0.1, 0.9))
+        plot = PhasorPlot(
+            title='kwargs',
+            xlim=(-0.1, 1.1),
+            ylim=(-0.1, 0.6),
+            xticks=(0, 0.5, 1),
+            yticks=(0, 0.5, 1),
+            xlabel='G',
+            ylabel='S',
+        )
+        self.show(plot)
+
+        plot = PhasorPlot(title='del kwargs', xlim=None, xticks=None)
         self.show(plot)
 
         fig, ax = pyplot.subplots()
@@ -68,6 +79,12 @@ class TestPhasorPlot:
         plot.save(fh, format='png')
         assert fh.getvalue()[:6] == b'\x89PNG\r\n'
         pyplot.close()
+
+    def test_legend(self):
+        plot = PhasorPlot(title='legend')
+        plot.ax.plot(0.6, 0.4, 'o', label='label')
+        plot.legend(loc='upper right')
+        plot.show()
 
     def test_plot(self):
         """Test plot method."""
@@ -204,57 +221,125 @@ class TestPhasorPlot:
         plot.circle(0.5, 0.2, 0.1, color='tab:red', linestyle='-')
         self.show(plot)
 
-    def test_cursor(self):
+    @pytest.mark.parametrize('allquadrants', (False, True))
+    @pytest.mark.parametrize('polar', (False, True))
+    def test_cursor(self, allquadrants, polar):
         """Test cursor method."""
-        plot = PhasorPlot(title='cursor')
-        plot.cursor(0.4, 0.3, color='tab:blue', linestyle='-')
-        plot.cursor(0.52, 0.3, 0.78, 0.16, color='tab:orange')
-        plot.cursor(0.9, 0.3, radius=0.05, color='tab:green')
-        plot.cursor(
-            0.4, 0.3, radius=0.05, radius_minor=0.1, fill=True, alpha=0.5
+        plot = PhasorPlot(
+            title=f'cursor {allquadrants=} {polar=}',
+            allquadrants=allquadrants,
         )
-        plot.cursor(
-            0.11, 0.3, radius=0.05, radius_minor=0.1, align_semicircle=True
+
+        def p(x, y):
+            if polar:
+                return plot, math.atan2(y, x), math.hypot(x, y)
+            return plot, x, y
+
+        cursor = PhasorPlot.polar_cursor if polar else PhasorPlot.cursor
+        if polar:
+            # these should not be drawn
+            plot.polar_cursor(color='tab:red', label='c0')
+            plot.polar_cursor(color='tab:red', polar=False, label='c0')
+            plot.polar_cursor(
+                None, None, 0.1, 0.1, color='tab:red', polar=False, label='c0'
+            )
+
+        cursor(*p(0.5, 0.25), color='tab:orange', label='c1')
+        cursor(
+            *p(0.5, 0.25),
+            color='tab:orange',
+            linestyle='--',
+            polar=not polar,
+            label='c2',
         )
+        cursor(
+            *p(0.2, 0.2),
+            *p(0.4, 0.1)[1:],
+            crosshair=True,
+            fill=True,
+            alpha=0.5,
+            color='tab:cyan',
+            label='c3',
+        )
+        cursor(
+            *p(0.7, 0.35),
+            radius=0.05,
+            color='tab:green',
+            fill=True,
+            label='c4',
+        )
+        cursor(
+            *p(0.8, 0.4),
+            radius=0.05,
+            crosshair=True,
+            color='tab:green',
+            label='c5',
+        )
+        cursor(
+            *p(0.75, 0.15),
+            radius=0.1,
+            radius_minor=0.05,
+            angle=0.0,
+            color='tab:blue',
+            label='c6',
+        )
+        cursor(
+            *p(0.4, 0.38),
+            radius=0.05,
+            radius_minor=0.1,
+            angle='phase',
+            color='tab:blue',
+            fill=True,
+            alpha=0.2,
+            label='c7',
+        )
+        cursor(
+            *p(0.2, 0.4),
+            radius=0.05,
+            radius_minor=0.1,
+            angle='semicircle',
+            color='tab:blue',
+            label='c8',
+        )
+        cursor(
+            *p(0.0, 0.0),  # polar crosshair not defined
+            radius=0.05,
+            polar=True,
+            crosshair=True,
+            color='tab:red',
+            label='c0',
+        )
+
         self.show(plot)
 
-    def test_cursor_allquadrants(self):
-        """Test cursor method with allquadrants."""
-        plot = PhasorPlot(title='cursor allquadrants', allquadrants=True)
-        plot.cursor(-0.4, -0.3, color='tab:blue', linestyle='-')
-        plot.cursor(-0.52, -0.3, -0.78, -0.16, color='tab:orange')
-        plot.cursor(-0.9, -0.3, radius=0.1, color='tab:green')
+    def test_cursor_special(self):
+        """Test cursor method special cases."""
+        plot = PhasorPlot(title='cursor special cases')
+        plot._cursor(color='tab:olive', polar=False, label='none')
+        plot.polar_cursor(0.5, color='tab:blue', label='phase only')
+        plot.polar_cursor(
+            None, 0.5, color='tab:orange', label='modulation only'
+        )
         plot.cursor(
-            -0.3, -0.6, radius=0.1, radius_minor=0.2, fill=True, alpha=0.5
+            (0.1, 0.9),
+            (0.3, 0.3),
+            color=((1.0, 0, 0), (0, 1.0, 0)),
+            label=('RGB red', 'RGB green'),
+            radius=0.1,
         )
-        plot.cursor(-0.6, 0.6, radius=0.1, radius_minor=0.2, angle=2.36)
-        self.show(plot)
 
-    def test_polar_cursor(self):
-        """Test polar_cursor method."""
-        plot = PhasorPlot(title='polar_cursor')
-        plot.polar_cursor()
-        plot.polar_cursor(0.6435, 0.5, color='tab:blue', linestyle='-')
-        plot.polar_cursor(0.5236, 0.6, 0.1963, 0.8, color='tab:orange')
-        plot.polar_cursor(0.3233, 0.9482, radius=0.05, color='tab:green')
-        plot.polar_cursor(0.3, color='tab:red', linestyle='--')
-        plot.polar_cursor(0.0, 0.0, radius=0.1, linestyle='-')
-        self.show(plot)
+        # ndim > 1
+        with pytest.raises(ValueError):
+            plot.polar_cursor(((0.1, 0.2),))
+        with pytest.raises(ValueError):
+            plot.polar_cursor(None, ((0.1, 0.2),))
+        # crosshair not supported with ellipse
+        with pytest.raises(ValueError):
+            plot.cursor(0.1, 0.2, radius=0.2, radius_minor=0.1, crosshair=True)
+        # invalid angle
+        with pytest.raises(ValueError):
+            plot.cursor(0.1, 0.2, radius=0.05, radius_minor=0.1, angle='none')
 
-    def test_polar_cursor_allquadrants(self):
-        """Test polar_cursor method with allquadrants."""
-        plot = PhasorPlot(title='polar_cursor allquadrants', allquadrants=True)
-        plot.polar_cursor()
-        plot.polar_cursor(
-            0.6435 + math.pi, 0.5, color='tab:blue', linestyle='-'
-        )
-        plot.polar_cursor(
-            0.5236 + math.pi, 0.6, 0.1963 + math.pi, 0.8, color='tab:orange'
-        )
-        plot.polar_cursor(
-            0.3233 + math.pi, 0.9482, radius=0.1, color='tab:green'
-        )
-        plot.polar_cursor(0.3 + math.pi, color='tab:red', linestyle='--')
         self.show(plot)
 
     def test_polar_grid(self):
@@ -357,7 +442,7 @@ class TestPhasorPlot:
     def test_semicircle(self):
         """Test semicircle method."""
         plot = PhasorPlot(grid=False, title='empty')
-        plot.semicircle()
+        plot.semicircle(label='semicircle')
         self.show(plot)
 
         plot = PhasorPlot(grid=False, title='frequency')

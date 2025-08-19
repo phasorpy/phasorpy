@@ -75,7 +75,7 @@ def test_phasorplot_nan():
         warnings.simplefilter('error')
         plot.circle(NAN, 0.5, radius=0.1)
     with pytest.raises(ValueError):
-        plot.cursor(NAN, 0.5, radius=0.1)
+        plot.polar_cursor(NAN, 0.5, radius=0.1, crosshair=True)
     # pyplot.show()
     pyplot.close()
 

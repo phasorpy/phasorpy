@@ -47,6 +47,7 @@ from phasorpy.plot import (
 
 filename = 'CFP and CFP-YFp.ref'
 frequency = 80.0  # MHz
+
 mean, real, imag, attrs = phasor_from_simfcs_referenced(fetch(filename))
 
 plot_phasor_image(mean, real, imag, title=filename)
@@ -109,7 +110,7 @@ phasor_plot.plot(
     '-',
     label='FRET trajectory',
     color='tab:orange',
-    lw=4,
+    linewidth=4,
     alpha=0.8,
 )
 phasor_plot.show()
