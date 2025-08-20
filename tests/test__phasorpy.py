@@ -318,8 +318,8 @@ def test_geometric_ufunc_on_grid():
         mask = mask.astype(bool)
         ax.set(
             aspect='equal',
-            xlim=[-0.05, 1.05],
-            ylim=[-0.05, 1.05],
+            xlim=(-0.05, 1.05),
+            ylim=(-0.05, 1.05),
             xticks=[],
             yticks=[],
             **kwargs,
@@ -333,8 +333,8 @@ def test_geometric_ufunc_on_grid():
         ax = kwargs.pop('ax') if not show else pyplot.subplot()
         ax.set(
             aspect='equal',
-            xlim=[-0.05, 1.05],
-            ylim=[-0.05, 1.05],
+            xlim=(-0.05, 1.05),
+            ylim=(-0.05, 1.05),
             xticks=[],
             yticks=[],
             **kwargs,

@@ -405,11 +405,11 @@ def test_phasor_component_graphical_nan():
         )
     assert_allclose(
         counts,
-        (
+        [
             [1, 1, 0, 0, 0, 0, 0, 0, 1, 0],
             [1, 1, 0, 0, 0, 0, 0, 0, 1, 0],
             [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-        ),
+        ],
     )
 
 

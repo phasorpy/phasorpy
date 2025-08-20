@@ -299,8 +299,8 @@ def test_cursors_on_grid():
         mask = mask.astype(bool)
         ax.set(
             aspect='equal',
-            xlim=[0, 1],
-            ylim=[0, 1],
+            xlim=(0, 1),
+            ylim=(0, 1),
             xticks=[],
             yticks=[],
             **kwargs,
@@ -315,7 +315,7 @@ def test_cursors_on_grid():
     _, ax = pyplot.subplots(4, 1, figsize=(3.2, 9), layout='constrained')
 
     mask = mask_from_circular_cursor(real, imag, 0.5, 0.5, radius=0.1)
-    plot_mask(real, imag, mask, title='mask_from_circular_cursor', ax=ax[0])
+    plot_mask(real, imag, mask, ax=ax[0], title='mask_from_circular_cursor')
     assert_array_equal(
         mask, mask_from_elliptic_cursor(real, imag, 0.5, 0.5, radius=0.1)
     )
@@ -323,7 +323,7 @@ def test_cursors_on_grid():
     mask = mask_from_elliptic_cursor(
         real, imag, 0.5, 0.5, radius=0.15, radius_minor=0.05  # , angle=pi / 4
     )
-    plot_mask(real, imag, mask, title='mask_from_elliptic_cursor', ax=ax[1])
+    plot_mask(real, imag, mask, ax=ax[1], title='mask_from_elliptic_cursor')
     assert_array_equal(
         mask,
         mask_from_elliptic_cursor(
@@ -346,7 +346,7 @@ def test_cursors_on_grid():
         radius_minor=0.05,
         angle='semicircle',
     )
-    plot_mask(real, imag, mask, title='align_semicircle', ax=ax[2])
+    plot_mask(real, imag, mask, ax=ax[2], title='align_semicircle')
     assert_array_equal(
         mask,
         mask_from_elliptic_cursor(
@@ -363,7 +363,7 @@ def test_cursors_on_grid():
     mask = mask_from_polar_cursor(
         real, imag, pi / 5, pi / 3 + 4 * pi, 0.6071, 0.8071
     )
-    plot_mask(real, imag, mask, title='mask_from_polar_cursor', ax=ax[3])
+    plot_mask(real, imag, mask, ax=ax[3], title='mask_from_polar_cursor')
 
     if show:
         pyplot.show()

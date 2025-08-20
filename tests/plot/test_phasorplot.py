@@ -39,17 +39,17 @@ class TestPhasorPlot:
         self.show(plot)
 
         plot = PhasorPlot(
-            title='kwargs',
             xlim=(-0.1, 1.1),
             ylim=(-0.1, 0.6),
             xticks=[0, 0.5, 1],
             yticks=[0, 0.5, 1],
             xlabel='G',
             ylabel='S',
+            title='kwargs',
         )
         self.show(plot)
 
-        plot = PhasorPlot(title='del kwargs', xlim=None, xticks=None)
+        plot = PhasorPlot(xlim=None, xticks=None, title='del kwargs')
         self.show(plot)
 
         fig, ax = pyplot.subplots()
@@ -139,7 +139,7 @@ class TestPhasorPlot:
             (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
         ).T
         plot = PhasorPlot(
-            title='histogram and contour', xlim=(0.4, 0.8), ylim=(0.25, 0.55)
+            xlim=(0.4, 0.8), ylim=(0.25, 0.55), title='histogram and contour'
         )
         plot.hist2d(real, imag, bins=32, cmap='Blues')
         plot.contour(real, imag, bins=32, levels=4, cmap='Reds')
@@ -158,7 +158,7 @@ class TestPhasorPlot:
         real = [0.1, 0.2, 0.5, 0.9]
         imag = [0.3, 0.4, 0.5, 0.3]
         weights = [2, 1, 2, 1]
-        plot = PhasorPlot(title='components', allquadrants=allquadrants)
+        plot = PhasorPlot(allquadrants=allquadrants, title='components')
         with pytest.raises(ValueError):
             plot.components([0.0, 1.0], [0.0])
         with pytest.raises(ValueError):
@@ -187,10 +187,10 @@ class TestPhasorPlot:
         plot.components(
             real,
             imag,
-            labels=['A', 'B', 'C', ''],
             fontsize=12,
             linestyle='',
             color='tab:green',
+            labels=['A', 'B', 'C', ''],
         )
         plot.components(real[-1], imag[-1], labels=['D'])
         self.show(plot)
@@ -226,8 +226,8 @@ class TestPhasorPlot:
     def test_cursor(self, allquadrants, polar):
         """Test cursor method."""
         plot = PhasorPlot(
-            title=f'cursor {allquadrants=} {polar=}',
             allquadrants=allquadrants,
+            title=f'cursor {allquadrants=} {polar=}',
         )
 
         def p(x, y):
@@ -372,7 +372,7 @@ class TestPhasorPlot:
         plot = PhasorPlot(
             grid=False, pad=0.2, allquadrants=True, title='polygon'
         )
-        plot.polar_grid(labels=['B', 'G', 'R'], samples=3, angles=3, radii=1)
+        plot.polar_grid(samples=3, angles=3, radii=1, labels=['B', 'G', 'R'])
         self.show(plot)
 
         plot = PhasorPlot(
@@ -471,17 +471,17 @@ class TestPhasorPlot:
         )
         self.show(plot)
 
-        plot = PhasorPlot(title='polar_reference', xlim=(-0.2, 1.1))
+        plot = PhasorPlot(xlim=(-0.2, 1.1), title='polar_reference')
         plot.semicircle(polar_reference=(0.9852, 0.5526))
         self.show(plot)
 
         plot = PhasorPlot(
-            frequency=80.0, title='phasor_reference', xlim=(-0.2, 1.1)
+            frequency=80.0, xlim=(-0.2, 1.1), title='phasor_reference'
         )
         plot.semicircle(frequency=80.0, phasor_reference=(0.2, 0.4))
         self.show(plot)
 
-        plot = PhasorPlot(title='limits', xlim=(0.4, 0.6), ylim=(0.4, 0.6))
+        plot = PhasorPlot(xlim=(0.4, 0.6), ylim=(0.4, 0.6), title='limits')
         plot.semicircle(frequency=80.0)
         self.show(plot)
 
