@@ -120,19 +120,20 @@ plot_phasor(
 
 # %%
 # Apparent single lifetimes are calculated from the calibrated phasor
-# coordinates and compared to the lifetimes calculated by LAS X software:
+# coordinates and compared to the "Fast FLIM" lifetimes (average photon
+# arrival times) calculated by LAS X software:
 
 phase_lifetime, modulation_lifetime = phasor_to_apparent_lifetime(
     real, imag, frequency
 )
 
-fitted_lifetime = lifetime_from_lif(fetch(filename))[0]
-fitted_lifetime[numpy.isnan(mean)] = numpy.nan
+fastflim_lifetime = lifetime_from_lif(fetch(filename))[0]
+fastflim_lifetime[numpy.isnan(mean)] = numpy.nan
 
 plot_histograms(
     phase_lifetime,
     modulation_lifetime,
-    fitted_lifetime,
+    fastflim_lifetime,
     range=(0, 10),
     bins=100,
     alpha=0.66,
@@ -141,7 +142,7 @@ plot_histograms(
     labels=[
         'Phase lifetime',
         'Modulation lifetime',
-        'Fitted lifetimes from LIF',
+        'Fast FLIM lifetime from LIF',
     ],
     title='Lifetime histograms',
 )
@@ -149,8 +150,6 @@ plot_histograms(
 # %%
 # The apparent single lifetimes from phase and modulation do not exactly match.
 # Most likely there is more than one lifetime component in the sample.
-# This could also explain the difference from the lifetimes fitted by the
-# LAS X software.
 
 # %%
 # .. note::

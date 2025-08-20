@@ -140,6 +140,8 @@ def lifetime_from_lif(
 
     Leica image files may contain fluorescence lifetime images and metadata
     from the analysis of FLIM measurements.
+    The lifetimes are average photon arrival times ("Fast FLIM") according to
+    the LAS X FLIM/FCS documentation.
 
     Parameters
     ----------
@@ -151,7 +153,7 @@ def lifetime_from_lif(
     Returns
     -------
     lifetime : ndarray
-        Fluorescence lifetime image in ns.
+        Fast FLIM lifetime image in ns.
     intensity : ndarray
         Fluorescence intensity image.
     stddev : ndarray
