@@ -193,8 +193,8 @@ plot_phasor(
 # applied to correlate with FLIM data.
 
 # Define center coordinates for three spectral regions
-spectral_centers_real = numpy.array([0.04, 0.24, 0.14])
-spectral_centers_imag = numpy.array([0.74, 0.70, 0.72])
+spectral_center_real = 0.04, 0.24, 0.14
+spectral_center_imag = 0.74, 0.70, 0.72
 
 # Define radius for the circular masks
 radius = 0.07
