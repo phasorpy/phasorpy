@@ -2,7 +2,7 @@
 Multidimensional phasor approach
 ================================
 
-Simultaneous analysis of multiple phasor dimensions.
+Simultaneous phasor analysis of lifetime and spectral data.
 
 Multidimensional phasor analysis enables the correlation and classification
 of pixels based on multiple fluorescence characteristics simultaneously.
@@ -12,7 +12,7 @@ or cellular components that may appear similar in single-domain analysis.
 
 Phasor coordinates in one dimension can be mapped to other dimensions by masks
 (or cursors) that define regions of interest in the phasor space. The dimension
-where cursors are defined serves as the "master" dimension, controlling the
+where cursors are defined serves as the "main" dimension, controlling the
 classification that is then applied to correlate with other dimensions.
 
 This analysis method is demonstrated using a dataset combining fluorescence
@@ -169,18 +169,12 @@ plot_phasor(
 )
 
 # %%
-# Display the FLIM phasor coordinates for first channel:
-plot_phasor(
-    flim_real[0], flim_imag[0], title='FLIM phasor coordinates (First Channel)'
-)
+# Display the FLIM phasor coordinates:
 
-# %%
-# Display the FLIM phasor coordinates for second channel:
-plot_phasor(
-    flim_real[1],
-    flim_imag[1],
-    title='FLIM phasor coordinates (Second Channel)',
-)
+plot = PhasorPlot(frequency=frequency, title='FLIM phasor plot')
+plot.hist2d(flim_real[0], flim_imag[0], cmap='Blues')
+plot.hist2d(flim_real[1], flim_imag[1], cmap='Oranges', alpha=0.5)
+plot.show()
 
 # %%
 # Define spectral regions using circular cursors
@@ -188,7 +182,7 @@ plot_phasor(
 #
 # Create circular masks on the spectral phasor plot to define regions of
 # interest corresponding to different spectral characteristics. In this
-# analysis, the spectral dimension serves as the "master" dimension,
+# analysis, the spectral dimension serves as the "main" dimension,
 # meaning that spectral cursors control the classification that will be
 # applied to correlate with FLIM data.
 
@@ -203,44 +197,47 @@ radius = 0.07
 spectral_masks = mask_from_circular_cursor(
     spectral_real,
     spectral_imag,
-    spectral_centers_real,
-    spectral_centers_imag,
+    spectral_center_real,
+    spectral_center_imag,
     radius=radius,
 )
 
 # %%
-# Spectral phasor plot with master cursors
+# Spectral phasor plot with main cursors
 # ----------------------------------------
 #
 # Display the spectral phasor coordinates as a 2D histogram and overlay
-# the circular selection regions. These master cursors define the
+# the circular selection regions. These main cursors define the
 # classification scheme for the multidimensional analysis.
 
-spectral_phasor_plot = PhasorPlot(
-    title='Spectral phasor plot with master cursors',
+plot = PhasorPlot(
+    xlim=(-0.5, 1.05),
+    ylim=(-0.1, 1.05),
     allquadrants=True,
+    title='Spectral phasor plot with main cursors',
 )
-spectral_phasor_plot.hist2d(
-    spectral_real, spectral_imag, cmap='Grays', bins=200
+plot.hist2d(
+    spectral_real,
+    spectral_imag,
+    cmap='Grays',
+    bins=200,
 )
-
-for i in range(len(spectral_centers_real)):
-    spectral_phasor_plot.circle(
-        spectral_centers_real[i],
-        spectral_centers_imag[i],
-        radius=radius,
-        color=CATEGORICAL[i],
-        linestyle='-',
-        linewidth=2,
-    )
-spectral_phasor_plot.show()
+plot.cursor(
+    spectral_center_real,
+    spectral_center_imag,
+    radius=radius,
+    color=CATEGORICAL[:3],
+    linestyle='-',
+    linewidth=2,
+)
+plot.show()
 
 # %%
 # Spectral pseudo-color image
 # ---------------------------
 #
 # Create a pseudo-colored image where each pixel is colored according to
-# its spectral classification based on the master dimension cursors.
+# its spectral classification based on the main dimension cursors.
 
 spectral_pseudo_color = pseudo_color(*spectral_masks)
 plot_image(
@@ -252,18 +249,18 @@ plot_image(
 # First FLIM channel phasor coordinates (spectrally classified)
 # -------------------------------------------------------------
 #
-# Apply the spectral classification masks (from the master dimension) to
+# Apply the spectral classification masks (from the main dimension) to
 # the FLIM phasor coordinates to examine how pixels with different spectral
 # properties distribute in the FLIM phasor space. This reveals the correlation
 # between spectral and lifetime characteristics.
 
-flim_ch1_phasor_plot = PhasorPlot(
+plot = PhasorPlot(
     title='First FLIM channel phasor coordinates (spectrally classified)',
 )
 
 # Plot FLIM coordinates for each spectral class
 for i in range(spectral_masks.shape[0]):
-    flim_ch1_phasor_plot.plot(
+    plot.plot(
         flim_real[0][spectral_masks[i]],
         flim_imag[0][spectral_masks[i]],
         color=CATEGORICAL[i],
@@ -271,16 +268,16 @@ for i in range(spectral_masks.shape[0]):
         markersize=0.5,
     )
 
-flim_ch1_phasor_plot.show()
+plot.show()
 
 # %%
-# Define FLIM first channel as master dimension
+# Define FLIM first channel as main dimension
 # ---------------------------------------------
 #
 # The inverse analysis can also be performed: select lifetime regions in the
-# FLIM phasor space as the new "master" dimension and visualize how they
+# FLIM phasor space as the new "main" dimension and visualize how they
 # distribute in the spectral phasor space. Now FLIM channel 1 serves as the
-# master dimension controlling the classification.
+# main dimension controlling the classification.
 
 # Define center coordinates for FLIM regions of interest
 flim_center_real = 0.35, 0.19, 0.27
@@ -291,41 +288,39 @@ flim_radius = 0.07
 flim_ch1_masks = mask_from_circular_cursor(
     flim_real[0],
     flim_imag[0],
-    flim_centers_real,
-    flim_centers_imag,
+    flim_center_real,
+    flim_center_imag,
     radius=flim_radius,
 )
 
 # %%
-# First FLIM channel phasor plot with master cursors
+# First FLIM channel phasor plot with main cursors
 # --------------------------------------------------
 #
 # Display the FLIM phasor coordinates as a 2D histogram and overlay
-# the circular selection regions. FLIM channel 1 now serves as the master
+# the circular selection regions. FLIM channel 1 now serves as the main
 # dimension, with cursors defining the classification scheme.
 
-flim_selection_plot = PhasorPlot(
-    title='First FLIM channel phasor plot with master cursors',
+plot = PhasorPlot(
+    title='First FLIM channel phasor plot with main cursors',
 )
-flim_selection_plot.hist2d(flim_real[0], flim_imag[0], cmap='Grays', bins=200)
-
-for i in range(len(flim_centers_real)):
-    flim_selection_plot.circle(
-        flim_centers_real[i],
-        flim_centers_imag[i],
-        radius=flim_radius,
-        color=CATEGORICAL[i],
-        linestyle='-',
-        linewidth=2,
-    )
-flim_selection_plot.show()
+plot.hist2d(flim_real[0], flim_imag[0], cmap='Grays', bins=200)
+plot.cursor(
+    flim_center_real,
+    flim_center_imag,
+    radius=flim_radius,
+    color=CATEGORICAL[:3],
+    linestyle='-',
+    linewidth=2,
+)
+plot.show()
 
 # %%
 # First FLIM channel pseudo-color image
 # -------------------------------------
 #
 # Create a pseudo-colored image where each pixel is colored according to
-# its FLIM classification based on the new master dimension cursors.
+# its FLIM classification based on the new main dimension cursors.
 
 flim_pseudo_color = pseudo_color(*flim_ch1_masks)
 plot_image(
@@ -337,22 +332,23 @@ plot_image(
 # Spectral phasor coordinates (FLIM classified)
 # ---------------------------------------------
 #
-# Apply the FLIM classification masks (from the new master dimension) to
+# Apply the FLIM classification masks (from the new main dimension) to
 # the spectral phasor coordinates to examine how pixels with different
 # lifetime properties distribute in the spectral phasor space. This shows
 # the correlation from the lifetime perspective.
 
-# Plot zoomed spectral coordinates defined by FLIM master cursors
-spectral_correlation_plot = PhasorPlot(
-    title='Spectral phasor coordinates (FLIM classified)',
-    allquadrants=True,
+# Plot spectral coordinates defined by FLIM main cursors
+plot = PhasorPlot(
     xlim=(-0.1, 0.4),
     ylim=(0.6, 0.8),
     xticks=[x for x in numpy.arange(-0.1, 0.5, 0.1)],
     yticks=(0.6, 0.7, 0.8),
+    allquadrants=True,
+    title='Spectral phasor coordinates (FLIM classified)',
 )
+
 for i in range(flim_ch1_masks.shape[0]):
-    spectral_correlation_plot.plot(
+    plot.plot(
         spectral_real[flim_ch1_masks[i]],
         spectral_imag[flim_ch1_masks[i]],
         color=CATEGORICAL[i],
@@ -360,26 +356,26 @@ for i in range(flim_ch1_masks.shape[0]):
         markersize=1,
     )
 
-spectral_correlation_plot.show()
+plot.show()
 
 # %%
 # Second FLIM channel phasor coordinates classified by first FLIM channel
 # -----------------------------------------------------------------------
 #
 # Analyze how the same spectral regions (defined by the original spectral
-# master cursors) appear in both FLIM detection channels to understand
+# main cursors) appear in both FLIM detection channels to understand
 # channel-specific lifetime characteristics. This uses the spectral
 # classification as the reference.
 
-flim_ch2_phasor_plot = PhasorPlot(
+plot = PhasorPlot(
     title=(
         'Second FLIM channel phasor coordinates classified by first FLIM channel'
     ),
 )
 
-# Plot FLIM channel 2 coordinates using spectral master classification
+# Plot FLIM channel 2 coordinates using spectral main classification
 for i in range(spectral_masks.shape[0]):
-    flim_ch2_phasor_plot.plot(
+    plot.plot(
         flim_real[1][spectral_masks[i]],
         flim_imag[1][spectral_masks[i]],
         color=CATEGORICAL[i],
@@ -387,8 +383,8 @@ for i in range(spectral_masks.shape[0]):
         markersize=0.5,
     )
 
-flim_ch2_phasor_plot.show()
+plot.show()
 
 # %%
-# sphinx_gallery_thumbnail_number = 5
+# sphinx_gallery_thumbnail_number = -3
 # mypy: allow-untyped-defs, allow-untyped-calls
