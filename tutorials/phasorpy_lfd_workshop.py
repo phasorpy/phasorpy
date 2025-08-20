@@ -450,9 +450,9 @@ plot_phasor_image(
 
 # %%
 
-mean = numpy.vstack((mean1, mean2))
-real = numpy.vstack((real1, real2))
-imag = numpy.vstack((imag1, imag2))
+mean = numpy.vstack([mean1, mean2])
+real = numpy.vstack([real1, real2])
+imag = numpy.vstack([imag1, imag2])
 
 mean, real, imag = phasor_filter_median(mean, real, imag, repeat=2)
 
@@ -483,9 +483,9 @@ donor_lifetime = numpy.mean(
 
 plot = PhasorPlot(
     frequency=frequency,
+    xlim=(0.45, 0.94),
+    ylim=(0.15, 0.55),
     title='FRET Donor (green) and background (black)',
-    xlim=[0.45, 0.94],
-    ylim=[0.15, 0.55],
 )
 plot.hist2d(real, imag)
 plot.circle(*donor_phasor, radius=0.03, linestyle='-', color='tab:green')
@@ -522,19 +522,19 @@ fretting2_trajectory = phasor_from_fret_donor(**settings, fret_efficiency=0.32)
 
 plot = PhasorPlot(
     frequency=frequency,
+    xlim=(0.45, 0.94),
+    ylim=(0.15, 0.55),
     title='FRET trajectories',
-    xlim=[0.45, 0.94],
-    ylim=[0.15, 0.55],
 )
 plot.hist2d(real, imag)
-plot.circle(*donor_phasor, radius=0.03, linestyle='-', color='tab:green')
-plot.circle(*background_phasor, radius=0.03, linestyle='-', color='dimgrey')
+plot.cursor(*donor_phasor, radius=0.03, color='tab:green')
+plot.cursor(*background_phasor, radius=0.03, color='dimgrey')
 plot.plot(*quenching_trajectory, fmt='-', color='tab:grey')
 plot.plot(*fretting1_trajectory, fmt='-', color='tab:grey')
 plot.plot(*fretting2_trajectory, fmt='-', color='tab:grey')
 plot.line(
-    [background_phasor[0], donor_phasor[0]],
-    [background_phasor[1], donor_phasor[1]],
+    (background_phasor[0], donor_phasor[0]),
+    (background_phasor[1], donor_phasor[1]),
     linestyle='-',
     color='tab:green',
 )

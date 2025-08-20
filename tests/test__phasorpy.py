@@ -318,8 +318,8 @@ def test_geometric_ufunc_on_grid():
         mask = mask.astype(bool)
         ax.set(
             aspect='equal',
-            xlim=[-0.05, 1.05],
-            ylim=[-0.05, 1.05],
+            xlim=(-0.05, 1.05),
+            ylim=(-0.05, 1.05),
             xticks=[],
             yticks=[],
             **kwargs,
@@ -333,8 +333,8 @@ def test_geometric_ufunc_on_grid():
         ax = kwargs.pop('ax') if not show else pyplot.subplot()
         ax.set(
             aspect='equal',
-            xlim=[-0.05, 1.05],
-            ylim=[-0.05, 1.05],
+            xlim=(-0.05, 1.05),
+            ylim=(-0.05, 1.05),
             xticks=[],
             yticks=[],
             **kwargs,
@@ -409,7 +409,7 @@ def test_geometric_ufunc_on_grid():
     mask = _is_inside_range(real, imag, 0.4, 0.6, 0.45, 0.55)
     plot_mask(real, imag, mask, title='_is_inside_range', ax=ax[7, 0])
 
-    plot_points([], [], title='', ax=ax[7, 1])
+    plot_points((), (), title=None, ax=ax[7, 1])
 
     mask = _is_near_semicircle(real, imag, 0.02)
     plot_mask(real, imag, mask, title='_is_near_semicircle', ax=ax[8, 0])

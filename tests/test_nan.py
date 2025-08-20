@@ -75,7 +75,7 @@ def test_phasorplot_nan():
         warnings.simplefilter('error')
         plot.circle(NAN, 0.5, radius=0.1)
     with pytest.raises(ValueError):
-        plot.cursor(NAN, 0.5, radius=0.1)
+        plot.polar_cursor(NAN, 0.5, radius=0.1, crosshair=True)
     # pyplot.show()
     pyplot.close()
 
@@ -220,7 +220,7 @@ def test_phasor_from_signal_nan():
     """Test phasor_from_signal function with NaN values."""
     sample_phase = numpy.linspace(0, 2 * numpy.pi, 4, endpoint=False)
     signal = 1.1 * (numpy.cos(sample_phase - 0.4) * 0.8 + 1)
-    signal = numpy.stack((signal, signal))
+    signal = numpy.stack([signal, signal])
     signal[0, 2] = NAN
     with warnings.catch_warnings():
         warnings.simplefilter('error')
@@ -405,11 +405,11 @@ def test_phasor_component_graphical_nan():
         )
     assert_allclose(
         counts,
-        (
+        [
             [1, 1, 0, 0, 0, 0, 0, 0, 1, 0],
             [1, 1, 0, 0, 0, 0, 0, 0, 1, 0],
             [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-        ),
+        ],
     )
 
 

@@ -82,7 +82,7 @@ assert math.isclose(fraction_of_first_component, component_fractions[0])
 # two components with known phasor coordinates:
 
 real, imag = numpy.random.multivariate_normal(
-    (real, imag), [[5e-3, 1e-3], [1e-3, 1e-3]], (100, 100)
+    [real, imag], [[5e-3, 1e-3], [1e-3, 1e-3]], (100, 100)
 ).T
 
 plot = PhasorPlot(
@@ -112,10 +112,10 @@ plot_histograms(
     range=(0, 1),
     bins=100,
     alpha=0.66,
-    title='Histograms of fractions of two components',
+    labels=['A', 'B'],
     xlabel='Fraction',
     ylabel='Count',
-    labels=['A', 'B'],
+    title='Histograms of fractions of two components',
 )
 
 
@@ -141,10 +141,10 @@ plot_histograms(
     range=(0, 1),
     bins=100,
     alpha=0.66,
-    title='Histograms of fitted fractions of multiple components',
+    labels=['A', 'B'],
     xlabel='Fraction',
     ylabel='Count',
-    labels=['A', 'B'],
+    title='Histograms of fitted fractions of multiple components',
 )
 
 # %%

@@ -114,8 +114,8 @@ plot_phasor(
     real,
     imag,
     frequency=frequency,
-    title=f'{filename} ({frequency} MHz)',
     cmin=10,
+    title=f'{filename} ({frequency} MHz)',
 )
 
 # %%
@@ -136,7 +136,6 @@ plot_histograms(
     range=(0, 10),
     bins=100,
     alpha=0.66,
-    title='Lifetime histograms',
     xlabel='Lifetime (ns)',
     ylabel='Count',
     labels=[
@@ -144,6 +143,7 @@ plot_histograms(
         'Modulation lifetime',
         'Fitted lifetimes from LIF',
     ],
+    title='Lifetime histograms',
 )
 
 # %%
@@ -172,7 +172,7 @@ filename = 'Convalaria_LambdaScan.lif'
 
 signal = signal_from_lif(fetch(filename))
 
-plot_signal_image(signal, title=filename, vmin=0, xlabel='wavelength (nm)')
+plot_signal_image(signal, vmin=0, xlabel='wavelength (nm)', title=filename)
 
 # %%
 # Emission wavelengths (in nm) are available in the coordinates of the
@@ -218,7 +218,7 @@ filename = 'FLIM_testdata.lif.filtered.ptu'
 
 signal = signal_from_ptu(fetch(filename), channel=0, frame=0)
 
-plot_signal_image(signal, title=filename, xlabel='delay-time (ns)')
+plot_signal_image(signal, xlabel='delay-time (ns)', title=filename)
 
 # %%
 # The returned ``signal`` is an `xarray.DataArray
@@ -246,8 +246,8 @@ plot_phasor(
     real,
     imag,
     frequency=frequency,
-    title=f'{filename} ({frequency} MHz)',
     cmin=10,
+    title=f'{filename} ({frequency} MHz)',
 )
 
 # %%
@@ -260,10 +260,10 @@ plot_histograms(
     range=(0, 10),
     bins=100,
     alpha=0.66,
-    title='Lifetime histograms',
     xlabel='Lifetime (ns)',
     ylabel='Count',
     labels=['Phase lifetime from PTU', 'Phase lifetime from LIF'],
+    title='Lifetime histograms',
 )
 
 # %%
@@ -300,7 +300,7 @@ filename = 'paramecium.lsm'
 
 signal = signal_from_lsm(fetch('paramecium.lsm'))
 
-plot_signal_image(signal, title=filename, xlabel='wavelength (nm)')
+plot_signal_image(signal, xlabel='wavelength (nm)', title=filename)
 
 # %%
 # Emission wavelengths (in nm) are available in the coordinates of the
@@ -339,7 +339,7 @@ filename = 'tcspc.sdt'
 
 signal = signal_from_sdt(fetch(filename))
 
-plot_signal_image(signal, title=filename, xlabel='delay-time (ns)')
+plot_signal_image(signal, xlabel='delay-time (ns)', title=filename)
 
 # %%
 # Plot the uncalibrated phasor coordinates:
@@ -348,9 +348,9 @@ frequency = signal.attrs['frequency']
 
 plot_phasor(
     *phasor_from_signal(signal)[1:],
-    title=f'{filename} ({frequency:.1f} MHz)',
     allquadrants=True,
     style='hist2d',
+    title=f'{filename} ({frequency:.1f} MHz)',
 )
 
 # %%
@@ -388,10 +388,9 @@ filename = 'Convallaria_$EI0S.fbd'
 signal = signal_from_fbd(fetch(filename), frame=-1, channel=0)
 
 frequency = signal.attrs['frequency'] * signal.attrs['harmonic']
-print(signal.sizes)
 
 plot_signal_image(
-    signal, title=filename, xlabel='cross-correlation phase (rad)'
+    signal, xlabel='cross-correlation phase (rad)', title=filename
 )
 
 # %%
@@ -407,8 +406,8 @@ reference_lifetime = 4.0
 
 plot_signal_image(
     reference_signal,
-    title=reference_filename,
     xlabel='cross-correlation phase (rad)',
+    title=reference_filename,
 )
 
 # %%
@@ -429,8 +428,8 @@ plot_phasor(
     *phasor_threshold(
         *phasor_filter_median(mean, real, imag, repeat=3), mean_min=1
     )[1:],
-    title=f'{filename} ({frequency} MHz)',
     frequency=frequency,
+    title=f'{filename} ({frequency} MHz)',
 )
 
 # %%
@@ -453,7 +452,7 @@ filename = 'Convallaria_m2_1740751781_phasor_ch1.json'
 
 signal = signal_from_flimlabs_json(fetch(filename), channel=channel)
 
-plot_signal_image(signal, title=filename, xlabel='delay-time (ns)')
+plot_signal_image(signal, xlabel='delay-time (ns)', title=filename)
 
 # %%
 # Phasor coordinates are calculated from the TCSPC histogram at three
@@ -493,8 +492,8 @@ plot_phasor(
     real[1],
     imag[1],
     frequency=frequency * 2,
-    title=f'{filename} ({frequency * 2:.1f} MHz)',
     cmin=10,
+    title=f'{filename} ({frequency * 2:.1f} MHz)',
 )
 
 # %%
@@ -586,9 +585,9 @@ reference_lifetime = attrs['ifli_header']['RefLifetime']
 
 plot_phasor(
     *phasor_filter_median(mean, real[0], imag[0], repeat=2)[1:],
-    title=f'{filename} ({frequency:.2f} MHz)',
     frequency=frequency,
     cmin=10,
+    title=f'{filename} ({frequency:.2f} MHz)',
 )
 
 # %%
@@ -636,9 +635,9 @@ plot_phasor(
         mean_min=25,
         real_min=1e-3,
     )[1:],
-    title=f'{filename} ({frequency:.2f} MHz)',
     frequency=frequency,
     cmin=2,
+    title=f'{filename} ({frequency:.2f} MHz)',
 )
 
 # %%
@@ -741,7 +740,7 @@ image_stack = imread(fetch(filename))
 # coordinates must be known. In this case, the TCSPC histogram bins are in
 # the first array dimension:
 
-plot_signal_image(image_stack, axis=0, title=filename, xlabel='index')
+plot_signal_image(image_stack, axis=0, xlabel='index', title=filename)
 
 mean, real, imag = phasor_from_signal(image_stack, axis=0)
 

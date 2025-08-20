@@ -53,8 +53,8 @@ fractions = numpy.array(
 
 plot_phasor(
     *phasor_from_lifetime(frequency, lifetimes, fractions),
-    linestyle='-',
     frequency=frequency,
+    linestyle='-',
     title='Multi-component lifetimes',
 )
 
@@ -69,8 +69,8 @@ plot_phasor(
     *phasor_from_lifetime(
         frequency, lifetimes, fractions, preexponential=True
     ),
-    linestyle='-',
     frequency=frequency,
+    linestyle='-',
     title='Pre-exponential amplitudes',
 )
 
@@ -133,7 +133,7 @@ plot_phasor(
         unit_conversion=1.0,
     ),
     marker='.',
-    label=('40 MHz', '80 MHz', '160 MHz'),
+    label=['40 MHz', '80 MHz', '160 MHz'],
     title='Lifetime distributions at multiple frequencies',
 )
 
@@ -166,11 +166,11 @@ plot.plot(
     *phasor_from_lifetime(
         frequency,
         lifetime=numpy.column_stack(
-            (
+            [
                 numpy.full(samples, lifetime),  # donor-only lifetime
                 lifetime_quenched,  # donor lifetime with FRET
                 numpy.full(samples, 1e9),  # background with long lifetime
-            )
+            ]
         ),
         fraction=[0.1, 0.9, 0.1 / 1e9],
         preexponential=True,

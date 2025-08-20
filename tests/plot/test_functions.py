@@ -22,31 +22,31 @@ INTERACTIVE = False  # enable for interactive plotting
 def test_plot_phasor():
     """Test plot_phasor function."""
     real, imag = numpy.random.multivariate_normal(
-        (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], 32
+        [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], 32
     ).T
     plot_phasor(
         real,
         imag,
+        frequency=80.0,
+        color='tab:red',
         style='plot',
         title='plot',
-        color='tab:red',
-        frequency=80.0,
         show=INTERACTIVE,
     )
     pyplot.close()
 
     _, ax = pyplot.subplots()
     real, imag = numpy.random.multivariate_normal(
-        (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
+        [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
     ).T
     plot_phasor(
         real,
         imag,
         ax=ax,
-        title='hist2d',
-        cmap='Blues',
         allquadrants=True,
         grid=False,
+        cmap='Blues',
+        title='hist2d',
         show=INTERACTIVE,
     )
     pyplot.close()
@@ -54,10 +54,10 @@ def test_plot_phasor():
     plot_phasor(
         real,
         imag,
+        levels=4,
+        cmap='viridis',
         style='contour',
         title='contour',
-        cmap='viridis',
-        levels=4,
         show=INTERACTIVE,
     )
     pyplot.close()
@@ -99,8 +99,8 @@ def test_plot_signal_image():
         data,
         vmin=0,
         vmax=1,
-        title='default',
         xlabel='xlabel',
+        title='default',
         show=INTERACTIVE,
     )
     pyplot.close()
@@ -110,8 +110,8 @@ def test_plot_signal_image():
     pyplot.close()
     plot_signal_image(
         data,
+        percentile=(5, 95),
         cmap='hot',
-        percentile=[5, 95],
         title='percentile',
         show=INTERACTIVE,
     )
@@ -247,10 +247,10 @@ def test_plot_image(percentile, labels, location, aspect, nimages):
         labels = [labels] * nimages
     plot_image(
         *images,
-        title=title,
         percentile=percentile,
         location=location,
         labels=labels,
+        title=title,
         show=INTERACTIVE,
     )
     pyplot.close()
@@ -274,9 +274,9 @@ def test_plot_image_shapes(columns, percentile):
     plot_image(
         *images,
         columns=columns,
-        title=f'{columns=} {percentile=}',
         percentile=percentile,
         labels=[f'{im.shape!r}' for im in images],
+        title=f'{columns=} {percentile=}',
         show=INTERACTIVE,
     )
     pyplot.close()
