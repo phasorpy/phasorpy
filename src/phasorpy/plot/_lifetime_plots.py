@@ -169,7 +169,12 @@ class LifetimePlots:
         time_plot.set_xlabel('Time [ns]')
         time_plot.set_ylabel('Intensity [normalized]')
         lines = time_plot.plot(
-            times, signal, label='Signal', color='tab:blue', lw=2, zorder=10
+            times,
+            signal,
+            label='Signal',
+            color='tab:blue',
+            linewidth=2,
+            zorder=10,
         )
         self._signal_lines.append(lines[0])
         if num_components > 1:
@@ -179,7 +184,7 @@ class LifetimePlots:
                     component_signal[i],
                     label=f'Lifetime {i}',
                     color=self._component_colors[i],
-                    lw=0.8,
+                    linewidth=0.8,
                     alpha=0.5,
                 )
                 self._signal_lines.append(lines[0])
@@ -188,7 +193,7 @@ class LifetimePlots:
             irf,
             label='Instrument response',
             color='tab:grey',
-            lw=0.8,
+            linewidth=0.8,
             alpha=0.5,
         )
         self._signal_lines.append(lines[0])
@@ -206,11 +211,11 @@ class LifetimePlots:
         if num_components > 1:
             for i in range(num_components):
                 lines = phasorplot.plot(
-                    [real, component_real[i]],
-                    [imag, component_imag[i]],
+                    (real, component_real[i]),
+                    (imag, component_imag[i]),
                     color=self._component_colors[i],
-                    ls='-',
-                    lw=0.8,
+                    linestyle='-',
+                    linewidth=0.8,
                     alpha=0.5,
                 )
                 self._phasor_lines.append(lines[0])
@@ -227,14 +232,14 @@ class LifetimePlots:
         phase_plot.set_xscale('log', base=10)
         phase_plot.set_xlabel('Frequency (MHz)')
         phase_plot.set_ylabel('Phase (°)', color='tab:blue')
-        phase_plot.set_yticks([0.0, 30.0, 60.0, 90.0])
-        phase_plot.plot([1, 1], [0.0, 90.0], alpha=0.0)  # set autoscale
+        phase_plot.set_yticks((0.0, 30.0, 60.0, 90.0))
+        phase_plot.plot((1, 1), (0.0, 90.0), alpha=0.0)  # set autoscale
         lines = phase_plot.plot(
-            [frequency, frequency],
-            [0, 90],
+            (frequency, frequency),
+            (0, 90),
             '--',
             color='gray',
-            lw=0.8,
+            linewidth=0.8,
             alpha=0.5,
         )
         self._frequency_line = lines[0]
@@ -243,7 +248,7 @@ class LifetimePlots:
         )
         self._phase_point = lines[0]
         lines = phase_plot.plot(
-            self._frequencies, phase_, color='tab:blue', lw=2, zorder=2
+            self._frequencies, phase_, color='tab:blue', linewidth=2, zorder=2
         )
         self._phase_lines.append(lines[0])
         if num_components > 1:
@@ -252,7 +257,7 @@ class LifetimePlots:
                     self._frequencies,
                     component_phase_[i],
                     color=self._component_colors[i],
-                    lw=0.5,
+                    linewidth=0.5,
                     alpha=0.5,
                 )
                 self._phase_lines.append(lines[0])
@@ -262,14 +267,18 @@ class LifetimePlots:
         # twinx modulation_plot is always plotted on top of phase_plot
         modulation_plot = phase_plot.twinx()
         modulation_plot.set_ylabel('Modulation (%)', color='tab:red')
-        modulation_plot.set_yticks([0.0, 25.0, 50.0, 75.0, 100.0])
-        modulation_plot.plot([1, 1], [0.0, 100.0], alpha=0.0)  # set autoscale
+        modulation_plot.set_yticks((0.0, 25.0, 50.0, 75.0, 100.0))
+        modulation_plot.plot((1, 1), (0.0, 100.0), alpha=0.0)  # set autoscale
         lines = modulation_plot.plot(
             frequency, modulation, 'o', color='tab:red', markersize=8, zorder=2
         )
         self._modulation_point = lines[0]
         lines = modulation_plot.plot(
-            self._frequencies, modulation_, color='tab:red', lw=2, zorder=2
+            self._frequencies,
+            modulation_,
+            color='tab:red',
+            linewidth=2,
+            zorder=2,
         )
         self._modulation_lines.append(lines[0])
         if num_components > 1:
@@ -278,7 +287,7 @@ class LifetimePlots:
                     self._frequencies,
                     component_modulation_[i],
                     color=self._component_colors[i],
-                    lw=0.5,
+                    linewidth=0.5,
                     alpha=0.5,
                 )
                 self._modulation_lines.append(lines[0])
@@ -522,8 +531,7 @@ class LifetimePlots:
                     [real, component_real[i]], [imag, component_imag[i]]
                 )
                 self._phasor_points[i + 1].set_data(
-                    [component_real[i]],
-                    [component_imag[i]],
+                    [component_real[i]], [component_imag[i]]
                 )
 
         # frequency domain plot

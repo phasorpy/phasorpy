@@ -61,7 +61,7 @@ html_js_files = ['custom-icons.js']
 html_show_sourcelink = False
 
 html_logo = '_static/phasorpy_logo.svg'
-# html_favicon = ''
+html_favicon = '_static/favicon.ico'
 
 pygments_style = 'sphinx'
 

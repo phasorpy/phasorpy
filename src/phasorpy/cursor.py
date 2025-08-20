@@ -26,10 +26,7 @@ __all__ = [
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import (
-        ArrayLike,
-        NDArray,
-    )
+    from ._typing import ArrayLike, Literal, NDArray
 
 import numpy
 
@@ -139,8 +136,7 @@ def mask_from_elliptic_cursor(
     *,
     radius: ArrayLike = 0.05,
     radius_minor: ArrayLike | None = None,
-    angle: ArrayLike | None = None,
-    align_semicircle: bool = False,
+    angle: ArrayLike | Literal['phase', 'semicircle'] | str | None = None,
 ) -> NDArray[numpy.bool_]:
     """Return masks for elliptic cursors of phasor coordinates.
 
@@ -159,14 +155,11 @@ def mask_from_elliptic_cursor(
     radius_minor : array_like, optional, shape (n,)
         Radii of ellipses along semi-minor axis.
         By default, the ellipses are circular.
-    angle : array_like, optional, shape (n,)
-        Rotation angles of semi-major axes of ellipses in radians.
-        By default, the ellipses are automatically oriented depending on
-        `align_semicircle`.
-    align_semicircle : bool, optional
-        Determines orientation of ellipses if `angle` is not provided.
-        If true, align the minor axes of the ellipses with the closest tangent
-        on the universal semicircle, else the unit circle (default).
+    angle : array_like or {'phase', 'semicircle'}, optional
+        Rotation angle of semi-major axis of elliptic cursors in radians.
+        If None or 'phase', align the minor axes of the ellipses with
+        the closest tangent on the unit circle.
+        If 'semicircle', align the ellipses with the universal semicircle.
 
     Returns
     -------
@@ -220,12 +213,17 @@ def mask_from_elliptic_cursor(
         angle = 0.0
     else:
         radius_b = numpy.asarray(radius_minor)
+
     if angle is None:
-        # TODO: vectorize align_semicircle?
-        if align_semicircle:
+        angle = numpy.arctan2(center_imag, center_real)
+    elif isinstance(angle, str):
+        # TODO: vectorize str type
+        if angle == 'phase':
+            angle = numpy.arctan2(center_imag, center_real)
+        elif angle == 'semicircle':
             angle = numpy.arctan2(center_imag, center_real - 0.5)
         else:
-            angle = numpy.arctan2(center_imag, center_real)
+            raise ValueError(f'invalid {angle=}')
 
     angle_sin = numpy.sin(angle)
     angle_cos = numpy.cos(angle)

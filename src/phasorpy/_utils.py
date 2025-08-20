@@ -134,7 +134,7 @@ def scale_matrix(factor: float, origin: Sequence[float]) -> NDArray[Any]:
 
     Examples
     --------
-    >>> scale_matrix(1.1, (0.0, 0.5))
+    >>> scale_matrix(1.1, [0.0, 0.5])
     array([[1.1, 0, -0],
            [0, 1.1, -0.05],
            [0, 0, 1]])
@@ -434,10 +434,10 @@ def parse_skip_axis(
 
     Examples
     --------
-    >>> parse_skip_axis((1, -2), 5)
+    >>> parse_skip_axis([1, -2], 5)
     ((1, 3), (0, 2, 4))
 
-    >>> parse_skip_axis((1, -2), 5, True)
+    >>> parse_skip_axis([1, -2], 5, True)
     ((0, 2, 4), (1, 3, 5))
 
     """

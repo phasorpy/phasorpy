@@ -1060,7 +1060,7 @@ def phasor_to_principal_plane(
     im = im.reshape(im.shape[0], -1)
 
     # vector of multi-frequency phasor coordinates
-    coordinates = numpy.vstack((re, im))
+    coordinates = numpy.vstack([re, im])
 
     # vector of centered coordinates
     center = numpy.nanmean(coordinates, axis=1, keepdims=True)

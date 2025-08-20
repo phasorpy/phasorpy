@@ -47,6 +47,7 @@ from phasorpy.plot import (
 
 filename = 'CFP and CFP-YFp.ref'
 frequency = 80.0  # MHz
+
 mean, real, imag, attrs = phasor_from_simfcs_referenced(fetch(filename))
 
 plot_phasor_image(mean, real, imag, title=filename)
@@ -82,35 +83,40 @@ fret_trajectory = phasor_from_fret_donor(
     background_imag=background_imag,
 )
 
-phasor_plot = PhasorPlot(frequency=frequency, xlim=(0.5, 1), ylim=(0.2, 0.6))
+phasor_plot = PhasorPlot(
+    frequency=frequency,
+    xlim=(0.5, 1),
+    ylim=(0.2, 0.6),
+    title='FRET efficiency trajectory',
+)
 phasor_plot.hist2d(real, imag)
 phasor_plot.line([donor_real, background_real], [donor_imag, background_imag])
 phasor_plot.plot(
     donor_real,
     donor_imag,
     'o',
-    label='Donor only',
     color='tab:green',
     markeredgecolor='black',
     markersize=10,
     zorder=10,
+    label='Donor only',
 )
 phasor_plot.plot(
     background_real,
     background_imag,
     'o',
-    label='Background',
     color='black',
     markersize=10,
     zorder=10,
+    label='Background',
 )
 phasor_plot.plot(
     *fret_trajectory,
     '-',
-    label='FRET trajectory',
     color='tab:orange',
-    lw=4,
+    linewidth=4,
     alpha=0.8,
+    label='FRET trajectory',
 )
 phasor_plot.show()
 
@@ -140,11 +146,11 @@ plot_image(fret_efficiencies, title='Estimated FRET efficiency')
 
 plot_histograms(
     fret_efficiencies * 100,  # convert to percentage
-    title='FRET efficiency histogram',
-    xlabel='FRET efficiency (%)',
-    ylabel='Counts',
     range=(0, 35),
     bins=35,
+    xlabel='FRET efficiency (%)',
+    ylabel='Counts',
+    title='FRET efficiency histogram',
 )
 
 # %%
