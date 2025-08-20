@@ -349,7 +349,7 @@ spectral_correlation_plot = PhasorPlot(
     xlim=(-0.1, 0.4),
     ylim=(0.6, 0.8),
     xticks=[x for x in numpy.arange(-0.1, 0.5, 0.1)],
-    yticks=[0.6, 0.7, 0.8],
+    yticks=(0.6, 0.7, 0.8),
 )
 for i in range(flim_ch1_masks.shape[0]):
     spectral_correlation_plot.plot(
