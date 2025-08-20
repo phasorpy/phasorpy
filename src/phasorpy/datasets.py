@@ -20,7 +20,7 @@ Datasets from the following repositories are available:
   <https://zenodo.org/records/15007900>`_
 - `FLIM and spectral dataset for GSLab
   <https://figshare.com/articles/dataset/FLIM_dataset_for_GSLab/28067108>`_
-- `Hyperspectral and FLIM dataset of LAURDAN-Stained NIH-3T3 Cells
+- `Hyperspectral and FLIM dataset of LAURDAN-stained NIH-3T3 cells
   <https://zenodo.org/records/16894639>`_
 
 The implementation is based on the `Pooch <https://www.fatiando.org/pooch>`_
