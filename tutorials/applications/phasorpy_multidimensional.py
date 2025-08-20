@@ -162,8 +162,10 @@ flim_mean, flim_real, flim_imag = phasor_threshold(
 plot_phasor(
     spectral_real,
     spectral_imag,
-    title='Spectral phasor coordinates',
+    xlim=(-0.5, 1.05),
+    ylim=(-0.1, 1.05),
     allquadrants=True,
+    title='Spectral phasor coordinates',
 )
 
 # %%
