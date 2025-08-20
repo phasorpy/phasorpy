@@ -36,7 +36,7 @@ def test_lifetime_plots_two():
     """Test LifetimePlots interactive with two components."""
     plot = LifetimePlots(
         frequency=100.0,
-        lifetime=(0.1, 0.1),
+        lifetime=[0.1, 0.1],
         interactive=True,
     )
     assert len(plot._lifetime_sliders) == 2
@@ -54,8 +54,8 @@ def test_lifetime_plots_three():
     """Test LifetimePlots interactive with three components."""
     plot = LifetimePlots(
         frequency=60.0,
-        lifetime=(0.1, 0.1, 0.1),
-        fraction=(1 / 3, 1 / 3, 1 / 3),
+        lifetime=[0.1, 0.1, 0.1],
+        fraction=[1 / 3, 1 / 3, 1 / 3],
         frequency_range=(10.0, 1000.0, 10.0),
         lifetime_range=(0.1, 10.0, 0.1),
         interactive=True,
@@ -79,8 +79,8 @@ def test_lifetime_plots_four():
     """Test LifetimePlots interactive with four components."""
     plot = LifetimePlots(
         frequency=None,
-        lifetime=(8, 4, 2, 1),
-        fraction=(0, 0, 0, 0),
+        lifetime=[8, 4, 2, 1],
+        fraction=[0, 0, 0, 0],
         interactive=True,
     )
     assert len(plot._lifetime_sliders) == 4
@@ -98,7 +98,7 @@ def test_lifetime_plots_exceptions():
         LifetimePlots(frequency=60.0, lifetime=[1.0] * 7)
 
     with pytest.raises(ValueError):
-        LifetimePlots(frequency=60.0, lifetime=4.2, fraction=(0.5, 0.5))
+        LifetimePlots(frequency=60.0, lifetime=4.2, fraction=[0.5, 0.5])
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

@@ -49,7 +49,7 @@ def test_spectral_vector_denoise(dtype, spectral_vector):
     mean, real, imag = phasor_from_signal(signal, axis=0)
 
     if spectral_vector is not None:
-        spectral_vector = numpy.moveaxis(numpy.stack((real, imag)), 0, -1)
+        spectral_vector = numpy.moveaxis(numpy.stack([real, imag]), 0, -1)
 
     denoised = spectral_vector_denoise(
         signal,
@@ -75,7 +75,7 @@ def test_spectral_vector_nan():
     signal[0, 0, 0] = numpy.nan
 
     mean, real, imag = phasor_from_signal(signal, axis=0)
-    spectral_vector = numpy.moveaxis(numpy.stack((real, imag)), 0, -1)
+    spectral_vector = numpy.moveaxis(numpy.stack([real, imag]), 0, -1)
     spectral_vector[0, 1] = numpy.nan
     assert numpy.all(numpy.isnan(spectral_vector[0, 0]))
 

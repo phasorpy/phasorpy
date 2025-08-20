@@ -143,8 +143,8 @@ class PhasorPlotFret(PhasorPlot):
         update_kwargs(
             kwargs,
             title='PhasorPy FRET phasor plot',
-            xlim=[-0.2, 1.1],
-            ylim=[-0.1, 0.8],
+            xlim=(-0.2, 1.1),
+            ylim=(-0.1, 0.8),
         )
         kwargs['allquadrants'] = False
         kwargs['grid'] = False
@@ -213,8 +213,7 @@ class PhasorPlotFret(PhasorPlot):
 
         if donor_fretting < 1.0 and donor_background == 0.0:
             lines = self.line(
-                [donor_real, donor_fret_real],
-                [donor_imag, donor_fret_imag],
+                [donor_real, donor_fret_real], [donor_imag, donor_fret_imag]
             )
         else:
             lines = self.line([0.0, 0.0], [0.0, 0.0])
@@ -306,6 +305,7 @@ class PhasorPlotFret(PhasorPlot):
         self._background_line = lines[0]
 
         if not interactive:
+            ax.legend()
             return
 
         # add sliders
@@ -446,6 +446,7 @@ class PhasorPlotFret(PhasorPlot):
             valstep=0.01,
             valinit=background_imag,
         )
+        ax.legend()
         self._background_imag_slider.on_changed(self._on_changed)
 
     def _on_semicircle_changed(self, value: Any) -> None:
@@ -527,8 +528,7 @@ class PhasorPlotFret(PhasorPlot):
 
         if donor_fretting < 1.0 and donor_background == 0.0:
             self._donor_donor_line.set_data(
-                [donor_real, donor_fret_real],
-                [donor_imag, donor_fret_imag],
+                [donor_real, donor_fret_real], [donor_imag, donor_fret_imag]
             )
         else:
             self._donor_donor_line.set_data([0.0, 0.0], [0.0, 0.0])

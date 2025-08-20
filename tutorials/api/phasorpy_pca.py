@@ -104,7 +104,7 @@ x2, y2 = numpy.dot(
 )
 
 plot = PhasorPlot(
-    title='Projection on principal plane', grid=False, xlabel='x', ylabel='y'
+    grid=False, xlabel='x', ylabel='y', title='Projection on principal plane'
 )
 plot.plot(x0, y0, '.', label='Phasor distributions')
 plot.plot(x1, y1, '-', color='0.5', label='Universal semicircle')
@@ -131,10 +131,10 @@ x2, y2 = numpy.dot(
 )
 
 plot = PhasorPlot(
-    title=f'Projection on principal plane ({frequency[0]} MHz)',
     grid=False,
     xlabel='x',
     ylabel='y',
+    title=f'Projection on principal plane ({frequency[0]} MHz)',
 )
 plot.plot(x0, y0, '.', label='Phasor distributions')
 plot.plot(x1, y1, '-', color='0.5', label='Universal semicircle')
