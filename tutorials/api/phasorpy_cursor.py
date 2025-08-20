@@ -54,7 +54,7 @@ plot.cursor(
     cursor_imag,
     radius=radius,
     color=CATEGORICAL[:2],
-    label=('cursor 0', 'cursor 1'),
+    label=['cursor 0', 'cursor 1'],
 )
 plot.show()
 
@@ -98,7 +98,7 @@ plot.cursor(
     radius=radius,
     radius_minor=radius_minor,
     color=CATEGORICAL[:2],
-    label=('cursor 0', 'cursor 1'),
+    label=['cursor 0', 'cursor 1'],
 )
 plot.show()
 
@@ -140,7 +140,7 @@ plot.polar_cursor(
     modulation=modulation_min,
     modulation_limit=modulation_max,
     color=CATEGORICAL[2:4],
-    label=('cursor 0', 'cursor 1'),
+    label=['cursor 0', 'cursor 1'],
 )
 plot.show()
 

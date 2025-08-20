@@ -82,7 +82,7 @@ assert math.isclose(fraction_of_first_component, component_fractions[0])
 # two components with known phasor coordinates:
 
 real, imag = numpy.random.multivariate_normal(
-    (real, imag), [[5e-3, 1e-3], [1e-3, 1e-3]], (100, 100)
+    [real, imag], [[5e-3, 1e-3], [1e-3, 1e-3]], (100, 100)
 ).T
 
 plot = PhasorPlot(

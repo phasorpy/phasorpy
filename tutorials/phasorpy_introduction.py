@@ -355,9 +355,9 @@ plot_phasor(
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursor import mask_from_circular_cursor
 
-cursor_real = 0.69, 0.59
-cursor_imag = 0.32, 0.33
-radius = 0.05, 0.05
+cursor_real = [0.69, 0.59]
+cursor_imag = [0.32, 0.33]
+radius = [0.05, 0.05]
 cursor_masks = mask_from_circular_cursor(
     real, imag, cursor_real, cursor_imag, radius=radius
 )
@@ -431,7 +431,7 @@ plot_phasor(
     title='Hyperspectral phasor plot',
     allquadrants=True,
     pad=0.2,  # make space for labels
-    grid={'ticks': (450, 500, 550, 600, 650, 700), 'tick_space': wavelengths},
+    grid={'ticks': [450, 500, 550, 600, 650, 700], 'tick_space': wavelengths},
 )
 
 # %%

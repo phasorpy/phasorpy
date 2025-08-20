@@ -213,28 +213,28 @@ class PhasorPlotFret(PhasorPlot):
 
         if donor_fretting < 1.0 and donor_background == 0.0:
             lines = self.line(
-                (donor_real, donor_fret_real), (donor_imag, donor_fret_imag)
+                [donor_real, donor_fret_real], [donor_imag, donor_fret_imag]
             )
         else:
-            lines = self.line((0.0, 0.0), (0.0, 0.0))
+            lines = self.line([0.0, 0.0], [0.0, 0.0])
         self._donor_donor_line = lines[0]
 
         if acceptor_background > 0.0:
             lines = self.line(
-                (float(acceptor_real), float(background_real)),
-                (float(acceptor_imag), float(background_imag)),
+                [float(acceptor_real), float(background_real)],
+                [float(acceptor_imag), float(background_imag)],
             )
         else:
-            lines = self.line((0.0, 0.0), (0.0, 0.0))
+            lines = self.line([0.0, 0.0], [0.0, 0.0])
         self._acceptor_background_line = lines[0]
 
         if donor_background > 0.0:
             lines = self.line(
-                (float(donor_real), float(background_real)),
-                (float(donor_imag), float(background_imag)),
+                [float(donor_real), float(background_real)],
+                [float(donor_imag), float(background_imag)],
             )
         else:
-            lines = self.line((0.0, 0.0), (0.0, 0.0))
+            lines = self.line([0.0, 0.0], [0.0, 0.0])
         self._donor_background_line = lines[0]
 
         lines = self.plot(
@@ -520,42 +520,42 @@ class PhasorPlotFret(PhasorPlot):
 
         if donor_background > 0.0:
             self._donor_background_line.set_data(
-                (float(donor_real), float(background_real)),
-                (float(donor_imag), float(background_imag)),
+                [float(donor_real), float(background_real)],
+                [float(donor_imag), float(background_imag)],
             )
         else:
-            self._donor_background_line.set_data((0.0, 0.0), (0.0, 0.0))
+            self._donor_background_line.set_data([0.0, 0.0], [0.0, 0.0])
 
         if donor_fretting < 1.0 and donor_background == 0.0:
             self._donor_donor_line.set_data(
-                (donor_real, donor_fret_real), (donor_imag, donor_fret_imag)
+                [donor_real, donor_fret_real], [donor_imag, donor_fret_imag]
             )
         else:
-            self._donor_donor_line.set_data((0.0, 0.0), (0.0, 0.0))
+            self._donor_donor_line.set_data([0.0, 0.0], [0.0, 0.0])
 
         if acceptor_background > 0.0:
             self._acceptor_background_line.set_data(
-                (float(acceptor_real), float(background_real)),
-                (float(acceptor_imag), float(background_imag)),
+                [float(acceptor_real), float(background_real)],
+                [float(acceptor_imag), float(background_imag)],
             )
         else:
-            self._acceptor_background_line.set_data((0.0, 0.0), (0.0, 0.0))
+            self._acceptor_background_line.set_data([0.0, 0.0], [0.0, 0.0])
 
-        self._background_line.set_data((background_real,), (background_imag,))
+        self._background_line.set_data([background_real], [background_imag])
 
-        self._donor_only_line.set_data((donor_real,), (donor_imag,))
-        self._donor_fret_line.set_data((donor_fret_real,), (donor_fret_imag,))
+        self._donor_only_line.set_data([donor_real], [donor_imag])
+        self._donor_fret_line.set_data([donor_fret_real], [donor_fret_imag])
         self._donor_trajectory_line.set_data(
             donor_trajectory_real, donor_trajectory_imag
         )
         self._donor_line.set_data(
-            (donor_trajectory_real[e],), (donor_trajectory_imag[e],)
+            [donor_trajectory_real[e]], [donor_trajectory_imag[e]]
         )
 
-        self._acceptor_only_line.set_data((acceptor_real,), (acceptor_imag,))
+        self._acceptor_only_line.set_data([acceptor_real], [acceptor_imag])
         self._acceptor_trajectory_line.set_data(
             acceptor_trajectory_real, acceptor_trajectory_imag
         )
         self._acceptor_line.set_data(
-            (acceptor_trajectory_real[e],), (acceptor_trajectory_imag[e],)
+            [acceptor_trajectory_real[e]], [acceptor_trajectory_imag[e]]
         )

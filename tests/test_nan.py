@@ -220,7 +220,7 @@ def test_phasor_from_signal_nan():
     """Test phasor_from_signal function with NaN values."""
     sample_phase = numpy.linspace(0, 2 * numpy.pi, 4, endpoint=False)
     signal = 1.1 * (numpy.cos(sample_phase - 0.4) * 0.8 + 1)
-    signal = numpy.stack((signal, signal))
+    signal = numpy.stack([signal, signal])
     signal[0, 2] = NAN
     with warnings.catch_warnings():
         warnings.simplefilter('error')

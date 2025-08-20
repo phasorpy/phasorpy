@@ -22,7 +22,7 @@ INTERACTIVE = False  # enable for interactive plotting
 def test_plot_phasor():
     """Test plot_phasor function."""
     real, imag = numpy.random.multivariate_normal(
-        (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], 32
+        [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], 32
     ).T
     plot_phasor(
         real,
@@ -37,7 +37,7 @@ def test_plot_phasor():
 
     _, ax = pyplot.subplots()
     real, imag = numpy.random.multivariate_normal(
-        (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
+        [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
     ).T
     plot_phasor(
         real,

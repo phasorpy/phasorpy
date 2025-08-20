@@ -61,7 +61,7 @@ plot.show()
 plot = PhasorPlot(title='Universal semicircle', xlim=(-0.2, 1.1))
 plot.semicircle(
     frequency=80.0,
-    lifetime=(0, 0.5, 1, 2, 4, 8, 16),
+    lifetime=[0, 0.5, 1, 2, 4, 8, 16],
     color='tab:green',
     label='donor',
 )
@@ -78,8 +78,8 @@ plot.show()
 
 plot = PhasorPlot(frequency=80.0, title='Scatter and line plots')
 plot.plot(0.6, 0.4, label='1')
-plot.plot((0.2, 0.9), (0.4, 0.3), '.-', label='2')
-plot.plot((0.39, 0.4, 0.41), (0.21, 0.19, 0.2), 'x', label='3')
+plot.plot([0.2, 0.9], [0.4, 0.3], '.-', label='2')
+plot.plot([0.39, 0.4, 0.41], [0.21, 0.19, 0.2], 'x', label='3')
 plot.show()
 
 # %%
@@ -146,13 +146,13 @@ plot.show()
 
 plot = PhasorPlot(frequency=80.0, title='Multiple cursors')
 plot.cursor(
-    (0.2, 0.5, 0.8),
+    [0.2, 0.5, 0.8],
     0.4,
-    radius=(0.05, 0.1, 0.05),
+    radius=[0.05, 0.1, 0.05],
     radius_minor=0.1,
     angle='semicircle',
-    color=('tab:blue', '0.5', 'tab:orange'),
-    label=('blue ellipse', 'gray circle', 'orange ellipse'),
+    color=['tab:blue', '0.5', 'tab:orange'],
+    label=['blue ellipse', 'gray circle', 'orange ellipse'],
 )
 plot.show()
 
@@ -181,7 +181,7 @@ plot.show()
 # Show linear combinations of phasor coordinates or ranges thereof:
 
 real, imag, weights = numpy.array(
-    ((0.1, 0.2, 0.5, 0.9), (0.3, 0.4, 0.5, 0.3), (2, 1, 2, 1))
+    [[0.1, 0.2, 0.5, 0.9], [0.3, 0.4, 0.5, 0.3], [2, 1, 2, 1]]
 )
 
 plot = PhasorPlot(frequency=80.0, title='Component mixtures')
@@ -190,7 +190,7 @@ plot.components(
     imag,
     linestyle='',
     marker='o',
-    labels=('A', 'B', 'C', 'D'),
+    labels=['A', 'B', 'C', 'D'],
     fill=True,
     color='tab:blue',
     facecolor='lightyellow',
@@ -206,7 +206,7 @@ plot.show()
 # Plot large number of phasor coordinates as a two-dimensional histogram:
 
 real, imag = numpy.random.multivariate_normal(
-    (0.6, 0.4), ((3e-3, -1e-3), (-1e-3, 1e-3)), (256, 256)
+    [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
 ).T
 plot = PhasorPlot(frequency=80.0, title='Two-dimensional histogram')
 plot.hist2d(real, imag)
@@ -239,7 +239,7 @@ plot.show()
 # Multiple plots can be combined:
 
 real2, imag2 = numpy.random.multivariate_normal(
-    (0.9, 0.2), ((2e-4, -1e-4), (-1e-4, 2e-4)), 4096
+    [0.9, 0.2], [[2e-4, -1e-4], [-1e-4, 2e-4]], 4096
 ).T
 
 plot = PhasorPlot(
@@ -275,8 +275,8 @@ plot = PhasorPlot(
     allquadrants=True,
     title='Custom grid',
     grid={
-        'labels': ('', '450', '500 nm', '550', '600', '650', '700', ''),
-        'ticks': (430, 450, 500, 550, 600, 650, 700, 730),
+        'labels': ['', '450', '500 nm', '550', '600', '650', '700', ''],
+        'ticks': [430, 450, 500, 550, 600, 650, 700, 730],
         'tick_space': numpy.linspace(430, 730, 16),
         'angles': 8,
         'radii': 2,

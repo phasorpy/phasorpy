@@ -513,7 +513,7 @@ class PhasorPlot:
                 linewidth=linewidth,
                 fill=GRID_FILL,
             )
-            self._ax.add_patch(Polygon(numpy.vstack((real, imag)).T, **kwargs))
+            self._ax.add_patch(Polygon(numpy.vstack([real, imag]).T, **kwargs))
             if marker is not None:
                 self._ax.plot(
                     real,
@@ -537,11 +537,11 @@ class PhasorPlot:
             linewidth=linewidth,
         )
         center_re, center_im = numpy.average(
-            numpy.vstack((real, imag)), axis=-1, weights=fraction
+            numpy.vstack([real, imag]), axis=-1, weights=fraction
         )
         for re, im in zip(real, imag):
             self._ax.add_line(
-                Line2D((center_re, re), (center_im, im), **kwargs)
+                Line2D([center_re, re], [center_im, im], **kwargs)
             )
         if marker is not None:
             self._ax.plot(real, imag, marker=marker, linestyle='', color=color)
@@ -964,14 +964,14 @@ class PhasorPlot:
                 x0, y0, x1, y1 = _intersect_circle_line(
                     x, y, radius, x, y, x + 1, y
                 )
-                ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
+                ax.add_line(Line2D([x0, x1], [y0, y1], **kwargs))
                 if 'label' in kwargs:
                     self._labels = True
                     del kwargs['label']
                 x0, y0, x1, y1 = _intersect_circle_line(
                     x, y, radius, x, y, x, y + 1
                 )
-                ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
+                ax.add_line(Line2D([x0, x1], [y0, y1], **kwargs))
                 return None
 
             if abs(x) < 1e-6 and abs(y) < 1e-6:
@@ -980,7 +980,7 @@ class PhasorPlot:
 
             # draw crosshair phase line and modulation arc limited by circle
             x0, y0, x1, y1 = _intersect_circle_line(x, y, radius, 0, 0, x, y)
-            ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
+            ax.add_line(Line2D([x0, x1], [y0, y1], **kwargs))
             if 'label' in kwargs:
                 self._labels = True
                 del kwargs['label']
@@ -1009,11 +1009,11 @@ class PhasorPlot:
             if phase_limit is None or modulation_limit is None:
                 # draw Cartesian crosshair lines
                 del kwargs['fill']
-                ax.add_line(Line2D((x0, x0), (-2, 2), **kwargs))
+                ax.add_line(Line2D([x0, x0], [-2, 2], **kwargs))
                 if 'label' in kwargs:
                     self._labels = True
                     del kwargs['label']
-                ax.add_line(Line2D((-2, 2), (y0, y0), **kwargs))
+                ax.add_line(Line2D([-2, 2], [y0, y0], **kwargs))
             else:
                 # draw rectangle
                 x1 = modulation_limit * math.cos(phase_limit)
@@ -1037,7 +1037,7 @@ class PhasorPlot:
                     y0 = 0
                     x1 = math.cos(phi) * 2
                     y1 = math.sin(phi) * 2
-                ax.add_line(Line2D((x0, x1), (y0, y1), **kwargs))
+                ax.add_line(Line2D([x0, x1], [y0, y1], **kwargs))
                 if 'label' in kwargs:
                     self._labels = True
                     del kwargs['label']
@@ -1155,7 +1155,7 @@ class PhasorPlot:
 
         if samples is not None and samples > 1:
             angle = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
-            xy = numpy.vstack((numpy.cos(angle), numpy.sin(angle))).T
+            xy = numpy.vstack([numpy.cos(angle), numpy.sin(angle)]).T
             ax.add_patch(Polygon(xy, fill=False, **kwargs))
 
         if radii is None:
@@ -1188,7 +1188,7 @@ class PhasorPlot:
                 continue
             x = math.cos(a)
             y = math.sin(a)
-            ax.add_line(Line2D((0.0, x), (0.0, y), **minor_kwargs))
+            ax.add_line(Line2D([0.0, x], [0.0, y], **minor_kwargs))
 
         if labels is None and ticks is None:
             # no labels
@@ -1226,7 +1226,7 @@ class PhasorPlot:
         real = numpy.cos(ticks)
         imag = numpy.sin(ticks)
         self._unitcircle_ticks = CircleTicks(labels=labels)
-        ax.plot(real, imag, path_effects=(self._unitcircle_ticks,), **kwargs)
+        ax.plot(real, imag, path_effects=[self._unitcircle_ticks], **kwargs)
 
     def semicircle(
         self,
@@ -1336,7 +1336,7 @@ class PhasorPlot:
                         *phasor_from_lifetime(frequency, lifetime),
                         *polar_reference,
                     ),
-                    path_effects=(self._semicircle_ticks,),
+                    path_effects=[self._semicircle_ticks],
                     **kwargs,
                 )
             )
@@ -1455,7 +1455,7 @@ class CircleTicks(AbstractPathEffect):
 
             renderer.draw_path(
                 gc0,
-                Path(xyt, numpy.tile((Path.MOVETO, Path.LINETO), p.shape[0])),
+                Path(xyt, numpy.tile([Path.MOVETO, Path.LINETO], p.shape[0])),
                 affine.inverted() + trans,
                 rgbFace,
             )

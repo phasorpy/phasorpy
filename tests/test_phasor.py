@@ -44,11 +44,11 @@ from phasorpy.phasor import (
 NAN = math.nan
 SYNTH_DATA_ARRAY = numpy.array([[50, 1], [1, 1]])
 SYNTH_DATA_ARRAY_3D = numpy.stack(
-    (
+    [
         SYNTH_DATA_ARRAY,
         SYNTH_DATA_ARRAY / 2,
         SYNTH_DATA_ARRAY / 3,
-    ),
+    ],
     axis=0,
 )
 SYNTH_DATA_NAN = numpy.array([[50, NAN], [1, 1]])

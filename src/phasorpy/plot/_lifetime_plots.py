@@ -480,18 +480,18 @@ class LifetimePlots:
                         *phasor_from_lifetime(frequency, lifetime)
                     )
                 )
-            self._frequency_line.set_data((frequency, frequency), (0, 90))
+            self._frequency_line.set_data([frequency, frequency], [0, 90])
             # self._time_plot.set_title(f'Time domain ({frequency:.0f} MHz)')
             # self._phasor_plot.set_title(f'Phasor plot ({frequency:.0f} MHz)')
 
-        lifetimes = numpy.asarray(tuple(s.val for s in self._lifetime_sliders))
-        fractions = numpy.asarray(tuple(s.val for s in self._fraction_sliders))
+        lifetimes = numpy.asarray([s.val for s in self._lifetime_sliders])
+        fractions = numpy.asarray([s.val for s in self._fraction_sliders])
 
         num_components = len(lifetimes)
         if num_components == 1:
-            fractions = numpy.asarray((1.0,))
+            fractions = numpy.asarray([1.0])
         elif num_components == 2:
-            fractions = numpy.asarray((fractions[0], 1.0 - fractions[0]))
+            fractions = numpy.asarray([fractions[0], 1.0 - fractions[0]])
 
         (
             frequency,
@@ -524,20 +524,20 @@ class LifetimePlots:
             self._time_plot.autoscale_view()
 
         # phasor plot
-        self._phasor_points[0].set_data((real,), (imag,))
+        self._phasor_points[0].set_data([real], [imag])
         if num_components > 1:
             for i in range(num_components):
                 self._phasor_lines[i].set_data(
-                    (real, component_real[i]), (imag, component_imag[i])
+                    [real, component_real[i]], [imag, component_imag[i]]
                 )
                 self._phasor_points[i + 1].set_data(
-                    (component_real[i],), (component_imag[i],)
+                    [component_real[i]], [component_imag[i]]
                 )
 
         # frequency domain plot
-        self._frequency_line.set_data((frequency, frequency), (0, 90))
-        self._phase_point.set_data((frequency,), (phase,))
-        self._modulation_point.set_data((frequency,), (modulation,))
+        self._frequency_line.set_data([frequency, frequency], [0, 90])
+        self._phase_point.set_data([frequency], [phase])
+        self._modulation_point.set_data([frequency], [modulation])
         self._phase_lines[0].set_data(self._frequencies, phase_)
         self._modulation_lines[0].set_data(self._frequencies, modulation_)
         if num_components > 1:

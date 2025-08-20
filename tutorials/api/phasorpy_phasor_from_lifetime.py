@@ -48,7 +48,7 @@ plot_phasor(
 # of the pure components:
 
 fractions = numpy.array(
-    ((1, 0), (0.25, 0.75), (0.5, 0.5), (0.75, 0.25), (0, 1))
+    [[1, 0], [0.25, 0.75], [0.5, 0.5], [0.75, 0.25], [0, 1]]
 )
 
 plot_phasor(
@@ -127,13 +127,13 @@ fraction_distributions = numpy.column_stack(
 
 plot_phasor(
     *phasor_from_lifetime(
-        frequency=(40e6, 80e6, 160e6),
+        frequency=[40e6, 80e6, 160e6],
         lifetime=lifetime_distributions,
         fraction=fraction_distributions,
         unit_conversion=1.0,
     ),
     marker='.',
-    label=('40 MHz', '80 MHz', '160 MHz'),
+    label=['40 MHz', '80 MHz', '160 MHz'],
     title='Lifetime distributions at multiple frequencies',
 )
 
@@ -166,13 +166,13 @@ plot.plot(
     *phasor_from_lifetime(
         frequency,
         lifetime=numpy.column_stack(
-            (
+            [
                 numpy.full(samples, lifetime),  # donor-only lifetime
                 lifetime_quenched,  # donor lifetime with FRET
                 numpy.full(samples, 1e9),  # background with long lifetime
-            )
+            ]
         ),
-        fraction=(0.1, 0.9, 0.1 / 1e9),
+        fraction=[0.1, 0.9, 0.1 / 1e9],
         preexponential=True,
     ),
     linestyle='-',
@@ -189,7 +189,7 @@ plot.show()
 
 frequencies = numpy.logspace(-1, 4, 32)
 lifetimes = [4.0, 1.0]
-fractions = numpy.array(((1, 0), (0.5, 0.5), (0, 1)))
+fractions = numpy.array([[1, 0], [0.5, 0.5], [0, 1]])
 
 plot_polar_frequency(
     frequencies,

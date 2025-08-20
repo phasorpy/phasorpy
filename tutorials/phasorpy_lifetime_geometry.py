@@ -36,8 +36,8 @@ from phasorpy.plot import PhasorPlot
 # frequency:
 
 frequency = 80.0  # MHz
-lifetime = 0.4, 4.0  # ns
-fraction = 0.6, 0.4
+lifetime = [0.4, 4.0]  # ns
+fraction = [0.6, 0.4]
 
 real, imag = phasor_from_lifetime(frequency, lifetime, fraction)
 phase, modulation = phasor_to_polar(real, imag)
@@ -64,10 +64,10 @@ plot = PhasorPlot(
     title='Geometrical interpretation of lifetimes in the phasor plot',
     xlim=(0.0, 1.01),
     ylim=(0.0, 0.6),
-    xticks=(0, 0.5, 1),
-    yticks=(0, 0.5),
-    xticklabels=('0', '1/2', '1'),
-    yticklabels=('0', '1/2'),
+    xticks=[0, 0.5, 1],
+    yticks=[0, 0.5],
+    xticklabels=['0', '1/2', '1'],
+    yticklabels=['0', '1/2'],
     xlabel=None,
     ylabel=None,
     grid=False,
@@ -82,8 +82,8 @@ plot.semicircle(color='tab:gray', linewidth=linewidth, zorder=0)
 
 # line to G coordinate
 plot.line(
-    (real, real),
-    (0.0, imag),
+    [real, real],
+    [0.0, imag],
     linestyle='--',
     color=color_phasor,
     linewidth=1,
@@ -92,8 +92,8 @@ plot.line(
 
 # line to S coordinate
 plot.line(
-    (real, 0),
-    (imag, imag),
+    [real, 0],
+    [imag, imag],
     linestyle='--',
     color=color_phasor,
     linewidth=1,
@@ -105,8 +105,8 @@ component_imag = numpy.atleast_1d(component_imag)
 
 # arc indicating phase angle
 plot.arrow(
-    (modulation / 4, 0.0),
-    (real / 4, imag / 4),
+    [modulation / 4, 0.0],
+    [real / 4, imag / 4],
     angle=phase,
     color=color_phase,
     arrowstyle='-',
@@ -115,8 +115,8 @@ plot.arrow(
 
 # phase line
 plot.arrow(
-    (0, 0),
-    (real, imag),
+    [0, 0],
+    [real, imag],
     color=color_phase,
     linewidth=linewidth,
     arrowstyle='-',
@@ -125,8 +125,8 @@ plot.arrow(
 
 # modulation arc
 plot.arrow(
-    (modulation, 0.0),
-    (real, imag),
+    [modulation, 0.0],
+    [real, imag],
     angle=phase,
     color=color_modulation,
     arrowstyle='-',
@@ -135,8 +135,8 @@ plot.arrow(
 
 # normal lifetime line
 plot.arrow(
-    (0.5, 0.0),
-    (real, imag),
+    [0.5, 0.0],
+    [real, imag],
     color=color_normal,
     arrowstyle='-',
     linewidth=linewidth,
@@ -145,24 +145,24 @@ plot.arrow(
 # arrows to single lifetimes
 for i in range(len(lifetime)):
     plot.arrow(
-        (real, imag),
-        (component_real[i], component_imag[i]),
+        [real, imag],
+        [component_real[i], component_imag[i]],
         color=color_component,
         linewidth=linewidth,
     )
 
 # arrow to phase lifetime
 plot.arrow(
-    (real, imag),
-    (tau_phi_re, tau_phi_im),
+    [real, imag],
+    [tau_phi_re, tau_phi_im],
     color=color_phase,
     linewidth=linewidth,
 )
 
 # arced arrow to modulation lifetime
 plot.arrow(
-    (real, imag),
-    (tau_mod_re, tau_mod_im),
+    [real, imag],
+    [tau_mod_re, tau_mod_im],
     angle=phase,
     color=color_modulation,
     linewidth=linewidth,
@@ -170,8 +170,8 @@ plot.arrow(
 
 # arrow to normal lifetime
 plot.arrow(
-    (real, imag),
-    (tau_norm_re, tau_norm_im),
+    [real, imag],
+    [tau_norm_re, tau_norm_im],
     color=color_normal,
     linewidth=linewidth,
 )

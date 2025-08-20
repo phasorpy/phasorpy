@@ -29,8 +29,8 @@ from phasorpy.plot import PhasorPlot
 # Create signals and phasor coordinates for the logo:
 
 frequency = 80.0  # MHz
-lifetime = 0.5, 6.0  # ns
-fraction = 0.66, 0.34
+lifetime = [0.5, 6.0]  # ns
+fraction = [0.66, 0.34]
 samples = 256  # number of signal samples
 
 signal, irf, times = lifetime_to_signal(
@@ -66,7 +66,7 @@ plot = PhasorPlot(ax=ax, title=None, xlim=(-0.04, 1.04), ylim=(-0.55, 0.55))
 
 plot.semicircle(
     frequency=frequency,
-    lifetime=(),  # turn off ticks
+    lifetime=[],  # turn off ticks
     color=semicircle_color,
     linewidth=linewidth,
     capstyle='round',
@@ -77,7 +77,7 @@ plot.cursor(*phasor, radius=0.08, linewidth=linewidth, color=cursor_color)
 
 # draw time-domain signal in inset
 cax = ax.inset_axes((0.015, 0.325, 0.97, 0.45))
-cax.set_ylim((0.02, 1.1))
+cax.set_ylim(0.02, 1.1)
 cax.set_axis_off()
 cax.plot(
     times,
@@ -106,14 +106,14 @@ if arrow_color is not None:
     point = 0.28, -0.04
     length = 0.46, 0.74
     plot.arrow(
-        (
+        [
             point[0] + length[0] * (phasor[0] - point[0]),
             point[1] + length[0] * (phasor[1] - point[1]),
-        ),
-        (
+        ],
+        [
             point[0] + length[1] * (phasor[0] - point[0]),
             point[1] + length[1] * (phasor[1] - point[1]),
-        ),
+        ],
         color=arrow_color,
         linewidth=linewidth,
     )

@@ -59,7 +59,7 @@ components = {
 }
 
 # analysis parameters
-harmonic = 1, 2  # which harmonics to use for analysis
+harmonic = [1, 2]  # which harmonics to use for analysis
 median_size = 5  # size of median filter window
 median_repeat = 3  # number of times to apply median filter
 threshold = 3  # minimum signal threshold

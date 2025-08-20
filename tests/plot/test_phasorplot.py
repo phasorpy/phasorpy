@@ -42,8 +42,8 @@ class TestPhasorPlot:
             title='kwargs',
             xlim=(-0.1, 1.1),
             ylim=(-0.1, 0.6),
-            xticks=(0, 0.5, 1),
-            yticks=(0, 0.5, 1),
+            xticks=[0, 0.5, 1],
+            yticks=[0, 0.5, 1],
             xlabel='G',
             ylabel='S',
         )
@@ -104,7 +104,7 @@ class TestPhasorPlot:
     def test_hist2d(self):
         """Test hist2d method."""
         real, imag = numpy.random.multivariate_normal(
-            (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
+            [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
         ).T
         plot = PhasorPlot(title='hist2d')
         plot.hist2d(real, imag)
@@ -119,7 +119,7 @@ class TestPhasorPlot:
     def test_contour(self):
         """Test contour method."""
         real, imag = numpy.random.multivariate_normal(
-            (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
+            [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
         ).T
         plot = PhasorPlot(title='contour')
         plot.contour(real, imag)
@@ -321,18 +321,18 @@ class TestPhasorPlot:
             None, 0.5, color='tab:orange', label='modulation only'
         )
         plot.cursor(
-            (0.1, 0.9),
-            (0.3, 0.3),
-            color=((1.0, 0, 0), (0, 1.0, 0)),
-            label=('RGB red', 'RGB green'),
+            [0.1, 0.9],
+            [0.3, 0.3],
+            color=[[1.0, 0, 0], [0, 1.0, 0]],
+            label=['RGB red', 'RGB green'],
             radius=0.1,
         )
 
         # ndim > 1
         with pytest.raises(ValueError):
-            plot.polar_cursor(((0.1, 0.2),))
+            plot.polar_cursor([[0.1, 0.2]])
         with pytest.raises(ValueError):
-            plot.polar_cursor(None, ((0.1, 0.2),))
+            plot.polar_cursor(None, [[0.1, 0.2]])
         # crosshair not supported with ellipse
         with pytest.raises(ValueError):
             plot.cursor(0.1, 0.2, radius=0.2, radius_minor=0.1, crosshair=True)
@@ -450,7 +450,7 @@ class TestPhasorPlot:
         self.show(plot)
 
         plot = PhasorPlot(grid=False, title='no labels')
-        plot.semicircle(frequency=80, labels=())
+        plot.semicircle(frequency=80, labels=[])
         self.show(plot)
 
         plot = PhasorPlot(grid=False, title='no circle')
