@@ -283,8 +283,8 @@ flim_ch1_phasor_plot.show()
 # master dimension controlling the classification.
 
 # Define center coordinates for FLIM regions of interest
-flim_centers_real = numpy.array([0.35, 0.19, 0.27])
-flim_centers_imag = numpy.array([0.44, 0.38, 0.41])
+flim_center_real = 0.35, 0.19, 0.27
+flim_center_imag = 0.44, 0.38, 0.41
 
 flim_radius = 0.07
 
