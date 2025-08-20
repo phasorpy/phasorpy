@@ -61,7 +61,7 @@ linewidth = 3.0
 textoffset = 0.01
 
 plot = PhasorPlot(
-    title='Geometrical interpretation of lifetimes in the phasor plot',
+    grid=False,
     xlim=(0.0, 1.01),
     ylim=(0.0, 0.6),
     xticks=[0, 0.5, 1],
@@ -70,7 +70,7 @@ plot = PhasorPlot(
     yticklabels=['0', '1/2'],
     xlabel=None,
     ylabel=None,
-    grid=False,
+    title='Geometrical interpretation of lifetimes in the phasor plot',
 )
 plot.ax.tick_params(axis='both', which='major', labelsize=fontsize * 2 / 3)
 plot.ax.spines['top'].set_visible(False)
@@ -237,10 +237,10 @@ plot.components(
     component_real,
     component_imag,
     fraction=fraction,
-    labels=['$\\tau_{%d}$' % i for i in range(len(lifetime))],
     color=color_component,
     fontsize=fontsize,
     linestyle=' ',
+    labels=['$\\tau_{%d}$' % i for i in range(len(lifetime))],
 )
 
 # label fractions of single lifetimes
@@ -260,27 +260,27 @@ if len(lifetime) == 2:
 plot.components(
     tau_phi_re,
     tau_phi_im,
-    labels=['$\\tau_{\\varphi}$'],
     fontsize=fontsize,
     color=color_phase,
+    labels=['$\\tau_{\\varphi}$'],
 )
 
 # label modulation lifetime
 plot.components(
     tau_mod_re,
     tau_mod_im,
-    labels=['$\\tau_{M}$'],
     color=color_modulation,
     fontsize=fontsize,
+    labels=['$\\tau_{M}$'],
 )
 
 # label normal lifetime
 plot.components(
     tau_norm_re,
     tau_norm_im,
-    labels=['$\\tau_{N}$'],
     color=color_normal,
     fontsize=fontsize,
+    labels=['$\\tau_{N}$'],
 )
 
 plot.show()

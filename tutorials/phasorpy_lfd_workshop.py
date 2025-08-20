@@ -483,9 +483,9 @@ donor_lifetime = numpy.mean(
 
 plot = PhasorPlot(
     frequency=frequency,
-    title='FRET Donor (green) and background (black)',
     xlim=(0.45, 0.94),
     ylim=(0.15, 0.55),
+    title='FRET Donor (green) and background (black)',
 )
 plot.hist2d(real, imag)
 plot.circle(*donor_phasor, radius=0.03, linestyle='-', color='tab:green')
@@ -522,9 +522,9 @@ fretting2_trajectory = phasor_from_fret_donor(**settings, fret_efficiency=0.32)
 
 plot = PhasorPlot(
     frequency=frequency,
-    title='FRET trajectories',
     xlim=(0.45, 0.94),
     ylim=(0.15, 0.55),
+    title='FRET trajectories',
 )
 plot.hist2d(real, imag)
 plot.cursor(*donor_phasor, radius=0.03, color='tab:green')

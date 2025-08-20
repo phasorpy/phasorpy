@@ -170,10 +170,10 @@ fractions = phasor_component_fit(
 plot_image(
     mean / mean.max(),
     *fractions,
-    title='Fractions of components in mixture',
-    labels=['Mixture'] + list(components.keys()),
     vmin=0,
     vmax=1,
+    labels=['Mixture'] + list(components.keys()),
+    title='Fractions of components in mixture',
 )
 
 # %%
@@ -182,10 +182,10 @@ plot_image(
 plot_image(
     mean,
     *(f * mean for f in fractions),
-    title='Intensity of components in mixture',
-    labels=['Mixture'] + list(components.keys()),
     vmin=0,
     vmax=mean.max(),
+    labels=['Mixture'] + list(components.keys()),
+    title='Intensity of components in mixture',
 )
 
 # %%

@@ -58,7 +58,7 @@ plot.show()
 # Create a phasor plot at a frequency of 80 MHz with custom lifetime ticks.
 # Add a second, transformed universal semicircle for FRET acceptor coordinates:
 
-plot = PhasorPlot(title='Universal semicircle', xlim=(-0.2, 1.1))
+plot = PhasorPlot(xlim=(-0.2, 1.1), title='Universal semicircle')
 plot.semicircle(
     frequency=80.0,
     lifetime=[0, 0.5, 1, 2, 4, 8, 16],
@@ -243,7 +243,7 @@ real2, imag2 = numpy.random.multivariate_normal(
 ).T
 
 plot = PhasorPlot(
-    title='Combined plots', xlim=(0.35, 1.03), ylim=(0.1, 0.59), grid=False
+    xlim=(0.35, 1.03), ylim=(0.1, 0.59), grid=False, title='Combined plots'
 )
 plot.semicircle(frequency=80.0, color='tab:purple')
 plot.hist2d(real, imag, bins=64, cmap='Blues')
@@ -273,7 +273,6 @@ plot.show()
 
 plot = PhasorPlot(
     allquadrants=True,
-    title='Custom grid',
     grid={
         'labels': ['', '450', '500 nm', '550', '600', '650', '700', ''],
         'ticks': [430, 450, 500, 550, 600, 650, 700, 730],
@@ -282,6 +281,7 @@ plot = PhasorPlot(
         'radii': 2,
     },
     pad=0.2,  # make space for labels
+    title='Custom grid',
 )
 plot.show()
 
@@ -315,7 +315,13 @@ pyplot.show()
 
 from phasorpy.plot import plot_phasor
 
-plot_phasor(real[0, :32], imag[0, :32], marker='.', frequency=80.0)
+plot_phasor(
+    real[0, :32],
+    imag[0, :32],
+    frequency=80.0,
+    marker='.',
+    title='plot_phasor function',
+)
 
 # %%
 # sphinx_gallery_thumbnail_number = -5

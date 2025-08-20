@@ -62,7 +62,7 @@ linewidth = 25
 fig, ax = pyplot.subplots(figsize=(6.4, 6.4))
 ax.set_axis_off()
 
-plot = PhasorPlot(ax=ax, title=None, xlim=(-0.04, 1.04), ylim=(-0.55, 0.55))
+plot = PhasorPlot(ax=ax, xlim=(-0.04, 1.04), ylim=(-0.55, 0.55), title=None)
 
 plot.semicircle(
     frequency=frequency,

@@ -112,10 +112,10 @@ plot_histograms(
     range=(0, 1),
     bins=100,
     alpha=0.66,
-    title='Histograms of fractions of two components',
+    labels=['A', 'B'],
     xlabel='Fraction',
     ylabel='Count',
-    labels=['A', 'B'],
+    title='Histograms of fractions of two components',
 )
 
 
@@ -141,10 +141,10 @@ plot_histograms(
     range=(0, 1),
     bins=100,
     alpha=0.66,
-    title='Histograms of fitted fractions of multiple components',
+    labels=['A', 'B'],
     xlabel='Fraction',
     ylabel='Count',
-    labels=['A', 'B'],
+    title='Histograms of fitted fractions of multiple components',
 )
 
 # %%

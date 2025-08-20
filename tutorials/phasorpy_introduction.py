@@ -411,8 +411,8 @@ wavelengths = hyperspectral_signal.coords['C'].values
 plot_signal_image(
     hyperspectral_signal,
     axis=0,
-    title='Hyperspectral image',
     xlabel='wavelength (nm)',
+    title='Hyperspectral image',
 )
 
 # %%
@@ -428,10 +428,10 @@ _, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 plot_phasor(
     real,
     imag,
-    title='Hyperspectral phasor plot',
     allquadrants=True,
     pad=0.2,  # make space for labels
     grid={'ticks': [450, 500, 550, 600, 650, 700], 'tick_space': wavelengths},
+    title='Hyperspectral phasor plot',
 )
 
 # %%

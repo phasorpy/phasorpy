@@ -125,8 +125,8 @@ plot_image(
     real_filtered,
     vmin=0.4,
     vmax=0.9,
-    title='Real component of phasor coordinates',
     labels=['Unfiltered', 'Median-filtered'],
+    title='Real component of phasor coordinates',
 )
 
 # %%
@@ -204,8 +204,8 @@ plot_image(
     real_filtered,
     vmin=0.4,
     vmax=0.9,
-    title='Real component of phasor coordinates',
     labels=['Unfiltered', 'pawFLIM-filtered'],
+    title='Real component of phasor coordinates',
 )
 
 # %%
