@@ -70,8 +70,9 @@ What's Changed
 * Add tutorial to create PhasorPy logo by @cgohlke in https://github.com/phasorpy/phasorpy/pull/280
 * Make PhasorPy logo square shaped by @cgohlke in https://github.com/phasorpy/phasorpy/pull/281
 * Update pre-commit-hooks by @cgohlke in https://github.com/phasorpy/phasorpy/pull/282
+* Improve PhasorPlot class and its cursor methods by @cgohlke in https://github.com/phasorpy/phasorpy/pull/284
+* Document that LIF files contain Fast FLIM lifetimes by @cgohlke in https://github.com/phasorpy/phasorpy/pull/286
 * Add multidimensional phasor tutorial and dataset by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/283
-* Improve PhasorPy class and its cursor methods by @cgohlke in https://github.com/phasorpy/phasorpy/pull/284
 * Release v0.7 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/285
 
 **Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.6...v0.7
