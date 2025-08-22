@@ -20,9 +20,9 @@ lifetime imaging microscopy (FLIM) and hyperspectral imaging (HSI) of LAURDAN
 fluorescence as presented in:
 
   Malacrida L, Jameson D, and Gratton E.
-  A multidimensional phasor approach reveals LAURDAN photophysics in NIH-3T3
-  cell membranes.
-  *Sci Rep*, 7: 9215 (2017). https://doi.org/10.1038/s41598-017-08564-z
+  `A multidimensional phasor approach reveals LAURDAN photophysics in NIH-3T3
+  cell membranes <https://doi.org/10.1038/s41598-017-08564-z>`_.
+  *Sci Rep*, 7: 9215 (2017).
 
 The dataset is available at https://zenodo.org/records/16894639.
 
@@ -141,13 +141,13 @@ plot_phasor(
     xlim=(-0.5, 1.05),
     ylim=(-0.1, 1.05),
     allquadrants=True,
-    title='Spectral phasor coordinates',
+    title='Spectral phasor',
 )
 
 # %%
 # Plot the FLIM phasor coordinates of channel 1 (blue) and 2 (orange):
 
-plot = PhasorPlot(frequency=frequency, title='FLIM phasor coordinates')
+plot = PhasorPlot(frequency=frequency, title='FLIM phasor')
 plot.hist2d(flim_real[0], flim_imag[0], cmap='Blues')
 plot.hist2d(flim_real[1], flim_imag[1], cmap='Oranges', alpha=0.5)
 plot.show()

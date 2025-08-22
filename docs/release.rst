@@ -9,7 +9,7 @@ documentation and maintenance changes.
     The PhasorPy library is still under construction. Backwards-incompatible
     changes may occur between revisions.
 
-0.7 (2025.x.x)
+0.7 (2025.8.22)
 ---------------
 
 This is the seventh alpha release of the PhasorPy library.
