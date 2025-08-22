@@ -20,9 +20,9 @@ lifetime imaging microscopy (FLIM) and hyperspectral imaging (HSI) of LAURDAN
 fluorescence as presented in:
 
   Malacrida L, Jameson D, and Gratton E.
-  A multidimensional phasor approach reveals LAURDAN photophysics in NIH-3T3
-  cell membranes.
-  *Sci Rep*, 7: 9215 (2017). https://doi.org/10.1038/s41598-017-08564-z
+  `A multidimensional phasor approach reveals LAURDAN photophysics in NIH-3T3
+  cell membranes <https://doi.org/10.1038/s41598-017-08564-z>`_.
+  *Sci Rep*, 7: 9215 (2017).
 
 The dataset is available at https://zenodo.org/records/16894639.
 
@@ -73,12 +73,12 @@ flim_signal = signal_from_fbd(
 reference_signal = numpy.stack(
     [
         signal_from_fbd(
-            fetch(f'cumarinech{ch}_780LAURDAN_000$CC0Z.fbd'),
+            fetch(f'cumarinech{ch + 1}_780LAURDAN_000$CC0Z.fbd'),
             frame=-1,
-            channel=ch - 1,
+            channel=ch,
             laser_factor=0.99168,
         )
-        for ch in (1, 2)
+        for ch in (0, 1)
     ],
 )
 
@@ -141,15 +141,20 @@ plot_phasor(
     xlim=(-0.5, 1.05),
     ylim=(-0.1, 1.05),
     allquadrants=True,
-    title='Spectral phasor coordinates',
+    title='Spectral phasor',
 )
 
 # %%
 # Plot the FLIM phasor coordinates of channel 1 (blue) and 2 (orange):
 
-plot = PhasorPlot(frequency=frequency, title='FLIM phasor coordinates')
-plot.hist2d(flim_real[0], flim_imag[0], cmap='Blues')
-plot.hist2d(flim_real[1], flim_imag[1], cmap='Oranges', alpha=0.5)
+fig, axs = pyplot.subplots(2, 1, figsize=(6.4, 9))
+fig.suptitle('FLIM phasor')
+for ch in (0, 1):
+    plot = PhasorPlot(
+        ax=axs[ch], frequency=frequency, title=f'Channel {ch + 1}'
+    )
+    plot.hist2d(flim_real[ch], flim_imag[ch])
+fig.tight_layout()
 plot.show()
 
 # %%
@@ -166,7 +171,7 @@ spectral_cursor_real = [0.04, 0.24, 0.14]
 spectral_cursor_imag = [0.74, 0.70, 0.72]
 spectral_cursor_radius = 0.05
 
-spectral_masks = mask_from_circular_cursor(
+spectral_mask = mask_from_circular_cursor(
     spectral_real,
     spectral_imag,
     spectral_cursor_real,
@@ -196,7 +201,6 @@ plot.cursor(
     spectral_cursor_imag,
     radius=spectral_cursor_radius,
     color=CATEGORICAL[:3],
-    linestyle='-',
     linewidth=2,
 )
 plot.show()
@@ -208,7 +212,7 @@ plot.show()
 # Create a pseudo-colored image where each pixel is colored according to
 # its spectral classification based on the main cursors:
 
-spectral_pseudo_color = pseudo_color(*spectral_masks)
+spectral_pseudo_color = pseudo_color(*spectral_mask)
 plot_image(spectral_pseudo_color, title='Spectral pseudo-color image')
 
 # %%
@@ -221,17 +225,17 @@ plot_image(spectral_pseudo_color, title='Spectral pseudo-color image')
 # the FLIM phasor space and reveals the correlation between spectral and
 # lifetime characteristics:
 
-fig, axs = pyplot.subplots(2, 1, figsize=(6.4, 8))
+fig, axs = pyplot.subplots(2, 1, figsize=(6.4, 9))
 fig.suptitle('Spectral classified FLIM phasor')
 
-for ch in range(2):
+for ch in (0, 1):
     plot = PhasorPlot(
         ax=axs[ch], frequency=frequency, title=f'Channel {ch + 1}'
     )
-    for i in range(spectral_masks.shape[0]):
+    for i in range(spectral_mask.shape[0]):
         plot.plot(
-            flim_real[ch][spectral_masks[i]],
-            flim_imag[ch][spectral_masks[i]],
+            flim_real[ch][spectral_mask[i]],
+            flim_imag[ch][spectral_mask[i]],
             color=CATEGORICAL[i],
             alpha=0.05,
             markersize=0.5,
@@ -253,7 +257,7 @@ flim_cursor_real = [0.35, 0.19, 0.27]
 flim_cursor_imag = [0.44, 0.38, 0.41]
 flim_cursor_radius = 0.05
 
-flim_ch1_masks = mask_from_circular_cursor(
+flim_mask = mask_from_circular_cursor(
     flim_real[0],
     flim_imag[0],
     flim_cursor_real,
@@ -274,7 +278,6 @@ plot.cursor(
     flim_cursor_imag,
     radius=flim_cursor_radius,
     color=CATEGORICAL[:3],
-    linestyle='-',
     linewidth=2,
 )
 plot.show()
@@ -283,8 +286,7 @@ plot.show()
 # Display the FLIM pseudo-color image:
 
 plot_image(
-    pseudo_color(*flim_ch1_masks),
-    title='FLIM pseudo-color image (first channel)',
+    pseudo_color(*flim_mask), title='FLIM pseudo-color image (first channel)'
 )
 
 # %%
@@ -297,10 +299,10 @@ plot = PhasorPlot(
     title='FLIM classified spectral phasor',
 )
 
-for i in range(flim_ch1_masks.shape[0]):
+for i in range(flim_mask.shape[0]):
     plot.plot(
-        spectral_real[flim_ch1_masks[i]],
-        spectral_imag[flim_ch1_masks[i]],
+        spectral_real[flim_mask[i]],
+        spectral_imag[flim_mask[i]],
         color=CATEGORICAL[i],
         alpha=0.05,
         markersize=1,
