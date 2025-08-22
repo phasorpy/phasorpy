@@ -149,6 +149,7 @@ class TutorialOrder:
         # applications
         'component_fit',
         'fret_efficiency',
+        'multidimensional',
         # misc
         'phasor_from_signal',
         'logo',
