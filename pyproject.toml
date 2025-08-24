@@ -41,8 +41,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
 ]
 authors = [{ name = "PhasorPy Contributors" }]
-license = "MIT"
-license-files = ["LICENSE.txt"]
+license = { text = "MIT" }
 
 [project.urls]
 Homepage = "https://www.phasorpy.org"
