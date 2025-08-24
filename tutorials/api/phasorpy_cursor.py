@@ -17,8 +17,9 @@ from phasorpy.cursor import (
     pseudo_color,
 )
 from phasorpy.datasets import fetch
+from phasorpy.filter import phasor_threshold
 from phasorpy.io import signal_from_lsm
-from phasorpy.phasor import phasor_from_signal, phasor_threshold
+from phasorpy.phasor import phasor_from_signal
 from phasorpy.plot import PhasorPlot, plot_image
 
 # %%

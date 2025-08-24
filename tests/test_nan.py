@@ -17,6 +17,7 @@ from phasorpy.cursor import (
     mask_from_elliptic_cursor,
     mask_from_polar_cursor,
 )
+from phasorpy.filter import phasor_filter_median, phasor_threshold
 from phasorpy.lifetime import (
     phasor_at_harmonic,
     phasor_calibrate,
@@ -31,11 +32,9 @@ from phasorpy.lifetime import (
 from phasorpy.phasor import (
     phasor_center,
     phasor_divide,
-    phasor_filter_median,
     phasor_from_polar,
     phasor_from_signal,
     phasor_multiply,
-    phasor_threshold,
     phasor_to_complex,
     phasor_to_polar,
     phasor_to_principal_plane,

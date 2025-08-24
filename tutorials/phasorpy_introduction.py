@@ -242,12 +242,15 @@ numpy.testing.assert_allclose(
 # Filter phasor coordinates
 # -------------------------
 #
+# The :py:mod:`phasorpy.filter` module provides functions to filter signals
+# and phasor coordinates.
+#
 # Applying median filter to the calibrated phasor coordinates,
 # often multiple times, improves contrast and reduces noise.
 # The filter is applied independently to the real and imaginary components,
 # but not to the signal average:
 
-from phasorpy.phasor import phasor_filter_median
+from phasorpy.filter import phasor_filter_median
 
 mean, real, imag = phasor_filter_median(mean, real, imag, size=3, repeat=2)
 
@@ -255,7 +258,7 @@ mean, real, imag = phasor_filter_median(mean, real, imag, size=3, repeat=2)
 # Pixels with low intensities are commonly excluded from analysis and
 # visualization of phasor coordinates:
 
-from phasorpy.phasor import phasor_threshold
+from phasorpy.filter import phasor_threshold
 
 mean, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 

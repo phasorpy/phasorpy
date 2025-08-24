@@ -42,13 +42,10 @@ from matplotlib import pyplot
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursor import mask_from_circular_cursor, pseudo_color
 from phasorpy.datasets import fetch
+from phasorpy.filter import phasor_filter_median, phasor_threshold
 from phasorpy.io import signal_from_fbd, signal_from_lsm
 from phasorpy.lifetime import phasor_calibrate
-from phasorpy.phasor import (
-    phasor_filter_median,
-    phasor_from_signal,
-    phasor_threshold,
-)
+from phasorpy.phasor import phasor_from_signal
 from phasorpy.plot import PhasorPlot, plot_image, plot_phasor
 
 # %%

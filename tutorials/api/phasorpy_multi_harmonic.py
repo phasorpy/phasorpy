@@ -17,17 +17,14 @@ of multi-harmonic phasor coordinates.
 import numpy
 
 from phasorpy.datasets import fetch
+from phasorpy.filter import phasor_filter_median, phasor_threshold
 from phasorpy.io import (
     phasor_from_ometiff,
     phasor_to_ometiff,
     signal_from_imspector_tiff,
 )
 from phasorpy.lifetime import phasor_calibrate
-from phasorpy.phasor import (
-    phasor_filter_median,
-    phasor_from_signal,
-    phasor_threshold,
-)
+from phasorpy.phasor import phasor_from_signal
 from phasorpy.plot import plot_phasor
 
 # %%

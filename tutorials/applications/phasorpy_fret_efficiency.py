@@ -18,16 +18,10 @@ from the trajectory.
 import numpy
 
 from phasorpy.datasets import fetch
+from phasorpy.filter import phasor_filter_median, phasor_threshold
 from phasorpy.io import phasor_from_simfcs_referenced
-from phasorpy.lifetime import (
-    phasor_from_fret_donor,
-    phasor_to_normal_lifetime,
-)
-from phasorpy.phasor import (
-    phasor_filter_median,
-    phasor_nearest_neighbor,
-    phasor_threshold,
-)
+from phasorpy.lifetime import phasor_from_fret_donor, phasor_to_normal_lifetime
+from phasorpy.phasor import phasor_nearest_neighbor
 from phasorpy.plot import (
     PhasorPlot,
     plot_histograms,
