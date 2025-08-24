@@ -26,7 +26,11 @@ import phasorpy
 
 version = phasorpy.__version__
 release = phasorpy.__version__
-version_match = version.replace('.dev', '').replace('.rc', '')
+# For development versions, use 'dev' as version_match for the switcher
+if '.dev' in version:
+    version_match = 'dev'
+else:
+    version_match = version.replace('.rc', '')
 
 # general configuration
 
@@ -37,8 +41,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.viewcode',
     'sphinx.ext.todo',
-    # don't enable intersphinx since tutorials are getting littered with links
-    # 'sphinx.ext.intersphinx',
+    'sphinx.ext.intersphinx',
     # 'numpydoc',
     'sphinx_inline_tabs',
     'sphinx_copybutton',
@@ -58,7 +61,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'pydata_sphinx_theme'
 html_static_path = ['_static']
 html_js_files = ['custom-icons.js']
-html_show_sourcelink = False
+html_show_sourcelink = True
 
 html_logo = '_static/phasorpy_logo.svg'
 html_favicon = '_static/favicon.ico'
@@ -122,9 +125,10 @@ sphinx_gallery_conf = {
     'filename_pattern': 'phasorpy_',
     'examples_dirs': '../tutorials',
     'gallery_dirs': 'tutorials',
-    'reference_url': {'phasorpy': None},
+    'reference_url': {'phasorpy': 'https://www.phasorpy.org/docs/stable/'},
     'matplotlib_animations': True,
     'within_subsection_order': 'conf.TutorialOrder',
+    'remove_config_comments_from_code': False,
 }
 
 
@@ -174,9 +178,13 @@ intersphinx_mapping = {
     'pandas': ('https://pandas.pydata.org/docs/', None),
     'sklearn': ('https://scikit-learn.org/stable/', None),
     'skimage': ('https://scikit-image.org/docs/stable/', None),
+    # Link to phasorpy documentation itself
+    'phasorpy': (None, None),
 }
 
-intersphinx_disabled_reftypes = ['*']
+# Enable intersphinx linking but limit to specific domains to avoid "littering"
+# Only link for function/method references in the main codebase
+# intersphinx_disabled_reftypes = ['*']
 
 # do not show typehints
 autodoc_typehints = 'none'
