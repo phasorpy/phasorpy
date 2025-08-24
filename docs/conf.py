@@ -29,8 +29,11 @@ release = phasorpy.__version__
 # For development versions, use 'dev' as version_match for the switcher
 if '.dev' in version:
     version_match = 'dev'
+elif '.rc' in version:
+    # Remove release candidate suffix (e.g., "1.0.rc1" -> "1.0")
+    version_match = version.split('.rc')[0]
 else:
-    version_match = version.replace('.rc', '')
+    version_match = version
 
 # general configuration
 
@@ -65,6 +68,10 @@ html_show_sourcelink = True
 
 html_logo = '_static/phasorpy_logo.svg'
 html_favicon = '_static/favicon.ico'
+
+# SEO and meta tags
+html_title = 'PhasorPy - Fluorescence Lifetime and Hyperspectral Image Analysis'
+html_short_title = 'PhasorPy'
 
 pygments_style = 'sphinx'
 
@@ -129,6 +136,9 @@ sphinx_gallery_conf = {
     'matplotlib_animations': True,
     'within_subsection_order': 'conf.TutorialOrder',
     'remove_config_comments_from_code': False,
+    'backreferences_dir': False,  # Disable backreferences to avoid fragment URLs
+    'show_memory': False,  # Don't show memory usage which can add fragments
+    'plot_gallery': 'True',  # Ensure plots are generated
 }
 
 
@@ -182,9 +192,9 @@ intersphinx_mapping = {
     'phasorpy': (None, None),
 }
 
-# Enable intersphinx linking but limit to specific domains to avoid "littering"
-# Only link for function/method references in the main codebase
-# intersphinx_disabled_reftypes = ['*']
+# Enable intersphinx linking but limit to avoid "littering" tutorials
+# Only allow linking for phasorpy functions, not external libraries in tutorials
+intersphinx_disabled_reftypes = ['std:doc']  # Disable doc links but allow function links
 
 # do not show typehints
 autodoc_typehints = 'none'
