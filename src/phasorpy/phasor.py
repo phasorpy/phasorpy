@@ -77,6 +77,7 @@ from ._phasorpy import (
     _phasor_transform_const,
 )
 from ._utils import parse_harmonic, parse_signal_axis, parse_skip_axis
+from .filter import phasor_threshold
 from .utils import number_threads
 
 
@@ -1350,8 +1351,6 @@ def phasor_center(
         mean = numpy.expand_dims(mean, axis=0)
 
     if nan_safe:
-        from .filter import phasor_threshold
-
         mean, real, imag = phasor_threshold(mean, real, imag)
 
     mean, real, imag = methods[method](mean, real, imag, axis=axis, **kwargs)
