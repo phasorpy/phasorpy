@@ -167,6 +167,8 @@ def lifetime_from_lif(
 
     Examples
     --------
+    Read Fast FLIM lifetime and related images from a Leica image file:
+
     >>> lifetime, intensity, stddev, attrs = lifetime_from_lif(
     ...     fetch('FLIM_testdata.lif')
     ... )
@@ -176,6 +178,12 @@ def lifetime_from_lif(
     ('Y', 'X')
     >>> attrs['frequency']
     19.505
+
+    Calibrate the Fast FLIM lifetime for IRF position:
+
+    >>> frequency = attrs['frequency']
+    >>> reference = attrs['flim_phasor_channels'][0]['AutomaticReferencePhase']
+    >>> lifetime -= math.radians(reference) / (2 * math.pi) / frequency * 1000
 
     """
     import liffile
