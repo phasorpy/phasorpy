@@ -295,7 +295,7 @@ def test_init_module():
     from phasorpy._utils import init_module  # noqa: F401
     from phasorpy.io import phasor_from_ometiff
 
-    assert phasor_from_ometiff.__module__ == 'phasorpy.io'
+    assert phasor_from_ometiff.__module__ == 'phasorpy.io._ometiff'
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

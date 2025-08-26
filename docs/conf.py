@@ -26,7 +26,7 @@ import phasorpy
 
 version = phasorpy.__version__
 release = phasorpy.__version__
-version_match = version.replace('.dev', '').replace('.rc', '')
+version_match = version.split('.dev')[0].split('.rc')[0]
 
 # general configuration
 
@@ -35,7 +35,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
-    'sphinx.ext.viewcode',
+    # 'sphinx.ext.viewcode',  # include source code in documentation
+    'sphinx.ext.linkcode',  # link to source code on GitHub
     'sphinx.ext.todo',
     # don't enable intersphinx since tutorials are getting littered with links
     # 'sphinx.ext.intersphinx',
@@ -60,6 +61,7 @@ html_static_path = ['_static']
 html_js_files = ['custom-icons.js']
 html_show_sourcelink = False
 
+html_title = f'PhasorPy {version} documentation'
 html_logo = '_static/phasorpy_logo.svg'
 html_favicon = '_static/favicon.ico'
 
@@ -125,6 +127,11 @@ sphinx_gallery_conf = {
     'reference_url': {'phasorpy': None},
     'matplotlib_animations': True,
     'within_subsection_order': 'conf.TutorialOrder',
+    'show_memory': False,
+    'show_api_usage': False,
+    'remove_config_comments': True,
+    # 'min_reported_time': 0.5,
+    # 'backreferences_dir': None,
 }
 
 
@@ -176,7 +183,69 @@ intersphinx_mapping = {
     'skimage': ('https://scikit-image.org/docs/stable/', None),
 }
 
-intersphinx_disabled_reftypes = ['*']
+# limit intersphinx linking to avoid "littering" tutorials
+# disable doc links but allow function links
+# intersphinx_disabled_reftypes = ['std:doc']
 
 # do not show typehints
 autodoc_typehints = 'none'
+
+
+def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
+    """Return GitHub URL for Python object."""
+    # adapted from
+    # https://github.com/matplotlib/matplotlib/blob/main/doc/conf.py
+    import inspect
+    from pathlib import Path
+
+    if domain != 'py':
+        return None
+
+    modname = info['module']
+    fullname = info['fullname']
+
+    submod = sys.modules.get(modname)
+    if submod is None:
+        return None
+
+    obj = submod
+    for part in fullname.split('.'):
+        try:
+            obj = getattr(obj, part)
+        except AttributeError:
+            return None
+
+    if inspect.isfunction(obj):
+        obj = inspect.unwrap(obj)
+    try:
+        fn = inspect.getsourcefile(obj)
+    except TypeError:
+        fn = None
+    if not fn or fn.endswith('__init__.py'):
+        try:
+            fn = inspect.getsourcefile(sys.modules[obj.__module__])
+        except (TypeError, AttributeError, KeyError):
+            fn = None
+    if not fn:
+        return None
+
+    try:
+        source, lineno = inspect.getsourcelines(obj)
+    except (OSError, TypeError):
+        lineno = None
+
+    linespec = f"#L{lineno:d}-L{lineno + len(source) - 1:d}" if lineno else ''
+
+    startdir = Path(phasorpy.__file__).parent.parent
+    try:
+        fn = os.path.relpath(fn, start=startdir).replace(os.path.sep, '/')
+    except ValueError:
+        return None
+
+    if '.dev' in version or '.rc' in version:
+        tag = 'main'
+    else:
+        tag = f'v{version}'
+    return (
+        f'https://github.com/phasorpy/phasorpy/blob/{tag}/src/{fn}{linespec}'
+    )
