@@ -1,6 +1,6 @@
 """Cluster phasor coordinates.
 
-The `phasorpy.cluster` module provides functions to:
+The ``phasorpy.cluster`` module provides functions to:
 
 - fit elliptic clusters to phasor coordinates using a
   Gaussian Mixture Model (GMM):
