@@ -4,7 +4,6 @@ from __future__ import annotations
 
 __all__ = ['lifetime_from_lif', 'phasor_from_lif', 'signal_from_lif']
 
-import math
 from typing import TYPE_CHECKING
 
 from .._utils import xarray_metadata
@@ -117,14 +116,14 @@ def lifetime_from_lif(
     filename: str | PathLike[Any],
     /,
     image: str | None = None,
-    calibrate: bool = False,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
     """Return lifetime image and metadata from Leica image file.
 
     Leica image files may contain fluorescence lifetime images and metadata
     from the analysis of FLIM measurements.
     The lifetimes are average photon arrival times ("Fast FLIM") according to
-    the LAS X FLIM/FCS documentation.
+    the LAS X FLIM/FCS documentation. They are not corrected for the IRF
+    position.
 
     Parameters
     ----------
@@ -132,8 +131,6 @@ def lifetime_from_lif(
         Name of Leica image file to read.
     image : str, optional
         Name of parent image containing lifetime image.
-    calibrate : bool, optional
-        Subtract automatic reference phase from lifetimes.
 
     Returns
     -------
@@ -202,16 +199,8 @@ def lifetime_from_lif(
         attrs: dict[str, Any] = {'dims': dims, 'coords': coords}
         _flim_metadata(im.parent_image, attrs)
 
-    lifetime = lifetime.astype(numpy.float32)
-    if calibrate:
-        # TODO: is AutomaticReferencePhase the same for all channels?
-        # TODO: which channel is the Fast FLIM image?
-        frequency = attrs['frequency']
-        reference = attrs['flim_phasor_channels'][0]['AutomaticReferencePhase']
-        lifetime -= math.radians(reference) / (2 * math.pi) / frequency * 1000
-
     return (
-        lifetime,
+        lifetime.astype(numpy.float32),
         intensity.astype(numpy.float32),
         stddev.astype(numpy.float32),
         attrs,

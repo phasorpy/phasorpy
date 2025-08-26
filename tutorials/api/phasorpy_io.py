@@ -122,14 +122,18 @@ plot_phasor(
 # Apparent single lifetimes are calculated from the calibrated phasor
 # coordinates and compared to the "Fast FLIM" lifetimes (average photon
 # arrival times) calculated by LAS X software. The Fast FLIM lifetimes are
-# corrected for the IRF position:
+# corrected for the IRF position, which is extracted from metadata:
 
 phase_lifetime, modulation_lifetime = phasor_to_apparent_lifetime(
     real, imag, frequency
 )
 
-fastflim_lifetime = lifetime_from_lif(fetch(filename), calibrate=True)[0]
+fastflim_lifetime, _, _, attrs = lifetime_from_lif(fetch(filename))
 fastflim_lifetime[numpy.isnan(mean)] = numpy.nan
+
+frequency = attrs['frequency']
+reference = attrs['flim_phasor_channels'][0]['AutomaticReferencePhase']
+fastflim_lifetime -= math.radians(reference) / (2 * math.pi) / frequency * 1000
 
 plot_histograms(
     phase_lifetime,
