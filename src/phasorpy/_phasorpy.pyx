@@ -6,7 +6,13 @@
 # cython: nonecheck = False
 # cython: freethreading_compatible = True
 
-"""Cython implementation of low-level functions for the PhasorPy library."""
+"""Private functions implemented in Cython for performance.
+
+.. note::
+    This module and its functions are not part of the public interface.
+    They are intended to facilitate the development of the PhasorPy library.
+
+"""
 
 cimport cython
 

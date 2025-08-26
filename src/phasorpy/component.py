@@ -1,4 +1,4 @@
-"""Component analysis of phasor coordinates.
+"""Analyze components in phasor coordinates.
 
 The ``phasorpy.component`` module provides functions to:
 

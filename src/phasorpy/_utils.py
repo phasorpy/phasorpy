@@ -1,4 +1,10 @@
-"""Private auxiliary and convenience functions."""
+"""Private auxiliary and convenience functions.
+
+.. note::
+    This module and its functions are not part of the public interface.
+    They are intended to facilitate the development of the PhasorPy library.
+
+"""
 
 from __future__ import annotations
 
@@ -667,7 +673,7 @@ def chunk_iter(
 
 
 def init_module(globs: dict[str, Any], /) -> None:
-    """Add names in module to ``__all__`` and set ``__module__`` attributes.
+    """Add names in module to ``__all__`` attribute.
 
     Parameters
     ----------
@@ -690,9 +696,11 @@ def init_module(globs: dict[str, Any], /) -> None:
         }:
             continue
         names.append(name)
-        obj = getattr(module, name)
-        if hasattr(obj, '__module__'):
-            obj.__module__ = module_name
+        # do not change __module__ attributes because that may interfere
+        # with introspection and pickling
+        # obj = getattr(module, name)
+        # if hasattr(obj, '__module__'):
+        #     obj.__module__ = module_name
     globs['__all__'] = sorted(set(names))
 
 
