@@ -53,7 +53,7 @@ from ._phasorpy import (
     _segment_direction_and_length,
 )
 from ._utils import sort_coordinates
-from .phasor import phasor_threshold
+from .filter import phasor_threshold
 from .utils import number_threads
 
 

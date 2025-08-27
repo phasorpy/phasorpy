@@ -26,6 +26,7 @@ import numpy
 from matplotlib import pyplot
 
 from phasorpy.datasets import fetch
+from phasorpy.filter import phasor_filter_median, phasor_threshold
 from phasorpy.io import phasor_from_simfcs_referenced
 from phasorpy.lifetime import (
     lifetime_fraction_from_amplitude,
@@ -34,11 +35,7 @@ from phasorpy.lifetime import (
     phasor_from_lifetime,
     phasor_to_apparent_lifetime,
 )
-from phasorpy.phasor import (
-    phasor_filter_median,
-    phasor_threshold,
-    phasor_to_polar,
-)
+from phasorpy.phasor import phasor_to_polar
 from phasorpy.plot import (
     PhasorPlot,
     plot_phasor,
