@@ -1,5 +1,7 @@
 """Test Leica image file reader functions."""
 
+import math
+
 import numpy
 import pytest
 from _conftest import SKIP_FETCH, SKIP_PRIVATE, private_file
@@ -56,6 +58,13 @@ def test_lifetime_from_lif(format):
         assert data.shape == (1024, 1024)
         assert data.dtype == numpy.float32
     assert intensity.sum(dtype=numpy.float64) == 19278552.0
+    assert pytest.approx(lifetime.mean(dtype=numpy.float64)) == 4.352868
+    assert (
+        pytest.approx(
+            attrs['flim_phasor_channels'][0]['AutomaticReferencePhase']
+        )
+        == 7.017962
+    )
     assert attrs['frequency'] == 19.505
     assert attrs['samples'] == 529
     assert 'harmonic' not in attrs
@@ -66,6 +75,12 @@ def test_lifetime_from_lif(format):
     )
     assert_array_equal(intensity1, intensity)
     assert_array_equal(lifetime1, lifetime)
+
+    # calibrate
+    frequency = attrs['frequency']
+    reference = attrs['flim_phasor_channels'][0]['AutomaticReferencePhase']
+    lifetime -= math.radians(reference) / (2 * math.pi) / frequency * 1000
+    assert pytest.approx(lifetime.mean(dtype=numpy.float64)) == 3.353414
 
     # file does not contain FLIM data
     if not SKIP_PRIVATE:

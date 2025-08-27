@@ -114,14 +114,19 @@ plot_phasor(
 # %%
 # Apparent single lifetimes are calculated from the calibrated phasor
 # coordinates and compared to the "Fast FLIM" lifetimes (average photon
-# arrival times) calculated by LAS X software:
+# arrival times) calculated by LAS X software. The Fast FLIM lifetimes are
+# corrected for the IRF position, which is extracted from metadata:
 
 phase_lifetime, modulation_lifetime = phasor_to_apparent_lifetime(
     real, imag, frequency
 )
 
-fastflim_lifetime = lifetime_from_lif(fetch(filename))[0]
+fastflim_lifetime, _, _, attrs = lifetime_from_lif(fetch(filename))
 fastflim_lifetime[numpy.isnan(mean)] = numpy.nan
+
+frequency = attrs['frequency']
+reference = attrs['flim_phasor_channels'][0]['AutomaticReferencePhase']
+fastflim_lifetime -= math.radians(reference) / (2 * math.pi) / frequency * 1000
 
 plot_histograms(
     phase_lifetime,
@@ -129,19 +134,20 @@ plot_histograms(
     fastflim_lifetime,
     range=(0, 10),
     bins=100,
-    alpha=0.66,
+    alpha=0.6,
     xlabel='Lifetime (ns)',
     ylabel='Count',
     labels=[
         'Phase lifetime',
         'Modulation lifetime',
-        'Fast FLIM lifetime from LIF',
+        'Fast FLIM lifetime',
     ],
     title='Lifetime histograms',
 )
 
 # %%
-# The apparent single lifetimes from phase and modulation do not exactly match.
+# The apparent single lifetimes from phase and modulation do not exactly match
+# and the Fast FLIM lifetimes are in between them.
 # Most likely there is more than one lifetime component in the sample.
 
 # %%
@@ -251,7 +257,7 @@ plot_histograms(
     phase_lifetime,
     range=(0, 10),
     bins=100,
-    alpha=0.66,
+    alpha=0.6,
     xlabel='Lifetime (ns)',
     ylabel='Count',
     labels=['Phase lifetime from PTU', 'Phase lifetime from LIF'],
@@ -742,6 +748,6 @@ mean, real, imag = phasor_from_signal(image_stack, axis=0)
 plot_phasor(real, imag, frequency=80.0, allquadrants=True, title=filename)
 
 # %%
-# sphinx_gallery_thumbnail_number = 3
+# sphinx_gallery_thumbnail_number = 11
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"

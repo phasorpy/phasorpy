@@ -82,7 +82,6 @@ def phasor_from_lif(
     import liffile
 
     image = '' if image is None else f'.*{image}.*/'
-    samples = 1
 
     with liffile.LifFile(filename) as lif:
         try:
@@ -100,27 +99,9 @@ def phasor_from_lif(
             ) from exc
 
         attrs: dict[str, Any] = {'dims': dims, 'coords': coords}
-        flim = im.parent_image
-        if flim is not None and isinstance(flim, liffile.LifFlimImage):
-            xml = flim.parent.xml_element
-            frequency = xml.find('.//Dataset/RawData/LaserPulseFrequency')
-            if frequency is not None and frequency.text is not None:
-                attrs['frequency'] = float(frequency.text) * 1e-6
-                clock_period = xml.find('.//Dataset/RawData/ClockPeriod')
-                if clock_period is not None and clock_period.text is not None:
-                    tmp = float(clock_period.text) * float(frequency.text)
-                    samples = int(round(1.0 / tmp))
-                    attrs['samples'] = samples
-            channels = []
-            for channel in xml.findall(
-                './/Dataset/FlimData/PhasorData/Channels'
-            ):
-                ch = liffile.xml2dict(channel)['Channels']
-                ch.pop('PhasorPlotShapes', None)
-                channels.append(ch)
-            attrs['flim_phasor_channels'] = channels
-            attrs['flim_rawdata'] = flim.attrs.get('RawData', {})
+        _flim_metadata(im.parent_image, attrs)
 
+    samples = attrs.get('samples', 1)
     if samples > 1:
         mean /= samples
     return (
@@ -141,7 +122,8 @@ def lifetime_from_lif(
     Leica image files may contain fluorescence lifetime images and metadata
     from the analysis of FLIM measurements.
     The lifetimes are average photon arrival times ("Fast FLIM") according to
-    the LAS X FLIM/FCS documentation.
+    the LAS X FLIM/FCS documentation. They are not corrected for the IRF
+    position.
 
     Parameters
     ----------
@@ -185,6 +167,8 @@ def lifetime_from_lif(
 
     Examples
     --------
+    Read Fast FLIM lifetime and related images from a Leica image file:
+
     >>> lifetime, intensity, stddev, attrs = lifetime_from_lif(
     ...     fetch('FLIM_testdata.lif')
     ... )
@@ -194,6 +178,12 @@ def lifetime_from_lif(
     ('Y', 'X')
     >>> attrs['frequency']
     19.505
+
+    Calibrate the Fast FLIM lifetime for IRF position:
+
+    >>> frequency = attrs['frequency']
+    >>> reference = attrs['flim_phasor_channels'][0]['AutomaticReferencePhase']
+    >>> lifetime -= math.radians(reference) / (2 * math.pi) / frequency * 1000
 
     """
     import liffile
@@ -215,18 +205,7 @@ def lifetime_from_lif(
             ) from exc
 
         attrs: dict[str, Any] = {'dims': dims, 'coords': coords}
-        flim = im.parent_image
-        if flim is not None and isinstance(flim, liffile.LifFlimImage):
-            xml = flim.parent.xml_element
-            frequency = xml.find('.//Dataset/RawData/LaserPulseFrequency')
-            if frequency is not None and frequency.text is not None:
-                attrs['frequency'] = float(frequency.text) * 1e-6
-                clock_period = xml.find('.//Dataset/RawData/ClockPeriod')
-                if clock_period is not None and clock_period.text is not None:
-                    tmp = float(clock_period.text) * float(frequency.text)
-                    samples = int(round(1.0 / tmp))
-                    attrs['samples'] = samples
-            attrs['flim_rawdata'] = flim.attrs.get('RawData', {})
+        _flim_metadata(im.parent_image, attrs)
 
     return (
         lifetime.astype(numpy.float32),
@@ -234,6 +213,29 @@ def lifetime_from_lif(
         stddev.astype(numpy.float32),
         attrs,
     )
+
+
+def _flim_metadata(flim: Any | None, attrs: dict[str, Any]) -> None:
+    """Add FLIM metadata to attrs."""
+    import liffile
+
+    if flim is not None and isinstance(flim, liffile.LifFlimImage):
+        xml = flim.parent.xml_element
+        frequency = xml.find('.//Dataset/RawData/LaserPulseFrequency')
+        if frequency is not None and frequency.text is not None:
+            attrs['frequency'] = float(frequency.text) * 1e-6
+            clock_period = xml.find('.//Dataset/RawData/ClockPeriod')
+            if clock_period is not None and clock_period.text is not None:
+                tmp = float(clock_period.text) * float(frequency.text)
+                samples = int(round(1.0 / tmp))
+                attrs['samples'] = samples
+        channels = []
+        for channel in xml.findall('.//Dataset/FlimData/PhasorData/Channels'):
+            ch = liffile.xml2dict(channel)['Channels']
+            ch.pop('PhasorPlotShapes', None)
+            channels.append(ch)
+        attrs['flim_phasor_channels'] = channels
+        attrs['flim_rawdata'] = flim.attrs.get('RawData', {})
 
 
 def signal_from_lif(
