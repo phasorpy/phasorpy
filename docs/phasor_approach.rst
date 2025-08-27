@@ -263,6 +263,13 @@ approach to analyze fluorescence time-resolved or spectral images:
   "instant FLIM" system. It supports image segmentation based on phasor plot
   regions of interest and K-means clustering.
 
+  .. _cell_analysis_tools:
+
+- `Cell-analysis-tools <https://github.com/skalalab/cell-analysis-tools>`_
+  is an open-source Python library for the analysis of single cell imaging
+  data, including phasor analysis of FLIM data.
+  The library is distributed under the GPL v3.
+
 -
   .. _flim_studio:
 
