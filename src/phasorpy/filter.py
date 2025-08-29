@@ -911,6 +911,7 @@ def signal_filter_ncpca(
         and signal.dtype == numpy.float32
     ):
         signal = signal.copy()
+        dtype = signal.dtype
     else:
         dtype = numpy.dtype(dtype)
         if dtype.char not in {'f', 'd'}:

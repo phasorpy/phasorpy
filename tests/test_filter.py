@@ -1297,7 +1297,7 @@ def test_signal_filter_ncpca(dtype, n_components):
     denoised = signal_filter_ncpca(signal, n_components, axis=0)
 
     assert_array_equal(signal, signal_copy)
-    assert_allclose(numpy.nanmean(denoised), numpy.nanmean(signal), atol=1e-5)
+    assert_allclose(numpy.nanmean(denoised), numpy.nanmean(signal), atol=1e-4)
     assert_allclose(
         denoised, signal, atol=1e-3 if n_components is None else 30
     )
