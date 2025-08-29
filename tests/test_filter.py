@@ -12,9 +12,10 @@ from phasorpy.filter import (
     phasor_filter_median,
     phasor_filter_pawflim,
     phasor_threshold,
+    signal_filter_ncpca,
     signal_filter_svd,
 )
-from phasorpy.io import signal_from_lsm
+from phasorpy.io import signal_from_imspector_tiff, signal_from_lsm
 from phasorpy.phasor import phasor_from_polar, phasor_from_signal
 
 SKIP_FETCH = os.environ.get('SKIP_FETCH', False)
@@ -1280,6 +1281,52 @@ def test_signal_filter_svd_exceptions():
 
     with pytest.raises(ValueError):
         signal_filter_svd(signal, spectral_vector[:15], axis=1)
+
+
+@pytest.mark.parametrize('dtype', [None, 'float32'])
+@pytest.mark.parametrize('n_components', [None, 8, 'mle'])
+def test_signal_filter_ncpca(dtype, n_components):
+    """Test signal_filter_ncpca function."""
+    # TODO: test synthetic data
+
+    signal = signal_from_imspector_tiff(fetch('Embryo.tif')).data
+    if dtype is not None:
+        signal = signal.astype(dtype)
+        signal[:, 0, 0] = numpy.nan
+    signal_copy = signal.copy()
+    denoised = signal_filter_ncpca(signal, n_components, axis=0)
+
+    assert_array_equal(signal, signal_copy)
+    assert_allclose(numpy.nanmean(denoised), numpy.nanmean(signal), atol=1e-5)
+    assert_allclose(
+        denoised, signal, atol=1e-3 if n_components is None else 30
+    )
+    if dtype is not None:
+        assert numpy.isnan(denoised[0, 0, 0])
+    assert denoised.dtype == dtype
+
+    mean, real, imag = phasor_from_signal(signal, axis=0)
+    mean1, real1, imag1 = phasor_from_signal(denoised, axis=0)
+    assert_allclose(mean1, mean, atol=1e-3 if n_components is None else 0.1)
+
+
+def test_signal_filter_ncpca_exceptions():
+    """Test signal_filter_ncpca function exceptions."""
+    signal = numpy.random.randint(0, 255, (16, 8, 2)).astype(numpy.float32)
+
+    signal_filter_ncpca(signal, axis=1)
+
+    with pytest.raises(ValueError):
+        signal_filter_ncpca(signal, axis=1, dtype=numpy.uint8)
+
+    with pytest.raises(ValueError):
+        signal_filter_ncpca(signal, axis=2)
+
+    with pytest.raises(ValueError):
+        signal_filter_ncpca(signal, n_components=9, axis=1)
+
+    with pytest.raises(ValueError):
+        signal_filter_ncpca([], axis=0)
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

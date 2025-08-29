@@ -11,9 +11,10 @@ The ``phasorpy.filter`` module provides functions to filter
 
 - signals:
 
+  - :py:func:`signal_filter_ncpca`
+    (noise-corrected principal component analysis)
   - :py:func:`signal_filter_svd` (spectral vector denoise)
   - :py:func:`signal_filter_median` (not implemented yet)
-  - :py:func:`signal_filter_pca` (not implemented yet)
 
 """
 
@@ -25,7 +26,7 @@ __all__ = [
     'phasor_filter_pawflim',
     'phasor_threshold',
     # 'signal_filter_median',
-    # 'signal_filter_pca',
+    'signal_filter_ncpca',
     'signal_filter_svd',
 ]
 
@@ -823,3 +824,138 @@ def signal_filter_svd(
     if axis != -1:
         denoised = numpy.moveaxis(denoised, -1, axis)
     return denoised
+
+
+def signal_filter_ncpca(
+    signal: ArrayLike,
+    /,
+    n_components: int | float | str | None = 3,
+    *,
+    axis: int = -1,
+    dtype: DTypeLike | None = None,
+    **kwargs: Any,
+) -> NDArray[Any]:
+    """Return signal filtered by noise-corrected principal component analysis.
+
+    Apply noise-corrected Principal Component Analysis (NC-PCA) to denoise
+    signal containing shot noise. The signal is Poisson-normalized,
+    its dimensionality reduced by PCA with a specified number of components,
+    and then reconstructed according to [3]_.
+
+    Parameters
+    ----------
+    signal : array_like
+        Data containing Poisson noise to be filtered.
+        Must have at least 3 samples along the specified `axis`.
+    n_components : int, float, or str, optional, default: 3
+        Number of principal components to retain.
+        If None, all components are kept (no denoising).
+        If 'mle', use Minka's MLE to guess the dimension.
+        If 0 < n_components < 1 and svd_solver == 'full', select the number
+        of components such that the amount of variance that needs to be
+        explained is greater than the percentage specified by n_components.
+        See `sklearn.decomposition.PCA
+        <https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html>`_
+        for more details.
+    axis : int, optional, default: -1
+        Axis over which PCA is computed. The default is the last axis (-1).
+    dtype : dtype_like, optional
+        Data type of computation and output arrays. Either float32 or float64.
+        The default is float64 unless the input `signal` is float32.
+    **kwargs
+        Additional keyword arguments passed to
+        :py:class:`sklearn.decomposition.PCA`
+
+    Returns
+    -------
+    ndarray
+        Denoised signal of specified `dtype`. Values may be negative.
+        Values, where the signal mean along `axis` is zero, are set to NaN.
+
+    Raises
+    ------
+    ValueError
+        If `dtype` is not a floating point type.
+        If `signal` has fewer than 3 samples along specified axis.
+        If `n_components` is invalid for the data size.
+
+    References
+    ----------
+    .. [3] Soltani S, Paulson J, Fong E, Mumenthaler, S, and Arman A.
+       `Denoising of fluorescence lifetime imaging data via principal
+       component analysis <https://doi.org/10.21203/rs.3.rs-7143126/v1>`_.
+       *Preprint*, (2025)
+
+    Notes
+    -----
+    Intensities of the reconstructed signal may be negative.
+    Hence, the phasor coordinates calculated from the reconstructed signal
+    may be outside the unit circle.
+    Consider thresholding low intensities for further analysis.
+
+    Examples
+    --------
+    Denoise FLIM data using 3 principal components:
+
+    >>> signal = numpy.random.poisson(100, (32, 32, 64))
+    >>> denoised = signal_filter_ncpca(signal, n_components=3)
+    >>> denoised.shape
+    (32, 32, 64)
+
+    """
+    from sklearn.decomposition import PCA
+
+    if (
+        dtype is None
+        and isinstance(signal, numpy.ndarray)
+        and signal.dtype == numpy.float32
+    ):
+        signal = signal.copy()
+    else:
+        dtype = numpy.dtype(dtype)
+        if dtype.char not in {'f', 'd'}:
+            raise ValueError(f'{dtype=} is not a floating point type')
+        signal = numpy.array(signal, dtype, copy=True)
+
+    if axis == -1 or axis == signal.ndim - 1:
+        axis = -1
+    else:
+        signal = numpy.moveaxis(signal, axis, -1)
+
+    shape = signal.shape
+
+    if signal.size == 0:
+        raise ValueError('signal array is empty')
+    if signal.shape[-1] < 3:
+        raise ValueError(f'{signal.shape[-1]=} < 3')
+
+    # flatten signal
+    signal = signal.reshape(-1, shape[-1])
+
+    # poisson-normalize signal
+    scale = numpy.sqrt(numpy.nanmean(signal, axis=0, keepdims=True))
+    with numpy.errstate(divide='ignore', invalid='ignore'):
+        signal /= scale
+
+    # replace NaN and infinite values
+    mask = numpy.logical_or(
+        numpy.any(numpy.isnan(signal), axis=-1),
+        numpy.any(numpy.isinf(signal), axis=-1),
+    )
+    assert isinstance(signal, numpy.ndarray)  # for Mypy
+    signal[mask] = 0.0
+
+    # PCA transform and reconstruction with n_components
+    pca = PCA(n_components, **kwargs)
+    signal = pca.inverse_transform(pca.fit_transform(signal))
+    del pca
+
+    # restore original scale and shape
+    assert isinstance(signal, numpy.ndarray)  # for Mypy
+    signal[mask] = numpy.nan
+    signal *= scale
+    signal = signal.reshape(shape)
+    if axis != -1:
+        signal = numpy.moveaxis(signal, -1, axis)
+
+    return signal
