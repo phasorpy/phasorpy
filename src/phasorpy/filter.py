@@ -849,6 +849,7 @@ def signal_filter_ncpca(
         Must have at least 3 samples along the specified `axis`.
     n_components : int, float, or str, optional, default: 3
         Number of principal components to retain.
+        The default is 3, matching the reference implementation.
         If None, all components are kept (no denoising).
         If 'mle', use Minka's MLE to guess the dimension.
         If 0 < n_components < 1 and svd_solver == 'full', select the number
@@ -858,7 +859,9 @@ def signal_filter_ncpca(
         <https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html>`_
         for more details.
     axis : int, optional, default: -1
-        Axis over which PCA is computed. The default is the last axis (-1).
+        Axis containing PCA features, for example, FLIM histogram bins.
+        The default is the last axis (-1).
+        Other axes are flattened and used as PCA samples.
     dtype : dtype_like, optional
         Data type of computation and output arrays. Either float32 or float64.
         The default is float64 unless the input `signal` is float32.
@@ -881,7 +884,7 @@ def signal_filter_ncpca(
 
     References
     ----------
-    .. [3] Soltani S, Paulson J, Fong E, Mumenthaler, S, and Arman A.
+    .. [3] Soltani S, Paulson J, Fong E, Mumenthaler, S, and Armani A.
        `Denoising of fluorescence lifetime imaging data via principal
        component analysis <https://doi.org/10.21203/rs.3.rs-7143126/v1>`_.
        *Preprint*, (2025)
@@ -930,7 +933,7 @@ def signal_filter_ncpca(
     if signal.shape[-1] < 3:
         raise ValueError(f'{signal.shape[-1]=} < 3')
 
-    # flatten signal
+    # flatten sample dimensions
     signal = signal.reshape(-1, shape[-1])
 
     # poisson-normalize signal
