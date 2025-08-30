@@ -21,7 +21,7 @@ dependencies = [
     "pooch",
     "tqdm",
     "scikit-learn>=1.5.0",
-    # "scikit-image>=0.22.0",
+    # "scikit-image>=0.23.0",
     # "pandas>=2.2.0",
     "xarray>=2023.10.0",
     "tifffile>=2024.8.30",
