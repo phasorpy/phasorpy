@@ -238,7 +238,7 @@ def test_phasor_from_signal_param(use_fft, shape, axis, dtype, dtype_out):
     """Test phasor_from_signal function parameters."""
     samples = shape[axis]
     dtype = numpy.dtype(dtype)
-    signal = numpy.empty(shape, dtype)
+    signal = numpy.empty(shape, dtype=dtype)
     sample_phase = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
     if not use_fft:
         sample_phase[0] = sample_phase[-1]  # out of order
@@ -281,7 +281,7 @@ def test_phasor_from_signal_noncontig(use_fft, dtype):
     """Test phasor_from_signal functions with non-contiguous input."""
     dtype = numpy.dtype(dtype)
     samples = 31
-    signal = numpy.empty((7, 19, samples, 11), dtype)
+    signal = numpy.empty((7, 19, samples, 11), dtype=dtype)
     sample_phase = numpy.linspace(0, 2 * math.pi, samples, endpoint=False)
     sig = 2.1 * (numpy.cos(sample_phase - 0.46364761) * 2 * 0.44721359 + 1)
     sig = sig.astype(dtype)

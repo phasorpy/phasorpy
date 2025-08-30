@@ -84,7 +84,7 @@ class TestPhasorPlot:
         plot = PhasorPlot(title='legend')
         plot.ax.plot(0.6, 0.4, 'o', label='label')
         plot.legend(loc='upper right')
-        plot.show()
+        self.show(plot)
 
     def test_plot(self):
         """Test plot method."""

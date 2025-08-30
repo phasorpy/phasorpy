@@ -1201,14 +1201,14 @@ class PhasorPlot:
         elif labels is None:
             # use tick values as labels
             assert ticks is not None
-            ticks = numpy.array(ticks, copy=True, ndmin=1)
+            ticks = numpy.array(ticks, ndmin=1, copy=True)
             if tick_format is None:
                 tick_format = '{}'
             labels = [tick_format.format(t) for t in ticks]
             ticks = ticks.astype(numpy.float64)
         else:
             # ticks and labels
-            ticks = numpy.array(ticks, dtype=numpy.float64, copy=True, ndmin=1)
+            ticks = numpy.array(ticks, dtype=numpy.float64, ndmin=1, copy=True)
             if ticks.size != len(labels):
                 raise ValueError(f'{ticks.size=} != {len(labels)=}')
 

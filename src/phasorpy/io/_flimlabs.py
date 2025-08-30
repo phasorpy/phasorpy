@@ -157,9 +157,9 @@ def phasor_from_flimlabs_json(
 
     shape: tuple[int, ...] = nharmonics, nchannels, height, width
     axes: str = 'CYX'
-    mean = numpy.zeros(shape[1:], dtype)
-    real = numpy.zeros(shape, dtype)
-    imag = numpy.zeros(shape, dtype)
+    mean = numpy.zeros(shape[1:], dtype=dtype)
+    real = numpy.zeros(shape, dtype=dtype)
+    imag = numpy.zeros(shape, dtype=dtype)
 
     for d in phasor_data:
         h = d['harmonic']
@@ -173,8 +173,8 @@ def phasor_from_flimlabs_json(
         else:
             c = channels.index(d['channel'])
 
-        real[h, c] = numpy.asarray(d['g_data'], dtype)
-        imag[h, c] = numpy.asarray(d['s_data'], dtype)
+        real[h, c] = numpy.asarray(d['g_data'], dtype=dtype)
+        imag[h, c] = numpy.asarray(d['s_data'], dtype=dtype)
 
     if 'intensities_data' in data:
         from .._phasorpy import _flimlabs_mean
@@ -327,7 +327,7 @@ def signal_from_flimlabs_json(
 
     from .._phasorpy import _flimlabs_signal
 
-    signal = numpy.zeros((nchannels, height * width, 256), dtype)
+    signal = numpy.zeros((nchannels, height * width, 256), dtype=dtype)
     _flimlabs_signal(
         signal,
         intensities_data,

@@ -1,7 +1,9 @@
 # Requirements for developing the PhasorPy library
+# The latest versions are generally recommended
+# python -m pip install -U -r requirements_dev.txt
 #
 # runtime requirements
-numpy
+numpy>=2.0.0
 scipy
 matplotlib
 click
@@ -18,7 +20,7 @@ wheel
 twine
 packaging
 cibuildwheel
-cython>=3.1.0
+cython>=3.1.3
 # meson-python
 #
 # documentation requirements

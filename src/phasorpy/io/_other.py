@@ -863,7 +863,7 @@ def signal_from_pqbin(
             raise ValueError('invalid PicoQuant BIN file header')
 
         shape = size_y, size_x, size_h
-        data = numpy.empty(shape, '<u4')
+        data = numpy.empty(shape, dtype='<u4')
         if fh.readinto(data) != size:
             raise ValueError('invalid PicoQuant BIN data size')
 

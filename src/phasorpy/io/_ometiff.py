@@ -135,9 +135,9 @@ def phasor_to_ometiff(
     if dtype.kind != 'f':
         raise ValueError(f'{dtype=} not a floating point type')
 
-    mean = numpy.asarray(mean, dtype)
-    real = numpy.asarray(real, dtype)
-    imag = numpy.asarray(imag, dtype)
+    mean = numpy.asarray(mean, dtype=dtype)
+    real = numpy.asarray(real, dtype=dtype)
+    imag = numpy.asarray(imag, dtype=dtype)
     datasize = mean.nbytes + real.nbytes + imag.nbytes
 
     if real.shape != imag.shape:
@@ -166,7 +166,9 @@ def phasor_to_ometiff(
             raise ValueError('invalid harmonic')
 
     if frequency is not None:
-        frequency_array = numpy.atleast_2d(frequency).astype(numpy.float64)
+        frequency_array = numpy.array(
+            frequency, dtype=numpy.float64, ndmin=2, copy=None
+        )
         if frequency_array.size > 1:
             raise ValueError('frequency must be scalar')
 
@@ -226,7 +228,7 @@ def phasor_to_ometiff(
 
         if harmonic is not None:
             tif.write(
-                numpy.atleast_2d(harmonic).astype(numpy.uint32),
+                numpy.array(harmonic, dtype=numpy.uint32, ndmin=2),
                 metadata={'Name': 'Phasor harmonic'},
             )
 
