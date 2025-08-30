@@ -97,7 +97,7 @@ def phasor_to_simfcs_referenced(
         raise ValueError(f'file extension {ext} != .r64')
 
     # TODO: delay conversions to numpy arrays to inner loop
-    mean = numpy.asarray(mean, numpy.float32)
+    mean = numpy.asarray(mean, dtype=numpy.float32)
     phi, mod = phasor_to_polar(real, imag, dtype=numpy.float32)
     del real
     del imag
@@ -272,7 +272,7 @@ def phasor_from_simfcs_referenced(
     harmonic, keep_harmonic_dim = parse_harmonic(harmonic, data.shape[0] // 2)
 
     mean = data[0].copy()
-    real = numpy.empty((len(harmonic),) + mean.shape, numpy.float32)
+    real = numpy.empty((len(harmonic),) + mean.shape, dtype=numpy.float32)
     imag = numpy.empty_like(real)
     for i, h in enumerate(harmonic):
         h = (h - 1) * 2 + 1

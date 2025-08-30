@@ -240,8 +240,8 @@ def phasor_from_signal(
             raise ValueError('sample_phase cannot be used with FFT')
         if num_harmonics > 1 or harmonic[0] != 1:
             raise ValueError('sample_phase cannot be used with harmonic != 1')
-        sample_phase = numpy.atleast_1d(
-            numpy.asarray(sample_phase, dtype=numpy.float64)
+        sample_phase = numpy.array(
+            sample_phase, dtype=numpy.float64, ndmin=1, order='C', copy=None
         )
         if sample_phase.ndim != 1 or sample_phase.size != samples:
             raise ValueError(f'{sample_phase.shape=} != ({samples},)')
@@ -263,10 +263,10 @@ def phasor_from_signal(
 
         mean = fft.take(0, axis=axis).real
         if not mean.ndim == 0:
-            mean = numpy.ascontiguousarray(mean, dtype)
+            mean = numpy.ascontiguousarray(mean, dtype=dtype)
         fft = fft.take(harmonic, axis=axis)
-        real = numpy.ascontiguousarray(fft.real, dtype)
-        imag = numpy.ascontiguousarray(fft.imag, dtype)
+        real = numpy.ascontiguousarray(fft.real, dtype=dtype)
+        imag = numpy.ascontiguousarray(fft.imag, dtype=dtype)
         del fft
 
         if not keepdims and real.shape[axis] == 1:
@@ -313,7 +313,7 @@ def phasor_from_signal(
     shape1 = signal.shape[axis + 1 :]
     size0 = math.prod(shape0)
     size1 = math.prod(shape1)
-    phasor = numpy.empty((num_harmonics * 2 + 1, size0, size1), dtype)
+    phasor = numpy.empty((num_harmonics * 2 + 1, size0, size1), dtype=dtype)
     signal = signal.reshape((size0, samples, size1))
 
     _phasor_from_signal(phasor, signal, sincos, normalize, num_threads)
@@ -430,8 +430,9 @@ def phasor_to_signal(
     else:
         keepdims = mean.ndim > 0 or real.ndim > 0
 
-    mean = numpy.asarray(numpy.atleast_1d(mean))
-    real = numpy.asarray(numpy.atleast_1d(real))
+    # mean, real = numpy.atleast_1d(mean, real) not working with Mypy
+    mean = numpy.array(mean, ndmin=1, copy=False)
+    real = numpy.array(real, ndmin=1, copy=False)
 
     if real.dtype.kind != 'f' or imag.dtype.kind != 'f':
         raise ValueError(f'{real.dtype=} or {imag.dtype=} not floating point')
@@ -523,7 +524,7 @@ def phasor_to_complex(
         if dtype.kind != 'c':
             raise ValueError(f'{dtype=} not a complex type')
 
-    c = numpy.empty(numpy.broadcast(real, imag).shape, dtype)
+    c = numpy.empty(numpy.broadcast(real, imag).shape, dtype=dtype)
     c.real = real
     c.imag = imag
     return c
@@ -735,9 +736,9 @@ def phasor_normalize(
     ):
         real = real_unnormalized.copy()
     else:
-        real = numpy.array(real_unnormalized, dtype, copy=True)
-    imag = numpy.array(imag_unnormalized, real.dtype, copy=True)
-    mean = numpy.array(mean_unnormalized, real.dtype, copy=True)
+        real = numpy.asarray(real_unnormalized, dtype=dtype, copy=True)
+    imag = numpy.asarray(imag_unnormalized, dtype=real.dtype, copy=True)
+    mean = numpy.asarray(mean_unnormalized, dtype=real.dtype, copy=True)
 
     with numpy.errstate(divide='ignore', invalid='ignore'):
         numpy.divide(real, mean, out=real)
@@ -1221,7 +1222,7 @@ def phasor_nearest_neighbor(
     neighbor_imag = neighbor_imag.ravel()
 
     indices = numpy.empty(
-        real.shape, numpy.min_scalar_type(-neighbor_real.size)
+        real.shape, dtype=numpy.min_scalar_type(-neighbor_real.size)
     )
 
     if distance_max is None:

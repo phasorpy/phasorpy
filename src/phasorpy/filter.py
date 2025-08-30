@@ -157,13 +157,13 @@ def phasor_filter_median(
     elif isinstance(real, numpy.ndarray) and real.dtype == numpy.float32:
         real = real.copy()
     else:
-        real = numpy.array(real, numpy.float64, copy=True)
+        real = numpy.asarray(real, dtype=numpy.float64, copy=True)
     if use_scipy or repeat == 0:  # or using nD numpy filter
         imag = numpy.asarray(imag)
     elif isinstance(imag, numpy.ndarray) and imag.dtype == numpy.float32:
         imag = imag.copy()
     else:
-        imag = numpy.array(imag, numpy.float64, copy=True)
+        imag = numpy.asarray(imag, dtype=numpy.float64, copy=True)
 
     if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
         raise ValueError(f'{mean.shape=} != {real.shape=}')
@@ -348,14 +348,14 @@ def phasor_filter_pawflim(
     """
     from pawflim import pawflim  # type: ignore[import-untyped]
 
-    mean = numpy.asarray(mean)
-    real = numpy.asarray(real)
-    imag = numpy.asarray(imag)
-
     if levels < 0:
         raise ValueError(f'{levels=} < 0')
     if levels == 0:
-        return mean, real, imag
+        return numpy.asarray(mean), numpy.asarray(real), numpy.asarray(imag)
+
+    mean = numpy.asarray(mean, dtype=numpy.float64, copy=True)
+    real = numpy.asarray(real, dtype=numpy.float64, copy=True)
+    imag = numpy.asarray(imag, dtype=numpy.float64, copy=True)
 
     if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
         raise ValueError(f'{mean.shape=} != {real.shape=}')
@@ -378,9 +378,11 @@ def phasor_filter_pawflim(
             'number of harmonics does not match first axis of real and imag'
         )
 
-    mean = numpy.asarray(numpy.nan_to_num(mean), dtype=float)
-    real = numpy.asarray(numpy.nan_to_num(real * mean), dtype=float)
-    imag = numpy.asarray(numpy.nan_to_num(imag * mean), dtype=float)
+    mean = numpy.asarray(numpy.nan_to_num(mean, copy=False))
+    real = numpy.asarray(numpy.nan_to_num(real, copy=False))
+    imag = numpy.asarray(numpy.nan_to_num(imag, copy=False))
+    real *= mean
+    imag *= mean
 
     mean_expanded = numpy.broadcast_to(mean, real.shape).copy()
     original_mean_expanded = mean_expanded.copy()
@@ -418,7 +420,7 @@ def phasor_filter_pawflim(
 
             complex_phasor = numpy.empty(
                 (3, *original_mean_expanded[n][full_index].shape),
-                dtype=complex,
+                dtype=numpy.complex128,
             )
             complex_phasor[0] = original_mean_expanded[n][full_index]
             complex_phasor[1] = real[n][full_index] + 1j * imag[n][full_index]
@@ -919,7 +921,7 @@ def signal_filter_ncpca(
         dtype = numpy.dtype(dtype)
         if dtype.char not in {'f', 'd'}:
             raise ValueError(f'{dtype=} is not a floating point type')
-        signal = numpy.array(signal, dtype, copy=True)
+        signal = numpy.asarray(signal, dtype=dtype, copy=True)
 
     if axis == -1 or axis == signal.ndim - 1:
         axis = -1

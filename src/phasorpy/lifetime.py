@@ -276,13 +276,13 @@ def phasor_from_lifetime(
     """
     if unit_conversion < 1e-16:
         raise ValueError(f'{unit_conversion=} < 1e-16')
-    frequency = numpy.atleast_1d(
-        numpy.ascontiguousarray(frequency, dtype=numpy.float64)
+    frequency = numpy.array(
+        frequency, dtype=numpy.float64, ndmin=1, order='C', copy=None
     )
     if frequency.ndim != 1:
         raise ValueError('frequency is not one-dimensional array')
-    lifetime = numpy.atleast_1d(
-        numpy.ascontiguousarray(lifetime, dtype=numpy.float64)
+    lifetime = numpy.array(
+        lifetime, dtype=numpy.float64, ndmin=1, order='C', copy=None
     )
     if lifetime.ndim > 2:
         raise ValueError('lifetime must be one- or two-dimensional array')
@@ -296,8 +296,8 @@ def phasor_from_lifetime(
         lifetime = lifetime.reshape(-1, 1)  # move components to last axis
         fraction = numpy.ones_like(lifetime)  # not really used
     else:
-        fraction = numpy.atleast_1d(
-            numpy.ascontiguousarray(fraction, dtype=numpy.float64)
+        fraction = numpy.array(
+            fraction, dtype=numpy.float64, ndmin=1, order='C', copy=None
         )
         if fraction.ndim > 2:
             raise ValueError('fraction must be one- or two-dimensional array')
@@ -1021,8 +1021,8 @@ def phasor_to_lifetime_search(
     if dtype.char not in {'f', 'd'}:
         raise ValueError(f'{dtype=} is not a floating point type')
 
-    real = numpy.ascontiguousarray(real, dtype)
-    imag = numpy.ascontiguousarray(imag, dtype)
+    real = numpy.ascontiguousarray(real, dtype=dtype)
+    imag = numpy.ascontiguousarray(imag, dtype=dtype)
 
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
@@ -1134,7 +1134,7 @@ def phasor_to_apparent_lifetime(
     (array([inf, 0]), array([inf, 0]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega = numpy.asarray(frequency, dtype=numpy.float64, copy=True)
     omega *= math.pi * 2.0 * unit_conversion
     return _phasor_to_apparent_lifetime(  # type: ignore[no-any-return]
         real, imag, omega, **kwargs
@@ -1218,7 +1218,7 @@ def phasor_from_apparent_lifetime(
     (array([1, 0.0]), array([0, 0.0]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega = numpy.asarray(frequency, dtype=numpy.float64, copy=True)
     omega *= math.pi * 2.0 * unit_conversion
     if modulation_lifetime is None:
         return _phasor_from_single_lifetime(  # type: ignore[no-any-return]
@@ -1302,7 +1302,7 @@ def phasor_to_normal_lifetime(
     array([1.989, 1.989])
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega = numpy.asarray(frequency, dtype=numpy.float64, copy=True)
     omega *= math.pi * 2.0 * unit_conversion
     return _phasor_to_normal_lifetime(  # type: ignore[no-any-return]
         real, imag, omega, **kwargs
@@ -1445,7 +1445,7 @@ def lifetime_fraction_to_amplitude(
     array([0.2, 0.2])
 
     """
-    t = numpy.array(fraction, dtype=numpy.float64)  # makes copy
+    t = numpy.asarray(fraction, dtype=numpy.float64, copy=True)
     t /= numpy.sum(t, axis=axis, keepdims=True)
     numpy.true_divide(t, lifetime, out=t)
     return t
@@ -1757,7 +1757,7 @@ def polar_to_apparent_lifetime(
     (array([1.989, 1.989]), array([1.989, 2.411]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega = numpy.asarray(frequency, dtype=numpy.float64, copy=True)
     omega *= math.pi * 2.0 * unit_conversion
     return _polar_to_apparent_lifetime(  # type: ignore[no-any-return]
         phase, modulation, omega, **kwargs
@@ -1829,7 +1829,7 @@ def polar_from_apparent_lifetime(
     (array([0.7854, 0.7854]), array([0.7071, 0.6364]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega = numpy.asarray(frequency, dtype=numpy.float64, copy=True)
     omega *= math.pi * 2.0 * unit_conversion
     if modulation_lifetime is None:
         return _polar_from_single_lifetime(  # type: ignore[no-any-return]
@@ -1923,7 +1923,7 @@ def phasor_from_fret_donor(
     (array([0.1766, 0.2737, 0.1466]), array([0.3626, 0.4134, 0.2534]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega = numpy.asarray(frequency, dtype=numpy.float64, copy=True)
     omega *= math.pi * 2.0 * unit_conversion
     return _phasor_from_fret_donor(  # type: ignore[no-any-return]
         omega,
@@ -2041,7 +2041,7 @@ def phasor_from_fret_acceptor(
     (array([0.1996, 0.05772, 0.2867]), array([0.3225, 0.3103, 0.4292]))
 
     """
-    omega = numpy.array(frequency, dtype=numpy.float64)  # makes copy
+    omega = numpy.asarray(frequency, dtype=numpy.float64, copy=True)
     omega *= math.pi * 2.0 * unit_conversion
     return _phasor_from_fret_acceptor(  # type: ignore[no-any-return]
         omega,
