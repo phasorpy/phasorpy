@@ -95,6 +95,10 @@ def phasor_from_component(
     imag : ndarray
         Imaginary component of phasor coordinates.
 
+    See Also
+    --------
+    phasorpy.phasor.phasor_combine_two
+
     Examples
     --------
     Calculate phasor coordinates from two components and their fractional

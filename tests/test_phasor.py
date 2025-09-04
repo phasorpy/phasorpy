@@ -22,9 +22,11 @@ try:
 except ImportError:
     mkl_fft = None
 
+from phasorpy.component import phasor_from_component
 from phasorpy.lifetime import phasor_from_lifetime
 from phasorpy.phasor import (
     phasor_center,
+    phasor_combine_two,
     phasor_divide,
     phasor_from_polar,
     phasor_from_signal,
@@ -913,6 +915,72 @@ def test_phasor_transform_more():
     real, imag = phasor_transform(1, 0, [math.pi / 4, math.pi / 8], [0.5, 0.9])
     assert_allclose(real, [0.353553, 0.831492], atol=1e-3)
     assert_allclose(imag, [0.353553, 0.344415], atol=1e-3)
+
+
+@pytest.mark.parametrize(
+    'args, expected',
+    [
+        ((0.1, 0.2, 0.3, 0.4, 0.5), (1.0, 0.2, 0.3)),
+        ((0.1, 0.2, 0.3, 0.4, 1.0, 1.0), (1.0, 0.2, 0.3)),
+        ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, 0.5), (1.0, 0.2, 0.3)),
+        ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, 1.0, 1.0), (1.0, 0.2, 0.3)),
+        # broadcast
+        (([0.1, 0.9], 0.2, 0.3, 0.4, 0.5), (1.0, [0.2, 0.6], [0.3, 0.3])),
+        (([0.1, 0.9], 0.2, 0.3, 0.4, 1.0, 1.0), (1.0, [0.2, 0.6], [0.3, 0.3])),
+        (
+            (1.0, [0.1, 0.9], 0.2, 1.0, 0.3, 0.4, 0.5),
+            (1.0, [0.2, 0.6], [0.3, 0.3]),
+        ),
+        (
+            (1.0, [0.1, 0.9], 0.2, 1.0, 0.3, 0.4, 1.0, 1.0),
+            (1.0, [0.2, 0.6], [0.3, 0.3]),
+        ),
+        # fraction0 + fraction1 == 0
+        ((0.1, 0.2, 0.3, 0.4, 0.5, -0.5), (0.0, NAN, NAN)),
+        ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, 0.5, -0.5), (0.0, NAN, NAN)),
+        # int0 + int1 == 0
+        ((0.5, 0.1, 0.2, -0.5, 0.3, 0.4, 0.5), (0.0, NAN, NAN)),
+        ((0.5, 0.1, 0.2, -0.5, 0.3, 0.4, 1.0, 1.0), (0.0, NAN, NAN)),
+    ],
+)
+def test_phasor_combine_two(args, expected):
+    """Test phasor_combine_two function."""
+    mean, real, imag = phasor_combine_two(*args)
+    assert_allclose(mean, expected[0])
+    assert_allclose(real, expected[1])
+    assert_allclose(imag, expected[2])
+
+
+def test_phasor_combine_more():
+    """Test phasor_combine_two function cases."""
+    # test against phasor_from_component
+    real = [0.6, 0.4]
+    imag = [0.3, 0.2]
+    fraction = [[1.0, 0.2, 0.9], [0.0, 0.8, 0.1]]
+
+    real0, imag0 = phasor_from_component(
+        real, imag, fraction, dtype=numpy.float32
+    )
+    mean1, real1, imag1 = phasor_combine_two(
+        real[0], imag[0], real[1], imag[1], fraction[0], dtype=numpy.float32
+    )
+    assert mean1.dtype == numpy.float32
+    assert real1.dtype == numpy.float32
+    assert imag1.dtype == numpy.float32
+    assert_allclose(real1, real0)
+    assert_allclose(imag1, imag0)
+
+    mean1, real1, imag1 = phasor_combine_two(
+        real[0], imag[0], real[1], imag[1], *fraction
+    )
+    assert_allclose(real1, real0)
+    assert_allclose(imag1, imag0)
+
+    with pytest.raises(TypeError):
+        phasor_combine_two(0.1, 0.2, 0.3, 0.4)
+
+    with pytest.raises(TypeError):
+        phasor_combine_two(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
 
 
 @pytest.mark.parametrize(
