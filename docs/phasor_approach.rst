@@ -167,11 +167,19 @@ approach to analyze fluorescence time-resolved or spectral images:
   unknown license and was last updated in 2013.
 
 -
+  .. _napari_phasors:
+
+  `Napari-phasors <https://github.com/napari-phasors/napari-phasors>`_
+  is a napari plugin for phasor analysis based on PhasorPy.
+  The plugin is distributed under the BSD-3-Clause license.
+
+-
   .. _napari_flim_phasor_plotter:
 
   `Napari-flim-phasor-plotter <https://github.com/zoccoler/napari-flim-phasor-plotter>`_
   is a napari plugin to interactively load and show raw FLIM single images
   and series and generate phasor plots.
+  The plugin is distributed under the BSD-3-Clause license.
 
 -
   .. _napari_live_flim:
