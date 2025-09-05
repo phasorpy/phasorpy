@@ -22,6 +22,10 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_divide`
   - :py:func:`phasor_normalize`
 
+- linearly combine two phasor coordinates:
+
+  - :py:func:`phasor_combine`
+
 - reduce dimensionality of arrays of phasor coordinates:
 
   - :py:func:`phasor_center`
@@ -40,6 +44,7 @@ __all__ = [
     'phasor_divide',
     'phasor_from_polar',
     'phasor_from_signal',
+    'phasor_combine',
     'phasor_multiply',
     'phasor_nearest_neighbor',
     'phasor_normalize',
@@ -68,6 +73,7 @@ import numpy
 
 from ._phasorpy import (
     _nearest_neighbor_2d,
+    _phasor_combine,
     _phasor_divide,
     _phasor_from_polar,
     _phasor_from_signal,
@@ -747,6 +753,103 @@ def phasor_normalize(
         numpy.divide(mean, samples, out=mean)
 
     return mean, real, imag
+
+
+def phasor_combine(
+    int0: ArrayLike,
+    real0: ArrayLike,
+    imag0: ArrayLike,
+    int1: ArrayLike,
+    real1: ArrayLike,
+    imag1: ArrayLike,
+    fraction0: ArrayLike,
+    fraction1: ArrayLike | None = None,
+    **kwargs: Any,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    r"""Return linear combination of two phasor coordinates.
+
+    Combine two sets of phasor coordinates using intensity-weighted mixing.
+    This simulates the phasor coordinates that would result from a mixture
+    of two components with known individual phasor coordinates.
+
+    Parameters
+    ----------
+    int0 : array_like
+        Intensity of first phasor coordinates.
+    real0 : array_like
+        Real component of first phasor coordinates.
+    imag0 : array_like
+        Imaginary component of first phasor coordinates.
+    int1 : array_like
+        Intensity of second phasor coordinates.
+    real1 : array_like
+        Real component of second phasor coordinates.
+    imag1 : array_like
+        Imaginary component of second phasor coordinates.
+    fraction0 : array_like
+        Fraction of first phasor coordinates.
+    fraction1 : array_like, optional
+        Fraction of second phasor coordinates.
+        The default is `1 - fraction0`.
+
+    **kwargs
+        Optional `arguments passed to numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    intensity : ndarray
+        Intensity of the linearly combined phasor coordinates.
+    real : ndarray
+        Real component of the linearly combined phasor coordinates.
+    imag : ndarray
+        Imaginary component of the linearly combined phasor coordinates.
+
+    Notes
+    -----
+    The phasor coordinates (:math:`I`, :math:`G`, :math:`S`) of the linear
+    combination of two phasor coordinates (:math:`I_{0}`, :math:`G_{0}`,
+    :math:`S_{0}`, and :math:`I_{1}`, :math:`G_{1}`, :math:`S_{1}`)
+    with fractions :math:`f_{0}` and :math:`f_{1}` of the first and second
+    coordinates are:
+
+    .. math::
+
+        f'_{0} &= f_{0} / (f_{0} + f_{1})
+
+        f'_{1} &= 1 - f'_{0}
+
+        I &= I_{0} \cdot f'_{0} + I_{1} \cdot f'_{1}
+
+        G &= (G_{0} \cdot I_{0} \cdot f'_{0}
+             + G_{1} \cdot I_{1} \cdot f'_{1}) / I
+
+        S &= (S_{0} \cdot I_{0} \cdot f'_{0}
+             + S_{1} \cdot I_{1} \cdot f'_{1}) / I
+
+    If the intensity :math:`I` is zero, the linear combined phasor coordinates
+    are undefined (NaN).
+
+    See Also
+    --------
+    phasorpy.component.phasor_from_component
+
+    Examples
+    --------
+    Calculate the linear combination of two phasor coordinates with equal
+    intensities at three fractional intensities:
+
+    >>> phasor_combine(1.0, 0.6, 0.3, 1.0, 0.4, 0.2, [1.0, 0.2, 0.9])
+    (array([1, 1, 1]), array([0.6, 0.44, 0.58]), array([0.3, 0.22, 0.29]))
+
+    """
+    if fraction1 is None:
+        fraction1 = numpy.asarray(fraction0, copy=True)
+        numpy.subtract(1.0, fraction0, out=fraction1)
+
+    return _phasor_combine(  # type: ignore[no-any-return]
+        int0, real0, imag0, int1, real1, imag1, fraction0, fraction1, **kwargs
+    )
 
 
 def phasor_transform(

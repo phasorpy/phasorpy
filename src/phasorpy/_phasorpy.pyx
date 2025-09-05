@@ -1011,6 +1011,38 @@ cdef (float_t, float_t) _phasor_divide(
     )
 
 
+@cython.ufunc
+cdef (float_t, float_t, float_t) _phasor_combine(
+    float_t int0,
+    float_t real0,
+    float_t imag0,
+    float_t int1,
+    float_t real1,
+    float_t imag1,
+    float_t fraction0,
+    float_t fraction1,
+) noexcept nogil:
+    """Return linear combination of two phasor coordinates."""
+    cdef:
+        float_t intensity
+
+    fraction1 += fraction0
+    if fraction1 == 0.0:
+        return <float_t> 0.0, <float_t> NAN, <float_t> NAN
+    fraction0 /= fraction1
+
+    int0 *= fraction0
+    int1 *= <float_t> 1.0 - fraction0
+    intensity = int0 + int1
+
+    if intensity == 0.0:
+        return <float_t> 0.0, <float_t> NAN, <float_t> NAN
+
+    int0 /= intensity
+    int1 /= intensity
+    return intensity, int0 * real0 + int1 * real1, int0 * imag0 + int1 * imag1
+
+
 ###############################################################################
 # Geometry ufuncs
 
