@@ -97,7 +97,7 @@ def phasor_from_component(
 
     See Also
     --------
-    phasorpy.phasor.phasor_combine_two
+    phasorpy.phasor.phasor_combine
 
     Examples
     --------

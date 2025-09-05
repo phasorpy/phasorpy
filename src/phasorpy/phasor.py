@@ -22,9 +22,9 @@ The ``phasorpy.phasor`` module provides functions to:
   - :py:func:`phasor_divide`
   - :py:func:`phasor_normalize`
 
-- linearly combine phasor coordinates:
+- linearly combine two phasor coordinates:
 
-  - :py:func:`phasor_combine_two`
+  - :py:func:`phasor_combine`
 
 - reduce dimensionality of arrays of phasor coordinates:
 
@@ -44,7 +44,7 @@ __all__ = [
     'phasor_divide',
     'phasor_from_polar',
     'phasor_from_signal',
-    'phasor_combine_two',
+    'phasor_combine',
     'phasor_multiply',
     'phasor_nearest_neighbor',
     'phasor_normalize',
@@ -73,10 +73,7 @@ import numpy
 
 from ._phasorpy import (
     _nearest_neighbor_2d,
-    _phasor_combine_two_5,
-    _phasor_combine_two_6,
-    _phasor_combine_two_7,
-    _phasor_combine_two_8,
+    _phasor_combine,
     _phasor_divide,
     _phasor_from_polar,
     _phasor_from_signal,
@@ -758,39 +755,42 @@ def phasor_normalize(
     return mean, real, imag
 
 
-def phasor_combine_two(
-    *args: ArrayLike,
+def phasor_combine(
+    int0: ArrayLike,
+    real0: ArrayLike,
+    imag0: ArrayLike,
+    int1: ArrayLike,
+    real1: ArrayLike,
+    imag1: ArrayLike,
+    fraction0: ArrayLike,
+    fraction1: ArrayLike | None = None,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     r"""Return linear combination of two phasor coordinates.
 
+    Combine two sets of phasor coordinates using intensity-weighted mixing.
+    This simulates the phasor coordinates that would result from a mixture
+    of two components with known individual phasor coordinates.
+
     Parameters
     ----------
-    *args : array_like
-        Phasor coordinates and fractions to combine.
-        The order of arguments is one of:
-
-        - **real0**, **imag0**, **real1**, **imag1**, **fraction0**
-        - **real0**, **imag0**, **real1**, **imag1**,
-          **fraction0**, **fraction1**
-        - **int0**, **real0**, **imag0**, **int1**, **real1**, **imag1**,
-          **fraction0**
-        - **int0**, **real0**, **imag0**, **int1**, **real1**, **imag1**,
-          **fraction0**, **fraction1**
-
-        where:
-
-        - **int0** (optional, default: 1):
-          Intensity of the first phasor coordinates.
-        - **real0**: Real component of the first phasor coordinates.
-        - **imag0**: Imaginary component of the first phasor coordinates.
-        - **int1** (optional, default: 1):
-          Intensity of the second phasor coordinates.
-        - **real1**: Real component of the second phasor coordinates.
-        - **imag1**: Imaginary component of the second phasor coordinates.
-        - **fraction0**: Fraction of the first phasor coordinates.
-        - **fraction1** (optional, default: `1 - fraction0`):
-          Fraction of the second phasor coordinates.
+    int0 : array_like
+        Intensity of first phasor coordinates.
+    real0 : array_like
+        Real component of first phasor coordinates.
+    imag0 : array_like
+        Imaginary component of first phasor coordinates.
+    int1 : array_like
+        Intensity of second phasor coordinates.
+    real1 : array_like
+        Real component of second phasor coordinates.
+    imag1 : array_like
+        Imaginary component of second phasor coordinates.
+    fraction0 : array_like
+        Fraction of first phasor coordinates.
+    fraction1 : array_like, optional
+        Fraction of second phasor coordinates.
+        The default is `1 - fraction0`.
 
     **kwargs
         Optional `arguments passed to numpy universal functions
@@ -815,17 +815,17 @@ def phasor_combine_two(
 
     .. math::
 
-        f_{0} &= f_{0} / (f_{0} + f_{1})
+        f'_{0} &= f_{0} / (f_{0} + f_{1})
 
-        f_{1} &= 1 - f_{0}
+        f'_{1} &= 1 - f'_{0}
 
-        I &= I_{0} \cdot f_{0} + I_{1} \cdot f_{1}
+        I &= I_{0} \cdot f'_{0} + I_{1} \cdot f'_{1}
 
-        G &= \left(G_{0} \cdot I_{0} \cdot f_{0}
-             + G_{1} \cdot I_{1} \cdot f_{1}\right) / I
+        G &= (G_{0} \cdot I_{0} \cdot f'_{0}
+             + G_{1} \cdot I_{1} \cdot f'_{1}) / I
 
-        S &= \left(S_{0} \cdot I_{0} \cdot f_{0}
-             + S_{1} \cdot I_{1} \cdot f_{1}\right) / I
+        S &= (S_{0} \cdot I_{0} \cdot f'_{0}
+             + S_{1} \cdot I_{1} \cdot f'_{1}) / I
 
     If the intensity :math:`I` is zero, the linear combined phasor coordinates
     are undefined (NaN).
@@ -836,27 +836,20 @@ def phasor_combine_two(
 
     Examples
     --------
-    Calculate phasor coordinates from two phasors at three fractional
-    intensities:
+    Calculate the linear combination of two phasor coordinates with equal
+    intensities at three fractional intensities:
 
-    >>> phasor_combine_two(0.6, 0.3, 0.4, 0.2, [1.0, 0.2, 0.9])
+    >>> phasor_combine(1.0, 0.6, 0.3, 1.0, 0.4, 0.2, [1.0, 0.2, 0.9])
     (array([1, 1, 1]), array([0.6, 0.44, 0.58]), array([0.3, 0.22, 0.29]))
 
     """
-    func = {
-        5: _phasor_combine_two_5,
-        6: _phasor_combine_two_6,
-        7: _phasor_combine_two_7,
-        8: _phasor_combine_two_8,
-    }.get(len(args))
+    if fraction1 is None:
+        fraction1 = numpy.asarray(fraction0, copy=True)
+        numpy.subtract(1.0, fraction0, out=fraction1)
 
-    if func is None:
-        raise TypeError(
-            'phasor_combine_two() takes 5 to 8 positional arguments '
-            f'but {len(args)} were given'
-        )
-
-    return func(*args, **kwargs)  # type: ignore[no-any-return]
+    return _phasor_combine(  # type: ignore[no-any-return]
+        int0, real0, imag0, int1, real1, imag1, fraction0, fraction1, **kwargs
+    )
 
 
 def phasor_transform(
