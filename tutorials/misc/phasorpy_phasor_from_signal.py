@@ -12,7 +12,7 @@ coordinates from time-resolved or spectral signals can operate in two modes:
 
 - using a real forward Fast Fourier Transform (FFT), ``numpy.fft.rfft`` or
   a drop-in replacement function like ``scipy.fft.rfft``
-  or ``mkl_fft._numpy_fft.rfft``.
+  or ``mkl_fft.interfaces.numpy_fft.rfft``.
 
 This tutorial compares the performance of the two modes.
 
@@ -34,7 +34,7 @@ except ImportError:
     scipy_fft = None
 
 try:
-    from mkl_fft._numpy_fft import rfft as mkl_fft
+    from mkl_fft.interfaces.numpy_fft import rfft as mkl_fft
 except ImportError:
     mkl_fft = None
 
