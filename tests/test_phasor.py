@@ -18,7 +18,7 @@ except ImportError:
     scipy_fft = None
 
 try:
-    import mkl_fft._numpy_fft as mkl_fft
+    from mkl_fft.interfaces import numpy_fft as mkl_fft
 except ImportError:
     mkl_fft = None
 

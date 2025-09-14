@@ -134,7 +134,8 @@ def phasor_from_signal(
         calculated, or `rfft` is specified.
     rfft : callable, optional
         Drop-in replacement function for ``numpy.fft.rfft``.
-        For example, ``scipy.fft.rfft`` or ``mkl_fft._numpy_fft.rfft``.
+        For example, ``scipy.fft.rfft`` or
+        ``mkl_fft.interfaces.numpy_fft.rfft``.
         Used to calculate the real forward FFT.
     dtype : dtype_like, optional
         Data type of output arrays. Either float32 or float64.
@@ -378,7 +379,8 @@ def phasor_to_signal(
         The default is the last axis (-1).
     irfft : callable, optional
         Drop-in replacement function for ``numpy.fft.irfft``.
-        For example, ``scipy.fft.irfft`` or ``mkl_fft._numpy_fft.irfft``.
+        For example, ``scipy.fft.irfft`` or
+        ``mkl_fft.interfaces.numpy_fft.irfft``.
         Used to calculate the real inverse FFT.
 
     Returns
