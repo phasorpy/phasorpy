@@ -66,7 +66,7 @@ def phasor_cluster_gmm(
         - 'area': Sort by inverse area of ellipse (-major * minor).
 
     **kwargs
-        Additional keyword arguments passed to
+        Optional arguments passed to
         :py:class:`sklearn.mixture.GaussianMixture`.
 
         Common options include:

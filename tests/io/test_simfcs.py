@@ -72,7 +72,7 @@ def test_signal_from_fbd():
         signal_from_fbd(filename, channel=2)
 
     filename = fetch('simfcs.r64')
-    with pytest.raises(lfdfiles.LfdFileError):
+    with pytest.raises(ValueError):
         signal_from_fbd(filename)
 
 

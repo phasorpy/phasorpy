@@ -138,6 +138,7 @@ def versions(
         'tifffile',
         'imagecodecs',
         'lfdfiles',
+        'fbdfile',
         'sdtfile',
         'ptufile',
         'liffile',

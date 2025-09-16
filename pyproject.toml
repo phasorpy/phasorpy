@@ -70,6 +70,7 @@ all = [
     "sdtfile>=2024.5.24",
     "ptufile>=2024.9.14",
     "liffile>=2025.2.10",
+    "fbdfile>=2025.9.16",
     "pawflim",
 ]
 
@@ -179,6 +180,6 @@ norecursedirs = [
 
 [tool.cibuildwheel]
 skip = "cp38* cp39* cp310* *musllinux* *i686 *ppc64le *s390x"
-test-requires = ["scikit-learn", "lfdfiles", "sdtfile", "ptufile", "liffile", "pawflim", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage"]
+test-requires = ["scikit-learn", "lfdfiles", "fbdfile", "sdtfile", "ptufile", "liffile", "pawflim", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage"]
 test-command = "pytest {project}/tests"
 test-environment = "SKIP_FETCH=1"

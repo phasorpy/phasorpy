@@ -82,7 +82,7 @@ class PhasorPlotFret(PhasorPlot):
     interactive : bool, optional, default: False
         Use matplotlib slider widgets to interactively control parameters.
     **kwargs
-        Additional parameters passed to :py:class:`phasorpy.plot.PhasorPlot`.
+        Optional arguments passed to :py:class:`phasorpy.plot.PhasorPlot`.
 
     See Also
     --------

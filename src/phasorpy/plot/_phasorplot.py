@@ -219,7 +219,8 @@ class PhasorPlot:
         Parameters
         ----------
         **kwargs
-            Keyword arguments passed to :py:func:`matplotlib.axes.Axes.legend`.
+            Optional arguments passed to
+            :py:func:`matplotlib.axes.Axes.legend`.
 
         """
         return self._ax.legend(**kwargs)
@@ -237,8 +238,7 @@ class PhasorPlot:
         file : str, path-like, or binary file-like
             Path or Python file-like object to write the current figure to.
         **kwargs
-            Additional keyword arguments passed to
-            :py:func:`matplotlib:pyplot.savefig`.
+            Optional arguments passed to :py:func:`matplotlib:pyplot.savefig`.
 
         """
         pyplot.savefig(file, **kwargs)
@@ -269,8 +269,7 @@ class PhasorPlot:
             Plot label.
             May be a sequence if phasor coordinates are two dimensional arrays.
         **kwargs
-            Additional parameters passed to
-            :py:meth:`matplotlib.axes.Axes.plot`.
+            Optional arguments passed to :py:meth:`matplotlib.axes.Axes.plot`.
 
         Returns
         -------
@@ -353,7 +352,7 @@ class PhasorPlot:
             Imaginary component of phasor coordinates.
             Must be of same shape as `real`.
         **kwargs
-            Additional parameters passed to :py:meth:`numpy.histogram2d`
+            Optional arguments passed to :py:meth:`numpy.histogram2d`
             and :py:meth:`matplotlib.axes.Axes.pcolormesh`.
 
         """
@@ -392,7 +391,7 @@ class PhasorPlot:
             Imaginary component of phasor coordinates.
             Must be of same shape as `real`.
         **kwargs
-            Additional parameters passed to :py:func:`numpy.histogram2d`
+            Optional arguments passed to :py:func:`numpy.histogram2d`
             and :py:meth:`matplotlib.axes.Axes.contour`.
 
         """
@@ -426,7 +425,7 @@ class PhasorPlot:
         image : array_like
             Image to display.
         **kwargs
-            Additional parameters passed to
+            Optional arguments passed to
             :py:meth:`matplotlib.axes.Axes.imshow`.
 
         """
@@ -461,7 +460,7 @@ class PhasorPlot:
         label_offset : float, optional
             Distance of text label to component coordinate.
         **kwargs
-            Additional parameters passed to
+            Optional arguments passed to
             :py:class:`matplotlib.patches.Polygon`,
             :py:class:`matplotlib.lines.Line2D`, or
             :py:class:`matplotlib.axes.Axes.annotate`
@@ -572,8 +571,7 @@ class PhasorPlot:
         imag : array_like, shape (n, )
             Imaginary components of line start and end coordinates.
         **kwargs
-            Additional parameters passed to
-            :py:class:`matplotlib.lines.Line2D`.
+            Optional arguments passed to :py:class:`matplotlib.lines.Line2D`.
 
         Returns
         -------
@@ -607,8 +605,7 @@ class PhasorPlot:
         radius : float
             Circle radius.
         **kwargs
-            Additional parameters passed to
-            :py:class:`matplotlib.patches.Circle`.
+            Optional arguments passed to :py:class:`matplotlib.patches.Circle`.
 
         """
         linestyle = kwargs.pop('ls', GRID_LINESTYLE)
@@ -646,7 +643,7 @@ class PhasorPlot:
             Angle in radians, controlling curvature of line between points.
             If None (default), draw a straight line.
         **kwargs
-            Additional parameters passed to
+            Optional arguments passed to
             :py:class:`matplotlib.patches.FancyArrowPatch`.
 
         """
@@ -719,7 +716,7 @@ class PhasorPlot:
             If true, draw phase line and modulation arc.
             Else, draw Cartesian lines.
         **kwargs
-            Additional parameters passed to
+            Optional arguments passed to
             :py:class:`matplotlib.lines.Line2D`,
             :py:class:`matplotlib.patches.Circle`,
             :py:class:`matplotlib.patches.Ellipse`, or
@@ -1110,7 +1107,7 @@ class PhasorPlot:
             Format string for tick values if `labels` is None.
             By default, the tick format is "{}".
         **kwargs
-            Parameters passed to
+            Optional arguments passed to
             :py:class:`matplotlib.patches.Circle` and
             :py:class:`matplotlib.lines.Line2D`.
 
@@ -1262,7 +1259,7 @@ class PhasorPlot:
         use_lines : bool, optional, default: False
             Draw universal semicircle using lines instead of arc.
         **kwargs
-            Additional parameters passed to
+            Optional arguments passed to
             :py:class:`matplotlib.lines.Line2D` or
             :py:class:`matplotlib.patches.Arc` and
             :py:meth:`matplotlib.axes.Axes.plot`.
@@ -1368,7 +1365,7 @@ class CircleTicks(AbstractPathEffect):
     labels : sequence of str, optional
         Tick labels for each vertex in path.
     **kwargs
-        Extra keywords passed to matplotlib's
+        Optional arguments passed to
         :py:meth:`matplotlib.patheffects.AbstractPathEffect._update_gc`.
 
     """

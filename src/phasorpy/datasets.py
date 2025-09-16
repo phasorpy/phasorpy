@@ -600,7 +600,7 @@ def fetch(
     return_scalar : bool, optional
         If true (default), return single path as string, else tuple of string.
     **kwargs
-        Additional arguments passed to ``pooch.fetch()``.
+        Optional arguments passed to :py:func:`pooch.fetch`.
         For example, ``progressbar=True``.
 
     Returns
