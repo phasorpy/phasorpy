@@ -172,7 +172,7 @@ def signal_from_ptu(
     keepdims : bool, optional, default: False
         If true, return reduced axes as size-one dimensions.
     **kwargs
-        Additional arguments passed to :py:meth:`PtuFile.decode_image`
+        Optional arguments passed to :py:meth:`PtuFile.decode_image`
         or :py:meth:`PtuFile.decode_histogram`.
 
     Returns
@@ -562,7 +562,7 @@ def phasor_from_ifli(
         If an integer, the returned `real` and `imag` arrays are single
         harmonic and have the same shape as `mean`.
     **kwargs
-        Additional arguments passed to :py:meth:`lfdfiles.VistaIfli.asarray`,
+        Optional arguments passed to :py:meth:`lfdfiles.VistaIfli.asarray`,
         for example ``memmap=True``.
 
     Returns

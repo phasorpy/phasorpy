@@ -442,8 +442,8 @@ def phasor_component_fit(
     component_imag : array_like
         Imaginary coordinates of components.
         Must be one or two-dimensional with harmonics in the first dimension.
-    **kwargs : optional
-        Additional arguments passed to :py:func:`scipy.linalg.lstsq()`.
+    **kwargs
+        Optional arguments passed to :py:func:`scipy.linalg.lstsq`.
 
     Returns
     -------

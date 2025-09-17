@@ -294,10 +294,11 @@ def signal_from_fbd(
     channel: int | None = 0,
     keepdims: bool = False,
     laser_factor: float = -1.0,
+    **kwargs: Any,
 ) -> DataArray:
     """Return phase histogram and metadata from FLIMbox FBD file.
 
-    FDB files contain encoded cross-correlation phase histograms from
+    FBD files contain encoded cross-correlation phase histograms from
     digital frequency-domain measurements using a FLIMbox device.
     The encoding scheme depends on the FLIMbox device's firmware.
     The FBD file format is undocumented.
@@ -322,6 +323,8 @@ def signal_from_fbd(
         If true, return reduced axes as size-one dimensions.
     laser_factor : float, optional
         Factor to correct dwell_time/laser_frequency.
+    **kwargs
+        Optional arguments passed to :py:class:`fbdfile.FbdFile`.
 
     Returns
     -------
@@ -338,13 +341,13 @@ def signal_from_fbd(
 
     Raises
     ------
-    lfdfiles.LfdFileError
+    ValueError
         File is not a FLIMbox FBD file.
 
     Notes
     -----
     The implementation is based on the
-    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
+    `fbdfile <https://github.com/cgohlke/fbdfile/>`__ library.
 
     Examples
     --------
@@ -365,12 +368,12 @@ def signal_from_fbd(
     40.0
 
     """
-    import lfdfiles
+    import fbdfile
 
     integrate_frames = 0 if frame is None or frame >= 0 else 1
 
-    with lfdfiles.FlimboxFbd(filename, laser_factor=laser_factor) as fbd:
-        data = fbd.asimage(None, None, integrate_frames=integrate_frames)
+    with fbdfile.FbdFile(filename, laser_factor=laser_factor, **kwargs) as fbd:
+        data = fbd.asimage(integrate_frames=integrate_frames)
         if integrate_frames:
             frame = None
         copy = False

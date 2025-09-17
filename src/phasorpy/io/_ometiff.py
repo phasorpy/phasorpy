@@ -95,7 +95,7 @@ def phasor_to_ometiff(
     description : str, optional
         Plain-text description of dataset. Write as OME dataset description.
     **kwargs
-        Additional arguments passed to :py:class:`tifffile.TiffWriter` and
+        Optional arguments passed to :py:class:`tifffile.TiffWriter` and
         :py:meth:`tifffile.TiffWriter.write`.
         For example, ``compression=None`` writes image data uncompressed.
 

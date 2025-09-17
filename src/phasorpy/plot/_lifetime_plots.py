@@ -62,7 +62,7 @@ class LifetimePlots:
         If True, add sliders to change frequency and lifetimes interactively.
         Default is False.
     **kwargs:
-        Additional arguments passed to matplotlib figure.
+        Optional arguments passed to matplotlib figure.
 
     """
 

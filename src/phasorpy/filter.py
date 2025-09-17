@@ -868,8 +868,7 @@ def signal_filter_ncpca(
         Data type of computation and output arrays. Either float32 or float64.
         The default is float64 unless the input `signal` is float32.
     **kwargs
-        Additional keyword arguments passed to
-        :py:class:`sklearn.decomposition.PCA`
+        Optional arguments passed to :py:class:`sklearn.decomposition.PCA`.
 
     Returns
     -------

@@ -370,7 +370,7 @@ plot_phasor(
 # files to another format from the software used to acquire the data.
 #
 # PhasorPy supports reading some FLIMbox FBD files via the
-# `lfdfiles <https://github.com/cgohlke/lfdfiles/>`_ library.
+# `fbdfile <https://github.com/cgohlke/fbdfile/>`_ library.
 #
 # The :py:func:`phasorpy.io.signal_from_fbd` function is used to read
 # a phase histograms from the

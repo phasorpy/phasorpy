@@ -66,7 +66,7 @@ def plot_phasor(
     show : bool, optional, default: True
         Display figure.
     **kwargs
-        Additional arguments passed to :py:class:`PhasorPlot`,
+        Optional arguments passed to :py:class:`PhasorPlot`,
         :py:meth:`PhasorPlot.plot`, :py:meth:`PhasorPlot.hist2d`, or
         :py:meth:`PhasorPlot.contour` depending on `style`.
 
@@ -159,7 +159,7 @@ def plot_phasor_image(
     show : bool, optional, default: True
         Display figure.
     **kwargs
-        Additional arguments passed to :func:`matplotlib.pyplot.imshow`.
+        Optional arguments passed to :func:`matplotlib.pyplot.imshow`.
 
     Raises
     ------
@@ -327,7 +327,7 @@ def plot_signal_image(
     show : bool, optional, default: True
         Display figure.
     **kwargs
-        Additional arguments passed to :func:`matplotlib.pyplot.imshow`.
+        Optional arguments passed to :func:`matplotlib.pyplot.imshow`.
 
     Raises
     ------
@@ -432,7 +432,7 @@ def plot_image(
     show : bool, optional, default: True
         Display figure.
     **kwargs
-        Additional arguments passed to :func:`matplotlib.pyplot.imshow`.
+        Optional arguments passed to :func:`matplotlib.pyplot.imshow`.
 
     Raises
     ------
@@ -578,7 +578,7 @@ def plot_polar_frequency(
     show : bool, optional, default: True
         Display figure.
     **kwargs
-        Additional arguments passed to :py:func:`matplotlib.pyplot.plot`.
+        Optional arguments passed to :py:func:`matplotlib.pyplot.plot`.
 
     """
     # TODO: make this customizable: labels, colors, ...
@@ -638,7 +638,7 @@ def plot_histograms(
     show : bool, optional, default: True
         Display figure.
     **kwargs
-        Additional arguments passed to :func:`matplotlib.pyplot.hist`.
+        Optional arguments passed to :func:`matplotlib.pyplot.hist`.
 
     """
     ax = pyplot.subplots()[1]

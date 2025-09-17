@@ -47,7 +47,8 @@ third-party file reader libraries, currently
 `tifffile <https://github.com/cgohlke/tifffile>`_,
 `ptufile <https://github.com/cgohlke/ptufile>`_,
 `liffile <https://github.com/cgohlke/liffile>`_,
-`sdtfile <https://github.com/cgohlke/sdtfile>`_, and
+`sdtfile <https://github.com/cgohlke/sdtfile>`_,
+`fbdfile <https://github.com/cgohlke/fbdfile>`_, and
 `lfdfiles <https://github.com/cgohlke/lfdfiles>`_.
 For advanced or unsupported use cases, consider using these libraries directly.
 
