@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.14"
+          python-version: "3.13"
       - name: Install PyBuild
         run: |
           python -m pip install -U build
@@ -48,7 +48,7 @@ jobs:
           path: dist
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.14"
+          python-version: "3.13"
       - run: |
           ls
           ls dist

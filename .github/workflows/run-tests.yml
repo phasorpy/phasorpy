@@ -93,7 +93,7 @@ jobs:
           SKIP_FETCH: 1
           CIBW_BUILD_VERBOSITY: 3
           CIBW_ARCHS_MACOS: x86_64
-          CIBW_BUILD: "cp312-manylinux_x86_64 cp314-win_amd64 cp314-macosx_x86_64"
+          CIBW_BUILD: "cp314-manylinux_x86_64 cp314-win_amd64 cp314-macosx_x86_64"
           CIBW_SKIP:
       - uses: actions/upload-artifact@v4
         with:
@@ -134,7 +134,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.14"]
+        python-version: ["3.13"]
     steps:
       - uses: actions/checkout@v5
       - name: Set up Python ${{ matrix.python-version }}
