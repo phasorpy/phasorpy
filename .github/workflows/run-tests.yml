@@ -24,12 +24,12 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.12"]
-        # 3.11, 3.13 tested with cibuildwheel, code_coverage
+        python-version: ["3.13"]
+        # 3.12, 3.14 tested with cibuildwheel, code_coverage
     steps:
       - uses: actions/checkout@v5
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Editable install
@@ -56,12 +56,12 @@ jobs:
       fail-fast: false
       matrix:
         os: ["windows-latest", "macos-latest"]
-        python-version: ["3.11"]
-        # 3.13 tested with cibuildwheel
+        python-version: ["3.12"]
+        # 3.14 tested with cibuildwheel
     steps:
       - uses: actions/checkout@v5
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Editable install
@@ -87,13 +87,13 @@ jobs:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
     steps:
       - uses: actions/checkout@v5
-      - uses: pypa/cibuildwheel@v3.1.4
+      - uses: pypa/cibuildwheel@v3.2.0
         env:
           # CIBW_ENVIRONMENT: "PIP_PRE=1"
           SKIP_FETCH: 1
           CIBW_BUILD_VERBOSITY: 3
           CIBW_ARCHS_MACOS: x86_64
-          CIBW_BUILD: "cp311-manylinux_x86_64 cp313-win_amd64 cp313-macosx_x86_64"
+          CIBW_BUILD: "cp312-manylinux_x86_64 cp314-win_amd64 cp314-macosx_x86_64"
           CIBW_SKIP:
       - uses: actions/upload-artifact@v4
         with:
@@ -117,7 +117,7 @@ jobs:
   #        uses: docker/setup-qemu-action@v3
   #        with:
   #          platforms: all
-  #      - uses: pypa/cibuildwheel@v3.1.4
+  #      - uses: pypa/cibuildwheel@v3.2.0
   #        env:
   #          CIBW_ARCHS_LINUX: aarch64
   #          CIBW_BUILD_VERBOSITY: 2
@@ -134,11 +134,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.13"]
+        python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v5
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Editable install
