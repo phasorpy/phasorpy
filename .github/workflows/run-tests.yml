@@ -146,6 +146,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --editable .
           python -m pip install -r requirements_dev.txt
+          python -m pip install -U --no-deps --force-reinstall -e git+https://github.com/cgohlke/blackdoc.git@v0.4.3.1#egg=blackdoc
       - name: Test with black
         run: |
           python -m black --check src/phasorpy tutorials docs
