@@ -16,7 +16,7 @@ image processing, array programming, and Python.
 # Install Python
 # --------------
 #
-# An installation of Python version 3.11 or higher is required to use the
+# An installation of Python version 3.12 or higher is required to use the
 # PhasorPy library.
 # Python is an easy to learn, powerful programming language.
 # Python installers can be obtained from, for example,
