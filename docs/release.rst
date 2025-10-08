@@ -9,8 +9,47 @@ documentation and maintenance changes.
     The PhasorPy library is still under construction. Backwards-incompatible
     changes may occur between revisions.
 
-0.7 (2025.8.22)
----------------
+0.8 (2025-10-08)
+----------------
+
+This is the eighth alpha release of the PhasorPy library.
+It contains several improvements and breaking changes.
+
+Filter-related functions have moved from the ``phasor`` module to the new
+``filter`` module.
+A new ``signal_filter_ncpca`` function has been added that filters signals
+using noise-corrected principal component analysis.
+The ``experimental.spectral_vector_denoise`` function has been renamed to
+``filter.signal_filter_svd``.
+
+The ``signal_from_fbd`` function has been updated to use the ``fbdfile``
+package.
+
+This release supports Python 3.12 to 3.14. Python 3.11 is no longer supported.
+
+What's Changed
+..............
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/287
+* Fix sdist does not contain all tests by @cgohlke in https://github.com/phasorpy/phasorpy/pull/288
+* Improve documentation by @cgohlke in https://github.com/phasorpy/phasorpy/pull/295
+* Mention cell-analysis-tools library by @cgohlke in https://github.com/phasorpy/phasorpy/pull/296
+* Add filter module by @cgohlke in https://github.com/phasorpy/phasorpy/pull/290
+* Document how to calibrate LIF Fast FLIM lifetimes by @cgohlke in https://github.com/phasorpy/phasorpy/pull/289
+* Add signal_filter_ncpca function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/297
+* Raise minimum version requirements by @cgohlke in https://github.com/phasorpy/phasorpy/pull/298
+* Mention napari-phasors software by @cgohlke in https://github.com/phasorpy/phasorpy/pull/301
+* Add phasor_combine function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/300
+* Bump the github-actions group with 2 updates by @dependabot[bot] in https://github.com/phasorpy/phasorpy/pull/299
+* Update to mkl_fft 2.0 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/302
+* Use fbdfile package to read FBD files by @cgohlke in https://github.com/phasorpy/phasorpy/pull/303
+* Support Python 3.14 and drop Python 3.11 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/304
+* Release v0.8 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/306
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.7...v0.8
+
+0.7 (2025-08-22)
+----------------
 
 This is the seventh alpha release of the PhasorPy library.
 It contains several bug fixes, improvements, and breaking changes.
@@ -77,8 +116,8 @@ What's Changed
 
 **Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.6...v0.7
 
-0.6 (2025.6.22)
----------------
+0.6 (2025-06-22)
+----------------
 
 This is the sixth alpha release of the PhasorPy library.
 It contains several bug fixes, improvements, and breaking changes.
@@ -141,8 +180,8 @@ What's Changed
 
 **Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.5...v0.6
 
-0.5 (2025.4.11)
----------------
+0.5 (2025-04-11)
+----------------
 
 This is the fifth alpha release of the PhasorPy library.
 It contains several bug fixes and improvements.
@@ -193,8 +232,8 @@ What's Changed
 
 **Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.4...v0.5
 
-0.4 (2025.1.30)
----------------
+0.4 (2025-01-30)
+----------------
 
 This is the fourth alpha release of the PhasorPy library.
 It contains several bug fixes and many improvements, mostly to the
@@ -226,7 +265,7 @@ What's Changed
 
 **Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.3...v0.4
 
-0.3 (2024.12.16)
+0.3 (2024-12-16)
 ----------------
 
 This is the third alpha release of the PhasorPy library.
@@ -251,7 +290,7 @@ What's Changed
 
 **Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.2...v0.3
 
-0.2 (2024.11.30)
+0.2 (2024-11-30)
 ----------------
 
 This is the second alpha release of the PhasorPy library.
@@ -285,8 +324,8 @@ What's Changed
 
 **Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.1...v0.2
 
-0.1 (2024.9.30)
----------------
+0.1 (2024-09-30)
+----------------
 
 This is the first alpha release of the PhasorPy library.
 It contains over 70 documented and tested functions and class methods to
