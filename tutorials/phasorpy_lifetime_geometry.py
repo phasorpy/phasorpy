@@ -292,7 +292,7 @@ plot.show()
 #   phasor coordinates on the **universal semicircle**.
 # - the **phasor coordinates** :math:`G` and :math:`S` of a mixture of
 #   two components with single-exponential lifetimes, weighted by their
-#   fractional intensities :math:`\alpha_{i}`, lie on a line between the
+#   **fractional intensities** :math:`\alpha_{i}`, lie on a line between the
 #   phasor coordinates of the single components.
 # - the **phase** :math:`\varphi` of the phasor coordinates :math:`G` and
 #   :math:`S` is the angle of the phasor coordinates with respect to the
