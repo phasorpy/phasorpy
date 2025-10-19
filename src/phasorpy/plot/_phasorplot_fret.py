@@ -142,7 +142,7 @@ class PhasorPlotFret(PhasorPlot):
     ) -> None:
         update_kwargs(
             kwargs,
-            title='PhasorPy FRET phasor plot',
+            title='FRET phasor plot',
             xlim=(-0.2, 1.1),
             ylim=(-0.1, 0.8),
         )
@@ -160,7 +160,7 @@ class PhasorPlotFret(PhasorPlot):
                 fig.subplots_adjust(bottom=0.45)
                 fcm = fig.canvas.manager
                 if fcm is not None:
-                    fcm.set_window_title(kwargs['title'])
+                    fcm.set_window_title('PhasorPy FRET phasor plot')
 
         super().__init__(ax=ax, **kwargs)
 
