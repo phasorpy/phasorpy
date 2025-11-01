@@ -95,7 +95,7 @@ jobs:
           CIBW_ARCHS_MACOS: x86_64
           CIBW_BUILD: "cp314-manylinux_x86_64 cp314-win_amd64 cp314-macosx_x86_64"
           CIBW_SKIP:
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           path: ./wheelhouse/*.whl
           name: wheels-${{ matrix.os }}
@@ -123,7 +123,7 @@ jobs:
   #          CIBW_BUILD_VERBOSITY: 2
   #          CIBW_BUILD: "cp311*"
   #          CIBW_SKIP: "*musllinux*"
-  #      - uses: actions/upload-artifact@v4
+  #      - uses: actions/upload-artifact@v5
   #        with:
   #          path: ./wheelhouse/*.whl
   #          name: wheels-${{ matrix.os }}
