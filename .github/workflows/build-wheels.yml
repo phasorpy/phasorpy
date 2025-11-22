@@ -36,7 +36,7 @@ jobs:
           CIBW_ARCHS_WINDOWS: AMD64 ARM64
           CIBW_TEST_SKIP: "cp314t*"
           CIBW_BUILD_VERBOSITY: 2
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v5
         with:
           path: ./wheelhouse/*.whl
           name: wheels-${{ matrix.os }}
