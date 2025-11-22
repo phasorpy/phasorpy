@@ -117,9 +117,9 @@ def versions(
     Examples
     --------
     >>> print(versions())  # doctest: +SKIP
-    Python-3.13.5
-    phasorpy-0.6
-    numpy-2.3.1
+    Python-3.14.0
+    phasorpy-0.8
+    numpy-2.3.5
     ...
 
     """
@@ -148,6 +148,8 @@ def versions(
         'sklearn',
         'pandas',
         'xarray',
+        'pawflim',
+        'mkl_fft',
         'click',
         'pooch',
     ):

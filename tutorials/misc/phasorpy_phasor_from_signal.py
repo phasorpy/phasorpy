@@ -54,7 +54,6 @@ signal[signal < 0.05] = 0.0  # 5% no signal
 # Print execution times depending on FFT function, axis, number of harmonics,
 # and number of threads:
 
-
 statement = """
 phasor_from_signal(signal, axis=axis, harmonic=harmonic, **kwargs)
 """
@@ -92,46 +91,46 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
 
 # %%
 # For reference, the results on a Core i7-14700K CPU, Windows 11,
-# Python 3.13.3, numpy 2.2.6, scipy 1.15.3, mkl-fft 1.3.14::
+# Python 3.14.0, numpy 2.3.5, scipy 1.16.3, mkl-fft 2.1.1::
 #
 #     harmonics 1
 #       axis -1
-#         not_fft              0.036s   1.00
+#         not_fft              0.034s   1.00
 #         not_fft (6 threads)  0.006s   0.17
-#         numpy_fft            0.270s   7.60
-#         scipy_fft            0.236s   6.64
-#         mkl_fft              0.114s   3.20
+#         numpy_fft            0.274s   8.03
+#         scipy_fft            0.240s   7.04
+#         mkl_fft              0.141s   4.14
 #       axis 0
-#         not_fft              0.139s   3.90
-#         not_fft (6 threads)  0.028s   0.78
-#         numpy_fft            0.591s  16.63
-#         scipy_fft            0.509s  14.32
-#         mkl_fft              0.148s   4.18
+#         not_fft              0.162s   4.75
+#         not_fft (6 threads)  0.038s   1.13
+#         numpy_fft            0.697s  20.44
+#         scipy_fft            0.496s  14.54
+#         mkl_fft              0.167s   4.90
 #       axis 2
-#         not_fft              0.037s   1.03
+#         not_fft              0.038s   1.12
 #         not_fft (6 threads)  0.006s   0.16
-#         numpy_fft            0.265s   7.47
-#         scipy_fft            0.239s   6.72
-#         mkl_fft              0.117s   3.29
+#         numpy_fft            0.272s   7.99
+#         scipy_fft            0.240s   7.04
+#         mkl_fft              0.130s   3.83
 #     harmonics 8
 #       axis -1
-#         not_fft              0.284s   8.00
-#         not_fft (6 threads)  0.040s   1.13
-#         numpy_fft            0.279s   7.84
-#         scipy_fft            0.247s   6.94
-#         mkl_fft              0.129s   3.64
+#         not_fft              0.287s   8.43
+#         not_fft (6 threads)  0.040s   1.17
+#         numpy_fft            0.288s   8.45
+#         scipy_fft            0.253s   7.43
+#         mkl_fft              0.161s   4.74
 #       axis 0
-#         not_fft              1.120s  31.52
-#         not_fft (6 threads)  0.280s   7.88
-#         numpy_fft            0.679s  19.11
-#         scipy_fft            0.525s  14.78
-#         mkl_fft              0.165s   4.65
+#         not_fft              1.161s  34.04
+#         not_fft (6 threads)  0.425s  12.47
+#         numpy_fft            0.715s  20.97
+#         scipy_fft            0.541s  15.88
+#         mkl_fft              0.183s   5.38
 #       axis 2
-#         not_fft              0.285s   8.03
-#         not_fft (6 threads)  0.039s   1.10
-#         numpy_fft            0.278s   7.84
-#         scipy_fft            0.243s   6.85
-#         mkl_fft              0.131s   3.68
+#         not_fft              0.282s   8.27
+#         not_fft (6 threads)  0.038s   1.13
+#         numpy_fft            0.288s   8.46
+#         scipy_fft            0.255s   7.49
+#         mkl_fft              0.155s   4.56
 
 # %%
 # Results

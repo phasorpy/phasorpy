@@ -2,7 +2,7 @@
 requires = [
     "setuptools>=68",
     "numpy",
-    "cython>=3.1.4",
+    "cython>=3.2.1",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -123,7 +123,7 @@ line_length = 79
 
 [tool.codespell]
 skip = "*.html,*.css,*.js,*.r64,*.map,./.git,./data,./docs/_build,./docs/tutorials,PKG-INFO,_htmlcov,pyproject.toml"
-ignore-words-list = "ba,compiletime,hist,nd,unparseable,HSI"
+ignore-words-list = "ba,compiletime,hist,nd,unparseable,HSI,coo"
 
 [tool.mypy]
 packages = ["phasorpy"]
@@ -179,7 +179,6 @@ norecursedirs = [
 ]
 
 [tool.cibuildwheel]
-skip = "cp38* cp39* cp310* cp311* *musllinux* *i686 *ppc64le *s390x"
+skip = "cp38* cp39* cp310* cp311* cp313* cp314-* *musllinux* *i686 *ppc64le *s390x"
 test-requires = ["scikit-learn", "lfdfiles", "fbdfile", "sdtfile", "ptufile", "liffile", "pawflim", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage"]
 test-command = "pytest {project}/tests"
-test-environment = "SKIP_FETCH=1"

@@ -3,11 +3,13 @@
 # project metadata are defined in pyproject.toml
 import os
 import sys
+import sysconfig
 
 import numpy
 from setuptools import Extension, setup
 
 DEBUG = bool(os.environ.get('PHASORPY_DEBUG', False))
+LIMITED_API = not sysconfig.get_config_var('Py_GIL_DISABLED')
 
 print()
 print(f'Building with numpy-{numpy.__version__}')
@@ -42,12 +44,21 @@ ext_modules = [
         extra_link_args=extra_link_args,
         define_macros=[
             # ('CYTHON_TRACE_NOGIL', '1'),
-            # ('CYTHON_LIMITED_API', '1'),
-            # ('Py_LIMITED_API', '1'),
-            ('NPY_NO_DEPRECATED_API', 'NPY_1_7_API_VERSION'),
-        ],
+            ('NPY_NO_DEPRECATED_API', 'NPY_2_0_API_VERSION'),
+        ]
+        + (
+            [('Py_LIMITED_API', 0x030C0000), ('CYTHON_LIMITED_API', '1')]
+            if LIMITED_API
+            else []
+        ),
+        py_limited_api=LIMITED_API,
     )
 ]
 
 
-setup(ext_modules=ext_modules)
+setup(
+    ext_modules=ext_modules,
+    options=(
+        {'bdist_wheel': {'py_limited_api': 'cp312'}} if LIMITED_API else {}
+    ),
+)
