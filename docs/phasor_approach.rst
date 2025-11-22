@@ -188,6 +188,10 @@ approach to analyze fluorescence time-resolved or spectral images:
   is a napari plugin for real-time TCSPC-FLIM analysis based on FLIMLib.
   The plugin is distributed under the GPLv3 license.
 
+- `FLOPA <https://github.com/IMCF-Biocev/FLOPA>`_
+  is a napari plugin for FLIM data opening, processing and analysis.
+  The plugin is distributed under the GPLv3 license.
+
 - `HySP <https://bioimage.usc.edu/software.html#HySP>`_
   is a free, closed-source, multi-platform desktop application developed by
   Francesco Cutrale for the analysis of multi-dimensional, hyper- and
