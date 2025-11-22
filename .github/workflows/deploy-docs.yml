@@ -32,7 +32,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements_dev.txt
-          python -m pip install --upgrade mkl-fft
+          # python -m pip install --upgrade mkl-fft
           python -m pip install --no-build-isolation --no-deps --verbose --editable .
       - name: Build docs
         run: |
