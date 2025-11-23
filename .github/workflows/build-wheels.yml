@@ -36,17 +36,13 @@ jobs:
           CIBW_ARCHS_WINDOWS: AMD64 ARM64
           CIBW_TEST_SKIP: "cp314t*"
           CIBW_BUILD_VERBOSITY: 2
-      - uses: actions/upload-artifact@v5
-        with:
-          path: ./wheelhouse/*.whl
-          name: wheels-${{ matrix.os }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install packages
         run: |
-          python -m pip install -U --find-links=wheelhouse phasorpy abi3audit
+          python -m pip install -U --pre --find-links=wheelhouse phasorpy abi3audit
       - name: Audit ABI3 wheels
         run: |
           abi3audit --strict --report wheelhouse/*abi3*.whl
@@ -54,3 +50,7 @@ jobs:
         run: |
           cd ..
           python -c "import phasorpy;from phasorpy import _phasorpy;print(phasorpy.__version__)"
+      - uses: actions/upload-artifact@v5
+        with:
+          path: ./wheelhouse/*.whl
+          name: wheels-${{ matrix.os }}
