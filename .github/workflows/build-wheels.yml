@@ -1,0 +1,51 @@
+name: Build wheels
+# Build ABI3 wheels for all platforms with Python 3.12 and test the Cython
+# extensions can be loaded on Python 3.14.
+# Also build wheels for Python 3.14t, but do not test them.
+# Tests using fetch are disabled.
+
+on:
+  push:
+    tags:
+      - "*"
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, windows-latest]
+        python-version: ["3.14"]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pypa/cibuildwheel@v3.3.0
+        env:
+          CIBW_ARCHS_LINUX: auto
+          CIBW_ARCHS_MACOS: x86_64 arm64
+          CIBW_ARCHS_WINDOWS: AMD64 ARM64
+          CIBW_BUILD_VERBOSITY: 2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install packages
+        run: |
+          python -m pip install -U --pre --find-links=wheelhouse phasorpy abi3audit
+      - name: Audit ABI3 wheels
+        run: |
+          abi3audit --strict --report wheelhouse/*abi3*.whl
+      - name: Test ABI3 wheels
+        run: |
+          cd ..
+          python -c "import phasorpy;from phasorpy import _phasorpy;print(phasorpy.__version__)"
+      - uses: actions/upload-artifact@v5
+        with:
+          path: ./wheelhouse/*.whl
+          name: wheels-${{ matrix.os }}
