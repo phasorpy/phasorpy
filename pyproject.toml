@@ -182,3 +182,8 @@ norecursedirs = [
 skip = "cp38* cp39* cp310* cp311* cp313* cp314-* *musllinux* *i686 *ppc64le *s390x"
 test-requires = ["scikit-learn", "lfdfiles", "fbdfile", "sdtfile", "ptufile", "liffile", "pawflim", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage"]
 test-command = "pytest {project}/tests"
+test-skip = ["cp314t*"]
+
+[tool.cibuildwheel.test-environment]
+SKIP_FETCH = "1"
+MPLBACKEND = "agg"
