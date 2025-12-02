@@ -52,7 +52,7 @@ jobs:
       - run: |
           ls
           ls dist
-          python -m pip install -U twine setuptools build wheel numpy "cython>=3.2.1"
+          python -m pip install --upgrade twine setuptools build wheel numpy cython"
           python -m twine check dist/*
           python -m pip install --upgrade --no-build-isolation --no-cache-dir --no-deps --pre --no-index --find-links=dist phasorpy
           python -c "import phasorpy;from phasorpy import _phasorpy;print(phasorpy.__version__)"
