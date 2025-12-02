@@ -124,7 +124,8 @@ following from within the local phasorpy repository::
     $ mkdir -p ~/pyenv/phasorpy-dev
     $ python -m venv ~/pyenv/phasorpy-dev
     $ source ~/pyenv/phasorpy-dev/bin/activate
-    $ pip install -r requirements_dev.txt
+    $ pip install --upgrade pip
+    $ pip install --upgrade --group dev
     $ pip install -e .
 
 Verify that the development environment is working by running the tests::

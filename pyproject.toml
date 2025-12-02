@@ -2,7 +2,7 @@
 requires = [
     "setuptools>=68",
     "numpy>=2.0.0",
-    "cython>=3.2.1",
+    "cython>=3.2.2",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -12,19 +12,19 @@ description = "Analysis of fluorescence lifetime and hyperspectral images using 
 readme = { file = "README.md", content-type = "text/markdown" }
 dynamic = ["version"]
 dependencies = [
-    # sync with requirements_min.txt
+    # sync with [dependency-groups.run]
     # https://scientific-python.org/specs/spec-0000/
     "numpy>=2.0.0",
     "matplotlib>=3.9.0",
+    "pandas>=2.2.0",
+    # "scikit-image>=0.23.0",
+    "scikit-learn>=1.5.0",
     "scipy>=1.13.0",
+    "tifffile>=2024.8.30",
+    "xarray>=2024.6.0",
     "click",
     "pooch",
     "tqdm",
-    "scikit-learn>=1.5.0",
-    # "scikit-image>=0.23.0",
-    # "pandas>=2.2.0",
-    "xarray>=2024.6.0",
-    "tifffile>=2024.8.30",
 ]
 requires-python = ">=3.12"
 classifiers = [
@@ -56,22 +56,112 @@ Download = "https://pypi.org/project/phasorpy/#files"
 phasorpy = "phasorpy.cli:main"
 
 [project.optional-dependencies]
-docs = [
-    "sphinx",
-    "sphinx-issues",
-    "sphinx_gallery",
-    "sphinx-copybutton",
-    "sphinx_click",
-    "pydata-sphinx-theme>=0.16.0",
-    "numpydoc",
-]
 all = [
-    "lfdfiles>=2024.5.24",
-    "sdtfile>=2024.5.24",
-    "ptufile>=2024.9.14",
-    "liffile>=2025.2.10",
+    # sync with [dependency-groups.optional]
     "fbdfile>=2025.9.18",
-    "pawflim",
+    "lfdfiles>=2024.5.24",
+    "liffile>=2025.2.10",
+    "ptufile>=2024.9.14",
+    "sdtfile>=2024.5.24",
+    "pawflim>=1.0.4",
+    # "mkl-fft>=2.1.1",
+]
+
+[dependency-groups]
+run = [
+    # runtime dependencies; sync with [project.dependencies]
+    "numpy>=2.0.0",
+    "matplotlib>=3.9.0",
+    "pandas>=2.2.0",
+    "scikit-learn>=1.5.0",
+    "scipy>=1.13.0",
+    "tifffile>=2024.8.30",
+    "xarray>=2024.6.0",
+    "click",
+    "pooch",
+    "tqdm",
+]
+optional = [
+    # optional runtime dependencies; sync with [project.optional-dependencies]
+    "fbdfile>=2025.9.18",
+    "lfdfiles>=2024.5.24",
+    "liffile>=2025.2.10",
+    "ptufile>=2024.9.14",
+    "sdtfile>=2024.5.24",
+    "pawflim>=1.0.4",
+]
+minimal = [
+    # minimal runtime versions for testing against oldest supported versions
+    "numpy==2.0.2; python_version == \"3.12\"",
+    "matplotlib==3.9.4; python_version == \"3.12\"",
+    "pandas==2.2.3; python_version == \"3.12\"",
+    "scikit-learn==1.5.0; python_version == \"3.12\"",
+    "scipy==1.13.1; python_version == \"3.12\"",
+    "tifffile==2024.8.30; python_version == \"3.12\"",
+    "xarray==2024.6.0; python_version == \"3.12\"",
+    # optional
+    "fbdfile==2025.9.18; python_version == \"3.12\"",
+    "lfdfiles==2024.5.24; python_version == \"3.12\"",
+    "liffile==2025.2.10; python_version == \"3.12\"",
+    "ptufile==2024.9.14; python_version == \"3.12\"",
+    "sdtfile==2024.5.24; python_version == \"3.12\"",
+    "pawflim==1.0.4; python_version == \"3.12\"",
+]
+build = [
+    # build requirements
+    "cython>=3.2.2",
+    "numpy>=2.0.0",
+    "abi3audit",
+    "build",
+    "cibuildwheel",
+    "packaging",
+    "setuptools",
+    "twine",
+    "wheel",
+]
+test = [
+    # test requirements
+    "coverage",
+    "cython",  # for Cython.Coverage plugin
+    "pytest",
+    "pytest-cov",
+    "pytest-doctestplus",
+    "pytest-runner",
+]
+docs = [
+    # documentation build requirements
+    "numpydoc",
+    "pydata-sphinx-theme>=0.16.0",
+    "sphinx<9",
+    "sphinx-copybutton",
+    "sphinx-design",
+    "sphinx-inline-tabs",
+    "sphinx-issues",
+    "sphinx_click",
+    "sphinx_gallery",
+]
+lint = [
+    # static code analysis requirements
+    "autoflake",
+    "black",
+    "blackdoc",
+    "codespell",
+    "cython_lint",
+    "flake8",
+    "isort",
+    "mypy",
+    "pre-commit",
+    "pre-commit-hooks",
+    "pyupgrade",
+]
+dev = [
+    # all development requirements
+    {include-group = "run"},
+    {include-group = "optional"},
+    {include-group = "build"},
+    {include-group = "test"},
+    {include-group = "docs"},
+    {include-group = "lint"},
 ]
 
 [tool.setuptools]

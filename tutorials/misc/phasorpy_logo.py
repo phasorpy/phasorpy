@@ -133,7 +133,7 @@ if background_color is not None:
 
 pyplot.tight_layout(pad=0.0, w_pad=0.0, h_pad=0.0)
 
-# save the figure to a SVG file:
+# save the figure to an SVG file:
 plot.save('phasorpy_logo.svg', dpi=160, transparent=True, bbox_inches='tight')
 plot.show()
 
