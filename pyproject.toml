@@ -122,6 +122,7 @@ build = [
 test = [
     # test requirements
     "coverage",
+    "cython",  # for Cython.Coverage plugin
     "pytest",
     "pytest-cov",
     "pytest-doctestplus",
