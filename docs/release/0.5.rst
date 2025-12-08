@@ -1,0 +1,56 @@
+.. currentmodule:: phasorpy
+
+PhasorPy 0.5 (2025-04-11)
+=========================
+
+This is the fifth alpha release of the PhasorPy library.
+It contains several bug fixes and improvements.
+The new ``phasor_cluster_gmm`` function finds clusters in phasor coordinates
+using a Gaussian mixture model.
+The ``phasor_filter_pawflim`` function applies a wavelet filter using the
+pawFLIM library.
+
+This release supports Python 3.11 to 3.13. Python 3.10 is no longer supported.
+
+What's Changed
+--------------
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/183
+* Bug Fix for phasor_calibrate when skipping axes with harmonic axis by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/185
+* Fixes for liffile 2025.2.6 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/184
+* Fix phasor_normalize with numpy 1.24 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/186
+* Add pawFLIM wavelet filter for phasor coordinates by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/167
+* Add dataset from zenodo.org/records/14860228 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/187
+* Improve support for Leica image files by @cgohlke in https://github.com/phasorpy/phasorpy/pull/188
+* Remove notes about early stage of development by @cgohlke in https://github.com/phasorpy/phasorpy/pull/189
+* Add plot_histograms function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/191
+* Fix NaN padding in phasor_to_simfcs_referenced by @cgohlke in https://github.com/phasorpy/phasorpy/pull/192
+* Return more metadata from IFLI and FBD readers by @cgohlke in https://github.com/phasorpy/phasorpy/pull/193
+* Add more formats to file I/O tutorial by @cgohlke in https://github.com/phasorpy/phasorpy/pull/194
+* Fix module attribute of functions in phasorpy.io by @cgohlke in https://github.com/phasorpy/phasorpy/pull/195
+* Add plot_image helper function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/196
+* Add section on other means to IO tutorial by @cgohlke in https://github.com/phasorpy/phasorpy/pull/197
+* Bump pypa/cibuildwheel from 2.22.0 to 2.23.0 in the github-actions group by @dependabot in https://github.com/phasorpy/phasorpy/pull/198
+* Improve IO tutorial by @cgohlke in https://github.com/phasorpy/phasorpy/pull/199
+* Fix minor issues found by GitHub Copilot by @cgohlke in https://github.com/phasorpy/phasorpy/pull/202
+* Move parse_skip_axis function to _utils module by @cgohlke in https://github.com/phasorpy/phasorpy/pull/203
+* Fix new mypy errors with numpy 2.2.4 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/204
+* Raise minimum requirements by @cgohlke in https://github.com/phasorpy/phasorpy/pull/208
+* Add phasor_cluster_gmm function by @R-Blanco802 in https://github.com/phasorpy/phasorpy/pull/201
+* Require scikit-learn>=1.5.0 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/209
+* Support routing channels in signal_from_sdt by @cgohlke in https://github.com/phasorpy/phasorpy/pull/210
+* Improve tests and documentation of phasor_cluster_gmm by @cgohlke in https://github.com/phasorpy/phasorpy/pull/211
+* Ignore PhasorPlot.contour cmap if colors is set by @cgohlke in https://github.com/phasorpy/phasorpy/pull/213
+* Bump pypa/cibuildwheel from 2.23.1 to 2.23.2 in the github-actions group by @dependabot in https://github.com/phasorpy/phasorpy/pull/214
+* Update Ubuntu version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/219
+* Require Cython>=3.1.0b1 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/216
+* Add PTU file exported from FLIM_testdata.lif with photon filter by @cgohlke in https://github.com/phasorpy/phasorpy/pull/217
+* Fix multi-channel FLIM LABS files containing single-channel phasors by @cgohlke in https://github.com/phasorpy/phasorpy/pull/218
+* Release v0.5 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/220
+
+New Contributors
+----------------
+
+* @R-Blanco802 made their first contribution in https://github.com/phasorpy/phasorpy/pull/201
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.4...v0.5

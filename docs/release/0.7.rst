@@ -1,0 +1,69 @@
+.. currentmodule:: phasorpy
+
+PhasorPy 0.7 (2025-08-22)
+=========================
+
+This is the seventh alpha release of the PhasorPy library.
+It contains several bug fixes, improvements, and breaking changes.
+
+Lifetime-related functions have moved from the ``phasor`` module to
+the new ``lifetime`` module.
+The ``cursors`` and ``components`` modules have been renamed
+to ``cursor`` and ``component`` respectively.
+
+The new ``phasor_from_component`` function calculates phasor coordinates
+from component fractions.
+The ``phasor_component_mvc`` function calculates mean value coordinates
+from phasor components.
+The ``phasor_to_lifetime_search`` function finds two lifetime components
+in multi-harmonic phasor coordinates.
+The ``signal_from_pqbin`` function reads TCSPC histograms from PicoQuant
+BIN files.
+
+New tutorials demonstrate the multidimensional phasor approach and the
+programmatic generation of the PhasorPy logo.
+
+This release supports Python 3.11 to 3.13. Wheels for Python 3.14, including
+free-threaded, are available for testing.
+
+What's Changed
+--------------
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/250
+* Bump pypa/cibuildwheel from 2.23.3 to 3.0.0 in the github-actions group by @dependabot[bot] in https://github.com/phasorpy/phasorpy/pull/252
+* Support reading variants of SimFCS referenced files by @cgohlke in https://github.com/phasorpy/phasorpy/pull/253
+* Add GSLab dataset by @cgohlke in https://github.com/phasorpy/phasorpy/pull/254
+* Fix tests failing with numpy 2.3 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/255
+* Remove numpy pin for static code analysis by @cgohlke in https://github.com/phasorpy/phasorpy/pull/256
+* Add phasor_from_component function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/257
+* Return component fractions as single array by @cgohlke in https://github.com/phasorpy/phasorpy/pull/258
+* Use only latest GitHub Actions runners by @cgohlke in https://github.com/phasorpy/phasorpy/pull/259
+* Add phasor_component_mvc function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/260
+* Move lifetime related functions out of phasor module by @cgohlke in https://github.com/phasorpy/phasorpy/pull/261
+* Add option to specify number of lifetimes in lifetime app by @cgohlke in https://github.com/phasorpy/phasorpy/pull/263
+* Rename cursors and components modules by @cgohlke in https://github.com/phasorpy/phasorpy/pull/262
+* Skip more tests if SKIP_FETCH environment variable is set by @cgohlke in https://github.com/phasorpy/phasorpy/pull/264
+* Improve docstrings and tests by @cgohlke in https://github.com/phasorpy/phasorpy/pull/265
+* Drop support for numpy 1.25 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/267
+* Update Python versions used in workflows by @cgohlke in https://github.com/phasorpy/phasorpy/pull/268
+* Add phasor_to_lifetime_search function for two components by @cgohlke in https://github.com/phasorpy/phasorpy/pull/266
+* Fix io tutorial by @cgohlke in https://github.com/phasorpy/phasorpy/pull/269
+* Fix multi-component fit tutorial by @cgohlke in https://github.com/phasorpy/phasorpy/pull/270
+* Build wheels for Python 3.14 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/271
+* Improve PhasorPlot.polar_grid method by @cgohlke in https://github.com/phasorpy/phasorpy/pull/272
+* Fix PhasorPlot.polar_cursor at origin by @cgohlke in https://github.com/phasorpy/phasorpy/pull/273
+* Pass kwargs from signal_from_ptu to PtuFile.decode_image by @cgohlke in https://github.com/phasorpy/phasorpy/pull/274
+* Add signal_from_pqbin function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/275
+* Build wheels for free-threaded Python by @cgohlke in https://github.com/phasorpy/phasorpy/pull/276
+* Fix signal_from_ptu function kwargs handling by @cgohlke in https://github.com/phasorpy/phasorpy/pull/277
+* Bump pypa/cibuildwheel from 3.1.2 to 3.1.3 in the github-actions group by @dependabot[bot] in https://github.com/phasorpy/phasorpy/pull/278
+* Rename build_manylinux scripts by @cgohlke in https://github.com/phasorpy/phasorpy/pull/279
+* Add tutorial to create PhasorPy logo by @cgohlke in https://github.com/phasorpy/phasorpy/pull/280
+* Make PhasorPy logo square shaped by @cgohlke in https://github.com/phasorpy/phasorpy/pull/281
+* Update pre-commit-hooks by @cgohlke in https://github.com/phasorpy/phasorpy/pull/282
+* Improve PhasorPlot class and its cursor methods by @cgohlke in https://github.com/phasorpy/phasorpy/pull/284
+* Document that LIF files contain Fast FLIM lifetimes by @cgohlke in https://github.com/phasorpy/phasorpy/pull/286
+* Add multidimensional phasor tutorial and dataset by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/283
+* Release v0.7 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/285
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.6...v0.7

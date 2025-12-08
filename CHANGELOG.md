@@ -1,1 +1,1 @@
-See the [PhasorPy release notes](docs/release.rst).
+See the [PhasorPy release notes](docs/release).
