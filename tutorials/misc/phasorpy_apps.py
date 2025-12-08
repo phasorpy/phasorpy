@@ -7,10 +7,9 @@ Interactive educational applications.
 The PhasorPy library includes interactive applications for educational
 purposes. They open graphical user interfaces where parameters can be
 adjusted via sliders and the resulting phasor and lifetime plots are
-updated in real time. The apps can be started from the command line or
+updated in real time. The apps can be started from the :doc:`/api/cli` or
 programmatically. A matplotlib backend that supports interactive
 windows is required.
-See the :doc:`Command-line interface reference </api/cli>` for usage.
 
 """
 
