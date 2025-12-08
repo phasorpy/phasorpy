@@ -1,7 +1,7 @@
-"""Tests handling NaN coordinates."""
+"""Test handling NaN coordinates."""
 
 import warnings
-from math import nan as NAN
+from math import nan
 
 import numpy
 import pytest
@@ -43,11 +43,11 @@ from phasorpy.phasor import (
 )
 from phasorpy.plot import PhasorPlot, plot_phasor_image
 
-VALUES_WITH_NAN = [1.1, 1.1, 1.1], [0.5, NAN, 0.1], [0.5, 0.5, 0.1]
+VALUES_WITH_NAN = [1.1, 1.1, 1.1], [0.5, nan, 0.1], [0.5, 0.5, 0.1]
 VALUES_WITH_NAN_2D = (
     [[1.1, 1.1, 1.1], [1.1, 1.1, 1.1], [1.1, 1.1, 1.1]],
-    [[0.5, NAN, 0.1], [0.5, 0.5, 0.1], [0.2, 0.3, NAN]],
-    [[0.5, 0.5, 0.1], [0.2, NAN, 0.3], [0.4, 0.4, 0.4]],
+    [[0.5, nan, 0.1], [0.5, 0.5, 0.1], [0.2, 0.3, nan]],
+    [[0.5, 0.5, 0.1], [0.2, nan, 0.3], [0.4, 0.4, 0.4]],
 )
 
 
@@ -72,9 +72,9 @@ def test_phasorplot_nan():
         plot.line(*VALUES_WITH_NAN[1:])
     with warnings.catch_warnings():
         warnings.simplefilter('error')
-        plot.circle(NAN, 0.5, radius=0.1)
+        plot.circle(nan, 0.5, radius=0.1)
     with pytest.raises(ValueError):
-        plot.polar_cursor(NAN, 0.5, radius=0.1, crosshair=True)
+        plot.polar_cursor(nan, 0.5, radius=0.1, crosshair=True)
     # pyplot.show()
     pyplot.close()
 
@@ -82,7 +82,7 @@ def test_phasorplot_nan():
 def test_plot_phasor_image_nan():
     """Test plot_phasor_image function with NaN values."""
     data = numpy.zeros((2, 3, 2))
-    data[0, 0, 0] = NAN
+    data[0, 0, 0] = nan
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         plot_phasor_image(data[0], data, data, show=False)
@@ -123,11 +123,11 @@ def test_phasor_at_harmonic_nan():
         warnings.simplefilter('error')
         phasor = phasor_at_harmonic(VALUES_WITH_NAN[1], 1, 2)
     assert_allclose(
-        phasor, [[0.2, NAN, 0.027027], [0.4, NAN, 0.162162]], atol=1e-3
+        phasor, [[0.2, nan, 0.027027], [0.4, nan, 0.162162]], atol=1e-3
     )
 
 
-@pytest.mark.parametrize('nan_safe', (True, False))
+@pytest.mark.parametrize('nan_safe', [True, False])
 def test_phasor_calibrate_nan(nan_safe):
     """Test phasor_calibrate function with NaN values."""
     with warnings.catch_warnings():
@@ -136,7 +136,7 @@ def test_phasor_calibrate_nan(nan_safe):
             *VALUES_WITH_NAN[1:], 1.0, 0.0, 1.0, 80, 4.2, nan_safe=nan_safe
         )
     assert_allclose(
-        phasor, [[0.28506, NAN, 0.05701], [0.10181, NAN, 0.02036]], atol=1e-3
+        phasor, [[0.28506, nan, 0.05701], [0.10181, nan, 0.02036]], atol=1e-3
     )
 
 
@@ -170,7 +170,7 @@ def test_phasor_divide_nan():
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         phasor = phasor_divide(*VALUES_WITH_NAN[1:], 1.0, 1.0)
-    assert_allclose(phasor, [[0.5, NAN, 0.1], [0.0, NAN, 0.0]], atol=1e-3)
+    assert_allclose(phasor, [[0.5, nan, 0.1], [0.0, nan, 0.0]], atol=1e-3)
 
 
 def test_phasor_filter_median_nan():
@@ -181,12 +181,12 @@ def test_phasor_filter_median_nan():
     assert_array_equal(phasor[0], VALUES_WITH_NAN_2D[0])
     assert_allclose(
         phasor[1],
-        [[0.5, NAN, 0.1], [0.5, 0.3, 0.1], [0.3, 0.3, NAN]],
+        [[0.5, nan, 0.1], [0.5, 0.3, 0.1], [0.3, 0.3, nan]],
         atol=1e-3,
     )
     assert_allclose(
         phasor[2],
-        [[0.5, 0.4, 0.2], [0.4, NAN, 0.35], [0.4, 0.4, 0.4]],
+        [[0.5, 0.4, 0.2], [0.4, nan, 0.35], [0.4, 0.4, 0.4]],
         atol=1e-3,
     )
 
@@ -198,7 +198,7 @@ def test_phasor_from_apparent_lifetime_nan():
         phasor = phasor_from_apparent_lifetime(*VALUES_WITH_NAN[1:], 80)
     assert_allclose(
         phasor,
-        [[0.940587, NAN, 0.99748], [0.236395, NAN, 0.050139]],
+        [[0.940587, nan, 0.99748], [0.236395, nan, 0.050139]],
         atol=1e-3,
     )
 
@@ -210,7 +210,7 @@ def test_phasor_from_polar_nan():
         phasor = phasor_from_polar(*VALUES_WITH_NAN[1:])
     assert_allclose(
         phasor,
-        [[0.438791, NAN, 0.0995], [0.239713, NAN, 0.009983]],
+        [[0.438791, nan, 0.0995], [0.239713, nan, 0.009983]],
         atol=1e-3,
     )
 
@@ -220,13 +220,13 @@ def test_phasor_from_signal_nan():
     sample_phase = numpy.linspace(0, 2 * numpy.pi, 4, endpoint=False)
     signal = 1.1 * (numpy.cos(sample_phase - 0.4) * 0.8 + 1)
     signal = numpy.stack([signal, signal])
-    signal[0, 2] = NAN
+    signal[0, 2] = nan
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         phasor = phasor_from_signal(signal)
     assert_allclose(
         phasor,
-        [[NAN, 1.1], [NAN, 0.368424], [NAN, 0.155767]],
+        [[nan, 1.1], [nan, 0.368424], [nan, 0.155767]],
         atol=1e-3,
     )
 
@@ -236,7 +236,7 @@ def test_phasor_multiply_nan():
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         phasor = phasor_multiply(*VALUES_WITH_NAN[1:], 1.0, 1.0)
-    assert_allclose(phasor, [[0.0, NAN, 0.0], [1.0, NAN, 0.2]], atol=1e-3)
+    assert_allclose(phasor, [[0.0, nan, 0.0], [1.0, nan, 0.2]], atol=1e-3)
 
 
 def test_phasor_threshold_nan():
@@ -245,7 +245,7 @@ def test_phasor_threshold_nan():
         warnings.simplefilter('error')
         phasor = phasor_threshold(*VALUES_WITH_NAN, real_min=0.2)
     assert_allclose(
-        phasor, [[1.1, NAN, NAN], [0.5, NAN, NAN], [0.5, NAN, NAN]], atol=1e-3
+        phasor, [[1.1, nan, nan], [0.5, nan, nan], [0.5, nan, nan]], atol=1e-3
     )
 
 
@@ -256,7 +256,7 @@ def test_phasor_to_apparent_lifetime_nan():
         lifetimes = phasor_to_apparent_lifetime(*VALUES_WITH_NAN[1:], 80)
     assert_allclose(
         lifetimes,
-        [[1.989437, NAN, 1.989437], [1.989437, NAN, 13.926058]],
+        [[1.989437, nan, 1.989437], [1.989437, nan, 13.926058]],
         atol=1e-3,
     )
 
@@ -268,7 +268,7 @@ def test_phasor_to_complex_nan():
         phasor = phasor_to_complex(*VALUES_WITH_NAN[1:])
     assert_allclose(
         phasor,
-        [0.5 + 0.5j, NAN + 0.5j, 0.1 + 0.1j],
+        [0.5 + 0.5j, nan + 0.5j, 0.1 + 0.1j],
         atol=1e-3,
     )
 
@@ -280,7 +280,7 @@ def test_phasor_to_polar_nan():
         polar = phasor_to_polar(*VALUES_WITH_NAN[1:])
     assert_allclose(
         polar,
-        [[0.785398, NAN, 0.785398], [0.707107, NAN, 0.141421]],
+        [[0.785398, nan, 0.785398], [0.707107, nan, 0.141421]],
         atol=1e-3,
     )
 
@@ -290,13 +290,13 @@ def test_phasor_to_principal_plane_nan():
     real = [[0.495, 0.35], [0.354, 0.304], [0.3, 0.37]]
     imag = [[0.333, 0.33], [0.301, 0.349], [0.3, 0.36]]
 
-    x, y, transformation_matrix = phasor_to_principal_plane(real, imag)
+    phasor_to_principal_plane(real, imag)
     # assert_allclose(x, [0.458946, 0.202887], atol=1e-3)
 
-    real[0][0] = NAN
-    with pytest.raises(Exception):
+    real[0][0] = nan
+    with pytest.raises(numpy.linalg.LinAlgError):
         # numpy.linalg.LinAlgError: Eigenvalues did not converge
-        x, y, transformation_matrix = phasor_to_principal_plane(real, imag)
+        phasor_to_principal_plane(real, imag)
 
 
 def test_phasor_to_signal_nan():
@@ -311,7 +311,7 @@ def test_phasor_to_signal_nan():
         atol=1e-1,
     )
     # TODO: this might be dependent on FFT implementation?
-    assert_allclose(signal[1][:4], [NAN, NAN, NAN, NAN], atol=1e-3)
+    assert_allclose(signal[1][:4], [nan, nan, nan, nan], atol=1e-3)
 
 
 def test_phasor_transform_nan():
@@ -321,7 +321,7 @@ def test_phasor_transform_nan():
         phasor = phasor_transform(*VALUES_WITH_NAN[1:], 1, 0.9)
     assert_allclose(
         phasor,
-        [[-0.135526, NAN, -0.027105], [0.621798, NAN, 0.12436]],
+        [[-0.135526, nan, -0.027105], [0.621798, nan, 0.12436]],
         atol=1e-3,
     )
 
@@ -333,7 +333,7 @@ def test_polar_from_apparent_lifetime_nan():
         polar = polar_from_apparent_lifetime(*VALUES_WITH_NAN[1:], 80)
     assert_allclose(
         polar,
-        [[0.246228, NAN, 0.050223], [0.969839, NAN, 0.998739]],
+        [[0.246228, nan, 0.050223], [0.969839, nan, 0.998739]],
         atol=1e-3,
     )
 
@@ -345,7 +345,7 @@ def test_polar_from_reference_nan():
         polar = polar_from_reference(*VALUES_WITH_NAN[1:], 0.5, 0.5)
     assert_allclose(
         polar,
-        [[0.0, NAN, 0.4], [1.0, NAN, 5.0]],
+        [[0.0, nan, 0.4], [1.0, nan, 5.0]],
         atol=1e-3,
     )
 
@@ -357,7 +357,7 @@ def test_polar_from_reference_phasor_nan():
         polar = polar_from_reference_phasor(*VALUES_WITH_NAN[1:], 0.5, 0.5)
     assert_allclose(
         polar,
-        [[0.0, NAN, 0.0], [1.0, NAN, 5.0]],
+        [[0.0, nan, 0.0], [1.0, nan, 5.0]],
         atol=1e-3,
     )
 
@@ -369,7 +369,7 @@ def test_polar_to_apparent_lifetime_nan():
         lifetime = polar_to_apparent_lifetime(*VALUES_WITH_NAN[1:], 80)
     assert_allclose(
         lifetime,
-        [[1.086834, NAN, 0.199609], [3.445806, NAN, 19.794646]],
+        [[1.086834, nan, 0.199609], [3.445806, nan, 19.794646]],
         atol=1e-3,
     )
 
@@ -379,7 +379,7 @@ def test_phasor_to_normal_lifetime_nan():
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         taunorm = phasor_to_normal_lifetime(*VALUES_WITH_NAN[1:], 80)
-    assert_allclose(taunorm, [1.989437, NAN, 16.160405], atol=1e-3)
+    assert_allclose(taunorm, [1.989437, nan, 16.160405], atol=1e-3)
 
 
 def test_phasor_component_fraction_nan():
@@ -389,7 +389,7 @@ def test_phasor_component_fraction_nan():
         fractions = phasor_component_fraction(
             *VALUES_WITH_NAN[1:], [0.5, 1.0], [0.5, 1.0]
         )
-    assert_allclose(fractions, [1.0, NAN, 1.0])
+    assert_allclose(fractions, [1.0, nan, 1.0])
 
 
 def test_phasor_component_graphical_nan():

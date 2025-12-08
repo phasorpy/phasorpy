@@ -5,20 +5,20 @@ The ``phasorpy.component`` module provides functions to:
 - calculate fractions of two known components by projecting onto the
   line between the components (:py:func:`phasor_component_fraction`)
 
-- calculate phasor coordinates of second component if only one is
-  known (not implemented)
+- calculate phasor coordinates of a second component if only one is
+  known (not implemented yet)
 
-- calculate fractions of multiple known components by using higher
-  harmonic information (:py:func:`phasor_component_fit`)
+- calculate fractions of multiple known components by using higher-harmonic
+  information (:py:func:`phasor_component_fit`)
 
 - calculate fractions of two or three known components by resolving
-  graphically with histogram (:py:func:`phasor_component_graphical`)
+  graphically with a histogram (:py:func:`phasor_component_graphical`)
 
-- calculate mean value coordinates of phasor coordinates with respect
-  to three or more components (:py:func:`phasor_component_mvc`)
+- calculate mean value coordinates of phasors with respect to three
+  or more components (:py:func:`phasor_component_mvc`)
 
 - blindly resolve fractions of multiple components by using harmonic
-  information (:py:func:`phasor_component_blind`, not implemented)
+  information (:py:func:`phasor_component_blind`, not implemented yet)
 
 - calculate phasor coordinates from fractional intensities of
   components (:py:func:`phasor_from_component`)
@@ -67,10 +67,10 @@ def phasor_from_component(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates from fractional intensities of components.
 
-    Return the dot products of the fractional intensities of components
-    with the real and imaginary phasor coordinates of the components.
+    Return the dot products of the fractional intensities with the real and
+    imaginary phasor coordinates of the components.
 
-    Multi-dimensional component arrays are currently not supported.
+    Multidimensional component arrays are not supported yet.
 
     Parameters
     ----------
@@ -81,12 +81,12 @@ def phasor_from_component(
         Imaginary coordinates of components.
     fraction : array_like
         Fractional intensities of components.
-        Fractions are normalized to sum to one along `axis`.
+        Fractions are normalized to sum to 1 along `axis`.
     axis : int, optional, default: 0
         Axis of components in `fraction`.
     dtype : dtype_like, optional
         Floating point data type used for calculation and output values.
-        Either `float32` or `float64`. The default is `float64`.
+        Either float32 or float64. The default is float64.
 
     Returns
     -------
@@ -112,7 +112,7 @@ def phasor_from_component(
     """
     dtype = numpy.dtype(dtype)
     if dtype.char not in {'f', 'd'}:
-        raise ValueError(f'{dtype=} is not a floating point type')
+        raise ValueError(f'{dtype=} is not a floating-point type')
 
     fraction = numpy.asarray(fraction, dtype=dtype, copy=True)
     if fraction.ndim < 1:
@@ -180,9 +180,9 @@ def phasor_component_fraction(
     -----
     The fraction of the second component is ``1.0 - fraction``.
 
-    For now, calculation of fraction of components from different
-    channels or frequencies is not supported. Only one pair of components can
-    be analyzed and will be broadcast to all channels/frequencies.
+    Calculation of fractions of components from different channels
+    or frequencies is not supported yet. Only one pair of components
+    can be analyzed and is broadcast to all channels/frequencies.
 
     Examples
     --------
@@ -244,10 +244,10 @@ def phasor_component_graphical(
         Radius of cursor.
     fractions : array_like or int, optional
         Number of equidistant fractions, or 1D array of fraction values.
-        Fraction values must be in range [0.0, 1.0].
+        Fraction values must be in the range [0.0, 1.0].
         If an integer, ``numpy.linspace(0.0, 1.0, fractions)`` fraction values
         are used.
-        If None (default), the number of fractions is determined from the
+        By default, the number of fractions is determined from the
         longest distance between any pair of components and the radius of
         the cursor (see Notes below).
 
@@ -265,7 +265,7 @@ def phasor_component_graphical(
         The array shapes of `real` and `imag`, or `component_real` and
         `component_imag` do not match.
         The number of components is not 2 or 3.
-        Fraction values are out of range [0.0, 1.0].
+        Fraction values are out of range [0, 1].
 
     See Also
     --------
@@ -273,9 +273,9 @@ def phasor_component_graphical(
 
     Notes
     -----
-    For now, calculation of fraction of components from different
-    channels or frequencies is not supported. Only one set of components can
-    be analyzed and will be broadcast to all channels/frequencies.
+    Calculation of fractions of components from different channels
+    or frequencies is not supported yet. Only one set of components
+    can be analyzed and is broadcast to all channels/frequencies.
 
     The graphical method was first introduced in [1]_.
 
@@ -296,10 +296,10 @@ def phasor_component_graphical(
     References
     ----------
     .. [1] Ranjit S, Datta R, Dvornikov A, and Gratton E.
-      `Multicomponent analysis of phasor plot in a single pixel to
-      calculate changes of metabolic trajectory in biological systems
-      <https://doi.org/10.1021/acs.jpca.9b07880>`_.
-      *J Phys Chem A*, 123(45): 9865-9873 (2019)
+       `Multicomponent analysis of phasor plot in a single pixel to
+       calculate changes of metabolic trajectory in biological systems
+       <https://doi.org/10.1021/acs.jpca.9b07880>`_.
+       *J Phys Chem A*, 123(45): 9865-9873 (2019)
 
     Examples
     --------
@@ -355,7 +355,7 @@ def phasor_component_graphical(
                 )
                 longest_distance = max(longest_distance, length)
         fractions = numpy.linspace(
-            0.0, 1.0, int(round(longest_distance / (radius / 2) + 1))
+            0.0, 1.0, round(longest_distance / (radius / 2) + 1)
         )
     elif isinstance(fractions, (int, numbers.Integral)):
         fractions = numpy.linspace(0.0, 1.0, fractions)
@@ -381,7 +381,7 @@ def phasor_component_graphical(
 
             for k, f in enumerate(fractions):
                 if f < 0.0 or f > 1.0:
-                    raise ValueError(f'fraction {f} out of bounds [0.0, 1.0]')
+                    raise ValueError(f'fraction {f} is out of range [0, 1]')
                 if num_components == 2:
                     mask = _is_inside_circle(
                         real,
@@ -416,15 +416,15 @@ def phasor_component_fit(
     /,
     **kwargs: Any,
 ) -> NDArray[Any]:
-    """Return fractions of multiple components from phasor coordinates.
+    r"""Return fractions of multiple components from phasor coordinates.
 
     Component fractions are obtained from the least-squares solution of a
     linear matrix equation that relates phasor coordinates from one or
     multiple harmonics to component fractions according to [2]_.
 
-    Up to ``2 * number harmonics + 1`` components can be fit to multi-harmonic
-    phasor coordinates, that is up to three components for single harmonic
-    phasor coordinates.
+    Up to ``2 * number harmonics + 1`` components can be fitted to
+    multi-harmonic phasor coordinates, that is up to three components
+    for single harmonic phasor coordinates.
 
     Parameters
     ----------
@@ -468,23 +468,23 @@ def phasor_component_fit(
 
     Notes
     -----
-    For now, calculation of fractions of components from different channels
-    or frequencies is not supported. Only one set of components can be
-    analyzed and is broadcast to all channels/frequencies.
+    Calculation of fractions of components from different channels
+    or frequencies is not supported yet. Only one set of components
+    can be analyzed and is broadcast to all channels/frequencies.
 
     The method builds a linear matrix equation,
-    :math:`A\\mathbf{x} = \\mathbf{b}`, where :math:`A` consists of the
-    phasor coordinates of individual components, :math:`\\mathbf{x}` are
-    the unknown fractions, and :math:`\\mathbf{b}` represents the measured
+    :math:`A\mathbf{x} = \mathbf{b}`, where :math:`A` consists of the
+    phasor coordinates of individual components, :math:`\mathbf{x}` are
+    the unknown fractions, and :math:`\mathbf{b}` represents the measured
     phasor coordinates in the mixture. The least-squares solution of this
     linear matrix equation yields the fractions.
 
     References
     ----------
     .. [2] Vallmitjana A, Lepanto P, Irigoin F, and Malacrida L.
-      `Phasor-based multi-harmonic unmixing for in-vivo hyperspectral
-      imaging <https://doi.org/10.1088/2050-6120/ac9ae9>`_.
-      *Methods Appl Fluoresc*, 11(1): 014001 (2022)
+       `Phasor-based multi-harmonic unmixing for in-vivo hyperspectral
+       imaging <https://doi.org/10.1088/2050-6120/ac9ae9>`_.
+       *Methods Appl Fluoresc*, 11(1): 014001 (2022)
 
     Examples
     --------
@@ -537,7 +537,7 @@ def phasor_component_fit(
 
     if component_matrix.shape[0] < component_matrix.shape[1]:
         raise ValueError(
-            'the system is undetermined '
+            'the system is underdetermined '
             f'({num_components=} > {num_harmonics * 2 + 1=})'
         )
 
@@ -560,17 +560,19 @@ def phasor_component_fit(
     # [imaginary coordinates (for each harmonic)] +
     # [ones for intensity constraint]
     coords = numpy.ones(
-        (2 * num_harmonics + 1,) + real.shape[1:]  # type: ignore[union-attr]
+        (2 * num_harmonics + 1, *real.shape[1:])  # type: ignore[union-attr]
     )
     coords[:num_harmonics] = real
     coords[num_harmonics : 2 * num_harmonics] = imag
 
     fractions = lstsq(
-        component_matrix, coords.reshape(coords.shape[0], -1), **kwargs
+        component_matrix,
+        coords.reshape(coords.shape[0], -1),  # type: ignore[misc]
+        **kwargs,
     )[0]
 
     # reshape to match input dimensions
-    fractions = fractions.reshape((num_components,) + coords.shape[1:])
+    fractions = fractions.reshape((num_components, *coords.shape[1:]))
 
     # TODO: normalize fractions to sum up to 1.0?
     # fractions /= numpy.sum(fractions, axis=0, keepdims=True)
@@ -611,10 +613,10 @@ def phasor_component_mvc(
         Imaginary coordinates of at least three components.
     dtype : dtype_like, optional
         Floating point data type used for calculation and output values.
-        Either `float32` or `float64`. The default is `float64`.
+        Either float32 or float64. The default is float64.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
-        By default, multi-threading is disabled.
+        By default, multithreading is disabled.
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
 
@@ -631,9 +633,9 @@ def phasor_component_mvc(
 
     Notes
     -----
-    Calculation of mean value coordinates for different channels,
-    frequencies, or harmonics is not supported. Only one set of components
-    can be analyzed and is broadcast to all channels/frequencies/harmonics.
+    Calculation of fractions of components from different channels
+    or frequencies is not supported yet. Only one set of components
+    can be analyzed and is broadcast to all channels/frequencies.
 
     For three components, this function returns the same result as
     :py:func:`phasor_component_fit`. For more than three components,
@@ -645,9 +647,9 @@ def phasor_component_mvc(
     References
     ----------
     .. [3] Fuda C and Hormann K.
-      `A new stable method to compute mean value coordinates
-      <https://doi.org/10.1016/j.cagd.2024.102310>`_.
-      *Computer Aided Geometric Design*, 111: 102310 (2024)
+       `A new stable method to compute mean value coordinates
+       <https://doi.org/10.1016/j.cagd.2024.102310>`_.
+       *Computer Aided Geometric Design*, 111: 102310 (2024)
 
     Examples
     --------
@@ -668,7 +670,7 @@ def phasor_component_mvc(
 
     dtype = numpy.dtype(dtype)
     if dtype.char not in {'f', 'd'}:
-        raise ValueError(f'{dtype=} is not a floating point type')
+        raise ValueError(f'{dtype=} is not a floating-point type')
 
     real = numpy.ascontiguousarray(real, dtype=dtype)
     imag = numpy.ascontiguousarray(imag, dtype=dtype)
@@ -688,7 +690,7 @@ def phasor_component_mvc(
             'component coordinates must not contain infinite values'
         )
 
-    # TODO:: sorting not strictly required for three components?
+    # TODO: sorting not strictly required for three components?
     component_real, component_imag, indices = sort_coordinates(
         component_real, component_imag
     )

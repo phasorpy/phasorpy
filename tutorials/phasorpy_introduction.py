@@ -4,7 +4,7 @@ Introduction to PhasorPy
 
 An introduction to using the PhasorPy library.
 
-PhasorPy is an open-source Python library for the analysis of fluorescence
+PhasorPy is an open-source Python library for the analysis of luminescence
 lifetime and hyperspectral images using the :doc:`/phasor_approach`.
 
 Using the PhasorPy library requires familiarity with the phasor approach,
@@ -18,7 +18,7 @@ image processing, array programming, and Python.
 #
 # An installation of Python version 3.12 or higher is required to use the
 # PhasorPy library.
-# Python is an easy to learn, powerful programming language.
+# Python is an easy-to-learn, powerful programming language.
 # Python installers can be obtained from, for example,
 # `Python.org <https://www.python.org/downloads/>`_ or
 # `Anaconda.com <https://www.anaconda.com/>`_.
@@ -85,7 +85,7 @@ import numpy
 #
 # The :py:mod:`phasorpy.datasets` module provides access to various sample
 # files. For example, an ImSpector TIFF file from the
-# `FLUTE <https://zenodo.org/records/8046636>`_  project containing a
+# `FLUTE <https://zenodo.org/records/8046636>`_ project containing a
 # time-correlated single photon counting (TCSPC) histogram
 # of a zebrafish embryo at day 3, acquired at 80.11 MHz:
 
@@ -103,14 +103,14 @@ print(signal.shape, signal.dtype)
 
 from phasorpy.plot import plot_signal_image
 
-plot_signal_image(signal, axis='H', xlabel='delay-time (ns)')
+plot_signal_image(signal, axis='H', xlabel='delay time (ns)')
 
 # %%
 # Calculate phasor coordinates
 # ----------------------------
 #
-# The :py:mod:`phasorpy.phasor` module provides functions to calculate,
-# filter, and convert phasor coordinates.
+# The :py:mod:`phasorpy.phasor` module provides functions to calculate
+# and convert phasor coordinates.
 #
 # Phasor coordinates are the real and imaginary components of the complex
 # numbers returned by a real forward Digital Fourier Transform (DFT)
@@ -153,8 +153,8 @@ reconstructed_signal = phasor_to_signal(
     *phasor_all_harmonics, axis=0, samples=signal.shape[0]
 )
 
-numpy.testing.assert_allclose(
-    numpy.nan_to_num(reconstructed_signal), signal, atol=1e-3
+assert numpy.allclose(
+    numpy.nan_to_num(reconstructed_signal), signal, atol=1e-3, equal_nan=True
 )
 
 # %%
@@ -162,10 +162,10 @@ numpy.testing.assert_allclose(
 # ----------------------------
 #
 # The :py:mod:`phasorpy.lifetime` module provides functions to calculate,
-# convert, and calibrate phasor coordinates of fluorescence lifetimes.
+# convert, and calibrate phasor coordinates of luminescence lifetimes.
 #
 # The signals from time-resolved measurements are convoluted with an
-# instrument response function, causing the phasor-coordinates to be
+# instrument response function, causing the phasor coordinates to be
 # phase-shifted and modulated (scaled) by unknown amounts.
 # The phasor coordinates must therefore be calibrated with coordinates
 # obtained from a reference standard of known lifetime, acquired with
@@ -216,7 +216,7 @@ plot_phasor_image(mean, real, imag, title='Calibrated')
 
 # %%
 # The phasor coordinates are now located in the first quadrant, except for
-# some with low signal to noise level.
+# some with low signal-to-noise ratio.
 #
 # If necessary, the calibration can be undone/reversed using the
 # same reference:
@@ -232,10 +232,11 @@ uncalibrated_real, uncalibrated_imag = phasor_calibrate(
     reverse=True,
 )
 
-numpy.testing.assert_allclose(
+assert numpy.allclose(
     (mean, uncalibrated_real, uncalibrated_imag),
     phasor_from_signal(signal, axis=0),
     atol=1e-3,
+    equal_nan=True,
 )
 
 # %%
@@ -245,8 +246,8 @@ numpy.testing.assert_allclose(
 # The :py:mod:`phasorpy.filter` module provides functions to filter signals
 # and phasor coordinates.
 #
-# Applying median filter to the calibrated phasor coordinates,
-# often multiple times, improves contrast and reduces noise.
+# Applying a median filter to the calibrated phasor coordinates,
+# often multiple times, can improve contrast and reduce noise.
 # The filter is applied independently to the real and imaginary components,
 # but not to the signal average:
 
@@ -273,7 +274,7 @@ plot_phasor_image(
 # Store phasor coordinates
 # ------------------------
 #
-# Phasor coordinates and select metadata can be exported to
+# Phasor coordinates and selected metadata can be exported to
 # `OME-TIFF <https://ome-model.readthedocs.io/en/stable/ome-tiff/>`_
 # formatted files, which are compatible with Bio-Formats and Fiji.
 #
@@ -300,7 +301,7 @@ phasor_to_ometiff(
 
 mean_, real_, imag_, attrs = phasor_from_ometiff('phasors.ome.tif')
 
-numpy.allclose(real_, real)
+assert numpy.allclose(real_, real, atol=1e-3, equal_nan=True)
 assert real_.dtype == numpy.float32
 assert attrs['frequency'] == frequency
 assert attrs['harmonic'] == 1
@@ -317,7 +318,7 @@ assert attrs['description'].startswith('Phasor coordinates of')
 # The :py:mod:`phasorpy.plot` module provides functions and classes for
 # plotting phasor and polar coordinates.
 #
-# Large number of phasor coordinates, such as obtained from imaging,
+# Large numbers of phasor coordinates, such as those obtained from imaging,
 # are commonly visualized as two-dimensional histograms:
 
 from phasorpy.plot import plot_phasor
@@ -333,8 +334,8 @@ plot_phasor(
 # The calibrated phasor coordinates of all pixels lie inside the universal
 # semicircle (on which theoretically the phasor coordinates of all single
 # exponential lifetimes are located).
-# That means, all pixels contain mixtures of signals from multiple lifetime
-# components.
+# That means that all pixels contain mixtures of signals from multiple
+# lifetime components.
 
 # %%
 # For comparison, the uncalibrated, unfiltered phasor coordinates:
@@ -392,8 +393,10 @@ plot_image(
 # %%
 # Component analysis
 # ------------------
-
-# TODO
+#
+# Component analysis in the phasor space (for example, estimating fractional
+# contributions of multiple lifetime components) will be covered in a
+# dedicated tutorial.
 
 # %%
 # Spectral phasors
@@ -401,9 +404,10 @@ plot_image(
 #
 # Phasor coordinates can be calculated from hyperspectral images (acquired
 # at many equidistant emission wavelengths) and processed in much the same
-# way as time-resolved signals. Calibration is not necessary.
+# way as time-resolved signals. No calibration is necessary because wavelength
+# is absolute.
 #
-# Open a hyperspectral dataset acquired with a laser scanning microscope
+# Load a hyperspectral dataset acquired with a laser scanning microscope
 # at 30 emission wavelengths:
 
 from phasorpy.io import signal_from_lsm
@@ -441,6 +445,9 @@ plot_phasor(
 # Find clusters
 # -------------
 #
+# The :py:mod:`phasorpy.cluster` module provides functions to fit clusters
+# to phasor coordinates.
+#
 # Automatically find the two elliptical clusters in the phasor space using
 # a Gaussian mixture model and plot them in distinct colors:
 
@@ -463,7 +470,7 @@ plot.cursor(
 plot.show()
 
 # %%
-# Use the elliptic clusters to mask regions of interest in the phasor space:
+# Use the elliptical clusters to mask regions of interest in the phasor space:
 
 from phasorpy.cursor import mask_from_elliptic_cursor
 
@@ -478,13 +485,13 @@ elliptic_masks = mask_from_elliptic_cursor(
 )
 
 # %%
-# Plot a pseudo-color image, composited from the elliptic cursor masks and
+# Plot a pseudo-color image, composited from the elliptical cursor masks and
 # the mean intensity image:
 
 pseudo_color_image = pseudo_color(*elliptic_masks, intensity=mean)
 
 plot_image(
-    pseudo_color_image, title='Pseudo-color image from elliptic cursors'
+    pseudo_color_image, title='Pseudo-color image from elliptical cursors'
 )
 
 # %%
@@ -497,8 +504,9 @@ from phasorpy.utils import versions
 
 print(versions())
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -8
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type, assignment"
 # isort: skip_file
+# sphinx_gallery_end_ignore

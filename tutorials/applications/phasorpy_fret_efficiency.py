@@ -4,6 +4,11 @@ FRET efficiency image
 
 Estimate FRET efficiencies in an image using a phasor-based model.
 
+Förster resonance energy transfer (FRET) is a distance-dependent interaction
+between two luminescing molecules where energy is transferred from a donor
+to an acceptor molecule. FRET efficiency is sensitive to donor-acceptor
+distances, making it useful for studying molecular interactions.
+
 The :py:func:`phasorpy.lifetime.phasor_from_fret_donor` function is used to
 calculate a theoretical FRET efficiency trajectory and the
 :py:func:`phasorpy.phasor.phasor_nearest_neighbor` function is then used
@@ -47,7 +52,7 @@ mean, real, imag, attrs = phasor_from_simfcs_referenced(fetch(filename))
 plot_phasor_image(mean, real, imag, title=filename)
 
 # Filter the phasor coordinates and set the intensity threshold
-# to 9000 counts to remove background:
+# to 9000 counts to remove low-intensity background pixels:
 
 mean, real, imag = phasor_filter_median(mean, real, imag, repeat=2)
 mean, real, imag = phasor_threshold(
@@ -58,8 +63,10 @@ mean, real, imag = phasor_threshold(
 # FRET efficiency trajectory
 # --------------------------
 #
-# Calculate a theoretical FRET efficiency trajectory of phasor coordinates
-# for the CFP FRET donor:
+# Calculate the theoretical FRET efficiency trajectory in phasor space
+# for the CFP FRET donor.
+# The trajectory represents the path phasor coordinates follow as FRET
+# efficiency increases from 0% (donor only) to 100% (complete energy transfer):
 
 donor_real, donor_imag = 0.72, 0.45  # estimated pure CFP phasor coordinates
 background_real, background_imag = 0.6, 0.41  # estimated background phasor
@@ -71,8 +78,8 @@ fret_trajectory = phasor_from_fret_donor(
     frequency,
     donor_lifetime,
     fret_efficiency=fret_efficiency_range,
-    donor_fretting=1.0,
-    donor_background=0.1,  # 10% background signal
+    donor_fretting=1.0,  # all donor molecules can undergo FRET
+    donor_background=0.1,  # 10% background signal contribution
     background_real=background_real,
     background_imag=background_imag,
 )
@@ -119,7 +126,8 @@ phasor_plot.show()
 # ------------------------
 #
 # Estimate FRET efficiencies for each pixel in the image by finding
-# the closest phasor coordinates in the FRET efficiency trajectory:
+# the nearest point on the FRET efficiency trajectory to each measured
+# phasor coordinate:
 
 fret_efficiencies = phasor_nearest_neighbor(
     real,
@@ -127,7 +135,7 @@ fret_efficiencies = phasor_nearest_neighbor(
     *fret_trajectory,
     values=fret_efficiency_range,
     dtype=real.dtype,
-    num_threads=4,
+    num_threads=4,  # use multiple threads for faster computation
 )
 
 # %%
@@ -148,5 +156,18 @@ plot_histograms(
 )
 
 # %%
+# Conclusions
+# -----------
+#
+# The FRET efficiency image shows spatial heterogeneity in donor-acceptor
+# interactions across the sample. Higher FRET efficiencies (warmer colors)
+# indicate closer proximity between CFP and YFP molecules, suggesting
+# successful FRET pair formation. Lower efficiencies (cooler colors) may
+# represent cells expressing primarily CFP donor without acceptor, or
+# regions where CFP and YFP are too far apart for efficient energy transfer.
+# The histogram reveals the distribution of FRET states in the population.
+
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -2
 # mypy: allow-untyped-defs, allow-untyped-calls
+# sphinx_gallery_end_ignore

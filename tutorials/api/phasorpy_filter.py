@@ -5,8 +5,8 @@ Filter phasor coordinates
 Functions for filtering phasor coordinates.
 
 Filtering phasor coordinates improves signal quality by reducing noise while
-preserving relevant features. Two of the most common methods for filtering
-include the median and wavelet filtering.
+preserving relevant features. Two of the most common filtering methods are
+median filtering and wavelet filtering.
 
 """
 
@@ -75,9 +75,9 @@ plot_phasor(
 #
 # Median filtering replaces each pixel value with the median of its
 # neighboring values, reducing noise while preserving edges.
-# The function :py:func:`phasorpy.phasor.phasor_filter_median` applies a
-# median filter to phasor coordinates. Typically, applying a 3×3 kernel
-# one to three times is sufficient to remove noise while maintaining
+# The function :py:func:`phasorpy.filter.phasor_filter_median` applies a
+# median filter to phasor coordinates. Typically, applying a 3x3 kernel
+# once to three times is sufficient to remove noise while maintaining
 # important features:
 
 mean_filtered, real_filtered, imag_filtered = phasor_filter_median(
@@ -134,11 +134,12 @@ plot_image(
 # ----------------------
 #
 # Filtering based on wavelet decomposition is another method to reduce noise.
-# The function :py:func:`phasorpy.phasor.phasor_filter_pawflim` is based
+# The function :py:func:`phasorpy.filter.phasor_filter_pawflim` is based
 # on the `pawFLIM <https://github.com/maurosilber/pawflim>`_ library.
 # While the median filter is applicable to any type of phasor coordinates,
 # the pawFLIM filter requires calibrated phasor coordinates from FLIM
-# measurements and at least one harmonic and its corresponding double:
+# measurements and at least one harmonic and its corresponding second harmonic
+# (the 1st and 2nd harmonic in this example):
 
 harmonic = [1, 2]
 
@@ -177,15 +178,16 @@ plot_phasor(
 )
 
 # %%
-# Increasing the significance level of the comparison between phasor
-# coordinates or the maximum averaging area can further reduce noise:
+# Increasing the significance level ``sigma`` of the comparison between
+# phasor coordinates or the maximum averaging area ``levels`` can reduce noise
+# further:
 
 mean_filtered, real_filtered, imag_filtered = phasor_filter_pawflim(
     mean, real, imag, harmonic=harmonic, sigma=5, levels=3
 )
 
 mean_filtered, real_filtered, imag_filtered = phasor_threshold(
-    mean_filtered, real_filtered, imag_filtered, 1
+    mean_filtered, real_filtered, imag_filtered, mean_min=1
 )
 
 plot_phasor(
@@ -208,7 +210,8 @@ plot_image(
     title='Real component of phasor coordinates',
 )
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -2
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore

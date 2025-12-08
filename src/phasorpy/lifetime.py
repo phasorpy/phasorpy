@@ -1,13 +1,12 @@
-"""Calculate, convert, and calibrate phasor coordinates of lifetimes.
+"""Process phasor coordinates of luminescence lifetimes.
 
 The ``phasorpy.lifetime`` module provides functions to:
 
-- synthesize time and frequency domain signals from fluorescence lifetimes:
+- synthesize time- and frequency-domain signals from lifetimes:
 
   - :py:func:`lifetime_to_signal`
 
-- convert between phasor coordinates and single- or multi-component
-  fluorescence lifetimes:
+- convert between phasor coordinates and single- or multi-component lifetimes:
 
   - :py:func:`phasor_from_lifetime`
   - :py:func:`phasor_from_apparent_lifetime`
@@ -15,24 +14,23 @@ The ``phasorpy.lifetime`` module provides functions to:
   - :py:func:`phasor_to_normal_lifetime`
   - :py:func:`phasor_to_lifetime_search`
 
-- convert to and from polar coordinates (phase and modulation):
+- convert between lifetimes and polar coordinates (phase and modulation):
 
   - :py:func:`polar_from_apparent_lifetime`
   - :py:func:`polar_to_apparent_lifetime`
 
-- calibrate phasor coordinates with a reference of known fluorescence
-  lifetime:
+- calibrate phasor coordinates with a reference of known lifetime:
 
   - :py:func:`phasor_calibrate`
   - :py:func:`polar_from_reference`
   - :py:func:`polar_from_reference_phasor`
 
-- calculate phasor coordinates for FRET donor and acceptor channels:
+- calculate phasor coordinates of FRET donor and acceptor channels:
 
   - :py:func:`phasor_from_fret_donor`
   - :py:func:`phasor_from_fret_acceptor`
 
-- convert between single component lifetimes and optimal frequency:
+- convert between single-component lifetimes and optimal frequency:
 
   - :py:func:`lifetime_to_frequency`
   - :py:func:`lifetime_from_frequency`
@@ -76,11 +74,10 @@ __all__ = [
 ]
 
 import math
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, NDArray, ArrayLike, DTypeLike, Literal
+    from ._typing import Any, ArrayLike, DTypeLike, Literal, NDArray, Sequence
 
 import numpy
 
@@ -140,14 +137,14 @@ def phasor_from_lifetime(
         components. Fractions are normalized to sum to 1.
         See notes below for allowed dimensions.
     preexponential : bool, optional, default: False
-        If true, `fraction` values are pre-exponential amplitudes,
-        else fractional intensities.
+        Fractions are pre-exponential amplitudes instead of fractional
+        intensities.
     unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
     keepdims : bool, optional, default: False
-        If true, length-one dimensions are left in phasor coordinates.
+        Leave length-1 dimensions in phasor coordinates.
 
     Returns
     -------
@@ -171,8 +168,8 @@ def phasor_from_lifetime(
     Notes
     -----
     The phasor coordinates :math:`G` (`real`) and :math:`S` (`imag`) for
-    many lifetime components :math:`j` with lifetimes :math:`\tau` and
-    pre-exponential amplitudes :math:`\alpha` at frequency :math:`f` are:
+    many lifetime components :math:`j` with lifetimes :math:`\tau_{j}` and
+    pre-exponential amplitudes :math:`\alpha_{j}` at frequency :math:`f` are:
 
     .. math::
 
@@ -188,6 +185,7 @@ def phasor_from_lifetime(
     fractional intensities :math:`\alpha` is:
 
     .. math::
+
         F_{DC} &= \sum_{j} a_{j} \tau_{j}
 
         \alpha_{j} &= a_{j} \tau_{j} / F_{DC}
@@ -195,7 +193,7 @@ def phasor_from_lifetime(
     The following combinations of `lifetime` and `fraction` parameters are
     supported:
 
-    - `lifetime` is scalar or one-dimensional, holding single component
+    - `lifetime` is scalar or one-dimensional, holding single-component
       lifetimes. `fraction` is None.
       Return arrays of shape `(frequency.size, lifetime.size)`.
 
@@ -213,8 +211,8 @@ def phasor_from_lifetime(
       The last dimensions hold lifetime components and their fractions.
       Return arrays of shape `(frequency.size, lifetime.shape[0])`.
 
-    Length-one dimensions are removed from returned arrays
-    if `keepdims` is false (default).
+    Length-1 dimensions are removed from the returned arrays if `keepdims`
+    is False (default).
 
     Examples
     --------
@@ -355,7 +353,7 @@ def lifetime_to_signal(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     r"""Return synthetic signal from lifetime components.
 
-    Return synthetic signal, instrument response function (IRF), and
+    Return a synthetic signal, instrument response function (IRF), and
     time axis, sampled over one period of the fundamental frequency.
     The signal is convolved with the IRF, which is approximated by a
     normal distribution.
@@ -363,37 +361,37 @@ def lifetime_to_signal(
     Parameters
     ----------
     frequency : float
-        Fundamental laser pulse or modulation frequency in MHz.
+        Laser pulse or modulation frequency in MHz.
     lifetime : array_like
         Lifetime components in ns.
     fraction : array_like, optional
         Fractional intensities or pre-exponential amplitudes of the lifetime
         components. Fractions are normalized to sum to 1.
         Must be specified if `lifetime` is not a scalar.
-    mean : array_like, optional, default: 1.0
+    mean : array_like, optional, default: 1
         Average signal intensity (DC). Must be scalar for now.
-    background : array_like, optional, default: 0.0
+    background : array_like, optional, default: 0
         Background signal intensity. Must be smaller than `mean`.
-    samples : int, default: 64
+    samples : int, optional, default: 64
         Number of signal samples to return. Must be at least 16.
-    harmonic : int, sequence of int, or 'all', optional, default: 'all'
+    harmonic : int, sequence of int, or 'all', optional
         Harmonics used to synthesize signal.
-        If `'all'`, all harmonics are used.
+        If `'all'` (default), all harmonics are used.
         Else, harmonics must be at least one and no larger than half of
         `samples`.
         Use `'all'` to synthesize an exponential time-domain decay signal,
         or `1` to synthesize a homodyne signal.
     zero_phase : float, optional
-        Position of instrument response function in radians.
-        Must be in range [0, pi]. The default is the 8th sample.
+        Position of instrument response function in radians along one period.
+        Must be in the range [0, 2 pi]. The default is the 8th sample.
     zero_stdev : float, optional
         Standard deviation of instrument response function in radians.
-        Must be at least 1.5 samples and no more than one tenth of samples
-        to allow for sufficient sampling of the function.
+        Must be at least 1.5 samples and at most one tenth of the number of
+        samples to allow sufficient sampling of the function.
         The default is 1.5 samples. Increase `samples` to narrow the IRF.
     preexponential : bool, optional, default: False
-        If true, `fraction` values are pre-exponential amplitudes,
-        else fractional intensities.
+        Fractions are pre-exponential amplitudes instead of
+        fractional intensities.
     unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
@@ -414,6 +412,7 @@ def lifetime_to_signal(
     phasorpy.lifetime.phasor_from_lifetime
     phasorpy.phasor.phasor_to_signal
     :ref:`sphx_glr_tutorials_api_phasorpy_lifetime_to_signal.py`
+    :ref:`sphx_glr_tutorials_misc_phasorpy_apps.py`
 
     Notes
     -----
@@ -473,7 +472,7 @@ def lifetime_to_signal(
     stdev = zero_stdev * scale  # in sample units
 
     if zero_phase < 0 or zero_phase > 2.0 * math.pi:
-        raise ValueError(f'{zero_phase=} out of range [0, 2 pi]')
+        raise ValueError(f'{zero_phase=} is out of range [0, 2 pi]')
     if stdev < 1.5:
         raise ValueError(
             f'{zero_stdev=} < {1.5 / scale} cannot be sampled sufficiently'
@@ -545,7 +544,7 @@ def phasor_calibrate(
     nan_safe: bool = True,
     reverse: bool = False,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
-    """Return calibrated/referenced phasor coordinates.
+    """Return calibrated (referenced) phasor coordinates.
 
     Calibration of phasor coordinates from time-resolved measurements is
     necessary to account for the instrument response function (IRF) and delays
@@ -559,21 +558,21 @@ def phasor_calibrate(
         Imaginary component of phasor coordinates to be calibrated.
     reference_mean : array_like or None
         Intensity of phasor coordinates from reference of known lifetime.
-        Used to re-normalize averaged phasor coordinates.
+        Used to renormalize averaged phasor coordinates.
     reference_real : array_like
         Real component of phasor coordinates from reference of known lifetime.
-        Must be measured with the same instrument setting as the phasor
+        Must be measured with the same instrument settings as the phasor
         coordinates to be calibrated. Dimensions must be the same as `real`.
     reference_imag : array_like
         Imaginary component of phasor coordinates from reference of known
         lifetime.
-        Must be measured with the same instrument setting as the phasor
+        Must be measured with the same instrument settings as the phasor
         coordinates to be calibrated.
     frequency : array_like
-        Fundamental laser pulse or modulation frequency in MHz.
+        Laser pulse or modulation frequency in MHz.
     lifetime : array_like
         Lifetime components in ns. Must be scalar or one-dimensional.
-    harmonic : int, sequence of int, or 'all', default: 1
+    harmonic : int, sequence of int, or 'all', optional
         Harmonics included in `real` and `imag`.
         If an integer, the harmonics at which `real` and `imag` were acquired
         or calculated.
@@ -589,24 +588,24 @@ def phasor_calibrate(
         Fractional intensities or pre-exponential amplitudes of the lifetime
         components. Fractions are normalized to sum to 1.
         Must be same size as `lifetime`.
-    preexponential : bool, optional
-        If true, `fraction` values are pre-exponential amplitudes,
-        else fractional intensities (default).
-    unit_conversion : float, optional
+    preexponential : bool, optional, default: False
+        Fractions are pre-exponential amplitudes instead of fractional
+        intensities.
+    unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
-    method : str, optional
+    method : str, optional, default: 'mean'
         Method used for calculating center of reference phasor coordinates:
 
         - ``'mean'``: Arithmetic mean.
         - ``'median'``: Spatial median.
 
-    nan_safe : bool, optional
-        Ensure `method` is applied to same elements of reference arrays.
+    nan_safe : bool, optional, default: True
+        Ensure that `method` is applied to same elements of reference arrays.
         By default, distribute NaNs among reference arrays before applying
         `method`.
-    reverse : bool, optional
+    reverse : bool, optional, default: False
         Reverse calibration.
 
     Returns
@@ -736,7 +735,7 @@ def phasor_calibrate(
             )
         if reference_real.shape[0] != len(frequency):
             raise ValueError(
-                f'{reference_real.shape[0]=} != {len(frequency)} '
+                f'{reference_real.shape[0]} != {len(frequency)} '
                 'frequencies or harmonics'
             )
         if reference_mean.shape != reference_real.shape[1:]:
@@ -768,7 +767,9 @@ def phasor_calibrate(
     )
 
     skip_axis, axis = parse_skip_axis(
-        skip_axis, real.ndim - int(has_harmonic_axis), has_harmonic_axis
+        skip_axis,
+        real.ndim - int(has_harmonic_axis),
+        prepend=has_harmonic_axis,
     )
 
     if has_harmonic_axis and any(skip_axis):
@@ -828,7 +829,7 @@ def polar_from_reference_phasor(
     known_imag : array_like
         Imaginary component of reference phasor coordinates.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -889,7 +890,7 @@ def polar_from_reference(
     known_modulation : array_like
         Radial component of reference polar coordinates.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -959,10 +960,10 @@ def phasor_to_lifetime_search(
         Use 1.0 for Hz and s.
     dtype : dtype_like, optional
         Floating point data type used for calculation and output values.
-        Either `float32` or `float64`. The default is `float64`.
+        Either float32 or float64. The default is float64.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
-        By default, multi-threading is disabled.
+        By default, multithreading is disabled.
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
 
@@ -976,17 +977,17 @@ def phasor_to_lifetime_search(
     Raises
     ------
     ValueError
-        The shapes of real and imaginary coordinates do not match.
+        The shapes of `real` and `imag` coordinates do not match.
         The number of harmonics is less than the number of components.
         The lifetime range is invalid.
 
     References
     ----------
     .. [1] Vallmitjana A, Torrado B, Dvornikov A, Ranjit S, and Gratton E.
-      `Blind resolution of lifetime components in individual pixels of
-      fluorescence lifetime images using the phasor approach
-      <https://doi.org/10.1021/acs.jpcb.0c06946>`_.
-      *J Phys Chem B*, 124(45): 10126-10137 (2020)
+       `Blind resolution of lifetime components in individual pixels of
+       fluorescence lifetime images using the phasor approach
+       <https://doi.org/10.1021/acs.jpcb.0c06946>`_.
+       *J Phys Chem B*, 124(45): 10126-10137 (2020)
 
     Notes
     -----
@@ -1013,13 +1014,13 @@ def phasor_to_lifetime_search(
         or lifetime_range[2] <= 0.0
         or lifetime_range[2] >= lifetime_range[1] - lifetime_range[0]
     ):
-        raise ValueError(f'invalid {lifetime_range=}')
+        raise ValueError(f'invalid {lifetime_range=!r}')
 
     num_threads = number_threads(num_threads)
 
     dtype = numpy.dtype(dtype)
     if dtype.char not in {'f', 'd'}:
-        raise ValueError(f'{dtype=} is not a floating point type')
+        raise ValueError(f'{dtype=} is not a floating-point type')
 
     real = numpy.ascontiguousarray(real, dtype=dtype)
     imag = numpy.ascontiguousarray(imag, dtype=dtype)
@@ -1075,12 +1076,12 @@ def phasor_to_apparent_lifetime(
         Imaginary component of phasor coordinates.
     frequency : array_like
         Laser pulse or modulation frequency in MHz.
-    unit_conversion : float, optional
+    unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and returned `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -1158,15 +1159,15 @@ def phasor_from_apparent_lifetime(
         Apparent single lifetime from phase.
     modulation_lifetime : ndarray, optional
         Apparent single lifetime from modulation.
-        If None, `modulation_lifetime` is same as `phase_lifetime`.
+        If None, same as `phase_lifetime`.
     frequency : array_like
         Laser pulse or modulation frequency in MHz.
-    unit_conversion : float, optional
+    unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -1252,12 +1253,12 @@ def phasor_to_normal_lifetime(
         Imaginary component of phasor coordinates.
     frequency : array_like
         Laser pulse or modulation frequency in MHz.
-    unit_conversion : float, optional
+    unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and returned `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -1286,10 +1287,10 @@ def phasor_to_normal_lifetime(
     References
     ----------
     .. [2] Silberberg M, and Grecco H.
-      `pawFLIM: reducing bias and uncertainty to enable lower photon
-      count in FLIM experiments
-      <https://doi.org/10.1088/2050-6120/aa72ab>`_.
-      *Methods Appl Fluoresc*, 5(2): 024016 (2017)
+       `pawFLIM: reducing bias and uncertainty to enable lower photon
+       count in FLIM experiments
+       <https://doi.org/10.1088/2050-6120/aa72ab>`_.
+       *Methods Appl Fluoresc*, 5(2): 024016 (2017)
 
     Examples
     --------
@@ -1314,12 +1315,12 @@ def lifetime_to_frequency(
     *,
     unit_conversion: float = 1e-3,
 ) -> NDArray[numpy.float64]:
-    r"""Return optimal frequency for resolving single component lifetime.
+    r"""Return optimal frequency for resolving single-component lifetime.
 
     Parameters
     ----------
     lifetime : array_like
-        Single component lifetime.
+        Single-component lifetime.
     unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
@@ -1330,9 +1331,13 @@ def lifetime_to_frequency(
     frequency : ndarray
         Optimal laser pulse or modulation frequency for resolving `lifetime`.
 
+    See Also
+    --------
+    phasorpy.lifetime.lifetime_from_frequency
+
     Notes
     -----
-    The optimal frequency :math:`f` to resolve a single component lifetime
+    The optimal frequency :math:`f` to resolve a single-component lifetime
     :math:`\tau` is
     (:ref:`Redford & Clegg 2005 <redford-clegg-2005>`. Eq. B.6):
 
@@ -1361,12 +1366,12 @@ def lifetime_from_frequency(
     *,
     unit_conversion: float = 1e-3,
 ) -> NDArray[numpy.float64]:
-    r"""Return single component lifetime best resolved at frequency.
+    r"""Return single-component lifetime best resolved at frequency.
 
     Parameters
     ----------
     frequency : array_like
-        Laser pulse or modulation frequency.
+        Laser pulse or modulation frequency in MHz.
     unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
@@ -1375,7 +1380,11 @@ def lifetime_from_frequency(
     Returns
     -------
     lifetime : ndarray
-        Single component lifetime best resolved at `frequency`.
+        Single-component lifetime best resolved at `frequency`.
+
+    See Also
+    --------
+    phasorpy.lifetime.lifetime_to_frequency
 
     Notes
     -----
@@ -1403,7 +1412,10 @@ def lifetime_from_frequency(
 
 
 def lifetime_fraction_to_amplitude(
-    lifetime: ArrayLike, fraction: ArrayLike, *, axis: int = -1
+    lifetime: ArrayLike,
+    fraction: ArrayLike,
+    *,
+    axis: int = -1,
 ) -> NDArray[numpy.float64]:
     r"""Return pre-exponential amplitude from fractional intensity.
 
@@ -1414,7 +1426,7 @@ def lifetime_fraction_to_amplitude(
     fraction : array_like
         Fractional intensities of lifetime components.
         Fractions are normalized to sum to 1.
-    axis : int, optional
+    axis : int, optional, default: -1
         Axis over which to compute pre-exponential amplitudes.
         The default is the last axis (-1).
 
@@ -1452,7 +1464,10 @@ def lifetime_fraction_to_amplitude(
 
 
 def lifetime_fraction_from_amplitude(
-    lifetime: ArrayLike, amplitude: ArrayLike, *, axis: int = -1
+    lifetime: ArrayLike,
+    amplitude: ArrayLike,
+    *,
+    axis: int = -1,
 ) -> NDArray[numpy.float64]:
     r"""Return fractional intensity from pre-exponential amplitude.
 
@@ -1462,7 +1477,7 @@ def lifetime_fraction_from_amplitude(
         Lifetime of components.
     amplitude : array_like
         Pre-exponential amplitudes of lifetime components.
-    axis : int, optional
+    axis : int, optional, default: -1
         Axis over which to compute fractional intensities.
         The default is the last axis (-1).
 
@@ -1536,7 +1551,7 @@ def phasor_semicircle(
 
     Examples
     --------
-    Calculate three phasor coordinates on universal semicircle:
+    Calculate three phasor coordinates on the universal semicircle:
 
     >>> phasor_semicircle(3)  # doctest: +NUMBER
     (array([0, 0.5, 1]), array([0.0, 0.5, 0]))
@@ -1578,23 +1593,23 @@ def phasor_semicircle_intersect(
     imag1 : array_like
         Imaginary component of second set of phasor coordinates.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
     -------
     real0 : ndarray
-        Real component of first intersect of phasors with semicircle.
+        Real component of first intersection of phasors with semicircle.
     imag0 : ndarray
-        Imaginary component of first intersect of phasors with semicircle.
+        Imaginary component of first intersection of phasors with semicircle.
     real1 : ndarray
-        Real component of second intersect of phasors with semicircle.
+        Real component of second intersection of phasors with semicircle.
     imag1 : ndarray
-        Imaginary component of second intersect of phasors with semicircle.
+        Imaginary component of second intersection of phasors with semicircle.
 
     Examples
     --------
-    Calculate two intersects of a line through two phasor coordinates
+    Calculate two intersections of a line through two phasor coordinates
     with the universal semicircle:
 
     >>> phasor_semicircle_intersect(0.2, 0.25, 0.6, 0.25)  # doctest: +NUMBER
@@ -1622,20 +1637,20 @@ def phasor_at_harmonic(
     r"""Return phasor coordinates on universal semicircle at other harmonics.
 
     Return phasor coordinates at any harmonic from the real component of
-    phasor coordinates of a single exponential lifetime at a certain harmonic.
+    phasor coordinates of a single-exponential lifetime at a certain harmonic.
     The input and output phasor coordinates lie on the universal semicircle.
 
     Parameters
     ----------
     real : array_like
-        Real component of phasor coordinates of single exponential lifetime
+        Real component of phasor coordinates of single-exponential lifetime
         at `harmonic`.
     harmonic : array_like
         Harmonic of `real` coordinate. Must be integer >= 1.
     other_harmonic : array_like
         Harmonic for which to return phasor coordinates. Must be integer >= 1.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -1649,8 +1664,8 @@ def phasor_at_harmonic(
     -----
     The phasor coordinates
     :math:`g_{n}` (`real_other`) and :math:`s_{n}` (`imag_other`)
-    of a single exponential lifetime at harmonic :math:`n` (`other_harmonic`)
-    is calculated from the real part of the phasor coordinates
+    of a single-exponential lifetime at harmonic :math:`n` (`other_harmonic`)
+    are calculated from the real part of the phasor coordinates
     :math:`g_{m}` (`real`) at harmonic :math:`m` (`harmonic`) according to
     (:ref:`Torrado, Malacrida, & Ranjit. 2022 <torrado-2022>`. Eq. 25):
 
@@ -1658,7 +1673,7 @@ def phasor_at_harmonic(
 
         g_{n} &= \frac{m^2 \cdot g_{m}}{n^2 + (m^2-n^2) \cdot g_{m}}
 
-        s_{n} &= \sqrt{G_{n} - g_{n}^2}
+        s_{n} &= \sqrt{g_{n} - g_{n}^2}
 
     This function is equivalent to the following operations:
 
@@ -1673,7 +1688,7 @@ def phasor_at_harmonic(
 
     Examples
     --------
-    The phasor coordinates at higher harmonics are approaching the origin:
+    The phasor coordinates at higher harmonics approach the origin:
 
     >>> phasor_at_harmonic(0.5, 1, [1, 2, 4, 8])  # doctest: +NUMBER
     (array([0.5, 0.2, 0.05882, 0.01538]), array([0.5, 0.4, 0.2353, 0.1231]))
@@ -1681,11 +1696,11 @@ def phasor_at_harmonic(
     """
     harmonic = numpy.asarray(harmonic, dtype=numpy.int32)
     if numpy.any(harmonic < 1):
-        raise ValueError('invalid harmonic')
+        raise ValueError('harmonic < 1')
 
     other_harmonic = numpy.asarray(other_harmonic, dtype=numpy.int32)
     if numpy.any(other_harmonic < 1):
-        raise ValueError('invalid other_harmonic')
+        raise ValueError('other_harmonic < 1')
 
     return _phasor_at_harmonic(  # type: ignore[no-any-return]
         real, harmonic, other_harmonic, **kwargs
@@ -1711,12 +1726,12 @@ def polar_to_apparent_lifetime(
         Radial component of polar coordinates.
     frequency : array_like
         Laser pulse or modulation frequency in MHz.
-    unit_conversion : float, optional
+    unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and returned `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -1781,15 +1796,15 @@ def polar_from_apparent_lifetime(
         Apparent single lifetime from phase.
     modulation_lifetime : ndarray, optional
         Apparent single lifetime from modulation.
-        If None, `modulation_lifetime` is same as `phase_lifetime`.
+        If None, same as `phase_lifetime`.
     frequency : array_like
         Laser pulse or modulation frequency in MHz.
-    unit_conversion : float, optional
+    unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -1854,15 +1869,15 @@ def phasor_from_fret_donor(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates of FRET donor channel.
 
-    Calculate phasor coordinates of a FRET (Förster Resonance Energy Transfer)
+    Calculate phasor coordinates of a Förster resonance energy transfer (FRET)
     donor channel as a function of frequency, donor lifetime, FRET efficiency,
-    fraction of donors undergoing FRET, and background fluorescence.
+    fraction of donors undergoing FRET, and background signal.
 
     The phasor coordinates of the donor channel contain fractions of:
 
     - donor not undergoing energy transfer
     - donor quenched by energy transfer
-    - background fluorescence
+    - background signal
 
     Parameters
     ----------
@@ -1870,27 +1885,27 @@ def phasor_from_fret_donor(
         Laser pulse or modulation frequency in MHz.
     donor_lifetime : array_like
         Lifetime of donor without FRET in ns.
-    fret_efficiency : array_like, optional, default 0
+    fret_efficiency : array_like, optional, default: 0
         FRET efficiency in range [0, 1].
-    donor_fretting : array_like, optional, default 1
-        Fraction of donors participating in FRET. Range [0, 1].
-    donor_background : array_like, optional, default 0
-        Weight of background fluorescence in donor channel
-        relative to fluorescence of donor without FRET.
-        A weight of 1 means the fluorescence of background and donor
-        without FRET are equal.
-    background_real : array_like, optional, default 0
-        Real component of background fluorescence phasor coordinate
+    donor_fretting : array_like, optional, default: 1
+        Fraction of donors participating in FRET, in range [0, 1].
+    donor_background : array_like, optional, default: 0
+        Weight of background signal in donor channel
+        relative to signal of donor without FRET.
+        A weight of 1 means the background signal and the donor
+        signal without FRET are equal.
+    background_real : array_like, optional, default: 0
+        Real component of background signal phasor coordinate
         at `frequency`.
-    background_imag : array_like, optional, default 0
-        Imaginary component of background fluorescence phasor coordinate
+    background_imag : array_like, optional, default: 0
+        Imaginary component of background signal phasor coordinate
         at `frequency`.
-    unit_conversion : float, optional
+    unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -1954,18 +1969,18 @@ def phasor_from_fret_acceptor(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return phasor coordinates of FRET acceptor channel.
 
-    Calculate phasor coordinates of a FRET (Förster Resonance Energy Transfer)
+    Calculate phasor coordinates of a Förster resonance energy transfer (FRET)
     acceptor channel as a function of frequency, donor and acceptor lifetimes,
     FRET efficiency, fraction of donors undergoing FRET, fraction of directly
-    excited acceptors, fraction of donor fluorescence in acceptor channel,
-    and background fluorescence.
+    excited acceptors, fraction of donor signal in acceptor channel,
+    and background signal.
 
     The phasor coordinates of the acceptor channel contain fractions of:
 
     - acceptor sensitized by energy transfer
     - directly excited acceptor
     - donor bleedthrough
-    - background fluorescence
+    - background signal
 
     Parameters
     ----------
@@ -1975,38 +1990,38 @@ def phasor_from_fret_acceptor(
         Lifetime of donor without FRET in ns.
     acceptor_lifetime : array_like
         Lifetime of acceptor in ns.
-    fret_efficiency : array_like, optional, default 0
+    fret_efficiency : array_like, optional, default: 0
         FRET efficiency in range [0, 1].
-    donor_fretting : array_like, optional, default 1
+    donor_fretting : array_like, optional, default: 1
         Fraction of donors participating in FRET. Range [0, 1].
-    donor_bleedthrough : array_like, optional, default 0
-        Weight of donor fluorescence in acceptor channel
-        relative to fluorescence of fully sensitized acceptor.
-        A weight of 1 means the fluorescence from donor and fully sensitized
+    donor_bleedthrough : array_like, optional, default: 0
+        Weight of donor signal in acceptor channel
+        relative to signal of fully sensitized acceptor.
+        A weight of 1 means the signal from donor and fully sensitized
         acceptor are equal.
         The background in the donor channel does not bleed through.
-    acceptor_bleedthrough : array_like, optional, default 0
-        Weight of fluorescence from directly excited acceptor
-        relative to fluorescence of fully sensitized acceptor.
-        A weight of 1 means the fluorescence from directly excited acceptor
+    acceptor_bleedthrough : array_like, optional, default: 0
+        Weight of signal from directly excited acceptor
+        relative to signal of fully sensitized acceptor.
+        A weight of 1 means the signal from directly excited acceptor
         and fully sensitized acceptor are equal.
-    acceptor_background : array_like, optional, default 0
-        Weight of background fluorescence in acceptor channel
-        relative to fluorescence of fully sensitized acceptor.
-        A weight of 1 means the fluorescence of background and fully
+    acceptor_background : array_like, optional, default: 0
+        Weight of background signal in acceptor channel
+        relative to signal of fully sensitized acceptor.
+        A weight of 1 means the signal of background and fully
         sensitized acceptor are equal.
-    background_real : array_like, optional, default 0
-        Real component of background fluorescence phasor coordinate
+    background_real : array_like, optional, default: 0
+        Real component of background signal phasor coordinate
         at `frequency`.
-    background_imag : array_like, optional, default 0
-        Imaginary component of background fluorescence phasor coordinate
+    background_imag : array_like, optional, default: 0
+        Imaginary component of background signal phasor coordinate
         at `frequency`.
-    unit_conversion : float, optional
+    unit_conversion : float, optional, default: 1e-3
         Product of `frequency` and `lifetime` units' prefix factors.
         The default is 1e-3 for MHz and ns, or Hz and ms.
         Use 1.0 for Hz and s.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns

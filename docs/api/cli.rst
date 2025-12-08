@@ -1,4 +1,4 @@
-Command line interface
+Command-line interface
 ----------------------
 
 .. click:: phasorpy.cli:main

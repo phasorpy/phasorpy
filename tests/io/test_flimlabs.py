@@ -206,7 +206,7 @@ def test_signal_from_flimlabs_json_channel():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-@pytest.mark.parametrize('channel', (0, 1))
+@pytest.mark.parametrize('channel', [0, 1])
 def test_phasor_from_flimlabs_json_channel(channel):
     """Test read FLIM LABS JSON phasor file from multi-channel dataset."""
     filename = private_file(

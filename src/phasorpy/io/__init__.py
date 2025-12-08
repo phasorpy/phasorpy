@@ -3,7 +3,7 @@
 The ``phasorpy.io`` module provides functions to:
 
 - read time-resolved and hyperspectral signals, as well as metadata from
-  many file formats used in bio-imaging:
+  many file formats used in bioimaging:
 
   - :py:func:`signal_from_lif` - Leica LIF and XLEF
   - :py:func:`signal_from_lsm` - Zeiss LSM
@@ -34,16 +34,16 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`phasor_to_ometiff`
   - :py:func:`phasor_to_simfcs_referenced`
 
-  Support for other file formats is being considered:
+  Support for additional file formats is being considered:
 
-  - OME-TIFF
+  - OME-TIFF (other than PhasorPy OME-TIFF)
   - Zeiss CZI
   - Nikon ND2
   - Olympus OIB/OIF
   - Olympus OIR
 
 The functions are implemented as minimal wrappers around specialized
-third-party file reader libraries, currently
+third-party file reader libraries:
 `tifffile <https://github.com/cgohlke/tifffile>`_,
 `ptufile <https://github.com/cgohlke/ptufile>`_,
 `liffile <https://github.com/cgohlke/liffile>`_,
@@ -55,10 +55,10 @@ For advanced or unsupported use cases, consider using these libraries directly.
 The signal-reading functions typically have the following signature::
 
     signal_from_ext(
-        filename: str | PathLike,
+        filename: str | os.PathLike,
         /,
         **kwargs
-    ): -> xarray.DataArray
+    ) -> xarray.DataArray:
 
 where ``ext`` indicates the file format and ``kwargs`` are optional arguments
 passed to the underlying file reader library or used to select which data is
@@ -69,7 +69,7 @@ attributes:
 
 - ``data`` or ``values`` (*array_like*)
 
-  Numpy array or array-like holding the array's values.
+  NumPy array or array-like containing measurement data.
 
 - ``dims`` (*tuple of str*)
 
@@ -79,9 +79,9 @@ attributes:
 
 - ``coords`` (*dict_like[str, array_like]*)
 
-  Coordinate arrays labelling each point in the data array.
+  Coordinate arrays labeling each point in the data array.
   The keys are :ref:`axes character codes <axes>`.
-  Values are 1-dimensional arrays of numbers or strings.
+  Values are one-dimensional arrays of numbers or strings.
   For example, ``coords['C']`` could be an array of emission wavelengths.
 
 - ``attrs`` (*dict[str, Any]*)
@@ -92,8 +92,8 @@ attributes:
 
 .. _axes:
 
-Axes character codes from the OME model and tifffile library are used as
-``dims`` items and ``coords`` keys:
+Axes character codes from the Open Microscopy Environment (OME) model
+and the tifffile library are used as ``dims`` items and ``coords`` keys:
 
 - ``'X'`` : width (OME)
 - ``'Y'`` : height (OME)
@@ -101,14 +101,14 @@ Axes character codes from the OME model and tifffile library are used as
 - ``'S'`` : sample (color components or phasor coordinates)
 - ``'I'`` : sequence (of images, frames, or planes)
 - ``'T'`` : time (OME)
-- ``'C'`` : channel (OME. Acquisition path or emission wavelength)
+- ``'C'`` : channel (OME; acquisition path or emission wavelength)
 - ``'A'`` : angle (OME)
-- ``'P'`` : phase (OME. In LSM, ``'P'`` maps to position)
-- ``'R'`` : tile (OME. Region, position, or mosaic)
+- ``'P'`` : phase (OME; in LSM, ``'P'`` maps to position)
+- ``'R'`` : tile (OME; region, position, or mosaic)
 - ``'H'`` : lifetime histogram (OME)
-- ``'E'`` : lambda (OME. Excitation wavelength)
+- ``'E'`` : lambda (OME; excitation wavelength)
 - ``'F'`` : frequency (ISS)
-- ``'Q'`` : other (OME. Harmonics in PhasorPy TIFF)
+- ``'Q'`` : other (OME; harmonics in PhasorPy TIFF)
 - ``'L'`` : exposure (FluoView)
 - ``'V'`` : event (FluoView)
 - ``'M'`` : mosaic (LSM 6)
@@ -136,4 +136,4 @@ from ._simfcs import *
 init_module(globals())
 del init_module
 
-# flake8: noqa: F401, F403
+# flake8: noqa: F403

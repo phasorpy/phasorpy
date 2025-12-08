@@ -9,13 +9,13 @@ from phasorpy.experimental import (
     anscombe_transform_inverse,
 )
 
-numpy.random.seed(42)
+rng = numpy.random.default_rng(42)
 
 
 @pytest.mark.parametrize('dtype', ['float32', 'uint16'])
 def test_anscombe_transform(dtype):
     """Test anscombe_transform and inverse functions."""
-    x = numpy.random.poisson(10, 100000).astype(dtype)
+    x = rng.poisson(10, 100000).astype(dtype)
     if dtype == 'float32':
         x[0] = numpy.nan
     z = anscombe_transform(x)

@@ -20,14 +20,14 @@ from phasorpy.lifetime import phasor_from_lifetime
 from phasorpy.phasor import phasor_to_polar
 from phasorpy.plot import PhasorPlot, plot_phasor, plot_polar_frequency
 
-rng = numpy.random.default_rng(42)
+rng = numpy.random.default_rng(42)  # initialize random number generator
 
 # %%
 # Single-component lifetimes
 # --------------------------
 #
-# The phasor coordinates of single-component lifetimes are located
-# on the universal semicircle.
+# The phasor coordinates of single-component lifetimes lie on the
+# universal semicircle.
 # For example, 4.0 ns and 1.0 ns at a frequency of 80 MHz:
 
 frequency = 80.0
@@ -63,7 +63,8 @@ plot_phasor(
 # --------------------------
 #
 # The phasor coordinates of two lifetime components with varying
-# pre-exponential amplitudes are also located on a line:
+# pre-exponential amplitudes are also located on a line connecting
+# the pure components:
 
 plot_phasor(
     *phasor_from_lifetime(
@@ -78,9 +79,9 @@ plot_phasor(
 # Average of lifetime distributions
 # ---------------------------------
 #
-# The average phasor coordinates for wider distributions of lifetimes
-# lie further inside the universal semicircle compared to the narrower
-# distributions:
+# The average phasor coordinates for broader (larger standard deviation)
+# lifetime distributions lie further inside the universal semicircle
+# compared to narrower (smaller standard deviation) distributions:
 
 frequency = 80.0
 lifetime = 4.0
@@ -107,10 +108,11 @@ plot.show()
 #
 # Phasor coordinates can be calculated at once for many frequencies,
 # lifetime components, and their fractions. As an example, random
-# distrinutions of lifetimes and their fractions are plotted at
+# distributions of lifetimes and their fractions are plotted at
 # three frequencies.
-# Lifetimes are passed in units of s and frequencies in Hz, requiring to
-# specify a `unit_conversion` factor:
+# Here, lifetimes are passed in units of seconds and frequencies in Hz
+# instead of nanoseconds and MHz. This requires specifying
+# the ``unit_conversion`` factor accordingly:
 
 samples = 100
 lifetimes = [4.0, 2.0, 1.0]
@@ -119,7 +121,7 @@ lifetime_distributions = (
     numpy.column_stack(
         [rng.gamma(lifetime / 0.01, 0.01, samples) for lifetime in lifetimes]
     )
-    * 1e-9
+    * 1e-9  # seconds
 )
 fraction_distributions = numpy.column_stack(
     [rng.random(samples) for lifetime in lifetimes]
@@ -130,7 +132,7 @@ plot_phasor(
         frequency=[40e6, 80e6, 160e6],
         lifetime=lifetime_distributions,
         fraction=fraction_distributions,
-        unit_conversion=1.0,
+        unit_conversion=1.0,  # using seconds and Hz
     ),
     marker='.',
     label=['40 MHz', '80 MHz', '160 MHz'],
@@ -141,9 +143,9 @@ plot_phasor(
 # FRET efficiency
 # ---------------
 #
-# The phasor coordinates of a fluorescence energy transfer donor
+# The phasor coordinates of a Förster resonance energy transfer (FRET) donor
 # with a single lifetime component of 4.0 ns as a function of FRET efficiency
-# at a frequency of 80 MHz, with some background signal and about 90 %
+# at a frequency of 80 MHz, with some background signal and about 90%
 # of the donors participating in energy transfer, are on a curved trajectory.
 # For comparison, when 100% donors participate in FRET and there is no
 # background signal, the phasor coordinates lie on the universal semicircle:
@@ -169,11 +171,11 @@ plot.plot(
             [
                 numpy.full(samples, lifetime),  # donor-only lifetime
                 lifetime_quenched,  # donor lifetime with FRET
-                numpy.full(samples, 1e9),  # background with long lifetime
+                numpy.full(samples, 1e9),  # background with very long lifetime
             ]
         ),
         fraction=[0.1, 0.9, 0.1 / 1e9],
-        preexponential=True,
+        preexponential=True,  # fraction contains pre-exponential amplitudes
     ),
     linestyle='-',
     label='90% Donor in FRET',
@@ -197,7 +199,8 @@ plot_polar_frequency(
     title='Multi-frequency plot',
 )
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -2
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore

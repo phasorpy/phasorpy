@@ -2,7 +2,7 @@
 
 The ``phasorpy.cluster`` module provides functions to:
 
-- fit elliptic clusters to phasor coordinates using a
+- fit elliptical clusters to phasor coordinates using a
   Gaussian Mixture Model (GMM):
 
   - :py:func:`phasor_cluster_gmm`
@@ -39,7 +39,7 @@ def phasor_cluster_gmm(
     tuple[float, ...],
     tuple[float, ...],
 ]:
-    """Return elliptic clusters in phasor coordinates using GMM.
+    """Return elliptical clusters in phasor coordinates using GMM.
 
     Fit a Gaussian Mixture Model (GMM) to the provided phasor coordinates and
     extract the parameters of ellipses that represent each cluster according
@@ -51,15 +51,15 @@ def phasor_cluster_gmm(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-    sigma : float, optional
+    sigma : float, optional, default: 2
         Scaling factor for radii of major and minor axes.
-        Defaults to 2.0, which corresponds to the scaling of eigenvalues for
+        The default 2.0 corresponds to the scaling of eigenvalues for
         a 95% confidence ellipse.
-    clusters : int, optional
+    clusters : int, optional, default: 1
         Number of Gaussian distributions to fit to phasor coordinates.
-        Defaults to 1.
     sort : {'polar', 'phasor', 'area'}, optional
-        Sorting method for output clusters. Defaults to 'polar'.
+        Sorting method for output clusters.
+        By default, use 'polar' sorting.
 
         - 'polar': Sort by polar coordinates (phase, then modulation).
         - 'phasor': Sort by phasor coordinates (real, then imaginary).
@@ -91,9 +91,9 @@ def phasor_cluster_gmm(
     References
     ----------
     .. [1] Vallmitjana A, Torrado B, and Gratton E.
-      `Phasor-based image segmentation: machine learning clustering techniques
-      <https://doi.org/10.1364/BOE.422766>`_.
-      *Biomed Opt Express*, 12(6): 3410-3422 (2021)
+       `Phasor-based image segmentation: machine learning clustering techniques
+       <https://doi.org/10.1364/BOE.422766>`_.
+       *Biomed Opt Express*, 12(6): 3410-3422 (2021)
 
     Examples
     --------
@@ -116,6 +116,10 @@ def phasor_cluster_gmm(
 
     """
     from sklearn.mixture import GaussianMixture
+
+    if sigma <= 0.0:
+        raise ValueError(f'{sigma=} <= 0')
+    sigma = float(sigma)
 
     coords = numpy.stack([real, imag], axis=-1).reshape(-1, 2)
 
@@ -186,7 +190,7 @@ def phasor_cluster_gmm(
 
         else:
             raise ValueError(
-                f"invalid {sort=!r} != 'phasor', 'polar', or 'area'"
+                f"{sort=!r} not in {{'phasor', 'polar', or 'area'}}"
             )
 
         argsort = sorted(range(len(center_real)), key=sort_key)

@@ -40,16 +40,18 @@ def number_threads(
 ) -> int:
     """Return number of threads for parallel computations across CPU cores.
 
-    This function is used to parse ``num_threads`` parameters.
+    This function is used to parse ``num_threads`` parameters in the API.
 
     Parameters
     ----------
     num_threads : int, optional
         Number of threads to use for parallel computations on CPU cores.
-        If None (default), return 1, disabling multi-threading.
-        If greater than zero, return value up to `max_threads` if set.
-        If zero, return the value of the ``PHASORPY_NUM_THREADS`` environment
-        variable if set, else half the CPU cores up to `max_threads` or 32.
+        By default, return 1, disabling multithreading.
+        If greater than zero, return the value, limited to `max_threads` if
+        set.
+        If zero, return the value of the ``PHASORPY_NUM_THREADS``
+        environment variable if set, otherwise half the number of CPU cores
+        (up to `max_threads` if specified, or 32 if not).
     max_threads : int, optional
         Maximum number of threads to return.
 
@@ -67,14 +69,11 @@ def number_threads(
 
     """
     if num_threads is None or num_threads < 0:
-        # disable multi-threading by default
+        # disable multithreading by default
         return 1
     if num_threads == 0:
         # return default number of threads
-        if max_threads is None:
-            max_threads = 32
-        else:
-            max_threads = max(max_threads, 1)
+        max_threads = 32 if max_threads is None else max(max_threads, 1)
         if 'PHASORPY_NUM_THREADS' in os.environ:
             return min(
                 max_threads, max(1, int(os.environ['PHASORPY_NUM_THREADS']))
@@ -95,17 +94,20 @@ def number_threads(
 
 
 def versions(
-    *, sep: str = '\n', dash: str = '-', verbose: bool = False
+    *,
+    sep: str = '\n',
+    dash: str = '-',
+    verbose: bool = False,
 ) -> str:
     """Return version information for PhasorPy and its dependencies.
 
     Parameters
     ----------
-    sep : str, optional
-        Separator between version items. Defaults to newline.
-    dash : str, optional
-        Separator between module name and version. Defaults to dash.
-    verbose : bool, optional
+    sep : str, optional, default: newline
+        Separator between version items. The default is newline.
+    dash : str, optional, default: -
+        Separator between module name and version. The default is a dash.
+    verbose : bool, optional, default: False
         Include paths to Python interpreter and modules.
 
     Returns
@@ -117,7 +119,7 @@ def versions(
     Examples
     --------
     >>> print(versions())  # doctest: +SKIP
-    Python-3.14.0
+    Python-3.14.1
     phasorpy-0.8
     numpy-2.3.5
     ...
@@ -156,20 +158,21 @@ def versions(
         try:
             __import__(module)
         except ModuleNotFoundError:
-            version_strings.append(f'{module.lower()}{dash}n/a')
+            version_strings.append(f'{module}{dash}n/a')
             continue
         lib = sys.modules[module]
         try:
             ver = importlib.metadata.version(module)
         except importlib.metadata.PackageNotFoundError:
             ver = getattr(lib, '__version__', 'unknown')
-        ver = f'{module.lower()}{dash}{ver}'
+        ver = f'{module}{dash}{ver}'
         if verbose:
             try:
-                path = getattr(lib, '__file__')
+                path = lib.__file__
             except NameError:
                 pass
             else:
-                ver += f'  ({os.path.dirname(path)})'
+                if path is not None:
+                    ver += f'  ({os.path.dirname(path)})'
         version_strings.append(ver)
     return sep.join(version_strings)

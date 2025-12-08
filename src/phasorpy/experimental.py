@@ -16,7 +16,7 @@ __all__ = [
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, NDArray, ArrayLike
+    from ._typing import Any, ArrayLike, NDArray
 
 from ._phasorpy import (
     _anscombe,
@@ -34,7 +34,7 @@ def anscombe_transform(
 
     The Anscombe transformation normalizes the standard deviation of noisy,
     Poisson-distributed data.
-    It can be used to transform un-normalized phasor coordinates to
+    It can be used to transform unnormalized phasor coordinates to
     approximate standard Gaussian distributions.
 
     Parameters
@@ -42,7 +42,7 @@ def anscombe_transform(
     data : array_like
         Noisy Poisson-distributed data to be transformed.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -67,7 +67,6 @@ def anscombe_transform(
 
     Examples
     --------
-
     >>> z = anscombe_transform(numpy.random.poisson(10, 10000))
     >>> numpy.allclose(numpy.std(z), 1.0, atol=0.1)
     True
@@ -89,10 +88,10 @@ def anscombe_transform_inverse(
     ----------
     data : array_like
         Anscombe-transformed data.
-    approx : bool, default: False
-        If true, return approximation of exact unbiased inverse.
+    approx : bool, optional, default: False
+        Return approximation of exact unbiased inverse.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -124,7 +123,7 @@ def anscombe_transform_inverse(
        `A closed-form approximation of the exact unbiased inverse of the
        Anscombe variance-stabilizing transformation
        <https://doi.org/10.1109/TIP.2011.2121085>`_.
-       *IEEE Trans Image Process*, 20(9): 2697-8 (2011)
+       *IEEE Trans Image Process*, 20(9): 2697-2698 (2011)
 
     .. [3] Makitalo M, and Foi A.
        `Optimal inversion of the generalized Anscombe transformation for
@@ -134,7 +133,6 @@ def anscombe_transform_inverse(
 
     Examples
     --------
-
     >>> x = numpy.random.poisson(10, 100)
     >>> x2 = anscombe_transform_inverse(anscombe_transform(x))
     >>> numpy.allclose(x, x2, atol=1e-3)

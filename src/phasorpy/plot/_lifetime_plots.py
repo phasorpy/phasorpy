@@ -7,13 +7,14 @@ __all__ = ['LifetimePlots']
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .._typing import Any, NDArray, ArrayLike
-
     from matplotlib.axes import Axes
+    from matplotlib.lines import Line2D
+
+    from .._typing import Any, ArrayLike, NDArray
+
 
 import numpy
 from matplotlib import pyplot
-from matplotlib.lines import Line2D
 from matplotlib.widgets import Slider
 
 from .._utils import update_kwargs
@@ -34,16 +35,16 @@ from ..plot._phasorplot import (
 
 
 class LifetimePlots:
-    """Plot lifetimes in time domain, frequency domain, and phasor plot.
+    """Plot lifetimes in time domain, frequency domain, and phasor space.
 
-    Plot the time domain signals, phasor coordinates, and multi-frequency
+    Plot the time-domain signals, phasor coordinates, and multi-frequency
     phase and modulation curves for a set of lifetime components and their
     mixture at given frequency and fractional intensities.
 
     Parameters
     ----------
     frequency : float
-        Fundamental laser pulse or modulation frequency in MHz.
+        Laser pulse or modulation frequency in MHz.
         If None, an optimal frequency is calculated from the mean of the
         lifetime components.
     lifetime : array_like
@@ -54,15 +55,18 @@ class LifetimePlots:
         If not given, all components are assumed to have equal fractions.
     frequency_range : tuple[float, float, float], optional
         Range of frequencies in MHz for frequency slider.
-        Default is (10.0, 200.0, 1.0).
+        The default is (10.0, 200.0, 1.0).
     lifetime_range : tuple[float, float, float], optional
         Range of lifetimes in ns for lifetime sliders.
-        Default is (0.0, 20.0, 0.1).
-    interactive: bool
-        If True, add sliders to change frequency and lifetimes interactively.
-        Default is False.
-    **kwargs:
+        The default is (0.0, 20.0, 0.1).
+    interactive : bool, optional, default: False
+        Add sliders to change frequency and lifetimes interactively.
+    **kwargs
         Optional arguments passed to matplotlib figure.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_misc_phasorpy_apps.py`
 
     """
 
@@ -70,7 +74,7 @@ class LifetimePlots:
     _frequency: float  # current frequency in MHz
     _zero_phase: float | None = None  # location of IRF peak in the phase
     _zero_stdev: float | None = None  # standard deviation of IRF in radians
-    _frequencies: NDArray[Any]  # for frequency domain plot
+    _frequencies: NDArray[Any]  # for frequency-domain plot
 
     _time_plot: Axes
     _phasor_plot: Axes
@@ -164,7 +168,7 @@ class LifetimePlots:
         self._phase_lines = []
         self._modulation_lines = []
 
-        # time domain plot
+        # time-domain plot
         time_plot.set_title('Time domain')
         time_plot.set_xlabel('Time [ns]')
         time_plot.set_ylabel('Intensity [normalized]')
@@ -203,7 +207,7 @@ class LifetimePlots:
         phasorplot = PhasorPlot(ax=phasor_plot)
         lines = phasorplot.semicircle(frequency)
         self._semicircle_line = lines[0]
-        self._semicircle_ticks = phasorplot._semicircle_ticks
+        self._semicircle_ticks = phasorplot._semicircle_ticks  # noqa: SLF001
         lines = phasorplot.plot(
             real, imag, 'o', color='tab:blue', markersize=10, zorder=10
         )
@@ -227,7 +231,7 @@ class LifetimePlots:
                 )
                 self._phasor_points.append(lines[0])
 
-        # frequency domain plot
+        # frequency-domain plot
         phase_plot.set_title('Frequency domain')
         phase_plot.set_xscale('log', base=10)
         phase_plot.set_xlabel('Frequency (MHz)')
@@ -321,9 +325,16 @@ class LifetimePlots:
         )
         self._frequency_slider.on_changed(self._on_changed)
 
+        lifetimes = numpy.atleast_1d(lifetimes)
+        fractions = numpy.atleast_1d(fractions)
+
         self._lifetime_sliders = []
-        for i, (lifetime, color) in enumerate(
-            zip(numpy.atleast_1d(lifetimes), self._component_colors)
+        for i, (valinit, color) in enumerate(
+            zip(
+                lifetimes,
+                self._component_colors[: lifetimes.shape[0]],
+                strict=True,
+            )
         ):
             slider = Slider(
                 ax=next(axes),
@@ -332,15 +343,19 @@ class LifetimePlots:
                 valmin=lifetime_range[0],
                 valmax=lifetime_range[1],
                 valstep=lifetime_range[2],
-                valinit=lifetime,  # type: ignore[arg-type]
+                valinit=valinit,
                 facecolor=color,
             )
             slider.on_changed(self._on_changed)
             self._lifetime_sliders.append(slider)
 
         self._fraction_sliders = []
-        for i, (fraction, color) in enumerate(
-            zip(numpy.atleast_1d(fractions), self._component_colors)
+        for i, (valinit, color) in enumerate(
+            zip(
+                fractions,
+                self._component_colors[: lifetimes.shape[0]],
+                strict=True,
+            )
         ):
             if num_components == 1 or (i == 1 and num_components == 2):
                 break
@@ -351,7 +366,7 @@ class LifetimePlots:
                 valmin=0.0,
                 valmax=1.0,
                 valstep=0.01,
-                valinit=fraction,  # type: ignore[arg-type]
+                valinit=valinit,
                 facecolor=color,
             )
             slider.on_changed(self._on_changed)
@@ -468,7 +483,7 @@ class LifetimePlots:
         )  # type: ignore[return-value]
 
     def _on_changed(self, value: Any) -> None:
-        """Callback function to update plot with current slider values."""
+        """Update plot with current slider values."""
         frequency = self._frequency_slider.val
 
         if frequency != self._frequency:
@@ -513,7 +528,7 @@ class LifetimePlots:
             component_modulation_,
         ) = self._calculate(frequency, lifetimes, fractions)
 
-        # time domain plot
+        # time-domain plot
         self._signal_lines[0].set_data(times, signal)
         if num_components > 1:
             for i in range(num_components):
@@ -534,7 +549,7 @@ class LifetimePlots:
                     [component_real[i]], [component_imag[i]]
                 )
 
-        # frequency domain plot
+        # frequency-domain plot
         self._frequency_line.set_data([frequency, frequency], [0, 90])
         self._phase_point.set_data([frequency], [phase])
         self._modulation_point.set_data([frequency], [modulation])
@@ -552,7 +567,7 @@ class LifetimePlots:
         self._frequency = frequency
 
     def show(self) -> None:
-        """Display all open figures. Call :py:func:`matplotlib.pyplot.show`."""
+        """Show all open figures. Call :py:func:`matplotlib.pyplot.show`."""
         pyplot.show()
 
 

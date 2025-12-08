@@ -87,17 +87,17 @@ repos:
         additional_dependencies: ["black==25.11.0"]
       - id: blackdoc-autoupdate-black
 
-# - repo: https://github.com/PyCQA/flake8
-#   rev: 7.3.0
-#   hooks:
-#   - id: flake8
-#     additional_dependencies: [flake8-typing-imports, flake8-docstrings]
+  # - repo: https://github.com/PyCQA/flake8
+  #   rev: 7.3.0
+  #   hooks:
+  #   - id: flake8
+  #     additional_dependencies: [flake8-typing-imports, flake8-docstrings]
 
-# - repo: https://github.com/astral-sh/ruff-pre-commit
-#   rev: v0.14.7
-#   hooks:
-#   - id: ruff
-#     args: [--show-fixes]
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.8
+    hooks:
+      - id: ruff-check
+        args: [--show-fixes]
 
 # - repo: https://github.com/pre-commit/mirrors-mypy
 #   rev: v1.19.0

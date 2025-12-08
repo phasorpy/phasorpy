@@ -1,4 +1,4 @@
-"""PhasorPy package command line interface."""
+"""PhasorPy package command-line interface."""
 
 import sys
 

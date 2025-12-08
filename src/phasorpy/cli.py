@@ -1,6 +1,6 @@
-"""PhasorPy package command line interface.
+"""PhasorPy package command-line interface.
 
-Invoke the command line application with::
+Invoke the command-line application with::
 
     $ python -m phasorpy --help
 
@@ -21,10 +21,10 @@ import click
 from . import __version__
 
 
-@click.group(help='PhasorPy package command line interface.')
+@click.group(help='PhasorPy package command-line interface.')
 @click.version_option(version=__version__)
 def main() -> int:
-    """PhasorPy command line interface."""
+    """PhasorPy command-line interface."""
     return 0
 
 
@@ -34,10 +34,10 @@ def main() -> int:
     default=False,
     is_flag=True,
     type=click.BOOL,
-    help='Show module paths.',
+    help='Show full module paths.',
 )
-def versions(verbose: bool) -> None:
-    """Versions command group."""
+def versions(*, verbose: bool) -> None:
+    """Show runtime versions."""
     from .utils import versions
 
     click.echo(versions(verbose=verbose))
@@ -46,18 +46,16 @@ def versions(verbose: bool) -> None:
 @main.command(help='Fetch sample files from remote repositories.')
 @click.argument('files', nargs=-1)
 @click.option(
-    '--hideprogress',
-    default=False,
-    is_flag=True,
-    type=click.BOOL,
-    help='Hide progressbar.',
+    '--show-progress/--hide-progress',
+    default=True,
+    help='Show progress bar.',
 )
-def fetch(files: Iterable[str], hideprogress: bool) -> None:
-    """Fetch command group."""
+def fetch(*, files: Iterable[str], show_progress: bool) -> None:
+    """Fetch command."""
     from . import datasets
 
     files = datasets.fetch(
-        *files, return_scalar=False, progressbar=not hideprogress
+        *files, return_scalar=False, progressbar=show_progress
     )
     click.echo(f'Cached at {os.path.commonpath(files)}')
 
@@ -70,7 +68,7 @@ def fetch(files: Iterable[str], hideprogress: bool) -> None:
     type=click.BOOL,
     help='Do not show interactive plot.',
 )
-def fret(hide: bool) -> None:
+def fret(*, hide: bool) -> None:
     """FRET command group."""
     from .plot import PhasorPlotFret
 
@@ -125,13 +123,14 @@ def fret(hide: bool) -> None:
     help='Do not show interactive plot.',
 )
 def lifetime(
+    *,
     number_lifetimes: int,
     frequency: float | None,
     lifetime: tuple[float, ...],
     fraction: tuple[float, ...],
     hide: bool,
 ) -> None:
-    """Lifetime command group."""
+    """Lifetime command."""
     from .lifetime import phasor_semicircle, phasor_to_normal_lifetime
     from .plot import LifetimePlots
 

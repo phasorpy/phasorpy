@@ -1,8 +1,13 @@
-"""Color palettes and color manipulation utilities."""
+"""Color palettes and color manipulation utilities.
+
+The ``phasorpy.color`` module provides color palattes and functions to
+manipulate colors.
+
+"""
 
 from __future__ import annotations
 
-__all__ = ['float2int', 'wavelength2rgb', 'CATEGORICAL', 'SRGB_SPECTRUM']
+__all__ = ['CATEGORICAL', 'SRGB_SPECTRUM', 'float2int', 'wavelength2rgb']
 
 from typing import TYPE_CHECKING
 
@@ -17,7 +22,7 @@ def wavelength2rgb(
     /,
     dtype: DTypeLike | None = None,
 ) -> tuple[float, float, float] | NDArray[Any]:
-    """Return approximate sRGB color components of visible wavelength(s).
+    """Return approximate sRGB color components for visible wavelength(s).
 
     Wavelengths are clipped to the range [360, 750] nm, rounded, and used to
     index the :py:attr:`SRGB_SPECTRUM` palette.
@@ -27,12 +32,12 @@ def wavelength2rgb(
     wavelength : array_like
         Scalar or array of wavelengths in nm.
     dtype : dtype_like, optional
-        Data-type of return value. The default is ``float32``.
+        Data type of return value. The default is float32.
 
     Returns
     -------
     ndarray or tuple of float
-        Approximate sRGB color components of visible wavelength(s).
+        Approximate sRGB color components for visible wavelength(s).
         If input is scalar, return tuple of three floats.
         If input is array, return ndarray with shape (..., 3).
         Floating-point values are in range [0.0, 1.0].
@@ -56,10 +61,7 @@ def wavelength2rgb(
     rgb = SRGB_SPECTRUM.take(indices, axis=0)
     if dtype is not None:
         dtype = numpy.dtype(dtype)
-        if dtype.kind in {'u', 'i'}:
-            rgb = float2int(rgb)
-        else:
-            rgb = rgb.astype(dtype)
+        rgb = float2int(rgb) if dtype.kind in {'u', 'i'} else rgb.astype(dtype)
     if astuple:
         return tuple(rgb.tolist()[:3])
     return rgb
@@ -76,8 +78,8 @@ def float2int(
     ----------
     rgb : array_like
         Scalar or array of normalized floating-point color components.
-    dtype : dtype_like, optional
-        Data type of return value. The default is ``uint8``.
+    dtype : dtype_like, optional, default: uint8
+        Data type of return value.
 
     Returns
     -------
@@ -92,10 +94,10 @@ def float2int(
     """
     dtype = numpy.dtype(dtype)
     if dtype.kind not in {'u', 'i'}:
-        raise ValueError('not an integer dtype')
+        raise ValueError(f'{dtype=} is not an integer type')
     arr: NDArray[Any] = numpy.asarray(rgb)
     if not arr.dtype.kind == 'f':
-        raise ValueError('not a floating-point array')
+        raise ValueError(f'{arr.dtype=} is not a floating-point type')
     iinfo = numpy.iinfo(dtype)
     arr = numpy.round(arr * iinfo.max)
     numpy.clip(arr, iinfo.min, iinfo.max, out=arr)
@@ -579,7 +581,7 @@ SRGB_SPECTRUM: NDArray[numpy.float32] = numpy.array([
 
 Array of shape (391, 3) containing normalized sRGB color components
 for wavelengths from 360 to 750 nm in 1 nm increments.
-Based on the CIE 1931 2° Standard Observer.
+Based on the CIE 1931 2-degree Standard Observer.
 
 Generated using the `colour <https://colour.readthedocs.io>`_ package::
 

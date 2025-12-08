@@ -5,6 +5,7 @@ from __future__ import annotations
 __all__ = ['phasor_from_flimlabs_json', 'signal_from_flimlabs_json']
 
 import json
+import os
 from typing import TYPE_CHECKING
 
 from .._utils import parse_harmonic, xarray_metadata
@@ -26,6 +27,7 @@ import numpy
 def phasor_from_flimlabs_json(
     filename: str | PathLike[Any],
     /,
+    *,
     channel: int | None = 0,
     harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
@@ -40,16 +42,16 @@ def phasor_from_flimlabs_json(
     filename : str or Path
         Name of FLIM LABS JSON phasor file to read.
         The file name usually contains the string "_phasor".
-    channel : int, optional
-        Index of channel to return.
+    channel : int, optional, default: 0
+        Index of channel to return (zero-based).
         By default, return the first channel.
         If None, return all channels.
     harmonic : int, sequence of int, or 'all', optional
         Harmonic(s) to return from file.
-        If None (default), return the first harmonic stored in the file.
-        If `'all'`, return all harmonics as stored in file.
-        If a list, the first axes of the returned `real` and `imag` arrays
-        contain specified harmonic(s).
+        By default, return the first harmonic stored in the file.
+        If `'all'`, return all harmonics as stored in the file.
+        If a sequence, the first axis of the returned `real` and `imag` arrays
+        contains the specified harmonics.
         If an integer, the returned `real` and `imag` arrays are single
         harmonic and have the same shape as `mean`.
 
@@ -57,13 +59,13 @@ def phasor_from_flimlabs_json(
     -------
     mean : ndarray
         Average intensity image.
-        Zeroed if an intensity image is not present in file.
+        Set to zero if an intensity image is not present in the file.
     real : ndarray
         Image of real component of phasor coordinates.
     imag : ndarray
         Image of imaginary component of phasor coordinates.
     attrs : dict
-        Select metadata:
+        Selected metadata:
 
         - ``'dims'`` (tuple of str):
           :ref:`Axes codes <axes>` for `mean` image dimensions.
@@ -104,10 +106,13 @@ def phasor_from_flimlabs_json(
 
     """
     with open(filename, 'rb') as fh:
+        filename = os.path.basename(filename)
         try:
             data = json.load(fh)
         except Exception as exc:
-            raise ValueError('not a valid JSON file') from exc
+            raise ValueError(
+                f'{filename=!r} is not a valid JSON file'
+            ) from exc
 
     if (
         'header' not in data
@@ -117,7 +122,8 @@ def phasor_from_flimlabs_json(
         # or data['header']['file_id'] != [73, 80, 71, 49]  # 'IPG1'
     ):
         raise ValueError(
-            'not a FLIM LABS JSON file containing phasor coordinates'
+            f'{filename=!r} is not a FLIM LABS JSON file '
+            'containing phasor coordinates'
         )
 
     header = data['header']
@@ -146,7 +152,7 @@ def phasor_from_flimlabs_json(
     else:
         harmonic, keep_harmonic_axis = parse_harmonic(harmonic, harmonics[-1])
     if any(h not in harmonics for h in harmonic):
-        raise IndexError(f'{harmonic=} not in {harmonics!r}')
+        raise IndexError(f'{harmonic=!r} not in {harmonics!r}')
     harmonic_index = {h: i for i, h in enumerate(harmonic)}
 
     nharmonics = len(harmonic)
@@ -186,7 +192,7 @@ def phasor_from_flimlabs_json(
             -1 if channel is None else channels.index(channel),
         )
         mean.shape = shape[1:]
-        # JSON cannot store NaN values
+        # JSON cannot store NaN values; zeros indicate invalid data
         nan_mask = mean == 0
         real[:, nan_mask] = numpy.nan
         imag[:, nan_mask] = numpy.nan
@@ -230,12 +236,13 @@ def signal_from_flimlabs_json(
     filename : str or Path
         Name of FLIM LABS JSON imaging file to read.
         The file name usually contains the string "_imaging" or "_phasor".
-    channel : int, optional
-        Index of channel to return.
+    channel : int, optional, default: 0
+        Index of channel to return (zero-based).
         By default, return the first channel.
         If None, return all channels.
-    dtype : dtype_like, optional, default: uint16
+    dtype : dtype_like, optional
         Unsigned integer type of TCSPC histogram.
+        By default, use uint16.
         Increase the bit-depth for high photon counts.
 
     Returns
@@ -247,9 +254,9 @@ def signal_from_flimlabs_json(
         - Single channel: axes ``'YXH'``
         - Multiple channels: axes ``'CYXH'``
 
-        Type specified by ``dtype`` parameter.
+        Type specified by the `dtype` parameter.
 
-        - ``coords['H']``: delay-times of histogram bins in ns.
+        - ``coords['H']``: delay times of histogram bins in ns.
         - ``coords['C']``: channel indices (if multiple channels).
         - ``attrs['frequency']``: laser repetition frequency in MHz.
         - ``attrs['flimlabs_header']``: FLIM LABS file header.
@@ -285,11 +292,13 @@ def signal_from_flimlabs_json(
 
     """
     with open(filename, 'rb') as fh:
+        filename = os.path.basename(filename)
         try:
             data = json.load(fh)
         except Exception as exc:
-            raise ValueError('not a valid JSON file') from exc
-
+            raise ValueError(
+                f'{filename=!r} is not a valid JSON file'
+            ) from exc
     if (
         'header' not in data
         or 'laser_period_ns' not in data['header']
@@ -297,7 +306,8 @@ def signal_from_flimlabs_json(
         or ('data' not in data and 'intensities_data' not in data)
     ):
         raise ValueError(
-            'not a FLIM LABS JSON file containing TCSPC histogram'
+            f'{filename=!r} is not a FLIM LABS JSON file '
+            'containing TCSPC histogram'
         )
 
     if dtype is None:
@@ -315,7 +325,9 @@ def signal_from_flimlabs_json(
 
     if channel is not None:
         if channel >= nchannels or channel < 0:
-            raise IndexError(f'{channel=} out of range[0, {nchannels=}]')
+            raise IndexError(
+                f'{channel=} is out of bounds [0, {nchannels - 1}]'
+            )
         nchannels = 1
 
     if 'data' in data:

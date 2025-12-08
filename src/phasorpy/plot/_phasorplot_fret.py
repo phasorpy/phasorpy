@@ -7,13 +7,13 @@ __all__ = ['PhasorPlotFret']
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .._typing import Any, NDArray
-
     from matplotlib.axes import Axes
+    from matplotlib.lines import Line2D
+
+    from .._typing import Any, NDArray
 
 import numpy
 from matplotlib import pyplot
-from matplotlib.lines import Line2D
 from matplotlib.widgets import Slider
 
 from .._utils import update_kwargs
@@ -33,7 +33,7 @@ from ._phasorplot import CircleTicks, PhasorPlot, _semicircle_ticks
 class PhasorPlotFret(PhasorPlot):
     """FRET phasor plot.
 
-    Plot Förster Resonance Energy Transfer efficiency trajectories
+    Plot Förster resonance energy transfer (FRET) efficiency trajectories
     of donor and acceptor channels in phasor space.
 
     Parameters
@@ -44,38 +44,37 @@ class PhasorPlotFret(PhasorPlot):
         Lifetime of donor without FRET in ns.
     acceptor_lifetime : array_like
         Lifetime of acceptor in ns.
-    fret_efficiency : array_like, optional, default 0
+    fret_efficiency : array_like, optional, default: 0
         FRET efficiency in range [0, 1].
-    donor_fretting : array_like, optional, default 1
+    donor_fretting : array_like, optional, default: 1
         Fraction of donors participating in FRET. Range [0, 1].
-    donor_bleedthrough : array_like, optional, default 0
-        Weight of donor fluorescence in acceptor channel
-        relative to fluorescence of fully sensitized acceptor.
-        A weight of 1 means the fluorescence from donor and fully sensitized
+    donor_bleedthrough : array_like, optional, default: 0
+        Weight of donor signal in acceptor channel
+        relative to signal of fully sensitized acceptor.
+        A weight of 1 means the signal from donor and fully sensitized
         acceptor are equal.
         The background in the donor channel does not bleed through.
-    acceptor_bleedthrough : array_like, optional, default 0
-        Weight of fluorescence from directly excited acceptor
-        relative to fluorescence of fully sensitized acceptor.
-        A weight of 1 means the fluorescence from directly excited acceptor
+    acceptor_bleedthrough : array_like, optional, default: 0
+        Weight of signal from directly excited acceptor
+        relative to signal of fully sensitized acceptor.
+        A weight of 1 means the signal from directly excited acceptor
         and fully sensitized acceptor are equal.
-    acceptor_background : array_like, optional, default 0
-        Weight of background fluorescence in acceptor channel
-        relative to fluorescence of fully sensitized acceptor.
-        A weight of 1 means the fluorescence of background and fully
+    acceptor_background : array_like, optional, default: 0
+        Weight of background signal in acceptor channel
+        relative to signal of fully sensitized acceptor.
+        A weight of 1 means the signal of background and fully
         sensitized acceptor are equal.
-    donor_background : array_like, optional, default 0
-        Weight of background fluorescence in donor channel
-        relative to fluorescence of donor without FRET.
-        A weight of 1 means the fluorescence of background and donor
-        without FRET are equal.
-    background_real : array_like, optional, default 0
-        Real component of background fluorescence phasor coordinate
+    donor_background : array_like, optional, default: 0
+        Weight of background signal in donor channel
+        relative to signal of donor without FRET.
+        A weight of 1 means the signal of background and donor without
+        FRET are equal.
+    background_real : array_like, optional, default: 0
+        Real component of background signal phasor coordinate at `frequency`.
+    background_imag : array_like, optional, default: 0
+        Imaginary component of background signal phasor coordinate
         at `frequency`.
-    background_imag : array_like, optional, default 0
-        Imaginary component of background fluorescence phasor coordinate
-        at `frequency`.
-    ax : matplotlib axes, optional
+    ax : matplotlib.axes.Axes, optional
         Matplotlib axes used for plotting.
         By default, a new subplot axes is created.
         Cannot be used with `interactive` mode.
@@ -86,9 +85,10 @@ class PhasorPlotFret(PhasorPlot):
 
     See Also
     --------
-    phasorpy.phasor.phasor_from_fret_donor
-    phasorpy.phasor.phasor_from_fret_acceptor
+    phasorpy.lifetime.phasor_from_fret_donor
+    phasorpy.lifetime.phasor_from_fret_acceptor
     :ref:`sphx_glr_tutorials_api_phasorpy_fret.py`
+    :ref:`sphx_glr_tutorials_misc_phasorpy_apps.py`
 
     """
 
@@ -309,9 +309,10 @@ class PhasorPlotFret(PhasorPlot):
             return
 
         # add sliders
-        axes = []
-        for i in range(11):
-            axes.append(fig.add_axes((0.33, 0.05 + i * 0.03, 0.45, 0.01)))
+        axes = [
+            fig.add_axes((0.33, 0.05 + i * 0.03, 0.45, 0.01))
+            for i in range(11)
+        ]
 
         self._frequency_slider = Slider(
             ax=axes[10],
@@ -450,7 +451,7 @@ class PhasorPlotFret(PhasorPlot):
         self._background_imag_slider.on_changed(self._on_changed)
 
     def _on_semicircle_changed(self, value: Any) -> None:
-        """Callback function to update semicircles."""
+        """Update semicircles."""
         self._frequency = frequency = self._frequency_slider.val
         acceptor_lifetime = self._acceptor_lifetime_slider.val
         if self._donor_semicircle_ticks is not None:
@@ -470,7 +471,7 @@ class PhasorPlotFret(PhasorPlot):
         self._on_changed(value)
 
     def _on_changed(self, value: Any) -> None:
-        """Callback function to update plot with current slider values."""
+        """Update plot with current slider values."""
         frequency = self._frequency_slider.val
         donor_lifetime = self._donor_lifetime_slider.val
         acceptor_lifetime = self._acceptor_lifetime_slider.val

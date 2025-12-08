@@ -40,12 +40,12 @@ def phasor_from_lif(
     imag : ndarray
         Image of imaginary component of phasor coordinates.
     attrs : dict
-        Select metadata:
+        Selected metadata:
 
         - ``'dims'`` (tuple of str):
           :ref:`Axes codes <axes>` for `mean` image dimensions.
         - ``'frequency'`` (float):
-          Fundamental frequency of time-resolved phasor coordinates in MHz.
+          Fundamental frequency of phasor coordinates in MHz.
           May not be present in all files.
         - ``'flim_rawdata'`` (dict):
           Settings from SingleMoleculeDetection/RawData XML element.
@@ -58,7 +58,7 @@ def phasor_from_lif(
     liffile.LifFileError
         File is not a Leica image file.
     ValueError
-        File or `image` do not contain phasor coordinates and metadata.
+        File or `image` does not contain phasor coordinates and metadata.
 
     Notes
     -----
@@ -122,8 +122,8 @@ def lifetime_from_lif(
     Leica image files may contain fluorescence lifetime images and metadata
     from the analysis of FLIM measurements.
     The lifetimes are average photon arrival times ("Fast FLIM") according to
-    the LAS X FLIM/FCS documentation. They are not corrected for the IRF
-    position.
+    the LAS X FLIM/FCS documentation. They are not corrected for the
+    instrument response function (IRF) position.
 
     Parameters
     ----------
@@ -139,15 +139,14 @@ def lifetime_from_lif(
     intensity : ndarray
         Fluorescence intensity image.
     stddev : ndarray
-        Standard deviation of fluorescence lifetimes in ns.
+        Standard deviation of lifetimes in ns.
     attrs : dict
-        Select metadata:
+        Selected metadata:
 
         - ``'dims'`` (tuple of str):
           :ref:`Axes codes <axes>` for `intensity` image dimensions.
         - ``'frequency'`` (float):
-          Fundamental frequency of lifetimes in MHz.
-          May not be present in all files.
+          Laser pulse frequency in MHz. May not be present in all files.
         - ``'samples'`` (int):
           Number of bins in TCSPC histogram. May not be present in all files.
         - ``'flim_rawdata'`` (dict):
@@ -158,7 +157,7 @@ def lifetime_from_lif(
     liffile.LifFileError
         File is not a Leica image file.
     ValueError
-        File or `image` does not contain lifetime coordinates and metadata.
+        File or `image` does not contain lifetime image and metadata.
 
     Notes
     -----
@@ -215,8 +214,12 @@ def lifetime_from_lif(
     )
 
 
-def _flim_metadata(flim: Any | None, attrs: dict[str, Any]) -> None:
-    """Add FLIM metadata to attrs."""
+def _flim_metadata(
+    flim: Any | None,
+    attrs: dict[str, Any],
+    /,
+) -> None:
+    """Add FLIM metadata to dictionary."""
     import liffile
 
     if flim is not None and isinstance(flim, liffile.LifFlimImage):
@@ -227,7 +230,7 @@ def _flim_metadata(flim: Any | None, attrs: dict[str, Any]) -> None:
             clock_period = xml.find('.//Dataset/RawData/ClockPeriod')
             if clock_period is not None and clock_period.text is not None:
                 tmp = float(clock_period.text) * float(frequency.text)
-                samples = int(round(1.0 / tmp))
+                samples = round(1.0 / tmp)
                 attrs['samples'] = samples
         channels = []
         for channel in xml.findall('.//Dataset/FlimData/PhasorData/Channels'):
@@ -241,8 +244,8 @@ def _flim_metadata(flim: Any | None, attrs: dict[str, Any]) -> None:
 def signal_from_lif(
     filename: str | PathLike[Any],
     /,
-    *,
     image: int | str | None = None,
+    *,
     dim: Literal['λ', 'Λ'] | str = 'λ',
 ) -> DataArray:
     """Return hyperspectral image and metadata from Leica image file.
@@ -257,7 +260,7 @@ def signal_from_lif(
     image : str or int, optional
         Index or regex pattern of image to return.
         By default, return the first image containing hyperspectral data.
-    dim : str or None
+    dim : {'λ', 'Λ'}, optional, default: 'λ'
         Character code of hyperspectral dimension.
         Either ``'λ'`` for emission (default) or ``'Λ'`` for excitation.
 

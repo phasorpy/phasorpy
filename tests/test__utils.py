@@ -219,7 +219,7 @@ def test_parse_skip_axis():
 
 
 def test_chunk_iter():
-    """test chunk_iter function."""
+    """Test chunk_iter function."""
 
     assert list(chunk_iter((), ())) == [((), '', False)]
     assert list(chunk_iter((), (), '')) == [((), '', False)]
@@ -268,7 +268,9 @@ def test_chunk_iter():
         '_T0_Z1_Y2_X0',
         True,
     )
-    assert list(chunk_iter((3, 255), (2, 128), 'YX', use_index=True))[0] == (
+    assert next(
+        iter(chunk_iter((3, 255), (2, 128), 'YX', use_index=True))
+    ) == (
         (slice(0, 2, 1), slice(0, 128, 1)),
         '_Y0_X000',
         False,

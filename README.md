@@ -1,6 +1,6 @@
 # PhasorPy
 
-PhasorPy is an open-source Python library for the analysis of fluorescence
+PhasorPy is an open-source Python library for the analysis of luminescence
 lifetime and hyperspectral images using the phasor approach.
 
 - [Homepage](https://www.phasorpy.org)

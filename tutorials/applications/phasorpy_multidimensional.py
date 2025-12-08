@@ -5,15 +5,16 @@ Multidimensional phasor approach
 Simultaneous phasor analysis of lifetime and spectral data.
 
 Multidimensional phasor analysis enables the correlation and classification
-of pixels based on multiple fluorescence characteristics simultaneously.
+of pixels based on multiple signal characteristics simultaneously.
 This approach combines phasor coordinates from different measurement domains
 to provide enhanced discrimination and identification of molecular species
 or cellular components that may appear similar in single-domain analysis.
 
 Phasor coordinates in one dimension can be mapped to other dimensions by masks
 (or cursors) that define regions of interest in the phasor space. The dimension
-where cursors are defined serves as the "main" dimension, controlling the
-classification that is then applied to correlate with other dimensions.
+where cursors are defined serves as the "main" dimension, controlling which
+regions of interest are selected and determining the classification that is
+then applied to correlate with other dimensions.
 
 This analysis method is demonstrated using a dataset combining fluorescence
 lifetime imaging microscopy (FLIM) and hyperspectral imaging (HSI) of LAURDAN
@@ -52,7 +53,7 @@ from phasorpy.plot import PhasorPlot, plot_image, plot_phasor
 # Read spectral and FLIM signals
 # ------------------------------
 #
-# Read hyperspectral and FLIM signals and metadata from the Zenodo dataset
+# Read hyperspectral and FLIM signals and metadata from a Zenodo dataset
 # of NIH-3T3 fibroblast cells stained with the membrane probe LAURDAN.
 # The spectral data is stored in Zeiss LSM format, while the two-channel
 # FLIM data is in FLIMbox FBD format. The calibration data for both FLIM
@@ -62,7 +63,7 @@ spectral_signal = signal_from_lsm(fetch('04 NIH3T3LAURDAN8meanspectra.lsm'))
 
 flim_signal = signal_from_fbd(
     fetch('04NIH3T3_LAURDAN_000$CC0Z.fbd'),
-    frame=-1,  # integrate all frames
+    frame=-1,  # integrate all time frames
     channel=None,  # load all channels
     laser_factor=0.99168,  # override incorrect metadata in FBD file
 )
@@ -86,8 +87,8 @@ frequency = flim_signal.attrs['frequency'] * flim_signal.attrs['harmonic']
 # ----------------
 #
 # Compute phasor coordinates from the spectral and FLIM signals. Calibrate
-# the FLIM phasor coordinates with the reference coordinates of known lifetime
-# (2.5 ns, Coumarin 6 in ethanol):
+# the FLIM phasor coordinates using reference measurements with a known
+# lifetime of 2.5 ns (Coumarin 6 in ethanol):
 
 spectral_mean, spectral_real, spectral_imag = phasor_from_signal(
     spectral_signal
@@ -101,7 +102,7 @@ flim_real, flim_imag = phasor_calibrate(
     *phasor_from_signal(reference_signal),
     frequency=frequency,
     lifetime=2.5,
-    skip_axis=0,
+    skip_axis=0,  # calibrate each channel separately
 )
 
 # %%
@@ -160,7 +161,7 @@ plot.show()
 #
 # Create circular masks on the spectral phasor plot to define regions of
 # interest corresponding to different spectral characteristics.
-# The spectral dimension serves as the "main" dimension, meaning that
+# The spectral dimension serves as the "main" dimension, meaning that the
 # spectral cursors control the classification that will be applied to
 # correlate with the FLIM dimension.
 
@@ -218,9 +219,9 @@ plot_image(spectral_pseudo_color, title='Spectral pseudo-color image')
 #
 # Apply the spectral classification masks (from the main dimension) to
 # the phasor coordinates of both FLIM channels.
-# This shows how pixels with different spectral properties distribute in
-# the FLIM phasor space and reveals the correlation between spectral and
-# lifetime characteristics:
+# This visualization shows how pixels with different spectral properties
+# distribute in the FLIM phasor space and reveals the correlation between
+# spectral and lifetime characteristics:
 
 fig, axs = pyplot.subplots(2, 1, figsize=(6.4, 9))
 fig.suptitle('Spectral classified FLIM phasor')
@@ -244,11 +245,11 @@ plot.show()
 # FLIM classified spectral phasor
 # -------------------------------
 #
-# The inverse analysis can also be performed: select regions in the
-# FLIM phasor space as the "main" dimension and correlate with the spectral
-# phasor space.
+# Perform the inverse analysis by selecting regions in the FLIM phasor space
+# as the "main" dimension and correlating with the spectral phasor space.
 #
-# Mask the FLIM phasor coordinates of the first channel using cursors:
+# Create circular masks on the FLIM phasor coordinates of the first channel
+# using cursors:
 
 flim_cursor_real = [0.35, 0.19, 0.27]
 flim_cursor_imag = [0.44, 0.38, 0.41]
@@ -307,6 +308,7 @@ for i in range(flim_mask.shape[0]):
 
 plot.show()
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = 4
 # mypy: allow-untyped-defs, allow-untyped-calls
+# sphinx_gallery_end_ignore

@@ -6,7 +6,7 @@ of bug reports, bug fixes, feature implementations, documentation, datasets,
 and enhancement proposals.
 This document provides information on how to contribute.
 
-The :doc:`code_of_conduct` should be honored by everyone participating in the
+The :doc:`code_of_conduct` applies to everyone participating in the
 PhasorPy community.
 
 Ask for help
@@ -24,8 +24,8 @@ To suggest a new feature or other improvement to the PhasorPy library, open a
 Share data files
 ----------------
 
-The PhasorPy project strives to support reading image and metadata from many
-time-resolved and hyperspectral file formats used in bio-imaging.
+The PhasorPy project strives to support reading images and metadata from many
+time-resolved and hyperspectral file formats used in bioimaging.
 Consider sharing datasets for testing and use in tutorials, preferably with the
 `PhasorPy community on Zenodo <https://zenodo.org/communities/phasorpy/>`_.
 
@@ -36,8 +36,8 @@ To report a bug in the PhasorPy library, please open a
 `GitHub issue <https://github.com/phasorpy/phasorpy/issues>`_
 and include the following items in the bug report:
 
-- A minimal, self-contained Python code reproducing the problem.
-  Format the code using markdown, for example::
+- A minimal, self-contained Python script reproducing the problem.
+  Format the code as a Python code block, for example::
 
     ```Python
     import phasorpy
@@ -54,16 +54,16 @@ and include the following items in the bug report:
   or shared via cloud storage, preferably on
   `Zenodo.org <https://zenodo.org/communities/phasorpy/>`_.
 
-- An explanation why the current behavior is wrong and what is expected
+- An explanation of why the current behavior is wrong and what is expected
   instead.
 
-- Information how PhasorPy was installed (pip, conda, or other) and the output
-  of::
+- Information on how PhasorPy was installed (pip, conda, or other) and the
+  output of::
 
     $ python -m phasorpy versions
-    Python-3.13.3
-    phasorpy-0.5
-    numpy-2.2.6
+    Python-3.14.1
+    phasorpy-0.8
+    numpy-2.3.5
     ...
 
 Contribute code or documentation
@@ -75,7 +75,7 @@ a GitHub repository at
 
 The repository is based on `git <https://git-scm.com/>`_, a distributed
 version control software for tracking changes in the source code files and for
-coordinating work among programmers who are collaboratively developing.
+coordinating work among programmers collaboratively developing the code.
 
 PhasorPy uses GitHub's `fork and pull collaborative development model
 <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests>`_.
@@ -91,7 +91,7 @@ development guidelines.
 Fork the repository
 ...................
 
-To work on the PhasorPy source code, fork the repository by pressing the
+To work with the PhasorPy source code, fork the repository by pressing the
 "Fork" button at
 `https://github.com/phasorpy/phasorpy <https://github.com/phasorpy/phasorpy>`_.
 
@@ -105,14 +105,15 @@ There are now two remote repositories:
 ``upstream``, which refers to the PhasorPy repository, and
 ``origin``, which refers to the personal fork.
 
-Instead of using the git command line application, you may find
+Instead of using the git command-line application, you may find
 `GitHub Desktop <https://desktop.github.com>`_ easier to use.
 
 Create a development environment
 ................................
 
-A Python compatible C compiler is required for developing the PhasorPy
-library. For example, `Visual Studio <https://visualstudio.microsoft.com/>`_,
+A C compiler compatible with the Python distribution is required for
+developing the PhasorPy library. For example,
+`Visual Studio <https://visualstudio.microsoft.com/>`_,
 `Xcode <https://developer.apple.com/xcode/>`_, or gcc.
 
 To work with the PhasorPy source code, it is recommended to set up a Python
@@ -153,7 +154,7 @@ For example::
 This changes the local repository to the "new-feature-branch" branch.
 Keep any changes in this branch specific to one bug or feature.
 
-To update this branch with latest code from the PhasorPy repository,
+To update this branch with the latest code from the PhasorPy repository,
 retrieve the changes from the main branch, make a backup of the feature
 branch, and perform a rebase::
 
@@ -162,16 +163,16 @@ branch, and perform a rebase::
     $ git branch new-feature-branch-backup new-feature-branch
     $ git rebase upstream/main
 
-This replays local commits at the "new-feature-branch" branch on top
+This replays local commits on the "new-feature-branch" branch on top
 of the latest PhasorPy upstream main branch.
-Merge-conflicts need to be resolved before submitting a pull request.
+Merge conflicts need to be resolved before submitting a pull request.
 
 Tests
 .....
 
 PhasorPy includes a `pytest <https://docs.pytest.org/>`_ based suite of
-unit tests in the ``tests`` folder. All classes and functions must be tested
-thorougly.
+unit tests in the ``tests`` folder. All user-facing classes and functions
+should be covered by tests.
 
 Run the unit tests in the development environment::
 
@@ -189,7 +190,7 @@ Code standards
 ..............
 
 All the PhasorPy source code, including tutorials and docstring examples,
-must conform to certain styles, which can be and applied with
+must conform to certain styles, which can be checked and applied with
 `pre-commit <https://pre-commit.com/>`_::
 
     $ python -m pre_commit run --all-files
@@ -222,7 +223,7 @@ Examples in docstrings must run and pass as
 
     $ python -m pytest -v src/phasorpy
 
-Examples in docstrings are meant to illustrate mere usage, not to
+Examples in docstrings are meant to illustrate basic usage, not to
 provide a testing framework.
 
 PhasorPy uses `Sphinx <https://www.sphinx-doc.org>`_
@@ -243,6 +244,7 @@ tutorials. Tutorials are included in the documentation via the
 `Sphinx-Gallery <https://sphinx-gallery.github.io>`_
 extension, which builds an HTML gallery of examples from the set of Python
 scripts in the ``tutorials`` folder.
+Avoid large external datasets or long-running computations.
 
 Examples in the .rst files must run and pass as doctests::
 
@@ -254,7 +256,8 @@ and tutorial files by running::
     $ cd docs
     $ make clean
     $ make html
-    $ open _build/html/index.html
+
+Then open ``_build/html/index.html`` in a web browser.
 
 Commit the changes
 ..................
@@ -275,11 +278,9 @@ on GitHub::
 
     $ git push origin new-feature-branch
 
-Open the personal fork on GitHub::
-
-    $ open https://github.com/your-user-name/phasorpy.git
-
-Click the green "pull request" button on the "new-feature-branch" branch.
+Then navigate to the personal fork on GitHub at
+``https://github.com/your-user-name/phasorpy`` and click the green
+"pull request" button on the "new-feature-branch" branch.
 
 Review the pull request checklist for recommendations.
 
@@ -288,7 +289,7 @@ All tests are automatically run via
 and must pass before code or documentation can be accepted.
 
 Other PhasorPy developers will review the pull request to check and help
-to improve its implementation, documentation, and style.
+improve its implementation, documentation, and style.
 
 Pull requests must be approved by a
 `PhasorPy organization member <https://github.com/orgs/phasorpy/people>`_

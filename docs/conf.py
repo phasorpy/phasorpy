@@ -31,6 +31,7 @@ version_match = version.split('.dev')[0].split('.rc')[0]
 # general configuration
 
 extensions = [
+    'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -134,6 +135,9 @@ sphinx_gallery_conf = {
     # 'backreferences_dir': None,
 }
 
+# TODO: remove MathJax 3 link once scroll bar issue is resolved
+mathjax_path = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+
 
 class TutorialOrder:
     """Order tutorials in gallery subsections."""
@@ -159,6 +163,7 @@ class TutorialOrder:
         'multidimensional',
         # misc
         'phasor_from_signal',
+        'apps',
         'logo',
     ]
 

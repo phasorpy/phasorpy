@@ -1,13 +1,9 @@
-"""Tests the phasorpy.utils module."""
+"""Test the phasorpy.utils module."""
 
 import os
 
-import numpy
-
 from phasorpy import __version__
 from phasorpy.utils import logger, number_threads, versions
-
-numpy.random.seed(42)
 
 
 def test_versions():

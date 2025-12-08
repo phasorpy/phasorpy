@@ -34,7 +34,7 @@ a custom directory path.
 
 from __future__ import annotations
 
-__all__ = ['fetch', 'REPOSITORIES']
+__all__ = ['REPOSITORIES', 'fetch']
 
 import os
 from typing import TYPE_CHECKING
@@ -46,9 +46,9 @@ import pooch
 
 ENV = 'PHASORPY_DATA_DIR'
 
-DATA_ON_GITHUB = bool(
-    os.environ.get('PHASORPY_DATA_ON_GITHUB', False)
-) or bool(os.environ.get('GITHUB_ACTIONS', False))
+DATA_ON_GITHUB = bool(os.environ.get('PHASORPY_DATA_ON_GITHUB', '')) or bool(
+    os.environ.get('GITHUB_ACTIONS', '')
+)
 
 TESTS = pooch.create(
     path=pooch.os_cache('phasorpy'),
@@ -597,8 +597,9 @@ def fetch(
         If omitted, return files in all repositories.
     extract_dir : str or None, optional
         Path, relative to cache location, where ZIP files will be unpacked.
-    return_scalar : bool, optional
-        If true (default), return single path as string, else tuple of string.
+        The cache location by default.
+    return_scalar : bool, optional, default: True
+        Return single path as string instead of tuple of strings.
     **kwargs
         Optional arguments passed to :py:func:`pooch.fetch`.
         For example, ``progressbar=True``.
@@ -667,7 +668,7 @@ def fetch(
                         filenames.append(repo.fetch(arg, **kwargs))
                     break
             else:
-                raise ValueError(f'file {arg!r} not found')
+                raise ValueError(f'{arg!r} not found')
         elif isinstance(arg, pooch.Pooch):
             # fetch all files in repository
             filenames.extend(

@@ -31,26 +31,35 @@ from phasorpy.plot import plot_phasor
 # Read signal from file
 # ---------------------
 #
-# Read a time-correlated single photon counting (TCSPC) histogram,
-# acquired at 80.11 MHz, from a file:
+# Read a time-correlated single photon counting (TCSPC) histogram with
+# 56 time bins, acquired at 80.11 MHz, from a file:
 
 signal = signal_from_imspector_tiff(fetch('Embryo.tif'))
 frequency = signal.attrs['frequency']
+
+print(signal.shape)
 
 # %%
 # Calculate phasor coordinates
 # ----------------------------
 #
 # Phasor coordinates at multiple harmonics can be calculated at once
-# from the signal. The histogram samples are in the first dimension of the
-# signal (`axis=0`).
-# The first and second harmonics are calculated in this example:
+# from the signal. The histogram bins are in the first dimension of
+# the signal (`axis=0`).
+# Calculate all possible harmonics by specifying `harmonic='all'`:
 
-mean, real, imag = phasor_from_signal(signal, harmonic=[1, 2], axis=0)
+mean, real, imag = phasor_from_signal(signal, harmonic='all', axis=0)
 
 # %%
-# The two harmonics are in the first dimension of the phasor coordinates,
-# `real` and `imag`:
+# There are 28 (56/2) harmonics in the first dimension of the phasor
+# coordinates, `real` and `imag`:
+
+print(mean.shape, real.shape, imag.shape)
+
+# For the remainder of the tutorial, only the first and second harmonics
+# are used. They are calculated by specifying `harmonic=[1, 2]`:
+
+mean, real, imag = phasor_from_signal(signal, harmonic=[1, 2], axis=0)
 
 print(mean.shape, real.shape, imag.shape)
 
@@ -60,11 +69,6 @@ print(mean.shape, real.shape, imag.shape)
 from phasorpy.plot import plot_phasor_image
 
 plot_phasor_image(mean, real, imag, title='Sample')
-
-# %%
-# To calculate all harmonics, use ``harmonic='all'``:
-
-_ = phasor_from_signal(signal, harmonic='all', axis=0)
 
 # %%
 # Calibrate phasor coordinates
@@ -85,9 +89,9 @@ reference_mean, reference_real, reference_imag = phasor_from_signal(
 )
 
 # %%
-# Calibration can be performed at all harmonics simultaneously. Calibrate the
-# raw phasor coordinates with the reference coordinates of known lifetime
-# (4.2 ns), at the first and second harmonics:
+# Calibration can be performed at multiple harmonics simultaneously.
+# Calibrate the raw phasor coordinates with the reference coordinates
+# of known lifetime (4.2 ns), at the first and second harmonics:
 
 real, imag = phasor_calibrate(
     real,
@@ -116,17 +120,18 @@ uncalibrated_real, uncalibrated_imag = phasor_calibrate(
     reverse=True,
 )
 
-numpy.testing.assert_allclose(
+assert numpy.allclose(
     (uncalibrated_real, uncalibrated_imag),
     phasor_from_signal(signal, harmonic=[1, 2], axis=0)[1:],
     atol=1e-3,
+    equal_nan=True,
 )
 
 # %%
 # Filter phasor coordinates
 # -------------------------
 #
-# Applying median filter to the calibrated phasor coordinates,
+# Applying a median filter to the calibrated phasor coordinates,
 # often multiple times, improves contrast and reduces noise.
 # The filter is applied independently to the real and imaginary components
 # of the harmonics, but not to the average signal:
@@ -150,7 +155,7 @@ plot_phasor_image(
 # Store phasor coordinates
 # ------------------------
 #
-# Write the calibrated and filtered phasor coordinates at multiple harmonics,
+# Write the calibrated and filtered phasor coordinates at multiple harmonics
 # and the fundamental frequency to an OME-TIFF file:
 
 phasor_to_ometiff(
@@ -159,7 +164,7 @@ phasor_to_ometiff(
     real,
     imag,
     frequency=frequency,
-    harmonic=[1, 2],
+    harmonic=[1, 2],  # real and imag contain 1st and 2nd harmonics
     description=(
         'Phasor coordinates at first and second harmonics of a zebrafish '
         'embryo at day 3, calibrated, median-filtered, and thresholded.'
@@ -170,13 +175,14 @@ phasor_to_ometiff(
 # Read the phasor coordinates and metadata back from the OME-TIFF file:
 
 mean_, real_, imag_, attrs = phasor_from_ometiff(
-    'phasors.ome.tif', harmonic='all'
+    'phasors.ome.tif',
+    harmonic='all',  # read all harmonics stored in the file
 )
 
-numpy.allclose(real_, real)
+assert numpy.allclose(real_, real, atol=1e-3, equal_nan=True)
 assert real_.dtype == numpy.float32
 assert attrs['frequency'] == frequency
-assert attrs['harmonic'] == [1, 2]
+assert attrs['harmonic'] == [1, 2]  # the file contains only two harmonics
 assert attrs['description'].startswith(
     'Phasor coordinates at first and second harmonics'
 )
@@ -207,13 +213,12 @@ plot_phasor(
     title='Raw phasor coordinates at second harmonic',
 )
 
-# %%
-# Component analysis
-# ------------------
+# sphinx_gallery_start_ignore
+# TODO: demonstrate component analysis in multi-harmonic phasor space
+# sphinx_gallery_end_ignore
 
-# TODO
-
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -1
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore

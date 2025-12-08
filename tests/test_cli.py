@@ -1,4 +1,4 @@
-"""Tests for the phasorpy command line interface."""
+"""Test the phasorpy command-line interface."""
 
 import os
 
@@ -9,7 +9,7 @@ from phasorpy import __version__
 from phasorpy.cli import main
 from phasorpy.utils import versions
 
-SKIP_FETCH = os.environ.get('SKIP_FETCH', False)
+SKIP_FETCH = bool(os.environ.get('SKIP_FETCH', ''))
 
 
 def test_version():

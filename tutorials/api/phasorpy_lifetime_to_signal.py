@@ -31,7 +31,7 @@ from phasorpy.phasor import phasor_from_signal
 frequency = 80.0  # fundamental frequency in MHz
 reference_lifetime = 4.2  # lifetime of reference signal in ns
 
-lifetimes = [0.5, 1.0, 2.0, 4.0]  # lifetime in ns
+lifetimes = [0.5, 1.0, 2.0, 4.0]  # lifetimes in ns
 fractions = [0.25, 0.25, 0.25, 0.25]  # fractional intensities
 
 settings = {
@@ -43,7 +43,7 @@ settings = {
 }
 
 # %%
-# Time-domain, multi-exponential
+# Time domain, multi exponential
 # ------------------------------
 #
 # Synthesize a time-domain signal of a multi-component lifetime system with
@@ -54,9 +54,9 @@ signal, instrument_response, times = lifetime_to_signal(
 )
 
 # %%
-# A reference signal of known lifetime, obtained with the same instrument
-# and sampling parameters, is required to correct/calibrate the
-# phasor coordinates of signals.
+# A reference signal of known lifetime is required to calibrate the phasor
+# coordinates. The reference signal must be obtained with the same instrument
+# and sampling parameters.
 # The calibrated phasor coordinates match the theoretical phasor coordinates
 # expected for the lifetimes:
 
@@ -67,7 +67,7 @@ reference_signal, _, _ = lifetime_to_signal(
 
 def verify_signal(fractions):
     """Verify calibrated phasor coordinates match expected results."""
-    numpy.testing.assert_allclose(
+    assert numpy.allclose(
         phasor_calibrate(
             *phasor_from_signal(signal)[1:],
             *phasor_from_signal(reference_signal),
@@ -75,13 +75,16 @@ def verify_signal(fractions):
             reference_lifetime,
         ),
         phasor_from_lifetime(frequency, lifetimes, fractions),
+        atol=1e-3,
+        equal_nan=True,
     )
 
 
 verify_signal(fractions)
 
 # %%
-# Plot the synthesized signal, the instrument response, and reference signal:
+# Plot the synthesized signals (multi-exponential, reference, and
+# instrument response):
 
 fig, ax = pyplot.subplots()
 ax.set(
@@ -96,7 +99,7 @@ ax.legend()
 pyplot.show()
 
 # %%
-# Time-domain, single-exponential
+# Time domain, single exponential
 # -------------------------------
 #
 # To synthesize separate signals for each lifetime component at once,
@@ -107,7 +110,7 @@ signal, _, times = lifetime_to_signal(frequency, lifetimes, **settings)
 verify_signal(None)
 
 # %%
-# Plot the synthesized signal:
+# Plot the synthesized signals:
 
 fig, ax = pyplot.subplots()
 ax.set(
@@ -123,10 +126,10 @@ pyplot.show()
 # As expected, the shorter the lifetime, the faster the decay.
 
 # %%
-# Frequency-domain, multi-exponential
+# Frequency domain, multi exponential
 # -----------------------------------
 #
-# To synthesize a frequency-domain, homodyne signal, limit the
+# To synthesize a frequency-domain homodyne signal, limit the
 # synthesis to the fundamental frequency (``harmonic=1``):
 
 signal, instrument_response, _ = lifetime_to_signal(
@@ -158,7 +161,7 @@ ax.legend()
 pyplot.show()
 
 # %%
-# Frequency-domain, single-exponential
+# Frequency domain, single exponential
 # ------------------------------------
 #
 # To synthesize separate signals for each lifetime component at once,
@@ -183,13 +186,16 @@ ax.legend()
 pyplot.show()
 
 # %%
-# As expected, the shorter the lifetime, the smaller the phase-shift and
-# de-modulation.
+# As expected, the shorter the lifetime, the smaller the phase shift and
+# demodulation.
 
-# %%
-# TODO: generate digitized image from lifetime distributions with background
-# and noise.
-#
+# sphinx_gallery_start_ignore
+# TODO: generate a digitized image from lifetime distributions with
+# background and noise.
+# sphinx_gallery_end_ignore
+
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -1
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore

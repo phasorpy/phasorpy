@@ -47,15 +47,15 @@ def phasor_to_simfcs_referenced(
 ) -> None:
     """Write phasor coordinate images to SimFCS referenced R64 file(s).
 
-    SimFCS referenced R64 files store square-shaped (commonly 256x256)
-    images of the average intensity, and the calibrated phasor coordinates
-    (encoded as phase and modulation) of two harmonics as ZIP-compressed,
-    single precision floating point arrays.
+    SimFCS referenced R64 files store square images (commonly 256x256)
+    of the average intensity and the calibrated phasor coordinates
+    (encoded as phase and modulation) of two harmonics, as ZIP-compressed,
+    single-precision floating point arrays.
     The file format does not support any metadata.
 
     Images with more than two dimensions or larger than square size are
-    chunked to square-sized images and saved to separate files with
-    a name pattern, for example, "filename_T099_Y256_X000.r64".
+    chunked into square images and saved to separate files with a name
+    pattern, for example, "filename_T099_Y256_X000.r64".
     Images or chunks with less than two dimensions or smaller than square size
     are padded with NaN values.
 
@@ -69,18 +69,18 @@ def phasor_to_simfcs_referenced(
     real : array_like
         Image of real component of calibrated phasor coordinates.
         Multiple harmonics, if any, must be in the first dimension.
-        Harmonics must be starting at and increasing by one.
+        Harmonics must start at 1 and increase by 1.
     imag : array_like
         Image of imaginary component of calibrated phasor coordinates.
         Multiple harmonics, if any, must be in the first dimension.
-        Harmonics must be starting at and increasing by one.
+        Harmonics must start at 1 and increase by 1.
     size : int, optional
-        Size of X and Y dimensions of square-sized images stored in file.
-        Must be in range [4, 65535].
-        By default, ``size = min(256, max(4, sizey, sizex))``.
+        Size of X and Y dimensions of square images stored in file.
+        Must be in the range [4, 65535].
+        The default is ``min(256, max(4, sizey, sizex))``.
     dims : sequence of str, optional
         Character codes for `mean` dimensions used to format file names.
-        Only used when chunking multi-dimensional data into multiple files.
+        Only used when chunking multidimensional data into multiple files.
 
     See Also
     --------
@@ -123,17 +123,19 @@ def phasor_to_simfcs_referenced(
     if size is None:
         size = min(256, max(4, sizey, sizex))
     elif not 4 <= size <= 65535:
-        raise ValueError(f'{size=} out of range [4, 65535]')
+        raise ValueError(f'{size=} is out of range [4, 65535]')
 
     harmonics_per_file = 2  # TODO: make this a parameter?
     chunk_shape = tuple(
         [max(harmonics_per_file, 2)] + ([1] * (phi.ndim - 3)) + [size, size]
     )
-    multi_file = any(i / j > 1 for i, j in zip(phi.shape, chunk_shape))
+    multi_file = any(
+        i / j > 1 for i, j in zip(phi.shape, chunk_shape, strict=True)
+    )
 
     if dims is not None and len(dims) == phi.ndim - 1:
         dims = tuple(dims)
-        dims = ('h' if dims[0].islower() else 'H',) + dims
+        dims = ('h' if dims[0].islower() else 'H', *dims)
 
     chunk = numpy.empty((size, size), dtype=numpy.float32)
 
@@ -183,8 +185,8 @@ def phasor_from_simfcs_referenced(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
     """Return phasor coordinates and metadata from SimFCS REF or R64 file.
 
-    SimFCS referenced REF and R64 files contain square-shaped phasor
-    coordinate images (encoded as phase and modulation) for two harmonics.
+    SimFCS referenced REF and R64 files contain square images of phasor
+    coordinates (encoded as phase and modulation) for two harmonics.
     Phasor coordinates from lifetime-resolved signals are calibrated.
     Variants of referenced files (RE<n>) written by other software may
     contain up to eight harmonics and may be uncalibrated.
@@ -196,8 +198,8 @@ def phasor_from_simfcs_referenced(
     harmonic : int, sequence of int, or 'all', optional
         Harmonic(s) to include in returned phasor coordinates.
         By default, only the first harmonic is returned.
-        If 'all', return all available harmonics.
-        If int or sequence, return specified harmonic(s).
+        If `'all'`, return all available harmonics.
+        If integer or sequence, return specified harmonic(s).
 
     Returns
     -------
@@ -210,14 +212,14 @@ def phasor_from_simfcs_referenced(
         Image of imaginary component of phasor coordinates.
         Multiple harmonics, if any, are in the first axis.
     attrs : dict
-        Select metadata containing:
+        Selected metadata:
 
         - ``'dims'`` (tuple of str):
           :ref:`Axes codes <axes>` for `mean` image dimensions.
 
     Raises
     ------
-    lfdfiles.LfdfileError
+    lfdfiles.LfdFileError
         File is not a SimFCS REF, R64, or RE<n> file.
 
     See Also
@@ -249,7 +251,8 @@ def phasor_from_simfcs_referenced(
         if ext[-1] == 'f':
             num_images = 5
         elif ext[-1].isdigit():
-            # non-SimFCS referenced files containing other number of harmonics
+            # non-SimFCS referenced files containing a different
+            # number of harmonics
             num_images = int(ext[-1]) * 2 + 1
         else:
             raise ValueError(
@@ -261,18 +264,18 @@ def phasor_from_simfcs_referenced(
             or size % (num_images * 4)
             or not math.sqrt(size // (num_images * 4)).is_integer()
         ):
-            raise ValueError(f'{filename!r} is not a valid referenced file')
+            raise ValueError(f'{filename!r} is not a valid reference file')
         size = int(math.sqrt(size // (num_images * 4)))
         data = numpy.fromfile(filename, dtype='<f4').reshape((-1, size, size))
     else:
         raise ValueError(
-            f'file extension must be .ref, .r64, or .re<n>, not {ext!r}'
+            f"file extension {ext!r} not in {{'.ref', '.r64', '.re<n>'}}"
         )
 
     harmonic, keep_harmonic_dim = parse_harmonic(harmonic, data.shape[0] // 2)
 
     mean = data[0].copy()
-    real = numpy.empty((len(harmonic),) + mean.shape, dtype=numpy.float32)
+    real = numpy.empty((len(harmonic), *mean.shape), dtype=numpy.float32)
     imag = numpy.empty_like(real)
     for i, h in enumerate(harmonic):
         h = (h - 1) * 2 + 1
@@ -313,16 +316,17 @@ def signal_from_fbd(
     filename : str or Path
         Name of FLIMbox FBD file to read.
     frame : int, optional
-        If None (default), return all frames.
+        Index of frame to return.
+        By default, return all frames.
         If < 0, integrate time axis, else return specified frame.
     channel : int or None, optional
         Index of channel to return.
         By default, return the first channel.
         If None, return all channels.
     keepdims : bool, optional, default: False
-        If true, return reduced axes as size-one dimensions.
-    laser_factor : float, optional
-        Factor to correct dwell_time/laser_frequency.
+        Return reduced axes as length-1 dimensions.
+    laser_factor : float, optional, default: -1
+        Factor to correct dwell_time / laser_frequency.
     **kwargs
         Optional arguments passed to :py:class:`fbdfile.FbdFile`.
 
@@ -330,7 +334,7 @@ def signal_from_fbd(
     -------
     xarray.DataArray
         Phase histogram with :ref:`axes codes <axes>` ``'TCYXH'`` and
-        type ``uint16``:
+        type uint16:
 
         - ``coords['H']``: cross-correlation phases in radians.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -384,7 +388,9 @@ def signal_from_fbd(
                 axes = 'TYXH'
         else:
             if channel < 0 or channel >= data.shape[1]:
-                raise IndexError(f'{channel=} out of bounds')
+                raise IndexError(
+                    f'{channel=} is out of bounds [0, {data.shape[1] - 1}]'
+                )
             if keepdims:
                 data = data[:, channel : channel + 1]
             else:
@@ -397,7 +403,9 @@ def signal_from_fbd(
                 axes = axes[1:]
         else:
             if frame < 0 or frame >= data.shape[0]:
-                raise IndexError(f'{frame=} out of bounds')
+                raise IndexError(
+                    f'{frame=} is out of bounds [0, {data.shape[0] - 1}]'
+                )
             if keepdims:
                 data = data[frame : frame + 1]
             else:
@@ -443,14 +451,14 @@ def signal_from_b64(
     Returns
     -------
     xarray.DataArray
-        Intensity image of type ``int16``.
+        Intensity image of type int16.
 
     Raises
     ------
     lfdfiles.LfdFileError
         File is not a SimFCS B64 file.
     ValueError
-        File does not contain an image stack.
+        File does not contain image stack.
 
     Notes
     -----
@@ -466,8 +474,6 @@ def signal_from_b64(
     dtype('int16')
     >>> signal.shape
     (22, 1024, 1024)
-    >>> signal.dtype
-    dtype('int16')
     >>> signal.dims
     ('I', 'Y', 'X')
 
@@ -478,9 +484,9 @@ def signal_from_b64(
         data = b64.asarray()
         if data.ndim != 3:
             raise ValueError(
-                f'{os.path.basename(filename)!r} '
-                'does not contain an image stack'
+                f'{os.path.basename(filename)!r} does not contain image stack'
             )
+        assert b64.axes is not None
         metadata = xarray_metadata(b64.axes, data.shape, filename)
 
     from xarray import DataArray
@@ -505,7 +511,7 @@ def signal_from_z64(
     Returns
     -------
     xarray.DataArray
-        Image stack of type ``float32``.
+        Image stack of type float32.
 
     Raises
     ------
@@ -534,6 +540,7 @@ def signal_from_z64(
 
     with lfdfiles.SimfcsZ64(filename) as z64:
         data = z64.asarray()
+        assert z64.axes is not None
         metadata = xarray_metadata(z64.axes, data.shape, filename)
 
     from xarray import DataArray
@@ -559,7 +566,7 @@ def signal_from_bh(
     -------
     xarray.DataArray
         TCSPC histogram with :ref:`axes codes <axes>` ``'HYX'``,
-        shape ``(256, 256, 256)``, and type ``float32``.
+        shape ``(256, 256, 256)``, and type float32.
 
     Raises
     ------
@@ -616,7 +623,7 @@ def signal_from_bhz(
     -------
     xarray.DataArray
         TCSPC histogram with :ref:`axes codes <axes>` ``'HYX'``,
-        shape ``(256, 256, 256)``, and type ``float32``.
+        shape ``(256, 256, 256)``, and type float32.
 
     Raises
     ------

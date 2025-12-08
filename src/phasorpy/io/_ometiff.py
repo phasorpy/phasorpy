@@ -49,7 +49,7 @@ def phasor_to_ometiff(
 
     The OME-TIFF format is compatible with Bio-Formats and Fiji.
 
-    By default, write phasor coordinates as single precision floating point
+    By default, write phasor coordinates as single-precision floating point
     values to separate image series.
     Write images larger than (1024, 1024) pixels as (256, 256) tiles, datasets
     larger than 2 GB as BigTIFF, and datasets larger than 8 KB using
@@ -75,13 +75,12 @@ def phasor_to_ometiff(
         Multiple harmonics, if any, must be in the first dimension.
         Write to image series named 'Phasor imag'.
     frequency : float, optional
-        Fundamental frequency of time-resolved phasor coordinates.
-        Usually in units of MHz.
+        Fundamental frequency of phasor coordinates. Usually in units of MHz.
         Write to image series named 'Phasor frequency'.
     harmonic : int or sequence of int, optional
         Harmonics present in the first dimension of `real` and `imag`, if any.
         Write to image series named 'Phasor harmonic'.
-        Only needed if harmonics are not starting at and increasing by one.
+        Only needed if harmonics do not start at 1 and increase by 1.
     dims : sequence of str, optional
         Character codes for `mean` image dimensions.
         By default, the last dimensions are assumed to be 'TZCYX'.
@@ -90,10 +89,11 @@ def phasor_to_ometiff(
         Refer to the OME-TIFF model for allowed axes and their order.
     dtype : dtype_like, optional
         Floating point data type used to store phasor coordinates.
-        The default is ``float32``, which has 6 digits of precision
+        The default is float32, which has 6 digits of precision
         and maximizes compatibility with other software.
     description : str, optional
-        Plain-text description of dataset. Write as OME dataset description.
+        Plain-text description of dataset.
+        Write to the OME dataset description.
     **kwargs
         Optional arguments passed to :py:class:`tifffile.TiffWriter` and
         :py:meth:`tifffile.TiffWriter.write`.
@@ -133,7 +133,7 @@ def phasor_to_ometiff(
         dtype = numpy.float32
     dtype = numpy.dtype(dtype)
     if dtype.kind != 'f':
-        raise ValueError(f'{dtype=} not a floating point type')
+        raise ValueError(f'{dtype=} is not a floating-point type')
 
     mean = numpy.asarray(mean, dtype=dtype)
     real = numpy.asarray(real, dtype=dtype)
@@ -163,7 +163,7 @@ def phasor_to_ometiff(
     if harmonic is not None:
         harmonic, _ = parse_harmonic(harmonic)
         if len(harmonic) != nharmonic:
-            raise ValueError('invalid harmonic')
+            raise ValueError(f'{len(harmonic)=} != {nharmonic}')
 
     if frequency is not None:
         frequency_array = numpy.array(
@@ -181,13 +181,14 @@ def phasor_to_ometiff(
         kwargs['photometric'] = 'minisblack'
     if 'compression' not in kwargs and datasize > 8192:
         kwargs['compression'] = 'zlib'
-    if 'tile' not in kwargs and 'rowsperstrip' not in kwargs:
-        if (
-            axes.endswith('YX')
-            and mean.shape[-1] > 1024
-            and mean.shape[-2] > 1024
-        ):
-            kwargs['tile'] = (256, 256)
+    if (
+        'tile' not in kwargs
+        and 'rowsperstrip' not in kwargs
+        and axes.endswith('YX')
+        and mean.shape[-1] > 1024
+        and mean.shape[-2] > 1024
+    ):
+        kwargs['tile'] = (256, 256)
 
     mode = kwargs.pop('mode', None)
     bigtiff = kwargs.pop('bigtiff', None)
@@ -250,9 +251,9 @@ def phasor_from_ometiff(
         Name of PhasorPy OME-TIFF file to read.
     harmonic : int, sequence of int, or 'all', optional
         Harmonic(s) to return from file.
-        If None (default), return the first harmonic stored in the file.
-        If `'all'`, return all harmonics as stored in file.
-        If a list, the first axes of the returned `real` and `imag` arrays
+        By default, return the first harmonic stored in the file.
+        If `'all'`, return all harmonics as stored in the file.
+        If a list, the first axis of the returned `real` and `imag` arrays
         contain specified harmonic(s).
         If an integer, the returned `real` and `imag` arrays are single
         harmonic and have the same shape as `mean`.
@@ -266,7 +267,7 @@ def phasor_from_ometiff(
     imag : ndarray
         Image of imaginary component of phasor coordinates.
     attrs : dict
-        Select metadata:
+        Selected metadata:
 
         - ``'dims'`` (tuple of str):
           :ref:`Axes codes <axes>` for `mean` image dimensions.
@@ -277,8 +278,7 @@ def phasor_from_ometiff(
           If a list, `real` and `imag` contain one or more harmonics in the
           first axis.
         - ``'frequency'`` (float, optional):
-          Fundamental frequency of time-resolved phasor coordinates.
-          Usually in units of MHz.
+          Fundamental frequency of phasor coordinates. Usually in units of MHz.
         - ``'description'`` (str, optional):
           OME dataset plain-text description.
 

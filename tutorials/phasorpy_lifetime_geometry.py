@@ -2,13 +2,12 @@ r"""
 Geometrical interpretation of lifetimes
 =======================================
 
-Demonstrate the geometrical interpretation of fluorescence lifetimes in the
-phasor plot.
+Demonstrate the geometrical interpretation of lifetimes in the phasor plot.
 
-The PhasorPy library is used to demonstrate the geometrical interpretation
-of fluorescence lifetimes and other quantities in the phasor plot:
+The PhasorPy library is used to illustrate the geometrical interpretation
+of lifetimes and other quantities in the phasor plot:
 
-- single exponential lifetimes
+- single-exponential lifetimes
 - fractional intensities of lifetime components
 - apparent single lifetime from phase and modulation
 - normal lifetime
@@ -37,7 +36,7 @@ from phasorpy.plot import PhasorPlot
 
 frequency = 80.0  # MHz
 lifetime = [0.4, 4.0]  # ns
-fraction = [0.6, 0.4]
+fraction = [0.6, 0.4]  # alpha_0 and alpha_1
 
 real, imag = phasor_from_lifetime(frequency, lifetime, fraction)
 phase, modulation = phasor_to_polar(real, imag)
@@ -49,7 +48,8 @@ tau_mod_re, tau_mod_im = phasor_from_lifetime(frequency, tau_mod)
 tau_norm_re, tau_norm_im = phasor_from_lifetime(frequency, tau_norm)
 
 # %%
-# Plot the phasor coordinates and lifetimes, and annotate the plot:
+# Plot the phasor coordinates and lifetimes, and annotate the plot
+# with text and arrows:
 
 color_phasor = 'black'
 color_component = 'tab:orange'
@@ -240,7 +240,7 @@ plot.components(
     color=color_component,
     fontsize=fontsize,
     linestyle=' ',
-    labels=['$\\tau_{%d}$' % i for i in range(len(lifetime))],
+    labels=[f'$\\tau_{i}$' for i in range(len(lifetime))],
 )
 
 # label fractions of single lifetimes
@@ -249,7 +249,7 @@ if len(lifetime) == 2:
         plot.ax.text(
             real + (component_real[i] - real) / 2,
             imag + (component_imag[i] - imag) / 2 - textoffset,
-            '$\\alpha_{%i}$' % i,
+            f'$\\alpha_{i}$',
             color=color_component,
             fontsize=fontsize,
             ha='center',
@@ -288,33 +288,34 @@ plot.show()
 # %%
 # The figure demonstrates:
 #
-# - **single exponential lifetimes** :math:`\tau_{i}` correspond to
-#   phasor coordinates on the **universal semicircle**.
+# - the **single-exponential lifetimes** :math:`\tau_{0}` and :math:`\tau_{1}`
+#   correspond to phasor coordinates on the **universal semicircle**.
 # - the **phasor coordinates** :math:`G` and :math:`S` of a mixture of
 #   two components with single-exponential lifetimes, weighted by their
-#   **fractional intensities** :math:`\alpha_{i}`, lie on a line between the
-#   phasor coordinates of the single components.
+#   **fractional intensities** :math:`\alpha_{0}` and :math:`\alpha_{1}`,
+#   lie on a line between the phasor coordinates of the single components.
 # - the **phase** :math:`\varphi` of the phasor coordinates :math:`G` and
 #   :math:`S` is the angle of the phasor coordinates with respect to the
 #   origin.
 # - the **modulation** :math:`M` of the phasor coordinates :math:`G` and
 #   :math:`S` is the distance from the origin to the phasor coordinates.
 # - the **apparent single lifetime from phase** :math:`\tau_{\varphi}`
-#   of the component mixture is the single exponential lifetime corresponding
+#   of the component mixture is the single-exponential lifetime corresponding
 #   to the intersection of the universal circle with a line through the origin
 #   and the phasor coordinates :math:`G` and :math:`S`.
 # - the **apparent single lifetime from modulation** :math:`\tau_{M}`
-#   of the component mixture is the single exponential lifetime corresponding
+#   of the component mixture is the single-exponential lifetime corresponding
 #   to the intersection of the universal circle with a circle around the origin
 #   of radius equal to the modulation :math:`M`.
 # - the **normal lifetime** :math:`\tau_{N}` of the component mixture
-#   is the single exponential lifetime corresponding to the nearest point on
+#   is the single-exponential lifetime corresponding to the nearest point on
 #   the universal circle to the phasor coordinates :math:`G` and :math:`S`,
 #   which is the intersection of the universal circle with the line through the
 #   center of the universal circle and the phasor coordinates :math:`G` and
 #   :math:`S`.
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -1
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type, assignment"
+# sphinx_gallery_end_ignore
