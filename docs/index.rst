@@ -16,7 +16,7 @@ examples to advanced applications.
 The :doc:`api/index` contains detailed information about all functions and
 classes of the library.
 
-The :doc:`release` list recent bug fixes, feature enhancements, documentation,
+The :doc:`release/index` list recent bug fixes, feature enhancements, documentation,
 and maintenance changes.
 
 The :doc:`contributing` explains how to get support, report bugs,
@@ -60,7 +60,7 @@ Contents
     phasor_approach
     tutorials/index
     api/index
-    release
+    release/index
     contributing
     acknowledgments
     license

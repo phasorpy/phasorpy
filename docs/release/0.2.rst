@@ -1,0 +1,37 @@
+.. currentmodule:: phasorpy
+
+PhasorPy 0.2 (2024-11-30)
+=========================
+
+This is the second alpha release of the PhasorPy library.
+It fixes NaN handling in the median filter, simplifies multiple harmonic
+calibration, and adds functions for spectral vector denoising and Anscombe
+transformation.
+
+This release supports Python 3.10 to 3.13.
+
+What's Changed
+--------------
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/132
+* Add documentation version switcher config file by @cgohlke in https://github.com/phasorpy/phasorpy/pull/134
+* Bump pypa/cibuildwheel from 2.20.0 to 2.21.1 in the github-actions group by @dependabot in https://github.com/phasorpy/phasorpy/pull/133
+* Update FLUTE license by @cgohlke in https://github.com/phasorpy/phasorpy/pull/137
+* Support Linux on AArch64 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/135
+* Improve private parse_harmonic function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/138
+* Add Anscombe transformation functions by @cgohlke in https://github.com/phasorpy/phasorpy/pull/139
+* Mention PhasorPlots for dummies by @cgohlke in https://github.com/phasorpy/phasorpy/pull/140
+* Simplify multiple harmonic calibration by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/124
+* Add documentation version switcher dropdown by @cgohlke in https://github.com/phasorpy/phasorpy/pull/136
+* Mention AlliGator software by @cgohlke in https://github.com/phasorpy/phasorpy/pull/141
+* Bump pypa/cibuildwheel from 2.21.1 to 2.21.3 in the github-actions group by @dependabot in https://github.com/phasorpy/phasorpy/pull/144
+* Add tool to print SHA256 hashes of dataset files by @cgohlke in https://github.com/phasorpy/phasorpy/pull/143
+* Add Convallaria dataset by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/145
+* Mention LIFA software by @cgohlke in https://github.com/phasorpy/phasorpy/pull/146
+* Upgrade GitHub Actions to macOS-13 environment by @cgohlke in https://github.com/phasorpy/phasorpy/pull/149
+* Add spectral vector denoising by @cgohlke in https://github.com/phasorpy/phasorpy/pull/148
+* Replace median filter implementation for NaN handling consistency by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/147
+* Improve median filter by @cgohlke in https://github.com/phasorpy/phasorpy/pull/150
+* Release v0.2 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/151
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.1...v0.2

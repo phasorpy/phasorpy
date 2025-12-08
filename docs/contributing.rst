@@ -237,7 +237,8 @@ markup language in the .rst files in the ``docs`` and ``tutorials`` folders.
 All user-facing classes and functions should be included in the
 ``docs/api/*.rst`` files.
 
-Any changes should be mentioned in the release notes (``docs/release.rst``).
+Any changes should be mentioned in the release notes
+(``docs/release/index.rst``).
 
 New features or important usage information should be covered in the
 tutorials. Tutorials are included in the documentation via the
