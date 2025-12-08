@@ -90,7 +90,7 @@ def _phasor_from_signal(
 
     Parameters
     ----------
-    phasor : 3D memoryview of float32 or float64
+    phasor : 3D memoryview of `float32` or `float64`
         Writable buffer of three dimensions where calculated phasor
         coordinates are stored:
 
@@ -98,7 +98,7 @@ def _phasor_from_signal(
         1. lower dimensions flat
         2. upper dimensions flat
 
-    signal : 3D memoryview of float32 or float64
+    signal : 3D memoryview of `float32` or `float64`
         Buffer of three dimensions containing signal:
 
         0. lower dimensions flat
@@ -251,7 +251,7 @@ def _phasor_from_lifetime(
 
     Parameters
     ----------
-    phasor : 3D memoryview of float32 or float64
+    phasor : 3D memoryview of `float32` or `float64`
         Writable buffer of three dimensions where calculated phasor
         coordinates are stored:
 
@@ -420,7 +420,7 @@ def _gaussian_signal(
 
     Parameters
     ----------
-    signal : memoryview of float32 or float64
+    signal : memoryview of `float32` or `float64`
         Writable buffer where calculated signal samples are stored.
     mean : float
         Mean of normal distribution.
@@ -2384,14 +2384,14 @@ def _phasor_from_signal_vector(
 
     Parameters
     ----------
-    phasor : 2D memoryview of float32 or float64
+    phasor : 2D memoryview of `float32` or `float64`
         Writable buffer of two dimensions where calculated phasor
         vectors are stored:
 
         0. other dimensions flat
         1. real and imaginary components
 
-    signal : 2D memoryview of float32 or float64
+    signal : 2D memoryview of `float32` or `float64`
         Buffer of two dimensions containing signal:
 
         0. other dimensions flat

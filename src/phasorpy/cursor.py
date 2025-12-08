@@ -68,7 +68,7 @@ def mask_from_circular_cursor(
     Returns
     -------
     masks : ndarray
-        Boolean array of shape `(n, *real.shape)`.
+        Boolean array of shape ``(n, *real.shape)``.
         The first dimension is omitted if `center_*` and `radius` are scalars.
         Values are True if phasor coordinates are inside the circular cursor,
         else False.
@@ -164,7 +164,7 @@ def mask_from_elliptic_cursor(
     Returns
     -------
     masks : ndarray
-        Boolean array of shape `(n, *real.shape)`.
+        Boolean array of shape ``(n, *real.shape)``.
         The first dimension is omitted if `center_real`, `center_imag`,
         `radius`, `radius_minor`, and `angle` are scalars.
         Values are True if phasor coordinates are inside elliptical cursor,
@@ -302,7 +302,7 @@ def mask_from_polar_cursor(
     Returns
     -------
     masks : ndarray
-        Boolean array of shape `(n, *real.shape)`.
+        Boolean array of shape ``(n, *real.shape)``.
         The first dimension is omitted if `phase_*` and `modulation_*`
         are scalars.
         Values are True if phasor coordinates are inside the polar range
@@ -416,7 +416,7 @@ def pseudo_color(
     Raises
     ------
     ValueError
-        `colors` is not a (n, 3) shaped floating point array.
+        `colors` is not a ``(n, 3)`` shaped floating point array.
         The shapes of `masks` or `mean` cannot broadcast.
 
     See Also

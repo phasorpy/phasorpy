@@ -142,8 +142,8 @@ def phasor_from_signal(
         ``mkl_fft.interfaces.numpy_fft.rfft``.
         Used to calculate the real forward FFT.
     dtype : dtype_like, optional
-        Data type of output arrays. Either float32 or float64.
-        The default is float64 unless the `signal` is float32.
+        Data type of output arrays. Either `float32` or `float64`.
+        The default is `float64` unless the `signal` is `float32`.
     normalize : bool, optional, default: True
         Return normalized phasor coordinates.
         Return average of `signal` along `axis` and Fourier coefficients
@@ -510,9 +510,9 @@ def phasor_to_complex(
     imag : array_like
         Imaginary component of phasor coordinates.
     dtype : dtype_like, optional
-        Data type of output array. Either complex64 or complex128.
-        By default, complex64 if `real` and `imag` are float32,
-        else complex128.
+        Data type of output array. Either `complex64` or `complex128`.
+        By default, `complex64` if `real` and `imag` are `float32`,
+        else `complex128`.
 
     Returns
     -------
@@ -697,8 +697,8 @@ def phasor_normalize(
     samples : int, optional, default: 1
         Number of signal samples over which `mean_unnormalized` was integrated.
     dtype : dtype_like, optional
-        Data type of output arrays. Either float32 or float64.
-        The default is float64 unless `real_unnormalized` is float32.
+        Data type of output arrays. Either `float32` or `float64`.
+        The default is `float64` unless `real_unnormalized` is `float32`.
 
     Returns
     -------
@@ -1267,7 +1267,7 @@ def phasor_nearest_neighbor(
         By default, all neighbors are considered.
     dtype : dtype_like, optional
         Floating point data type used for calculation and output values.
-        Either float32 or float64. The default is float64.
+        Either `float32` or `float64`. The default is `float64`.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
         By default, multithreading is disabled.

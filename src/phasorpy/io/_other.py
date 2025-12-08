@@ -54,9 +54,11 @@ def signal_from_sdt(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'QCYXH'`` and
-        type uint16, uint32, or float32.
-        Dimensions ``'Q'`` and ``'C'`` are optional detector channels.
+        TCSPC histogram with :ref:`axes codes <axes>` `'QCYXH'` and
+        type `uint16`, `uint32`, or `float32`.
+        Dimensions `'Q'` and `'C'` are optional detector channels.
+
+        Selected metadata:
 
         - ``coords['H']``: delay times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -156,18 +158,18 @@ def signal_from_ptu(
         Increase the bit depth to avoid overflows when integrating.
     frame : int, optional
         If < 0, integrate time axis, else return specified frame.
-        Overrides `selection` for axis ``T``.
+        Overrides `selection` for axis `'T'`.
     channel : int, optional, default: 0
         Index of channel to return.
         By default, return the first channel.
         If < 0, integrate channel axis.
-        Overrides `selection` for axis ``C``.
+        Overrides `selection` for axis `'C'`.
     dtime : int, optional, default: 0
         Specifies number of bins in TCSPC histogram.
         If 0 (default), return the number of bins in one period.
         If < 0, integrate delay-time axis (image mode only).
         If > 0, return up to specified bin.
-        Overrides `selection` for axis ``H``.
+        Overrides `selection` for axis `'H'`.
     keepdims : bool, optional, default: False
         Return reduced axes as length-1 dimensions.
     **kwargs
@@ -177,8 +179,8 @@ def signal_from_ptu(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'TYXCH'`` and
-        type specified in `dtype`:
+        TCSPC histogram with :ref:`axes codes <axes>` `'TYXCH'`,
+        type specified in `dtype`, and selected metadata:
 
         - ``coords['H']``: delay times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -282,7 +284,8 @@ def signal_from_lsm(
     -------
     xarray.DataArray
         Hyperspectral image data.
-        Usually, a 3-to-5-dimensional array of type uint8 or uint16.
+        Usually, a 3-to-5-dimensional array of type `uint8` or `uint16`,
+        and selected metadata:
 
         - ``coords['C']``: wavelengths in nm.
         - ``coords['T']``: time coordinates in s, if any.
@@ -390,8 +393,8 @@ def signal_from_imspector_tiff(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'HTZYX'`` and
-        type uint16.
+        TCSPC histogram with :ref:`axes codes <axes>` `'HTZYX'` and
+        type `uint16`, and selected metadata:
 
         - ``coords['H']``: delay times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -568,7 +571,7 @@ def phasor_from_ifli(
     -------
     mean : ndarray
         Average intensity image.
-        May have up to 7 dimensions in ``RETCZYX`` order.
+        May have up to 7 dimensions in `'RETCZYX'` order.
     real : ndarray
         Image of real component of phasor coordinates.
         Same shape as `mean`, except it may have a harmonic/frequency
@@ -723,8 +726,8 @@ def signal_from_flif(
     Returns
     -------
     xarray.DataArray
-        Phase images with :ref:`axes codes <axes>` ``'THYX'`` and
-        type uint16:
+        Phase images with :ref:`axes codes <axes>` `'THYX'` and
+        type `uint16`, and selected metadata:
 
         - ``coords['H']``: phases in radians.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -806,8 +809,8 @@ def signal_from_pqbin(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'YXH'``
-        and type uint32.
+        TCSPC histogram with :ref:`axes codes <axes>` `'YXH'`
+        and type `uint32`, and selected metadata:
 
         - ``coords['H']``: delay times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.

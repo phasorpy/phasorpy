@@ -34,13 +34,13 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`phasor_to_ometiff`
   - :py:func:`phasor_to_simfcs_referenced`
 
-  Support for additional file formats is being considered:
+Support for additional file formats is being considered:
 
-  - OME-TIFF (other than PhasorPy OME-TIFF)
-  - Zeiss CZI
-  - Nikon ND2
-  - Olympus OIB/OIF
-  - Olympus OIR
+- OME-TIFF (other than PhasorPy OME-TIFF)
+- Zeiss CZI
+- Nikon ND2
+- Olympus OIB/OIF
+- Olympus OIR
 
 The functions are implemented as minimal wrappers around specialized
 third-party file reader libraries:
@@ -103,7 +103,7 @@ and the tifffile library are used as ``dims`` items and ``coords`` keys:
 - ``'T'`` : time (OME)
 - ``'C'`` : channel (OME; acquisition path or emission wavelength)
 - ``'A'`` : angle (OME)
-- ``'P'`` : phase (OME; in LSM, ``'P'`` maps to position)
+- ``'P'`` : phase (OME; in LSM, `'P'` maps to position)
 - ``'R'`` : tile (OME; region, position, or mosaic)
 - ``'H'`` : lifetime histogram (OME)
 - ``'E'`` : lambda (OME; excitation wavelength)

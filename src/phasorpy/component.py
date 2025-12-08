@@ -86,7 +86,7 @@ def phasor_from_component(
         Axis of components in `fraction`.
     dtype : dtype_like, optional
         Floating point data type used for calculation and output values.
-        Either float32 or float64. The default is float64.
+        Either `float32` or `float64`. The default is `float64`.
 
     Returns
     -------
@@ -256,8 +256,8 @@ def phasor_component_graphical(
     counts : ndarray
         Counts along each line segment connecting components.
         Ordered 0-1 (2 components) or 0-1, 0-2, 1-2 (3 components).
-        Shaped `(number fractions,)` (2 components) or
-        `(3, number fractions)` (3 components).
+        Shaped ``(number fractions,)`` (2 components) or
+        ``(3, number fractions)`` (3 components).
 
     Raises
     ------
@@ -613,7 +613,7 @@ def phasor_component_mvc(
         Imaginary coordinates of at least three components.
     dtype : dtype_like, optional
         Floating point data type used for calculation and output values.
-        Either float32 or float64. The default is float64.
+        Either `float32` or `float64`. The default is `float64`.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
         By default, multithreading is disabled.

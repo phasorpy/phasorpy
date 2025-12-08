@@ -32,7 +32,7 @@ def wavelength2rgb(
     wavelength : array_like
         Scalar or array of wavelengths in nm.
     dtype : dtype_like, optional
-        Data type of return value. The default is float32.
+        Data type of return value. The default is `float32`.
 
     Returns
     -------
@@ -579,7 +579,7 @@ SRGB_SPECTRUM: NDArray[numpy.float32] = numpy.array([
 ], dtype=numpy.float32)
 """sRGB color components for wavelengths of visible light (360-750 nm).
 
-Array of shape (391, 3) containing normalized sRGB color components
+Array of shape ``(391, 3)`` containing normalized sRGB color components
 for wavelengths from 360 to 750 nm in 1 nm increments.
 Based on the CIE 1931 2-degree Standard Observer.
 

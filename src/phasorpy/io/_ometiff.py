@@ -51,7 +51,7 @@ def phasor_to_ometiff(
 
     By default, write phasor coordinates as single-precision floating point
     values to separate image series.
-    Write images larger than (1024, 1024) pixels as (256, 256) tiles, datasets
+    Write images larger than 1024x1024 pixels as 256x256 tiles, datasets
     larger than 2 GB as BigTIFF, and datasets larger than 8 KB using
     zlib compression.
 
@@ -83,13 +83,13 @@ def phasor_to_ometiff(
         Only needed if harmonics do not start at 1 and increase by 1.
     dims : sequence of str, optional
         Character codes for `mean` image dimensions.
-        By default, the last dimensions are assumed to be 'TZCYX'.
-        If harmonics are present in `real` and `imag`, an "other" (``Q``)
+        By default, the last dimensions are assumed to be `'TZCYX'`.
+        If harmonics are present in `real` and `imag`, an "other" (`'Q'`)
         dimension is prepended to axes for those arrays.
         Refer to the OME-TIFF model for allowed axes and their order.
     dtype : dtype_like, optional
         Floating point data type used to store phasor coordinates.
-        The default is float32, which has 6 digits of precision
+        The default is `float32`, which has 6 digits of precision
         and maximizes compatibility with other software.
     description : str, optional
         Plain-text description of dataset.

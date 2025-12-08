@@ -242,7 +242,7 @@ def signal_from_flimlabs_json(
         If None, return all channels.
     dtype : dtype_like, optional
         Unsigned integer type of TCSPC histogram.
-        By default, use uint16.
+        By default, use `uint16`.
         Increase the bit-depth for high photon counts.
 
     Returns
@@ -251,10 +251,12 @@ def signal_from_flimlabs_json(
         TCSPC histogram with :ref:`axes codes <axes>` depending on
         `channel` parameter:
 
-        - Single channel: axes ``'YXH'``
-        - Multiple channels: axes ``'CYXH'``
+        - Single channel: axes `'YXH'`
+        - Multiple channels: axes `'CYXH'`
 
         Type specified by the `dtype` parameter.
+
+        Selected metadata:
 
         - ``coords['H']``: delay times of histogram bins in ns.
         - ``coords['C']``: channel indices (if multiple channels).

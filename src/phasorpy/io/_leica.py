@@ -262,14 +262,14 @@ def signal_from_lif(
         By default, return the first image containing hyperspectral data.
     dim : {'λ', 'Λ'}, optional, default: 'λ'
         Character code of hyperspectral dimension.
-        Either ``'λ'`` for emission (default) or ``'Λ'`` for excitation.
+        Either `'λ'` for emission (default) or `'Λ'` for excitation.
 
     Returns
     -------
     xarray.DataArray
-        Hyperspectral image data.
+        Hyperspectral image and selected metadata:
 
-        - ``coords['C']``: wavelengths in nm.
+        - ``coords['C']``: excitation or emission wavelengths in nm.
         - ``coords['T']``: time coordinates in s, if any.
 
     Raises

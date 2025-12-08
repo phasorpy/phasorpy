@@ -195,21 +195,21 @@ def phasor_from_lifetime(
 
     - `lifetime` is scalar or one-dimensional, holding single-component
       lifetimes. `fraction` is None.
-      Return arrays of shape `(frequency.size, lifetime.size)`.
+      Return arrays of shape ``(frequency.size, lifetime.size)``.
 
     - `lifetime` is two-dimensional, `fraction` is one-dimensional.
       The last dimensions match in size, holding lifetime components and
       their fractions.
-      Return arrays of shape `(frequency.size, lifetime.shape[1])`.
+      Return arrays of shape ``(frequency.size, lifetime.shape[1])``.
 
     - `lifetime` is one-dimensional, `fraction` is two-dimensional.
       The last dimensions must match in size, holding lifetime components and
       their fractions.
-      Return arrays of shape `(frequency.size, fraction.shape[1])`.
+      Return arrays of shape ``(frequency.size, fraction.shape[1])``.
 
     - `lifetime` and `fraction` are up to two-dimensional of same shape.
       The last dimensions hold lifetime components and their fractions.
-      Return arrays of shape `(frequency.size, lifetime.shape[0])`.
+      Return arrays of shape ``(frequency.size, lifetime.shape[0])``.
 
     Length-1 dimensions are removed from the returned arrays if `keepdims`
     is False (default).
@@ -960,7 +960,7 @@ def phasor_to_lifetime_search(
         Use 1.0 for Hz and s.
     dtype : dtype_like, optional
         Floating point data type used for calculation and output values.
-        Either float32 or float64. The default is float64.
+        Either `float32` or `float64`. The default is `float64`.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
         By default, multithreading is disabled.

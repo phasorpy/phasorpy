@@ -311,7 +311,7 @@ def plot_signal_image(
         Image stack. Must be three or more dimensional.
     axis : int or str, optional
         Axis over which phasor coordinates would be computed.
-        By default, the 'H' or 'C' axes if signal contains such dimension
+        By default, the `'H'` or `'C'` axes if signal contains such dimension
         names, else the last axis (-1).
     percentile : float or [float, float], optional
         The [q, 100-q] percentiles of image data are covered by colormaps.

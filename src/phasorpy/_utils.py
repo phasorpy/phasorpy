@@ -358,7 +358,7 @@ def parse_signal_axis(
         Axis over which to compute phasor coordinates.
         If an integer, specifies axis index.
         If a string, specifies axis name (requires `signal.dims`).
-        By default, automatically select 'H' or 'C' axis if available,
+        By default, automatically select `'H'` or `'C'` axis if available,
         otherwise use the last axis (-1).
 
     Returns

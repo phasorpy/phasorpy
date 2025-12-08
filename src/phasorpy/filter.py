@@ -711,8 +711,8 @@ def signal_filter_svd(
         Signal intensity along `axis` below which spectra are excluded from
         denoising.
     dtype : dtype_like, optional
-        Data type of output arrays. Either float32 or float64.
-        The default is float64 unless the `signal` is float32.
+        Data type of output arrays. Either `float32` or `float64`.
+        The default is `float64` unless the `signal` is `float32`.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
         By default, multithreading is disabled.
@@ -854,8 +854,9 @@ def signal_filter_ncpca(
         The default is the last axis (-1).
         Other axes are flattened and used as PCA samples.
     dtype : dtype_like, optional
-        Data type of computation and output arrays. Either float32 or float64.
-        The default is float64 unless the input `signal` is float32.
+        Data type of computation and output arrays.
+        Either `float32` or `float64`.
+        The default is `float64` unless the input `signal` is `float32`.
     **kwargs
         Optional arguments passed to :py:class:`sklearn.decomposition.PCA`.
 

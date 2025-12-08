@@ -63,7 +63,7 @@ def phasor_to_simfcs_referenced(
     ----------
     filename : str or Path
         Name of SimFCS referenced R64 file to write.
-        The file extension must be ``.r64``.
+        The file extension must be `'.r64'`.
     mean : array_like
         Average intensity image.
     real : array_like
@@ -333,8 +333,8 @@ def signal_from_fbd(
     Returns
     -------
     xarray.DataArray
-        Phase histogram with :ref:`axes codes <axes>` ``'TCYXH'`` and
-        type uint16:
+        Phase histogram with :ref:`axes codes <axes>` `'TCYXH'` and
+        type `uint16`, and selected metadata:
 
         - ``coords['H']``: cross-correlation phases in radians.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -451,7 +451,7 @@ def signal_from_b64(
     Returns
     -------
     xarray.DataArray
-        Intensity image of type int16.
+        Intensity image of type `int16`.
 
     Raises
     ------
@@ -511,7 +511,7 @@ def signal_from_z64(
     Returns
     -------
     xarray.DataArray
-        Image stack of type float32.
+        Image stack of type `float32`.
 
     Raises
     ------
@@ -565,8 +565,8 @@ def signal_from_bh(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'HYX'``,
-        shape ``(256, 256, 256)``, and type float32.
+        TCSPC histogram with :ref:`axes codes <axes>` `'HYX'`,
+        shape ``(256, 256, 256)``, and type `float32`.
 
     Raises
     ------
@@ -622,8 +622,8 @@ def signal_from_bhz(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'HYX'``,
-        shape ``(256, 256, 256)``, and type float32.
+        TCSPC histogram with :ref:`axes codes <axes>` `'HYX'`,
+        shape ``(256, 256, 256)``, and type `float32`.
 
     Raises
     ------
