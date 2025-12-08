@@ -10,6 +10,7 @@ adjusted via sliders and the resulting phasor and lifetime plots are
 updated in real time. The apps can be started from the command line or
 programmatically. A matplotlib backend that supports interactive
 windows is required.
+See the :doc:`Command-line interface reference </api/cli>` for usage.
 
 """
 
