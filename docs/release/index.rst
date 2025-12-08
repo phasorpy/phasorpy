@@ -1,7 +1,7 @@
 Release notes
 =============
 
-The release notes  describe changes to the PhasorPy library that
+The release notes describe changes to the PhasorPy library that
 are specific to a release. It includes descriptions of bug fixes,
 feature enhancements, documentation and maintenance changes.
 
