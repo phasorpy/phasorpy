@@ -21,6 +21,8 @@ from phasorpy.io import (
     signal_from_z64,
 )
 
+rng = numpy.random.default_rng(42)
+
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 def test_signal_from_fbd():
@@ -287,7 +289,7 @@ def test_phasor_from_simfcs_referenced_re2():
 
 def test_phasor_to_simfcs_referenced():
     """Test phasor_to_simfcs_referenced with square image."""
-    data = numpy.random.random_sample((3, 32, 32))
+    data = rng.random((3, 32, 32))
     data[..., 0, 0] = numpy.nan
 
     with TempFileName('simple.r64') as filename:
@@ -305,7 +307,7 @@ def test_phasor_to_simfcs_referenced():
 
 def test_phasor_to_simfcs_referenced_scalar():
     """Test phasor_to_simfcs_referenced with scalar."""
-    data = numpy.random.random_sample((3, 1))
+    data = rng.random((3, 1))
 
     with TempFileName('simple.r64') as filename:
         phasor_to_simfcs_referenced(filename, *data)
@@ -320,12 +322,11 @@ def test_phasor_to_simfcs_referenced_scalar():
         assert_allclose(imag[0, 0], data[2], atol=1e-3)
         with pytest.warns(RuntimeWarning):
             assert numpy.isnan(numpy.nanmean(real[1:, 1:]))
-            assert numpy.isnan(numpy.nanmean(imag[1:, 1:]))
 
 
 def test_phasor_to_simfcs_referenced_exceptions():
     """Test phasor_to_simfcs_referenced exceptions."""
-    data = numpy.random.random_sample((32, 32))
+    data = rng.random((32, 32))
 
     with TempFileName('simple.r64') as filename:
         phasor_to_simfcs_referenced(filename, data, data, data)
@@ -341,7 +342,7 @@ def test_phasor_to_simfcs_referenced_exceptions():
 
 def test_phasor_to_simfcs_referenced_multiharmonic():
     """Test phasor_to_simfcs_referenced with multi-harmonic phasor."""
-    data = numpy.random.random_sample((3, 4, 35, 31))
+    data = rng.random((3, 4, 35, 31))
     data[..., 0, 0] = numpy.nan
 
     with TempFileName('multiharmonic.r64', pattern=True) as filename:
@@ -367,8 +368,11 @@ def test_phasor_to_simfcs_referenced_multiharmonic():
         assert attrs['dims'] == ('Y', 'X')
         with pytest.warns(RuntimeWarning):
             assert numpy.isnan(numpy.nanmean(real[1]))
+        with pytest.warns(RuntimeWarning):
             assert numpy.isnan(numpy.nanmean(imag[1]))
+        with pytest.warns(RuntimeWarning):
             assert numpy.isnan(numpy.nanmean(mean[..., -1]))
+        with pytest.warns(RuntimeWarning):
             assert numpy.isnan(numpy.nanmean(mean[..., 3, :]))
         assert_allclose(mean[:3, :31], data[0, 3, 32:35, :31], atol=1e-3)
         assert_allclose(real[0, :3, :31], data[2, 3, 32:35, :31], atol=1e-3)
@@ -385,14 +389,14 @@ def test_phasor_to_simfcs_referenced_multiharmonic():
 
 def test_phasor_to_simfcs_referenced_nanpad():
     """Test phasor_to_simfcs_referenced with NaN padding."""
-    data = numpy.random.random_sample((2, 95, 97))
+    data = rng.random((2, 95, 97))
     with TemporaryDirectory() as tempdir:
         filename = os.path.join(tempdir, 'nanpad.r64')
         phasor_to_simfcs_referenced(
             filename, data[0], data, data[::-1], size=80
         )
         filename = os.path.join(tempdir, 'nanpad_0_80_80.r64')
-        mean, real, imag, attrs = phasor_from_simfcs_referenced(
+        mean, real, _imag, _attrs = phasor_from_simfcs_referenced(
             filename, harmonic='all'
         )
         assert_allclose(

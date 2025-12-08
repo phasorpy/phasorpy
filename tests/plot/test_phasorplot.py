@@ -9,6 +9,8 @@ from matplotlib import pyplot
 
 from phasorpy.plot import PhasorPlot
 
+rng = numpy.random.default_rng(42)
+
 INTERACTIVE = False  # enable for interactive plotting
 
 
@@ -103,7 +105,7 @@ class TestPhasorPlot:
 
     def test_hist2d(self):
         """Test hist2d method."""
-        real, imag = numpy.random.multivariate_normal(
+        real, imag = rng.multivariate_normal(
             [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
         ).T
         plot = PhasorPlot(title='hist2d')
@@ -118,7 +120,7 @@ class TestPhasorPlot:
 
     def test_contour(self):
         """Test contour method."""
-        real, imag = numpy.random.multivariate_normal(
+        real, imag = rng.multivariate_normal(
             [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
         ).T
         plot = PhasorPlot(title='contour')
@@ -135,7 +137,7 @@ class TestPhasorPlot:
 
     def test_histogram_contour(self):
         """Test histogram and contour match."""
-        real, imag = numpy.random.multivariate_normal(
+        real, imag = rng.multivariate_normal(
             (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
         ).T
         plot = PhasorPlot(
@@ -152,7 +154,7 @@ class TestPhasorPlot:
             plot.imshow([[0]])
         self.show(plot)
 
-    @pytest.mark.parametrize('allquadrants', (True, False))
+    @pytest.mark.parametrize('allquadrants', [True, False])
     def test_components(self, allquadrants):
         """Test components method."""
         real = [0.1, 0.2, 0.5, 0.9]
@@ -221,8 +223,8 @@ class TestPhasorPlot:
         plot.circle(0.5, 0.2, 0.1, color='tab:red', linestyle='-')
         self.show(plot)
 
-    @pytest.mark.parametrize('allquadrants', (False, True))
-    @pytest.mark.parametrize('polar', (False, True))
+    @pytest.mark.parametrize('allquadrants', [False, True])
+    @pytest.mark.parametrize('polar', [False, True])
     def test_cursor(self, allquadrants, polar):
         """Test cursor method."""
         plot = PhasorPlot(
@@ -351,7 +353,7 @@ class TestPhasorPlot:
         self.show(plot)
 
         plot = PhasorPlot(
-            grid=dict(radii=0, angles=0), allquadrants=True, title='empty'
+            grid={'radii': 0, 'angles': 0}, allquadrants=True, title='empty'
         )
         self.show(plot)
 

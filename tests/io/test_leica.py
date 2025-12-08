@@ -12,10 +12,10 @@ from phasorpy.io import lifetime_from_lif, phasor_from_lif, signal_from_lif
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-@pytest.mark.parametrize('format', ('lif', 'xlef'))
-def test_phasor_from_lif(format):
+@pytest.mark.parametrize('ext', ['lif', 'xlef'])
+def test_phasor_from_lif(ext):
     """Test read phasor coordinates from Leica LIF file."""
-    filename = fetch(f'FLIM_testdata.{format}')
+    filename = fetch(f'FLIM_testdata.{ext}')
     mean, real, imag, attrs = phasor_from_lif(filename)
     for data in (mean, real, imag):
         assert data.shape == (1024, 1024)
@@ -31,7 +31,7 @@ def test_phasor_from_lif(format):
     )
 
     # select image
-    mean1, real1, imag1, attrs = phasor_from_lif(
+    mean1, _real1, _imag1, attrs = phasor_from_lif(
         filename, image='FLIM Compressed'
     )
     assert_array_equal(mean1, mean)
@@ -49,10 +49,10 @@ def test_phasor_from_lif(format):
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-@pytest.mark.parametrize('format', ('lif', 'xlef'))
-def test_lifetime_from_lif(format):
+@pytest.mark.parametrize('ext', ['lif', 'xlef'])
+def test_lifetime_from_lif(ext):
     """Test read lifetime image from Leica LIF file."""
-    filename = fetch(f'FLIM_testdata.{format}')
+    filename = fetch(f'FLIM_testdata.{ext}')
     lifetime, intensity, stddev, attrs = lifetime_from_lif(filename)
     for data in (intensity, lifetime, stddev):
         assert data.shape == (1024, 1024)
@@ -70,7 +70,7 @@ def test_lifetime_from_lif(format):
     assert 'harmonic' not in attrs
 
     # select series
-    lifetime1, intensity1, stddev1, attrs = lifetime_from_lif(
+    lifetime1, intensity1, _stddev, attrs = lifetime_from_lif(
         filename, image='FLIM Compressed'
     )
     assert_array_equal(intensity1, intensity)

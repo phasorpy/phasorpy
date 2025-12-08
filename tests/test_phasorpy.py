@@ -1,4 +1,4 @@
-"""Tests for the phasorpy module."""
+"""Test the phasorpy module."""
 
 
 def test_version():

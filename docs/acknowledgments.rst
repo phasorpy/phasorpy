@@ -3,7 +3,7 @@ Acknowledgments
 
 The PhasorPy project was established by the
 `Advanced Bioimaging Unit <https://pasteur.uy/en/units/advanced-bioimaging>`_
-at the University of the Republic and Institut Pasteur de Montevideo and the
+at the University of the Republic and Institut Pasteur de Montevideo, and the
 `Laboratory for Fluorescence Dynamics <https://www.lfd.uci.edu>`_
 at the University of California, Irvine.
 
@@ -22,7 +22,8 @@ This software project was supported in part by the
 Contributors
 ------------
 
-PhasorPy is developed by `contributors to the PhasorPy repository
+PhasorPy is developed by
+`contributors to the PhasorPy repository
 <https://github.com/phasorpy/phasorpy/graphs/contributors>`_
 and
 `members of the PhasorPy organization
@@ -37,6 +38,5 @@ feature suggestions, and data files that have helped improve the library.
 Citation
 --------
 
-If PhasorPy contributes to a project that leads to a publication,
-please cite
+If PhasorPy contributes to research that leads to a publication, please cite
 `doi: 10.5281/zenodo.13862586 <https://doi.org/10.5281/zenodo.13862586>`_.

@@ -1,4 +1,4 @@
-"""Tests for the phasorpy.cluster module."""
+"""Test the phasorpy.cluster module."""
 
 import numpy
 import pytest
@@ -6,16 +6,16 @@ from numpy.testing import assert_allclose
 
 from phasorpy.cluster import phasor_cluster_gmm
 
-numpy.random.seed(42)
+rng = numpy.random.default_rng(42)
 
 
 @pytest.mark.parametrize('clusters', [1, 2, 3])
 @pytest.mark.parametrize('sort', ['polar', 'phasor', 'area'])
 def test_phasor_cluster_gmm_basic(clusters, sort):
-    real1, imag1 = numpy.random.multivariate_normal(
+    real1, imag1 = rng.multivariate_normal(
         [0.2, 0.3], [[3e-3, 1e-3], [1e-3, 1e-3]], 2**15
     ).T
-    real2, imag2 = numpy.random.multivariate_normal(
+    real2, imag2 = rng.multivariate_normal(
         [0.3, 0.5], [[1e-3, -0.5e-3], [-0.5e-3, 1e-3]], 2**14
     ).T
     real = numpy.concatenate([real1, real2])
@@ -44,11 +44,16 @@ def test_phasor_cluster_gmm_invalid_shapes():
         phasor_cluster_gmm([1, 2], [1, 2], clusters=2, sort='invalid')
 
 
+def test_phasor_cluster_gmm_invalid_sigma():
+    with pytest.raises(ValueError):
+        phasor_cluster_gmm([1, 2], [1, 2], sigma=-1.0)
+
+
 @pytest.mark.parametrize(
     'covariance_type', ['full', 'tied', 'diag', 'spherical']
 )
 def test_phasor_cluster_gmm_covariance(covariance_type):
-    center_real, center_imag, radius_major, radius_minor, angles = (
+    center_real, center_imag, radius_major, _radius_minor, _angles = (
         phasor_cluster_gmm(
             [0.1, 0.2, 0.3],
             [0.1, 0.2, 0.3],
@@ -58,18 +63,12 @@ def test_phasor_cluster_gmm_covariance(covariance_type):
     )
     assert len(center_real) == 2
     assert len(center_imag) == 2
-    if covariance_type == 'full':
-        assert isinstance(radius_major, tuple) and len(radius_major) == 2
-    elif covariance_type == 'tied':
-        assert isinstance(radius_major, tuple) and len(radius_major) == 2
-    elif covariance_type == 'diag':
-        assert isinstance(radius_major, tuple) and len(radius_major) == 2
-    elif covariance_type == 'spherical':
-        assert isinstance(radius_major, tuple) and len(radius_major) == 2
+    assert isinstance(radius_major, tuple)
+    assert len(radius_major) == 2
 
 
 @pytest.mark.parametrize(
-    'real, imag',
+    ('real', 'imag'),
     [
         ([1, 2, 3], [1, 2]),
         ([1.0], [1.0]),
@@ -82,7 +81,7 @@ def test_phasor_cluster_gmm_exceptions(real, imag):
 
 
 @pytest.mark.parametrize(
-    'real, imag',
+    ('real', 'imag'),
     [
         ([[1, 2], [3, 4]], [[1, 2], [3, 4]]),
         ([1, 2, 3, 4], [1, 2, 3, 4]),

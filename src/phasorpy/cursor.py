@@ -8,7 +8,7 @@ The ``phasorpy.cursor`` module provides functions to:
   - :py:func:`mask_from_elliptic_cursor`
   - :py:func:`mask_from_polar_cursor`
 
-- create pseudo-color image from average signal and cursor masks:
+- create pseudo-color images from average signal and cursor masks:
 
   - :py:func:`pseudo_color`
 
@@ -62,15 +62,15 @@ def mask_from_circular_cursor(
         Real coordinates of circle centers.
     center_imag : array_like, shape (n,)
         Imaginary coordinates of circle centers.
-    radius : array_like, optional, shape (n,)
+    radius : array_like, optional, default: 0.05
         Radii of circles.
 
     Returns
     -------
     masks : ndarray
-        Boolean array of shape `(n, *real.shape)`.
+        Boolean array of shape ``(n, *real.shape)``.
         The first dimension is omitted if `center_*` and `radius` are scalars.
-        Values are True if phasor coordinates are inside circular cursor,
+        Values are True if phasor coordinates are inside the circular cursor,
         else False.
 
     Raises
@@ -138,7 +138,7 @@ def mask_from_elliptic_cursor(
     radius_minor: ArrayLike | None = None,
     angle: ArrayLike | Literal['phase', 'semicircle'] | str | None = None,
 ) -> NDArray[numpy.bool_]:
-    """Return masks for elliptic cursors of phasor coordinates.
+    """Return masks for elliptical cursors of phasor coordinates.
 
     Parameters
     ----------
@@ -147,27 +147,27 @@ def mask_from_elliptic_cursor(
     imag : array_like
         Imaginary component of phasor coordinates.
     center_real : array_like, shape (n,)
-        Real coordinates of ellipses centers.
+        Real coordinates of ellipse centers.
     center_imag : array_like, shape (n,)
-        Imaginary coordinates of ellipses centers.
-    radius : array_like, optional, shape (n,)
+        Imaginary coordinates of ellipse centers.
+    radius : array_like, optional, default: 0.05
         Radii of ellipses along semi-major axis.
-    radius_minor : array_like, optional, shape (n,)
+    radius_minor : array_like, optional
         Radii of ellipses along semi-minor axis.
         By default, the ellipses are circular.
     angle : array_like or {'phase', 'semicircle'}, optional
-        Rotation angle of semi-major axis of elliptic cursors in radians.
-        If None or 'phase', align the minor axes of the ellipses with
+        Rotation angle of semi-major axis of elliptical cursors in radians.
+        If `'phase'` or None, align the minor axes of the ellipses with
         the closest tangent on the unit circle.
-        If 'semicircle', align the ellipses with the universal semicircle.
+        If `'semicircle'`, align the ellipses with the universal semicircle.
 
     Returns
     -------
     masks : ndarray
-        Boolean array of shape `(n, *real.shape)`.
+        Boolean array of shape ``(n, *real.shape)``.
         The first dimension is omitted if `center_real`, `center_imag`,
         `radius`, `radius_minor`, and `angle` are scalars.
-        Values are True if phasor coordinates are inside elliptic cursor,
+        Values are True if phasor coordinates are inside elliptical cursor,
         else False.
 
     Raises
@@ -183,12 +183,12 @@ def mask_from_elliptic_cursor(
 
     Examples
     --------
-    Create mask for a single elliptic cursor:
+    Create mask for a single elliptical cursor:
 
     >>> mask_from_elliptic_cursor([0.2, 0.5], [0.4, 0.5], 0.2, 0.4, radius=0.1)
     array([ True, False])
 
-    Create masks for two elliptic cursors with different radii:
+    Create masks for two elliptical cursors with different radii:
 
     >>> mask_from_elliptic_cursor(
     ...     [0.2, 0.5],
@@ -223,7 +223,7 @@ def mask_from_elliptic_cursor(
         elif angle == 'semicircle':
             angle = numpy.arctan2(center_imag, center_real - 0.5)
         else:
-            raise ValueError(f'invalid {angle=}')
+            raise ValueError(f"{angle=} not in {{'phase', 'semicircle'}}")
 
     angle_sin = numpy.sin(angle)
     angle_cos = numpy.cos(angle)
@@ -280,7 +280,7 @@ def mask_from_polar_cursor(
     modulation_max: ArrayLike,
     /,
 ) -> NDArray[numpy.bool_]:
-    """Return mask for polar cursor of polar coordinates.
+    """Return masks for polar cursor of polar coordinates.
 
     Parameters
     ----------
@@ -290,10 +290,10 @@ def mask_from_polar_cursor(
         Imaginary component of phasor coordinates.
     phase_min : array_like, shape (n,)
         Lower bound of angular range of cursors in radians.
-        Values should be in range [-pi, pi].
+        Values should be in the range [-pi, pi].
     phase_max : array_like, shape (n,)
         Upper bound of angular range of cursors in radians.
-        Values should be in range [-pi, pi].
+        Values should be in the range [-pi, pi].
     modulation_min : array_like, shape (n,)
         Lower bound of radial range of cursors.
     modulation_max : array_like, shape (n,)
@@ -302,11 +302,11 @@ def mask_from_polar_cursor(
     Returns
     -------
     masks : ndarray
-        Boolean array of shape `(n, *real.shape)`.
+        Boolean array of shape ``(n, *real.shape)``.
         The first dimension is omitted if `phase_*` and `modulation_*`
         are scalars.
-        Values are True if phasor coordinates are inside polar range cursor,
-        else False.
+        Values are True if phasor coordinates are inside the polar range
+        cursor, else False.
 
     Raises
     ------
@@ -396,17 +396,17 @@ def pseudo_color(
         Boolean mask for each cursor.
     intensity : array_like, optional
         Intensity used as base layer to blend cursor colors in "overlay" mode.
-        If None, cursor masks are blended using "screen" mode.
-    vmin : float, optional
-        Minimum value to normalize `intensity`.
-        If None, the minimum value of `intensity` is used.
-    vmax : float, optional
-        Maximum value to normalize `intensity`.
-        If None, the maximum value of `intensity` is used.
-    colors : array_like, optional, shape (N, 3)
+        By default, cursor masks are blended using "screen" mode.
+    colors : array_like, optional, shape (n, 3)
         RGB colors assigned to each cursor.
         The last dimension contains the normalized RGB floating point values.
         The default is :py:data:`phasorpy.color.CATEGORICAL`.
+    vmin : float, optional, default: 0
+        Minimum value to normalize `intensity`.
+        By default, the minimum value of `intensity` is used.
+    vmax : float, optional
+        Maximum value to normalize `intensity`.
+        By default, the maximum value of `intensity` is used.
 
     Returns
     -------
@@ -416,7 +416,7 @@ def pseudo_color(
     Raises
     ------
     ValueError
-        `colors` is not a (n, 3) shaped floating point array.
+        `colors` is not a ``(n, 3)`` shaped floating point array.
         The shapes of `masks` or `mean` cannot broadcast.
 
     See Also
@@ -455,7 +455,7 @@ def pseudo_color(
         if colors.shape[-1] != 3:
             raise ValueError(f'{colors.shape[-1]=} != 3')
         if colors.dtype.kind != 'f':
-            raise ValueError('colors is not a floating point array')
+            raise ValueError(f'{colors.dtype=} is not a floating-point type')
     # TODO: add support for matplotlib colors
 
     shape = numpy.asarray(masks[0]).shape

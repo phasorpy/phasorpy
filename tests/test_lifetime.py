@@ -1,7 +1,8 @@
-"""Tests for the phasorpy.lifetime module."""
+"""Test the phasorpy.lifetime module."""
 
 import copy
 import math
+from math import nan
 
 import numpy
 import pytest
@@ -35,7 +36,6 @@ from phasorpy.lifetime import (
 )
 from phasorpy.phasor import phasor_from_polar, phasor_to_polar
 
-NAN = math.nan
 SYNTH_DATA_ARRAY = numpy.array([[50, 1], [1, 1]])
 SYNTH_DATA_ARRAY_3D = numpy.stack(
     [
@@ -45,16 +45,16 @@ SYNTH_DATA_ARRAY_3D = numpy.stack(
     ],
     axis=0,
 )
-SYNTH_DATA_NAN = numpy.array([[50, NAN], [1, 1]])
+SYNTH_DATA_NAN = numpy.array([[50, nan], [1, 1]])
 SYNTH_DATA_LIST = [1, 2, 4]
 SYNTH_PHI = numpy.array([[0.5, 0.5], [0.5, 0.5]])
 SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
 
-numpy.random.seed(42)
+rng = numpy.random.default_rng(42)
 
 
 @pytest.mark.parametrize(
-    'harmonic, expected, zero_expected',
+    ('harmonic', 'expected', 'zero_expected'),
     [
         (
             # time domain
@@ -63,7 +63,7 @@ numpy.random.seed(42)
             [0.0, 0.479172, 0.246015, 0.0],
         ),
         (
-            # frequency-domain
+            # frequency domain
             1,
             [0.204701, -0.056023, 1.031253, 0.586501],
             [-0.095829, 0.35908, 0.307823, -0.07783],
@@ -167,39 +167,39 @@ def test_phasor_semicircle_intersect():
     """Test phasor_semicircle_intersect function."""
     assert_allclose(
         phasor_semicircle_intersect(
-            [0.2, 0.2, NAN], [0.25, 0.0, 0.25], 0.6, 0.25
+            [0.2, 0.2, nan], [0.25, 0.0, 0.25], 0.6, 0.25
         ),
         (
-            [0.066, NAN, NAN],
-            [0.25, NAN, NAN],
-            [0.933, 0.817, NAN],
-            [0.25, 0.386, NAN],
+            [0.066, nan, nan],
+            [0.25, nan, nan],
+            [0.933, 0.817, nan],
+            [0.25, 0.386, nan],
         ),
         atol=1e-3,
     )
     # reverse order
     assert_allclose(
         phasor_semicircle_intersect(
-            0.6, 0.25, [0.2, 0.2, NAN], [0.25, 0.0, 0.25]
+            0.6, 0.25, [0.2, 0.2, nan], [0.25, 0.0, 0.25]
         ),
         (
-            [0.933, NAN, NAN],
-            [0.25, NAN, NAN],
-            [0.066, 0.817, NAN],
-            [0.25, 0.386, NAN],
+            [0.933, nan, nan],
+            [0.25, nan, nan],
+            [0.066, 0.817, nan],
+            [0.25, 0.386, nan],
         ),
         atol=1e-3,
     )
     # no intersection
     assert_allclose(
         phasor_semicircle_intersect(0.1, -0.1, 0.9, -0.1),
-        (NAN, NAN, NAN, NAN),
+        (nan, nan, nan, nan),
         atol=1e-3,
     )
     # no line
     assert_allclose(
         phasor_semicircle_intersect(0.25, 0.25, 0.25, 0.25),
-        (NAN, NAN, NAN, NAN),
+        (nan, nan, nan, nan),
         atol=1e-3,
     )
     # tangent
@@ -222,9 +222,14 @@ def test_phasor_semicircle_intersect():
 
 
 @pytest.mark.parametrize(
-    """measured_phase, measured_modulation,
-    known_phase, known_modulation,
-    expected_phase, expected_modulation""",
+    (
+        'measured_phase',
+        'measured_modulation',
+        'known_phase',
+        'known_modulation',
+        'expected_phase',
+        'expected_modulation',
+    ),
     [
         (2, 2, 0.2, 0.5, -1.8, 0.25),
         (-2, -2, 0.2, 0.5, 2.2, -0.25),
@@ -274,9 +279,14 @@ def test_polar_from_reference(
 
 
 @pytest.mark.parametrize(
-    """measured_real, measured_imag,
-    known_real, known_imag,
-    expected_phase, expected_modulation""",
+    (
+        'measured_real',
+        'measured_imag',
+        'known_real',
+        'known_imag',
+        'expected_phase',
+        'expected_modulation',
+    ),
     [
         (2, 2, 0.2, 0.5, 0.4048917862850834, 0.19039432764659772),
         (-2, -2, 0.2, 0.5, 3.5464844398748765, 0.19039432764659772),
@@ -330,8 +340,8 @@ def test_polar_from_reference_phasor(
 def test_polar_from_reference_functions():
     """Test polar_from_reference and polar_from_reference_phasor match."""
     # https://github.com/phasorpy/phasorpy/issues/43
-    measured_real = numpy.random.rand(5, 7)
-    measured_imag = numpy.random.rand(5, 7)
+    measured_real = rng.random((5, 7))
+    measured_imag = rng.random((5, 7))
     known_real = 0.5
     known_imag = 0.5
     phi0, mod0 = polar_from_reference_phasor(
@@ -346,7 +356,7 @@ def test_polar_from_reference_functions():
 
 
 @pytest.mark.parametrize(
-    'args, kwargs, expected',
+    ('args', 'kwargs', 'expected'),
     [
         # single lifetime
         ((80.0, 0.0), {}, (1.0, 0.0)),  # shortest lifetime
@@ -385,7 +395,7 @@ def test_polar_from_reference_functions():
         ((80.0, [0.0, 1.9894368, 1e9], [0, 1, 0]), {}, (0.5, 0.5)),
         ((80.0, [0.0, 1.9894368, 1e9], [1, 1, 0]), {}, (0.75, 0.5 / 2)),
         ((80.0, [0.0, 1.9894368, 1e9], [0, 1, 1]), {}, (0.25, 0.5 / 2)),
-        ((80.0, [0.0, 1.9894368, 1e9], [0, 0, 0]), {}, (NAN, NAN)),
+        ((80.0, [0.0, 1.9894368, 1e9], [0, 0, 0]), {}, (nan, nan)),
         (
             (80.0, [3.9788735, 1.9894368, 0.9947183], [1.0, 1.0, 1.0]),
             {},
@@ -457,7 +467,7 @@ def test_polar_from_reference_functions():
 def test_phasor_from_lifetime(args, kwargs, expected):
     """Test phasor_from_lifetime function."""
     result = phasor_from_lifetime(*args, **kwargs, keepdims=True)
-    for actual, desired in zip(result, expected):
+    for actual, desired in zip(result, expected, strict=True):
         assert actual.ndim == 2
         assert_allclose(actual.squeeze(), desired, atol=1e-6)
 
@@ -500,7 +510,7 @@ def test_phasor_from_lifetime_modify():
 
 
 @pytest.mark.parametrize(
-    'args, kwargs, expected',
+    ('args', 'kwargs', 'expected'),
     [
         # scalar data
         # single lifetime
@@ -1113,7 +1123,7 @@ def test_phasor_to_normal_lifetime():
         #  dtype=numpy.float32
     )
     assert taunorm.shape == (3, 2)
-    assert taunorm.dtype == 'float64'
+    assert taunorm.dtype == numpy.float64
     assert_allclose(
         taunorm,
         [[7.957747, 7.957747], [3.978874, 3.978874], [1.989437, 1.989437]],
@@ -1141,7 +1151,7 @@ def test_phasor_to_apparent_lifetime():
         #  dtype=numpy.float32
     )
     assert tauphi.shape == (3, 2)
-    assert tauphi.dtype == 'float64'
+    assert tauphi.dtype == numpy.float64
     assert_allclose(
         tauphi,
         [[7.957747, 7.161972], [3.978874, 3.580986], [1.989437, 1.790493]],
@@ -1190,7 +1200,7 @@ def test_phasor_from_apparent_lifetime():
 
 
 def test_polar_to_apparent_lifetime():
-    """Test test_polar_to_apparent_lifetime function."""
+    """Test polar_to_apparent_lifetime function."""
     tauphi, taumod = polar_to_apparent_lifetime(
         *phasor_to_polar([0.5, 0.5, 0, 1, -1.1], [0.5, 0.45, 0, 0, 1.1]),
         frequency=80,
@@ -1210,7 +1220,7 @@ def test_polar_to_apparent_lifetime():
         #  dtype=numpy.float32
     )
     assert tauphi.shape == (3, 2)
-    assert tauphi.dtype == 'float64'
+    assert tauphi.dtype == numpy.float64
     assert_allclose(
         tauphi,
         [[7.957747, 7.161972], [3.978874, 3.580986], [1.989437, 1.790493]],
@@ -1464,7 +1474,7 @@ def test_lifetime_fraction_to_amplitude():
     with pytest.warns(RuntimeWarning):
         assert_allclose(
             lifetime_fraction_to_amplitude([4.0, 1.0], [0.0, 0.0]),
-            [NAN, NAN],
+            [nan, nan],
             atol=1e-3,
         )
 
@@ -1498,13 +1508,13 @@ def test_lifetime_fraction_from_amplitude():
     with pytest.warns(RuntimeWarning):
         assert_allclose(
             lifetime_fraction_from_amplitude([0.0, 0.0], [0.4, 0.4]),
-            [NAN, NAN],
+            [nan, nan],
             atol=1e-3,
         )
     with pytest.warns(RuntimeWarning):
         assert_allclose(
             lifetime_fraction_from_amplitude([4.0, 1.0], [0.0, 0.0]),
-            [NAN, NAN],
+            [nan, nan],
             atol=1e-3,
         )
 
@@ -1607,7 +1617,7 @@ def test_phasor_component_search_exceptions():
 
 
 @pytest.mark.parametrize(
-    'real, imag, expected_real, expected_imag, expected_fraction',
+    ('real', 'imag', 'expected_real', 'expected_imag', 'expected_fraction'),
     [
         # inside semicircle
         (
@@ -1622,11 +1632,11 @@ def test_phasor_component_search_exceptions():
         # on semicircle
         ([0.5, 0.2], [0.5, 0.4], [1, 0.5], [0, 0.5], [0, 1]),
         # outside semicircle
-        ([0.5, 0.2], [0.6, 10], [NAN, NAN], [NAN, NAN], [NAN, NAN]),
-        ([0.5, 0.2], [0.5, -1], [NAN, NAN], [NAN, NAN], [NAN, NAN]),
-        # NAN
-        ([NAN, 0], [0, 0], [NAN, NAN], [NAN, NAN], [NAN, NAN]),
-        ([0, 0], [0, NAN], [NAN, NAN], [NAN, NAN], [NAN, NAN]),
+        ([0.5, 0.2], [0.6, 10], [nan, nan], [nan, nan], [nan, nan]),
+        ([0.5, 0.2], [0.5, -1], [nan, nan], [nan, nan], [nan, nan]),
+        # nan
+        ([nan, 0], [0, 0], [nan, nan], [nan, nan], [nan, nan]),
+        ([0, 0], [0, nan], [nan, nan], [nan, nan], [nan, nan]),
     ],
 )
 def test_phasor_to_lifetime_search_two(
@@ -1655,7 +1665,6 @@ def test_phasor_to_lifetime_search_two_range():
     phase_lifetime = numpy.round(phase_lifetime + 0.01, 2)
     normal_lifetime = phasor_to_normal_lifetime(real[0], imag[0], frequency)
     normal_lifetime = numpy.round(normal_lifetime - 0.01, 2)
-    print(phase_lifetime, normal_lifetime)
 
     # lower lifetime is out of range
     lifetimes, fractions = phasor_to_lifetime_search(
@@ -1704,8 +1713,8 @@ def test_phasor_to_lifetime_search_two_range():
         frequency,
         lifetime_range=(phase_lifetime, normal_lifetime, 0.01),
     )
-    assert_allclose(lifetimes, [NAN, NAN], atol=1e-6)
-    assert_allclose(fractions, [NAN, NAN], atol=1e-6)
+    assert_allclose(lifetimes, [nan, nan], atol=1e-6)
+    assert_allclose(fractions, [nan, nan], atol=1e-6)
 
 
 @pytest.mark.parametrize('exact', [True, False])
@@ -1716,7 +1725,7 @@ def test_phasor_to_lifetime_search_two_distribution(exact):
     frequency = 60.0
     lifetime = [0.5, 4.2]
     fraction = numpy.empty((*shape, 2))
-    fraction[..., 0] = numpy.random.normal(0.3, 0.01, shape)
+    fraction[..., 0] = rng.normal(0.3, 0.01, shape)
     fraction[..., 1] = 1.0 - fraction[..., 0]
     fraction = numpy.clip(fraction, 0.0, 1.0)
 
@@ -1727,12 +1736,11 @@ def test_phasor_to_lifetime_search_two_distribution(exact):
     imag = imag.reshape(2, *shape)
     if not exact:
         # add noise to the imaginary parts
-        imag += numpy.random.normal(0.0, 0.005, (2, *shape))
-        dtype = 'float32'
+        imag += rng.normal(0.0, 0.005, (2, *shape))
         atol = 5e-2
     else:
-        dtype = 'float64'
         atol = 1e-3
+    dtype = numpy.float32 if not exact else numpy.float64
 
     lifetimes, fractions = phasor_to_lifetime_search(
         real,

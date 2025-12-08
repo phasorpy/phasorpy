@@ -1,4 +1,4 @@
-"""Higher level plot functions."""
+"""Higher-level plot functions."""
 
 from __future__ import annotations
 
@@ -16,10 +16,10 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .._typing import Any, ArrayLike, NDArray, Literal
-
     from matplotlib.axes import Axes
     from matplotlib.image import AxesImage
+
+    from .._typing import Any, ArrayLike, Literal, NDArray
 
 import numpy
 from matplotlib import pyplot
@@ -50,21 +50,21 @@ def plot_phasor(
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
-        Must be of same shape as `real`.
+        Must have the same shape as `real`.
     style : {'plot', 'hist2d', 'contour'}, optional
         Method used to plot phasor coordinates.
-        By default, if the number of coordinates are less than 65536
+        By default, if the number of coordinates is less than 65536
         and the arrays are less than three-dimensional, `'plot'` style is used,
         else `'hist2d'`.
     allquadrants : bool, optional
         Show all quadrants of phasor space.
-        By default, only the first quadrant is shown.
+        By default, show only the first quadrant.
     frequency : float, optional
         Frequency of phasor plot.
         If provided, the universal semicircle is labeled with reference
         lifetimes.
     show : bool, optional, default: True
-        Display figure.
+        Show figure.
     **kwargs
         Optional arguments passed to :py:class:`PhasorPlot`,
         :py:meth:`PhasorPlot.plot`, :py:meth:`PhasorPlot.hist2d`, or
@@ -109,7 +109,7 @@ def plot_phasor(
     elif style == 'contour':
         plot.contour(real, imag, **kwargs)
     else:
-        raise ValueError(f'invalid {style=}')
+        raise ValueError(f'{style=} not in {{"plot", "hist2d", "contour"}}')
     if show:
         plot.show()
 
@@ -131,7 +131,7 @@ def plot_phasor_image(
     image stacks as returned by :py:func:`phasorpy.phasor.phasor_from_signal`.
 
     The last two axes are assumed to be the image axes.
-    Harmonics, if any, are in the first axes of `real` and `imag`.
+    Harmonics, if any, are in the first axis of `real` and `imag`.
     Other axes are averaged for display.
 
     Parameters
@@ -140,31 +140,31 @@ def plot_phasor_image(
         Image average. Must be two or more dimensional, or None.
     real : array_like
         Image of real component of phasor coordinates.
-        The last dimensions must match shape of `mean`.
+        The last dimensions must match the shape of `mean`.
     imag : array_like
         Image of imaginary component of phasor coordinates.
         Must be same shape as `real`.
     harmonics : int, optional
-        Number of harmonics to display.
+        Number of harmonics to show.
         If `mean` is None, a nonzero value indicates the presence of harmonics
-        in the first axes of `mean` and `real`. Else, the presence of harmonics
+        in the first axis of `mean` and `real`. Else, the presence of harmonics
         is determined from the shapes of `mean` and `real`.
-        By default, up to 4 harmonics are displayed.
+        By default, up to four harmonics are shown.
     percentile : float, optional
         The (q, 100-q) percentiles of image data are covered by colormaps.
         By default, the complete value range of `mean` is covered,
         for `real` and `imag` the range [-1, 1].
     title : str, optional
-        Figure title.
+        Figure title. By default, no title is set.
     show : bool, optional, default: True
-        Display figure.
+        Show figure.
     **kwargs
         Optional arguments passed to :func:`matplotlib.pyplot.imshow`.
 
     Raises
     ------
     ValueError
-        The shapes of `mean`, `real`, and `image` do not match.
+        The shapes of `mean`, `real`, and `imag` do not match.
         Percentile is out of range.
 
     """
@@ -175,20 +175,17 @@ def plot_phasor_image(
     if mean is not None:
         mean = numpy.asarray(mean)
         if mean.ndim < 2:
-            raise ValueError(f'not an image {mean.ndim=} < 2')
+            raise ValueError(f'{mean.ndim=} < 2')
         shape = mean.shape
         mean = mean.reshape(-1, *mean.shape[-2:])
-        if mean.shape[0] == 1:
-            mean = mean[0]
-        else:
-            mean = numpy.nanmean(mean, axis=0)
+        mean = mean[0] if mean.shape[0] == 1 else numpy.nanmean(mean, axis=0)
 
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
     if real.ndim < 2:
-        raise ValueError(f'not an image {real.ndim=} < 2')
+        raise ValueError(f'{real.ndim=} < 2')
 
     if (shape is not None and real.shape[1:] == shape) or (
         shape is None and harmonics
@@ -201,7 +198,7 @@ def plot_phasor_image(
         # single harmonic
         nh = 1
     else:
-        raise ValueError(f'shape mismatch {real.shape[1:]=} != {shape}')
+        raise ValueError(f'{real.shape[1:]=} != {shape}')
 
     real = real.reshape(nh, -1, *real.shape[-2:])
     imag = imag.reshape(nh, -1, *imag.shape[-2:])
@@ -217,7 +214,7 @@ def plot_phasor_image(
     assert isinstance(real, numpy.ndarray)
     assert isinstance(imag, numpy.ndarray)
 
-    # limit number of displayed harmonics
+    # limit number of shown harmonics
     nh = min(4 if harmonics is None else harmonics, nh)
 
     # create figure with size depending on image aspect and number of harmonics
@@ -302,7 +299,7 @@ def plot_signal_image(
 ) -> None:
     """Plot average image and signal along axis.
 
-    Preview time-resolved or hyperspectral image stacks to be anayzed with
+    Preview time-resolved or hyperspectral image stacks to be analyzed with
     :py:func:`phasorpy.phasor.phasor_from_signal`.
 
     The last two axes, excluding `axis`, are assumed to be the image axes.
@@ -314,18 +311,18 @@ def plot_signal_image(
         Image stack. Must be three or more dimensional.
     axis : int or str, optional
         Axis over which phasor coordinates would be computed.
-        By default, the 'H' or 'C' axes if signal contains such dimension
+        By default, the `'H'` or `'C'` axes if signal contains such dimension
         names, else the last axis (-1).
     percentile : float or [float, float], optional
         The [q, 100-q] percentiles of image data are covered by colormaps.
         By default, the complete value range of `mean` is covered,
         for `real` and `imag` the range [-1, 1].
     title : str, optional
-        Figure title.
+        Figure title. By default, no title is set.
     xlabel : str, optional
         Label of axis over which phasor coordinates would be computed.
     show : bool, optional, default: True
-        Display figure.
+        Show figure.
     **kwargs
         Optional arguments passed to :func:`matplotlib.pyplot.imshow`.
 
@@ -352,7 +349,7 @@ def plot_signal_image(
     update_kwargs(kwargs, interpolation='nearest')
     signal = numpy.asarray(signal)
     if signal.ndim < 3:
-        raise ValueError(f'not an image stack {signal.ndim=} < 3')
+        raise ValueError(f'{signal.ndim=} < 3')
 
     axis %= signal.ndim
 
@@ -378,13 +375,13 @@ def plot_signal_image(
         ax.set_title(f'{axis=}')
         ax.plot(numpy.nanmean(signal, axis=tuple(axes)))
 
-    ax.set_ylim(kwargs.get('vmin', None), kwargs.get('vmax', None))
+    ax.set_ylim(kwargs.get('vmin'), kwargs.get('vmax'))
 
     if xlabel is not None:
         ax.set_xlabel(xlabel)
 
     # image
-    axes = list(sorted(axes[:-2] + [axis]))
+    axes = sorted([*axes[:-2], axis])
     ax = fig.add_subplot(gs[0, 0])
     _imshow(
         ax,
@@ -426,11 +423,11 @@ def plot_image(
         Number of columns in figure.
         By default, up to four columns are used.
     title : str, optional
-        Figure title.
+        Figure title. By default, no title is set.
     labels : sequence of str, optional
         Labels for each image.
     show : bool, optional, default: True
-        Display figure.
+        Show figure.
     **kwargs
         Optional arguments passed to :func:`matplotlib.pyplot.imshow`.
 
@@ -454,7 +451,7 @@ def plot_image(
     for image in images:
         image = numpy.asarray(image)
         if image.ndim < 2:
-            raise ValueError(f'not an image {image.ndim=} < 2')
+            raise ValueError(f'{image.ndim=} < 2')
         if image.ndim == 3 and image.shape[2] in {3, 4}:
             # RGB(A)
             pass
@@ -469,8 +466,7 @@ def plot_image(
                     image = numpy.nanmean(image, axis=0)
             assert isinstance(image, numpy.ndarray)
             for i in (-1, -2):
-                if image.shape[i] > shape[i]:
-                    shape[i] = image.shape[i]
+                shape[i] = max(shape[i], image.shape[i])
         arrays.append(image)
 
     if columns is None:
@@ -560,7 +556,7 @@ def plot_polar_frequency(
     show: bool = True,
     **kwargs: Any,
 ) -> None:
-    """Plot phase and modulation verus frequency.
+    """Plot phase and modulation versus frequency.
 
     Parameters
     ----------
@@ -570,13 +566,13 @@ def plot_polar_frequency(
         Angular component of polar coordinates in radians.
     modulation : array_like
         Radial component of polar coordinates.
-    ax : matplotlib axes, optional
+    ax : matplotlib.axes.Axes, optional
         Matplotlib axes used for plotting.
         By default, a new subplot axes is created.
     title : str, optional
         Figure title. The default is "Multi-frequency plot".
     show : bool, optional, default: True
-        Display figure.
+        Show figure.
     **kwargs
         Optional arguments passed to :py:func:`matplotlib.pyplot.plot`.
 
@@ -628,7 +624,7 @@ def plot_histograms(
     *data : array_like
         Data arrays to be plotted as histograms.
     title : str, optional
-        Figure title.
+        Figure title. By default, no title is set.
     xlabel : str, optional
         Label for x-axis.
     ylabel : str, optional
@@ -636,7 +632,7 @@ def plot_histograms(
     labels: sequence of str, optional
         Labels for each data array.
     show : bool, optional, default: True
-        Display figure.
+        Show figure.
     **kwargs
         Optional arguments passed to :func:`matplotlib.pyplot.hist`.
 
@@ -648,7 +644,7 @@ def plot_histograms(
         )
     else:
         for d, label in zip(
-            data, [None] * len(data) if labels is None else labels
+            data, [None] * len(data) if labels is None else labels, strict=True
         ):
             ax.hist(numpy.asarray(d).flatten(), label=label, **kwargs)
     if title is not None:
@@ -702,7 +698,7 @@ def _imshow(
             or percentile[0] < 0
             or percentile[1] > 100
         ):
-            raise ValueError(f'{percentile=} out of range')
+            raise ValueError(f'{percentile=} is out of range [0, 100]')
         vmin, vmax = numpy.nanpercentile(image, percentile)
     pos = ax.imshow(image, vmin=vmin, vmax=vmax, **kwargs)
     if colorbar:

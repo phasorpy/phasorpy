@@ -7,7 +7,7 @@ Read and write phasor-related data from and to various file formats.
 The :py:mod:`phasorpy.io` module provides functions to read phasor
 coordinates, TCSPC time-delay histograms, cross-correlation phase histograms,
 hyperspectral image stacks, lifetime images, and relevant metadata from
-various file formats used in bio-imaging.
+various file formats used in bioimaging.
 The module also includes functions to write phasor coordinates to OME-TIFF
 and SimFCS Referenced files.
 
@@ -21,7 +21,6 @@ import os
 from tempfile import TemporaryDirectory
 
 import numpy
-from numpy.testing import assert_allclose
 
 from phasorpy.filter import phasor_filter_median, phasor_threshold
 from phasorpy.lifetime import phasor_calibrate, phasor_to_apparent_lifetime
@@ -57,11 +56,11 @@ print(filename)
 # ------------------
 #
 # Leica image files (LIF and XLEF) are written by Leica LAS X software.
-# They contain collections of multi-dimensional images and metadata from
+# They contain collections of multidimensional images and metadata from
 # a variety of microscopy acquisition and analysis modes.
 #
-# PhasorPy currently supports reading hyperspectral images,
-# phasor coordinates, and lifetime images from Leica image files via the
+# PhasorPy supports reading hyperspectral images, phasor coordinates,
+# and lifetime images from Leica image files via the
 # `liffile <https://github.com/cgohlke/liffile/>`_ library.
 #
 # LIF FLIM
@@ -70,9 +69,9 @@ print(filename)
 # Leica image files, acquired on a FALCON microscope and analyzed with LAS X
 # software, contain calculated phasor coordinates, lifetime images, and
 # relevant metadata. The :py:func:`phasorpy.io.phasor_from_lif` and
-# :py:func:`phasorpy.io.lifetime_from_lif` functions are used to read those
-# data from the `FLIM_testdata dataset
-# <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_:
+# :py:func:`phasorpy.io.lifetime_from_lif` functions are used to read that
+# data from the `FLIM testdata dataset
+# <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_ :
 
 from phasorpy.io import lifetime_from_lif, phasor_from_lif
 
@@ -86,7 +85,7 @@ plot_phasor_image(mean, real, imag, title=filename)
 # The returned mean intensity and uncalibrated phasor coordinates are
 # NumPy arrays. ``attrs`` is a dictionary holding metadata, including the
 # auto-reference phase (in degrees) and modulation for all image channels,
-# as well as the fundamental laser frequency (in MHz):
+# as well as the fundamental frequency (in MHz):
 
 frequency = attrs['frequency']
 channel_0 = attrs['flim_phasor_channels'][0]
@@ -147,13 +146,13 @@ plot_histograms(
 
 # %%
 # The apparent single lifetimes from phase and modulation do not exactly match
-# and the Fast FLIM lifetimes are in between them.
+# and the Fast FLIM lifetimes lie between them.
 # Most likely there is more than one lifetime component in the sample.
 
 # %%
 # .. note::
-#   Reading of FLIM/TCSPC histograms from LIF-FLIM files is currently not
-#   supported because the storage scheme is undocumented or patent-pending.
+#   Reading of FLIM/TCSPC histograms from LIF-FLIM files is not supported
+#   yet because the storage scheme is undocumented or patent-pending.
 #   However, TTTR records can be exported to PTU format using LAS X software.
 
 # %%
@@ -166,7 +165,7 @@ plot_histograms(
 
 from phasorpy.io import signal_from_lif
 
-filename = 'Convalaria_LambdaScan.lif'
+filename = 'Convalaria_LambdaScan.lif'  # filename contains spelling error
 
 signal = signal_from_lif(fetch(filename))
 
@@ -195,14 +194,14 @@ plot_phasor(
 #
 # PicoQuant PTU files are written by PicoQuant SymPhoTime, Leica LAS X, and
 # other software. The files contain time-correlated single-photon
-# counting (TCSPC) measurement data and instrumentation parameters.
+# counting (TCSPC) measurement data and instrument parameters.
 #
 # PhasorPy supports reading TCSPC histograms from PTU files acquired in T3
 # imaging mode via the `ptufile <https://github.com/cgohlke/ptufile/>`_
 # library.
 #
 # The :py:func:`phasorpy.io.signal_from_ptu` function is used to read
-# the TCSPC histogram from a PTU file exported from the `FLIM_testdata LIF
+# the TCSPC histogram from a PTU file exported from the `FLIM testdata
 # dataset <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_.
 # For phasor analysis, periods containing multiple photons must have all
 # their photons discarded before exporting to PTU format. In the Leica
@@ -216,15 +215,15 @@ filename = 'FLIM_testdata.lif.filtered.ptu'
 
 signal = signal_from_ptu(fetch(filename), channel=0, frame=0)
 
-plot_signal_image(signal, xlabel='delay-time (ns)', title=filename)
+plot_signal_image(signal, xlabel='delay time (ns)', title=filename)
 
 # %%
 # The returned ``signal`` is an `xarray.DataArray
 # <https://docs.xarray.dev/en/stable/generated/xarray.DataArray.html>`_
 # holding the TCSPC histogram as a NumPy array, and metadata as a
 # dictionary in the ``attrs`` property.
-# The metadata includes all PTU tags and the fundamental laser frequency,
-# which is needed to interpret the phasor coordinates.
+# The metadata includes all PTU tags and the fundamental frequency, which
+# is needed to interpret the phasor coordinates.
 # The reference phase and modulation previously loaded from the LIF-FLIM file
 # are again used to calibrate the phasor coordinates. The same intensity
 # threshold is applied:
@@ -272,10 +271,10 @@ plot_histograms(
 # They contain images and metadata from a variety of microscopy acquisition
 # and analysis modes, including hyperspectral imaging.
 #
-# PhasorPy does not currently support reading CZI files.
+# PhasorPy does not support reading CZI files yet.
 # However, hyperspectral images can be read from CZI files using, for example,
-# the `pylibCZIrw  <https://github.com/ZEISS/pylibczirw/>`_ or
-# `BioIO <https://github.com/bioio-devs/bioio>`_ libraries. Another option is
+# the `pylibCZIrw <https://github.com/ZEISS/pylibczirw/>`_ or
+# `BioIO <https://github.com/bioio-devs/bioio>`_ library. Another option is
 # to export CZI files as LSM using the ZEN software.
 
 # %%
@@ -302,7 +301,7 @@ plot_signal_image(signal, xlabel='wavelength (nm)', title=filename)
 
 # %%
 # Emission wavelengths (in nm) are available in the coordinates of the
-# channel axis:
+# channel axis ('C'):
 
 print(signal.coords['C'].values.astype(int))
 
@@ -337,7 +336,7 @@ filename = 'tcspc.sdt'
 
 signal = signal_from_sdt(fetch(filename))
 
-plot_signal_image(signal, xlabel='delay-time (ns)', title=filename)
+plot_signal_image(signal, xlabel='delay time (ns)', title=filename)
 
 # %%
 # Plot the uncalibrated phasor coordinates:
@@ -365,7 +364,7 @@ plot_phasor(
 # frequency-domain measurements acquired with a FLIMbox device.
 # Newer file versions also contain metadata.
 #
-# The FBD file format is undocumented, not standardized, and files are
+# The FBD file format is undocumented and not standardized, and files are
 # frequently found corrupted. Therefore, it is recommended to export FLIMbox
 # files to another format from the software used to acquire the data.
 #
@@ -373,10 +372,10 @@ plot_phasor(
 # `fbdfile <https://github.com/cgohlke/fbdfile/>`_ library.
 #
 # The :py:func:`phasorpy.io.signal_from_fbd` function is used to read
-# a phase histograms from the
+# phase histograms from the
 # `Convallaria FBD dataset <https://zenodo.org/records/14026720>`_, which was
-# acquired at the second harmonic. The dataset is a time series of two
-# channels. Since the photon count is low and the second channel empty,
+# acquired at the second harmonic frequency. The dataset is a time series of
+# two channels. Since the photon count is low and the second channel empty,
 # only the first channel is read and the time-axis integrated:
 
 from phasorpy.io import signal_from_fbd
@@ -450,7 +449,7 @@ filename = 'Convallaria_m2_1740751781_phasor_ch1.json'
 
 signal = signal_from_flimlabs_json(fetch(filename), channel=channel)
 
-plot_signal_image(signal, xlabel='delay-time (ns)', title=filename)
+plot_signal_image(signal, xlabel='delay time (ns)', title=filename)
 
 # %%
 # Phasor coordinates are calculated from the TCSPC histogram at three
@@ -487,7 +486,7 @@ real, imag = phasor_calibrate(
 # Plot the second harmonic phasor coordinates:
 
 plot_phasor(
-    real[1],
+    real[1],  # index 1 corresponds to second harmonic
     imag[1],
     frequency=frequency * 2,
     cmin=10,
@@ -497,7 +496,9 @@ plot_phasor(
 # %%
 # Newer versions of the FLIM LABS JSON files may also contain calibrated
 # phasor coordinates, possibly at multiple harmonics, which can be read
-# using the :py:func:`phasorpy.io.phasor_from_flimlabs_json` function:
+# using the :py:func:`phasorpy.io.phasor_from_flimlabs_json` function.
+# These calibrated phasors match those previously computed from the TCSPC
+# histograms and metadata:
 
 from phasorpy.io import phasor_from_flimlabs_json
 
@@ -506,9 +507,9 @@ mean_fromfile, real_fromfile, imag_fromfile, attrs = phasor_from_flimlabs_json(
 )
 
 assert attrs['harmonic'] == [1, 2, 3]
-assert_allclose(mean, mean_fromfile, atol=1e-3)
-assert_allclose(real, real_fromfile, atol=1e-3, equal_nan=True)
-assert_allclose(imag, imag_fromfile, atol=1e-3, equal_nan=True)
+assert numpy.allclose(mean_fromfile, mean, atol=1e-3, equal_nan=True)
+assert numpy.allclose(real_fromfile, real, atol=1e-3, equal_nan=True)
+assert numpy.allclose(imag_fromfile, imag, atol=1e-3, equal_nan=True)
 
 # %%
 # The reference phase, modulation, and lifetime used to calibrate the phasor
@@ -533,8 +534,8 @@ frequency = attrs['frequency_mhz']
 # --------
 #
 # IFLI files are written by ISS VistaVision software. They contain calibrated
-# phasor coordinates from analog or digital frequency-domain fluorescence
-# lifetime measurements.
+# phasor coordinates from analog or digital frequency-domain lifetime
+# measurements.
 # IFLI datasets can be up to 9-dimensional in the order of mean/real/imag,
 # frequency, position, emission wavelength, time, channel, Z, Y, and X.
 #
@@ -542,8 +543,8 @@ frequency = attrs['frequency_mhz']
 # `lfdfiles <https://github.com/cgohlke/lfdfiles/>`_ library.
 #
 # The :py:func:`phasorpy.io.phasor_from_ifli` function is used to read
-# calibrated phasor coordinates from a measurement of mouse liver fed with
-# Western diet. Select the second channel and first three harmonics:
+# calibrated phasor coordinates from a measurement of liver from mice fed
+# a Western diet. Select the second channel and first three harmonics:
 
 from phasorpy.io import phasor_from_ifli
 
@@ -569,9 +570,9 @@ assert (
 )
 
 # %%
-# The ``attrs`` dictionary holds metadata including the fundamental laser
-# frequency, the harmonics in the phasor coordinates, and the reference phasor
-# coordinates used for calibration:
+# The ``attrs`` dictionary holds metadata including the fundamental frequency,
+# the harmonics in the phasor coordinates, and the reference phasor coordinates
+# used for calibration:
 
 frequency = attrs['frequency']
 harmonic = attrs['harmonic']
@@ -598,8 +599,8 @@ plot_phasor(
 # ------------------
 #
 # Referenced files, REF and R64, are written by the SimFCS software and
-# supported in several other software.
-# The files most commonly contain a square-sized average intensity image and
+# supported in several other software packages.
+# The files most commonly contain a square average intensity image and
 # the calibrated phasor coordinates of the first two harmonics.
 #
 # PhasorPy supports reading and writing SimFCS Referenced files via the
@@ -642,7 +643,7 @@ plot_phasor(
 # The :py:func:`phasorpy.io.phasor_to_simfcs_referenced` function is used
 # to write calibrated phasor coordinates to R64 files in a temporary directory.
 # Images with more than two dimensions or larger than square size are
-# chunked to square-sized images and saved to separate files.
+# chunked to square images and saved to separate files.
 # Images or chunks with less than two dimensions or smaller than square size
 # are padded with NaN values:
 
@@ -659,7 +660,7 @@ with TemporaryDirectory() as tmpdir:
         print(filename)
 
     # verify the first harmonic phasor coordinates in the last file
-    assert_allclose(
+    assert numpy.allclose(
         phasor_from_simfcs_referenced(os.path.join(tmpdir, filenames[-1]))[1],
         numpy.pad(real[0, 160:, 160:], (0, 64), constant_values=numpy.nan),
         atol=1e-3,
@@ -670,7 +671,7 @@ with TemporaryDirectory() as tmpdir:
 # PhasorPy OME-TIFF
 # -----------------
 #
-# PhasorPy can store phasor coordinates and select metadata in
+# PhasorPy can store phasor coordinates and selected metadata in
 # `OME-TIFF <https://ome-model.readthedocs.io/en/stable/ome-tiff/>`_
 # formatted files, which are compatible with Bio-Formats, Fiji, and other
 # software. The implementation is based on the
@@ -705,7 +706,7 @@ with TemporaryDirectory() as tmpdir:
     )
 
     mean1, real1, imag1, attrs = phasor_from_ometiff(filename, harmonic='all')
-    assert_allclose(mean, mean1)
+    assert numpy.allclose(mean, mean1, atol=1e-3, equal_nan=True)
     assert attrs['frequency'] == frequency
     assert attrs['harmonic'] == [1, 2]
     assert attrs['description'] == 'Written by PhasorPy'
@@ -717,7 +718,7 @@ with TemporaryDirectory() as tmpdir:
 # While PhasorPy provides many functions to read phasor-related data and
 # metadata from file formats commonly used in the field, it is by no means
 # required to use those functions.
-# Instead, any other means that yields image stacks in NumPy array compatible
+# Instead, any other means that yields image stacks in NumPy array-compatible
 # form can be used (for example) for advanced use cases, or when a file
 # format is not supported by PhasorPy.
 #
@@ -747,7 +748,8 @@ mean, real, imag = phasor_from_signal(image_stack, axis=0)
 
 plot_phasor(real, imag, frequency=80.0, allquadrants=True, title=filename)
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = 11
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore

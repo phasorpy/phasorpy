@@ -1,5 +1,9 @@
-# Configuration file for the Sphinx documentation builder.
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""Sphinx build configuration file.
+
+https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+"""
+
 # pylint: skip-file
 
 import os
@@ -31,6 +35,7 @@ version_match = version.split('.dev')[0].split('.rc')[0]
 # general configuration
 
 extensions = [
+    'sphinx.ext.mathjax',
     'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
@@ -134,6 +139,9 @@ sphinx_gallery_conf = {
     # 'backreferences_dir': None,
 }
 
+# TODO: remove MathJax 3 link once scroll bar issue is resolved
+mathjax_path = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+
 
 class TutorialOrder:
     """Order tutorials in gallery subsections."""
@@ -159,6 +167,7 @@ class TutorialOrder:
         'multidimensional',
         # misc
         'phasor_from_signal',
+        'apps',
         'logo',
     ]
 
@@ -234,7 +243,7 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
     except (OSError, TypeError):
         lineno = None
 
-    linespec = f"#L{lineno:d}-L{lineno + len(source) - 1:d}" if lineno else ''
+    linespec = f'#L{lineno:d}-L{lineno + len(source) - 1:d}' if lineno else ''
 
     startdir = Path(phasorpy.__file__).parent.parent
     try:
@@ -242,10 +251,7 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
     except ValueError:
         return None
 
-    if '.dev' in version or '.rc' in version:
-        tag = 'main'
-    else:
-        tag = f'v{version}'
+    tag = 'main' if '.dev' in version or '.rc' in version else f'v{version}'
     return (
         f'https://github.com/phasorpy/phasorpy/blob/{tag}/src/{fn}{linespec}'
     )

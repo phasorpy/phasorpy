@@ -1,6 +1,6 @@
-"""Tests for the phasorpy.components module."""
+"""Test the phasorpy.component module."""
 
-from math import nan as NAN
+from math import nan
 
 import numpy
 import pytest
@@ -15,7 +15,7 @@ from phasorpy.component import (
 )
 from phasorpy.lifetime import phasor_from_lifetime
 
-numpy.random.seed(42)
+rng = numpy.random.default_rng(42)
 
 
 @pytest.mark.parametrize('swap', [False, True])
@@ -33,7 +33,7 @@ def test_three_components(swap, func):
         [0.6, 0.4, 0.0],
         [0.3, 0.5, 0.2],
         [1 / 3, 1 / 3, 1 / 3],
-        [NAN, NAN, NAN],
+        [nan, nan, nan],
     ]
     if swap:
         lifetime = [lifetime[i] for i in (1, 0, 2)]
@@ -70,7 +70,7 @@ def test_phasor_component_mvc():
         [0.3, 0.4, 0.2, 0.1],
         [-0.1, 0.4, -0.2, 0.9],
         [1 / 4, 1 / 4, 1 / 4, 1 / 4],
-        [NAN, NAN, NAN, NAN],
+        [nan, nan, nan, nan],
     ]
 
     real, imag = phasor_from_component(
@@ -102,7 +102,7 @@ def test_phasor_component_mvc():
         phasor_component_mvc(real[:4], imag, component_real, component_imag)
 
     with pytest.raises(ValueError):
-        phasor_component_mvc(real, imag, [NAN, 1, 1, 1], component_imag)
+        phasor_component_mvc(real, imag, [nan, 1, 1, 1], component_imag)
 
     with pytest.raises(ValueError):
         phasor_component_mvc(real, imag, [numpy.inf, 1, 1, 1], component_imag)
@@ -200,7 +200,11 @@ def test_phasor_from_component():
 
     with pytest.raises(ValueError):
         real, imag = phasor_from_component(
-            known_real[:3], known_imag[:3], fraction, axis=-1, dtype='int32'
+            known_real[:3],
+            known_imag[:3],
+            fraction,
+            axis=-1,
+            dtype=numpy.int32,
         )
     with pytest.raises(ValueError):
         phasor_from_component(
@@ -287,10 +291,15 @@ def test_phasor_component_fraction_channels():
 
 
 @pytest.mark.parametrize(
-    """real, imag,
-    component_real, component_imag,
-    radius, fractions,
-    expected_counts""",
+    (
+        'real',
+        'imag',
+        'component_real',
+        'component_imag',
+        'radius',
+        'fractions',
+        'expected_counts',
+    ),
     [
         # Two components, phasor as scalar
         (
@@ -410,10 +419,7 @@ def test_phasor_component_graphical(
 
 
 @pytest.mark.parametrize(
-    """real, imag,
-    component_real, component_imag,
-    fractions
-    """,
+    ('real', 'imag', 'component_real', 'component_imag', 'fractions'),
     [
         # imag.shape != real.shape
         ([0], [0, 0], [0, 1], [0, 1], 10),
@@ -476,7 +482,7 @@ def test_phasor_component_fit():
     size = 5
     component_real = [0.1, 0.9]
     component_imag = [0.2, 0.3]
-    mean = numpy.random.rand(size)
+    mean = rng.random(size)
     real = numpy.linspace(*component_real, size)
     imag = numpy.linspace(*component_imag, size)
     fractions = (numpy.linspace(1, 0, size), numpy.linspace(0, 1, size))
@@ -498,8 +504,8 @@ def test_phasor_component_fit():
     )
 
     # add noise
-    real += numpy.random.rand(size) * 1e-3
-    imag += numpy.random.rand(size) * 1e-3
+    real += rng.random(size) * 1e-3
+    imag += rng.random(size) * 1e-3
     assert_allclose(
         phasor_component_fit(mean, real, imag, component_real, component_imag),
         fractions,
@@ -521,10 +527,10 @@ def test_phasor_component_fit():
     )
 
     # NaN handling
-    mean[0] = NAN
-    real[1] = NAN
-    fractions[0][:2] = NAN
-    fractions[1][:2] = NAN
+    mean[0] = nan
+    real[1] = nan
+    fractions[0][:2] = nan
+    fractions[1][:2] = nan
     assert_allclose(
         phasor_component_fit(mean, real, imag, component_real, component_imag),
         fractions,
@@ -549,7 +555,7 @@ def test_phasor_component_fit():
             numpy.zeros((3, 4)),
         )
 
-    # system is undetermined: 4 components, 1 harmonic
+    # system is underdetermined: 4 components, 1 harmonic
     with pytest.raises(ValueError):
         phasor_component_fit(
             numpy.zeros(10),
@@ -562,7 +568,7 @@ def test_phasor_component_fit():
     with pytest.raises(ValueError):
         phasor_component_fit(
             mean, real, imag, numpy.zeros((1, 2, 2)), numpy.zeros((1, 2, 2))
-        ),
+        )
 
     with pytest.raises(ValueError):
         phasor_component_fit(
@@ -579,7 +585,7 @@ def test_phasor_component_fit():
             mean, real, imag, component_real[:-1], component_imag
         )
 
-    component_real[0] = NAN
+    component_real[0] = nan
     with pytest.raises(ValueError):
         phasor_component_fit(mean, real, imag, component_real, component_real)
 

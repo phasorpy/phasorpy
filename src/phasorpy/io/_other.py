@@ -4,8 +4,8 @@ from __future__ import annotations
 
 __all__ = [
     # 'signal_from_czi',
-    'signal_from_flif',
     'phasor_from_ifli',
+    'signal_from_flif',
     'signal_from_imspector_tiff',
     'signal_from_lsm',
     'signal_from_pqbin',
@@ -25,11 +25,11 @@ if TYPE_CHECKING:
         Any,
         DataArray,
         DTypeLike,
+        EllipsisType,
         Literal,
         NDArray,
         PathLike,
         Sequence,
-        EllipsisType,
     )
 
 import numpy
@@ -38,12 +38,11 @@ import numpy
 def signal_from_sdt(
     filename: str | PathLike[Any],
     /,
-    *,
     index: int = 0,
 ) -> DataArray:
     """Return TCSPC histogram and metadata from Becker & Hickl SDT file.
 
-    SDT files contain TCSPC measurement data and instrumentation parameters.
+    SDT files contain TCSPC measurement data and instrument parameters.
 
     Parameters
     ----------
@@ -55,11 +54,13 @@ def signal_from_sdt(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'QCYXH'`` and
-        type ``uint16``, ``uint32``, or ``float32``.
-        Dimensions ``'Q'`` and ``'C'`` are optional detector channels.
+        TCSPC histogram with :ref:`axes codes <axes>` `'QCYXH'` and
+        type `uint16`, `uint32`, or `float32`.
+        Dimensions `'Q'` and `'C'` are optional detector channels.
 
-        - ``coords['H']``: delay-times of histogram bins in ns.
+        Selected metadata:
+
+        - ``coords['H']``: delay times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
 
     Raises
@@ -92,14 +93,14 @@ def signal_from_sdt(
     import sdtfile
 
     with sdtfile.SdtFile(filename) as sdt:
+        filename = os.path.basename(filename)
         if (
             'SPC Setup & Data File' not in sdt.info.id
             and 'SPC FCS Data File' not in sdt.info.id
         ):
             # skip DLL data
             raise ValueError(
-                f'{os.path.basename(filename)!r} '
-                'is not an SDT file containing TCSPC data'
+                f'{filename!r} is not an SDT file containing TCSPC data'
             )
         # filter block types?
         # sdtfile.BlockType(sdt.block_headers[index].block_type).contents
@@ -133,8 +134,8 @@ def signal_from_ptu(
 ) -> DataArray:
     """Return TCSPC histogram and metadata from PicoQuant PTU T3 mode file.
 
-    PTU files contain TCSPC measurement data and instrumentation parameters,
-    which are decoded to a multi-dimensional TCSPC histogram.
+    PTU files contain TCSPC measurement data and instrument parameters,
+    which are decoded to a multidimensional TCSPC histogram.
 
     Parameters
     ----------
@@ -157,20 +158,20 @@ def signal_from_ptu(
         Increase the bit depth to avoid overflows when integrating.
     frame : int, optional
         If < 0, integrate time axis, else return specified frame.
-        Overrides `selection` for axis ``T``.
-    channel : int, optional
+        Overrides `selection` for axis `'T'`.
+    channel : int, optional, default: 0
         Index of channel to return.
         By default, return the first channel.
         If < 0, integrate channel axis.
-        Overrides `selection` for axis ``C``.
+        Overrides `selection` for axis `'C'`.
     dtime : int, optional, default: 0
         Specifies number of bins in TCSPC histogram.
         If 0 (default), return the number of bins in one period.
         If < 0, integrate delay-time axis (image mode only).
         If > 0, return up to specified bin.
-        Overrides `selection` for axis ``H``.
+        Overrides `selection` for axis `'H'`.
     keepdims : bool, optional, default: False
-        If true, return reduced axes as size-one dimensions.
+        Return reduced axes as length-1 dimensions.
     **kwargs
         Optional arguments passed to :py:meth:`PtuFile.decode_image`
         or :py:meth:`PtuFile.decode_histogram`.
@@ -178,14 +179,14 @@ def signal_from_ptu(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'TYXCH'`` and
-        type specified in ``dtype``:
+        TCSPC histogram with :ref:`axes codes <axes>` `'TYXCH'`,
+        type specified in `dtype`, and selected metadata:
 
-        - ``coords['H']``: delay-times of histogram bins in ns.
+        - ``coords['H']``: delay times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
         - ``attrs['ptu_tags']``: metadata read from PTU file.
 
-        Size-one dimensions are prepended to point mode data to make them
+        Length-1 dimensions are prepended to point mode data to make them
         broadcastable to image data.
 
     Raises
@@ -246,10 +247,9 @@ def signal_from_ptu(
             )
             assert isinstance(data, DataArray)
             if channel is not None:
-                if keepdims:
-                    data = data[channel : channel + 1]
-                else:
-                    data = data[channel]
+                data = (
+                    data[channel : channel + 1] if keepdims else data[channel]
+                )
             # prepend dimensions as needed to appear image-like
             data = data.expand_dims(dim={'Y': 1, 'X': 1})
             if keepdims:
@@ -272,7 +272,7 @@ def signal_from_lsm(
 ) -> DataArray:
     """Return hyperspectral image and metadata from Zeiss LSM file.
 
-    Zeiss LSM files contain multi-dimensional images and metadata from laser
+    Zeiss LSM files contain multidimensional images and metadata from laser
     scanning microscopy measurements. The file format is based on TIFF.
 
     Parameters
@@ -284,7 +284,8 @@ def signal_from_lsm(
     -------
     xarray.DataArray
         Hyperspectral image data.
-        Usually, a 3-to-5-dimensional array of type ``uint8`` or ``uint16``.
+        Usually, a 3-to-5-dimensional array of type `uint8` or `uint16`,
+        and selected metadata:
 
         - ``coords['C']``: wavelengths in nm.
         - ``coords['T']``: time coordinates in s, if any.
@@ -392,10 +393,10 @@ def signal_from_imspector_tiff(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'HTZYX'`` and
-        type ``uint16``.
+        TCSPC histogram with :ref:`axes codes <axes>` `'HTZYX'` and
+        type `uint16`, and selected metadata:
 
-        - ``coords['H']``: delay-times of histogram bins in ns.
+        - ``coords['H']``: delay times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
 
     Raises
@@ -458,7 +459,7 @@ def signal_from_imspector_tiff(
     coords = {}
     physical_size = {}
 
-    root = ElementTree.fromstring(omexml)
+    root = ElementTree.fromstring(omexml)  # noqa: S314
     ns = {
         '': 'http://www.openmicroscopy.org/Schemas/OME/2008-02',
         'ca': 'http://www.openmicroscopy.org/Schemas/CA/2008-02',
@@ -538,29 +539,30 @@ def phasor_from_ifli(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
     """Return phasor coordinates and metadata from ISS IFLI file.
 
-    ISS VistaVision IFLI files contain calibrated phasor coordinates for
-    possibly several positions, wavelengths, time points, channels, slices,
-    and frequencies from analog or digital frequency-domain fluorescence
+    ISS VistaVision IFLI files contain calibrated phasor coordinates,
+    possibly for several positions, wavelengths, time points, channels,
+    slices, and frequencies from analog or digital frequency-domain
     lifetime measurements.
 
     Parameters
     ----------
     filename : str or Path
         Name of ISS IFLI file to read.
-    channel : int, optional
+    channel : int, optional, default: 0
         Index of channel to return.
         By default, return the first channel.
         If None, return all channels.
     harmonic : int, sequence of int, 'any', or 'all', optional
         Harmonic(s) to return from file.
-        If None (default), return the first harmonic stored in file.
-        If `'all'`, return all harmonics of first frequency stored in file.
-        If `'any'`, return all frequencies as stored in file, not necessarily
-        harmonics of the first frequency.
-        If a list, the first axes of the returned `real` and `imag` arrays
-        contain specified harmonic(s).
-        If an integer, the returned `real` and `imag` arrays are single
-        harmonic and have the same shape as `mean`.
+        By default, return the first harmonic stored in the file.
+        If `'all'`, return all harmonics of the first frequency stored in the
+        file.
+        If `'any'`, return all frequencies stored in the file, which are not
+        necessarily harmonics of the first frequency.
+        If a list, the first axis of the returned `real` and `imag`
+        arrays contains the specified harmonic(s).
+        If an integer, the returned `real` and `imag` arrays represent a
+        single harmonic and have the same shape as `mean`.
     **kwargs
         Optional arguments passed to :py:meth:`lfdfiles.VistaIfli.asarray`,
         for example ``memmap=True``.
@@ -569,7 +571,7 @@ def phasor_from_ifli(
     -------
     mean : ndarray
         Average intensity image.
-        May have up to 7 dimensions in ``'RETCZYX'`` order.
+        May have up to 7 dimensions in `'RETCZYX'` order.
     real : ndarray
         Image of real component of phasor coordinates.
         Same shape as `mean`, except it may have a harmonic/frequency
@@ -578,20 +580,20 @@ def phasor_from_ifli(
         Image of imaginary component of phasor coordinates.
         Same shape as `real`.
     attrs : dict
-        Select metadata:
+        Selected metadata:
 
         - ``'dims'`` (tuple of str):
           :ref:`Axes codes <axes>` for `mean` image dimensions.
         - ``'harmonic'`` (int or list of int):
           Harmonic(s) present in `real` and `imag`.
-          If a scalar, `real` and `imag` are single harmonic and contain no
-          harmonic axes.
+          If a scalar, `real` and `imag` represent a single harmonic and
+          contain no harmonic axis.
           If a list, `real` and `imag` contain one or more harmonics in the
           first axis.
         - ``'frequency'`` (float):
-          Fundamental frequency of time-resolved phasor coordinates in MHz.
+          Fundamental frequency of phasor coordinates in MHz.
         - ``'samples'`` (int):
-            Number of samples per frequency.
+          Number of samples per frequency.
         - ``'ifli_header'`` (dict):
           Metadata from IFLI file header.
 
@@ -643,7 +645,7 @@ def phasor_from_ifli(
     shape, dims, _ = squeeze_dims(data.shape, axes, skip='YXF')
     data = data.reshape(shape)
     data = numpy.moveaxis(data, -2, 0)  # move frequency to first axis
-    mean = data[..., 0].mean(axis=0)  # average frequencies
+    mean = data[..., 0].mean(axis=0)  # average across frequencies
     real = data[..., 1].copy()
     imag = data[..., 2].copy()
     dims = dims[:-2]
@@ -652,13 +654,13 @@ def phasor_from_ifli(
     samples = header['HistogramResolution']
     frequencies = header['ModFrequency']
     frequency = frequencies[0]
+
+    # check if frequencies are harmonics (fractional part near 1.0)
     harmonic_stored = [
-        (
-            int(round(f / frequency))
-            if (0.99 < f / frequency % 1.0) < 1.01
-            else None
+        h if (abs(f) < 1e-2 or abs(f - frequency) < 1e-2) else None
+        for h, f in (
+            (round(f / frequency), f % frequency) for f in frequencies
         )
-        for f in frequencies
     ]
 
     index: int | list[int]
@@ -724,8 +726,8 @@ def signal_from_flif(
     Returns
     -------
     xarray.DataArray
-        Phase images with :ref:`axes codes <axes>` ``'THYX'`` and
-        type ``uint16``:
+        Phase images with :ref:`axes codes <axes>` `'THYX'` and
+        type `uint16`, and selected metadata:
 
         - ``coords['H']``: phases in radians.
         - ``attrs['frequency']``: repetition frequency in MHz.
@@ -807,10 +809,10 @@ def signal_from_pqbin(
     Returns
     -------
     xarray.DataArray
-        TCSPC histogram with :ref:`axes codes <axes>` ``'YXH'``,
-        and type ``uint32``.
+        TCSPC histogram with :ref:`axes codes <axes>` `'YXH'`
+        and type `uint32`, and selected metadata:
 
-        - ``coords['H']``: delay-times of histogram bins in ns.
+        - ``coords['H']``: delay times of histogram bins in ns.
         - ``attrs['frequency']``: repetition frequency in MHz.
           This assumes that the histogram contains exactly one period.
 
@@ -837,10 +839,11 @@ def signal_from_pqbin(
 
     """
     with open(filename, 'rb') as fh:
+        filename = os.path.basename(filename)
         header = fh.read(20)
         if len(header) != 20:
             raise ValueError(
-                f'invalid PicoQuant BIN header length {len(header)} != 20'
+                f'{filename!r} does not contain valid PicoQuant BIN header'
             )
         (size_x, size_y, pixel_resolution, size_h, tcspc_resolution) = (
             struct.unpack('<IIfIf', header)
@@ -860,12 +863,14 @@ def signal_from_pqbin(
             or tcspc_resolution <= 0.0
             or tcspc_resolution > 1.0
         ):
-            raise ValueError('invalid PicoQuant BIN file header')
+            raise ValueError(
+                f'{filename!r} does not contain valid PicoQuant BIN header'
+            )
 
         shape = size_y, size_x, size_h
         data = numpy.empty(shape, dtype='<u4')
         if fh.readinto(data) != size:
-            raise ValueError('invalid PicoQuant BIN data size')
+            raise ValueError(f'{filename!r} does not contain enough data')
 
     metadata = xarray_metadata(
         ('Y', 'X', 'H'),

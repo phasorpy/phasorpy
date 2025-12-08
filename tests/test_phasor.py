@@ -1,7 +1,8 @@
-"""Tests for the phasorpy.phasor module."""
+"""Test the phasorpy.phasor module."""
 
 import copy
 import math
+from math import nan
 
 import numpy
 import numpy.fft as numpy_fft
@@ -40,7 +41,6 @@ from phasorpy.phasor import (
     phasor_transform,
 )
 
-NAN = math.nan
 SYNTH_DATA_ARRAY = numpy.array([[50, 1], [1, 1]])
 SYNTH_DATA_ARRAY_3D = numpy.stack(
     [
@@ -50,15 +50,15 @@ SYNTH_DATA_ARRAY_3D = numpy.stack(
     ],
     axis=0,
 )
-SYNTH_DATA_NAN = numpy.array([[50, NAN], [1, 1]])
+SYNTH_DATA_NAN = numpy.array([[50, nan], [1, 1]])
 SYNTH_DATA_LIST = [1, 2, 4]
 SYNTH_PHI = numpy.array([[0.5, 0.5], [0.5, 0.5]])
 SYNTH_MOD = numpy.array([[2, 2], [2, 2]])
 
-numpy.random.seed(42)
+rng = numpy.random.default_rng(42)
 
 
-@pytest.mark.parametrize('use_fft', (True, False))
+@pytest.mark.parametrize('use_fft', [True, False])
 def test_phasor_from_signal(use_fft):
     """Test phasor_from_signal function."""
     samples = 7
@@ -117,7 +117,7 @@ def test_phasor_from_signal(use_fft):
     # zero signal
     assert_allclose(
         phasor_from_signal(numpy.zeros(256), use_fft=use_fft),
-        (0.0, NAN, NAN),
+        (0.0, nan, nan),
         atol=1e-6,
     )
 
@@ -180,7 +180,7 @@ def test_phasor_from_signal(use_fft):
     with pytest.raises(ValueError):
         phasor_from_signal(signal, harmonic=[1, 1], use_fft=use_fft)
     with pytest.raises(TypeError):
-        phasor_from_signal(signal.astype('complex64'), use_fft=use_fft)
+        phasor_from_signal(signal.astype(numpy.complex64), use_fft=use_fft)
     if not use_fft:
         with pytest.raises(ValueError):
             phasor_from_signal(
@@ -191,7 +191,7 @@ def test_phasor_from_signal(use_fft):
                 signal, sample_phase=sample_phase[::-2], use_fft=use_fft
             )
         with pytest.raises(TypeError):
-            phasor_from_signal(signal, dtype='int8', use_fft=use_fft)
+            phasor_from_signal(signal, dtype=numpy.int8, use_fft=use_fft)
     else:
         with pytest.raises(ValueError):
             phasor_from_signal(
@@ -199,7 +199,7 @@ def test_phasor_from_signal(use_fft):
             )
 
 
-@pytest.mark.parametrize('use_fft', (True, False))
+@pytest.mark.parametrize('use_fft', [True, False])
 @pytest.mark.parametrize('samples', [2, 3])
 def test_phasor_from_signal_min_samples(samples, use_fft):
     """Test phasor_from_signal function with two and three samples."""
@@ -215,24 +215,24 @@ def test_phasor_from_signal_min_samples(samples, use_fft):
         assert_allclose(phasor, (1.1, 0.4, 0.2), atol=1e-3)
 
 
-@pytest.mark.parametrize('use_fft', (True, False))
+@pytest.mark.parametrize('use_fft', [True, False])
 @pytest.mark.parametrize(
-    'shape, axis, dtype, dtype_out',
+    ('shape', 'axis', 'dtype', 'dtype_out'),
     [
-        ((3,), 0, 'float64', 'float64'),
-        ((1, 3), 1, 'float64', 'float64'),
-        ((1, 3, 1), 1, 'float64', 'float64'),
-        ((5, 2), 0, 'float64', 'float64'),
-        ((2, 5), 1, 'float64', 'float64'),
-        ((5, 2, 2), 0, 'float64', 'float64'),
-        ((2, 5, 2), 1, 'float64', 'float64'),
-        ((2, 2, 5), 2, 'float64', 'float64'),
-        ((2, 2, 5, 2), 2, 'float64', 'float64'),
-        ((2, 5, 2), 1, 'float32', 'float32'),
-        ((2, 5, 2), 1, 'int16', 'float32'),
-        ((2, 5, 2), 1, 'int32', 'float32'),
-        ((64, 128, 128, 2, 32), 4, 'float32', 'float32'),  # 256 MB
-        ((32, 32, 256, 256), 1, 'float32', 'float32'),  # 256 MB
+        ((3,), 0, numpy.float64, numpy.float64),
+        ((1, 3), 1, numpy.float64, numpy.float64),
+        ((1, 3, 1), 1, numpy.float64, numpy.float64),
+        ((5, 2), 0, numpy.float64, numpy.float64),
+        ((2, 5), 1, numpy.float64, numpy.float64),
+        ((5, 2, 2), 0, numpy.float64, numpy.float64),
+        ((2, 5, 2), 1, numpy.float64, numpy.float64),
+        ((2, 2, 5), 2, numpy.float64, numpy.float64),
+        ((2, 2, 5, 2), 2, numpy.float64, numpy.float64),
+        ((2, 5, 2), 1, numpy.float32, numpy.float32),
+        ((2, 5, 2), 1, numpy.int16, numpy.float32),
+        ((2, 5, 2), 1, numpy.int32, numpy.float32),
+        ((64, 128, 128, 2, 32), 4, numpy.float32, numpy.float32),  # 256 MB
+        ((32, 32, 256, 256), 1, numpy.float32, numpy.float32),  # 256 MB
         # TODO: can't test uint with this
     ],
 )
@@ -277,8 +277,8 @@ def test_phasor_from_signal_param(use_fft, shape, axis, dtype, dtype_out):
     assert_allclose(numpy.mean(imag), 0.2, 1e-3)
 
 
-@pytest.mark.parametrize('use_fft', (True, False))
-@pytest.mark.parametrize('dtype', ('float32', 'float64'))
+@pytest.mark.parametrize('use_fft', [True, False])
+@pytest.mark.parametrize('dtype', ['float32', 'float64'])
 def test_phasor_from_signal_noncontig(use_fft, dtype):
     """Test phasor_from_signal functions with non-contiguous input."""
     dtype = numpy.dtype(dtype)
@@ -306,14 +306,13 @@ def test_phasor_from_signal_noncontig(use_fft, dtype):
     assert_allclose(numpy.mean(imag), 0.2, 1e-3)
 
 
-@pytest.mark.parametrize('scalar', (True, False))
-@pytest.mark.parametrize('harmonic', ('all', 1, 2, 8, [1], [1, 2, 8]))
+@pytest.mark.parametrize('scalar', [True, False])
+@pytest.mark.parametrize('harmonic', ['all', 1, 2, 8, [1], [1, 2, 8]])
 def test_phasor_from_signal_harmonic(scalar, harmonic):
     """Test phasor_from_signal function harmonic parameter."""
-    rng = numpy.random.default_rng(1)
     signal = rng.random((33,) if scalar else (3, 33, 61, 63))
     signal += 1.1
-    kwargs = dict(axis=0 if scalar else 1, harmonic=harmonic)
+    kwargs = {'axis': 0 if scalar else 1, 'harmonic': harmonic}
     mean0, real0, imag0 = phasor_from_signal(signal, use_fft=False, **kwargs)
     mean1, real1, imag1 = phasor_from_signal(signal, use_fft=True, **kwargs)
     assert_allclose(mean0, mean1, 1e-8)
@@ -321,17 +320,16 @@ def test_phasor_from_signal_harmonic(scalar, harmonic):
     assert_allclose(imag0, imag1, 1e-8)
 
 
-@pytest.mark.parametrize('fft', (numpy_fft, scipy_fft, mkl_fft))
-@pytest.mark.parametrize('scalar', (True, False))
-@pytest.mark.parametrize('harmonic', (1, [4], [1, 4]))
+@pytest.mark.parametrize('fft', [numpy_fft, scipy_fft, mkl_fft])
+@pytest.mark.parametrize('scalar', [True, False])
+@pytest.mark.parametrize('harmonic', [1, [4], [1, 4]])
 def test_phasor_from_signal_fft_func(fft, scalar, harmonic):
     """Test phasor_from_signal_fft function rfft parameter."""
     if fft is None:
         pytest.skip('rfft function could not be imported')
-    rng = numpy.random.default_rng(1)
     signal = rng.random((33,) if scalar else (3, 33, 61, 63))
     signal += 1.1
-    kwargs = dict(axis=0 if scalar else 1, harmonic=harmonic)
+    kwargs = {'axis': 0 if scalar else 1, 'harmonic': harmonic}
     mean0, real0, imag0 = phasor_from_signal(signal, use_fft=True, **kwargs)
     mean1, real1, imag1 = phasor_from_signal(
         signal, rfft=fft.rfft, use_fft=True, **kwargs
@@ -341,17 +339,16 @@ def test_phasor_from_signal_fft_func(fft, scalar, harmonic):
     assert_allclose(imag0, imag1, 1e-8)
 
 
-@pytest.mark.parametrize('harmonics', (True, False))
-@pytest.mark.parametrize('normalize', (True, False))
+@pytest.mark.parametrize('harmonics', [True, False])
+@pytest.mark.parametrize('normalize', [True, False])
 def test_phasor_normalization(harmonics, normalize):
     """Test phasor_from_signal and phasor_normalize functions."""
-    rng = numpy.random.default_rng(1)
     samples = 33
     signal = rng.random((3, samples, 61, 63))
     signal += 1.1
     if normalize:
         # TODO: NaN handling seems to differ with FFT in unnormalized case
-        signal[0, 0, 0, 0] = NAN
+        signal[0, 0, 0, 0] = nan
         signal[0, :, 1, 1] = 0.0
 
     harmonic = [1, 2] if harmonics else None
@@ -415,7 +412,7 @@ def test_phasor_normalization(harmonics, normalize):
 
 
 @pytest.mark.parametrize(
-    'shape, axis',
+    ('shape', 'axis'),
     [
         ((15,), 0),
         ((15,), -1),
@@ -431,7 +428,7 @@ def test_phasor_to_signal_roundtrip(shape, axis):
     """Test phasor_to_signal and phasor_from_signal functions in roundtrip."""
     samples = shape[axis]
     harmonic = list(range(1, samples // 2 + 1))
-    signal0 = numpy.random.normal(1.1, 0.1, shape)
+    signal0 = rng.normal(1.1, 0.1, shape)
 
     # get all harmonics
     mean, real, imag = phasor_from_signal(signal0, harmonic='all', axis=axis)
@@ -444,7 +441,7 @@ def test_phasor_to_signal_roundtrip(shape, axis):
     assert_allclose(signal1, signal0, atol=1e-4)
 
     if signal0.size > 15:
-        # synthesize all harmonics found in first axes
+        # synthesize all harmonics found in first axis
         signal1 = phasor_to_signal(
             mean, real, imag, samples=samples, axis=axis
         )
@@ -620,7 +617,6 @@ def test_phasor_from_polar():
     assert_allclose(imag, [0, 0.5, 1], atol=1e-6)
 
     # roundtrip
-    rng = numpy.random.default_rng()
     phase = rng.random((63, 65)).astype(numpy.float32) * (2.0 * math.pi)
     modulation = rng.random((63, 65)).astype(numpy.float32)
     phase_, modulation_ = phasor_from_polar(
@@ -639,8 +635,8 @@ def test_phasor_from_polar():
     # real, imag = phasor_from_polar(phase, modulation)
     # assert_allclose(real, [0, 0.5], atol=1e-3)
     # assert_allclose(imag, [0, 0.5], atol=1e-3)
-    # assert real.dtype == 'float32'
-    # assert imag.dtype == 'float32'
+    # assert real.dtype == numpy.float32
+    # assert imag.dtype == numpy.float32
 
     # broadcast
     assert_allclose(
@@ -657,7 +653,7 @@ def test_phasor_from_polar():
 
 
 @pytest.mark.parametrize(
-    'real, imag, expected_phase, expected_modulation',
+    ('real', 'imag', 'expected_phase', 'expected_modulation'),
     [
         (1, 0, 0.0, 1.0),
         (-0.5, -0.7, -2.191045812777718, 0.8602325267042626),
@@ -708,8 +704,8 @@ def test_phasor_to_polar_more():
     # phase, modulation = phasor_to_polar(real, imag)
     # assert_allclose(phase, [0, 0.785398], atol=1e-3)
     # assert_allclose(modulation, [0, 0.707107], atol=1e-3)
-    # assert phase.dtype == 'float32'
-    # assert modulation.dtype == 'float32'
+    # assert phase.dtype == numpy.float32
+    # assert modulation.dtype == numpy.float32
 
     # broadcast
     assert_allclose(
@@ -721,8 +717,8 @@ def test_phasor_to_polar_more():
 
 def test_phasor_to_complex():
     """Test phasor_to_complex function."""
-    real = [NAN, 0.1, 0.2]
-    imag = [NAN, 0.3, 0.4]
+    real = [nan, 0.1, 0.2]
+    imag = [nan, 0.3, 0.4]
     assert_allclose(phasor_to_complex(real, imag).real, real)
     assert_allclose(phasor_to_complex(real, imag).imag, imag)
     assert_allclose(phasor_to_complex(0, imag).real, 0)
@@ -778,8 +774,8 @@ def test_phasor_divide():
     imag1 = [0.0, 0.22, 0.4]
     real2 = [0.0, 0.5, 0.6]
     imag2 = [0.0, 0.7, 0.8]
-    real = [NAN, 0.1, 0.2]
-    imag = [NAN, 0.3, 0.4]
+    real = [nan, 0.1, 0.2]
+    imag = [nan, 0.3, 0.4]
 
     assert_allclose(
         phasor_to_complex(*phasor_divide(real1, imag1, real2, imag2)),
@@ -793,7 +789,7 @@ def test_phasor_divide():
 
 
 @pytest.mark.parametrize(
-    'real, imag, phase, modulation, expected_real, expected_imag',
+    ('real', 'imag', 'phase', 'modulation', 'expected_real', 'expected_imag'),
     [
         (2, 2, None, None, 2, 2),
         (2, 2, 0, 1, 2, 2),
@@ -908,8 +904,8 @@ def test_phasor_transform_more():
     # real, imag = phasor_transform(real, imag, math.pi / 4, 0.5)
     # assert_allclose(real, [0, 0.353553], atol=1e-3)
     # assert_allclose(imag, [0, 0.353553], atol=1e-3)
-    # assert real.dtype == 'float32'
-    # assert imag.dtype == 'float32'
+    # assert real.dtype == numpy.float32
+    # assert imag.dtype == numpy.float32
 
     # broadcast
     real, imag = phasor_transform(1, 0, [math.pi / 4, math.pi / 8], [0.5, 0.9])
@@ -918,7 +914,7 @@ def test_phasor_transform_more():
 
 
 @pytest.mark.parametrize(
-    'args, expected',
+    ('args', 'expected'),
     [
         # same intensity, same fraction
         ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, 0.5), (1.0, 0.2, 0.3)),
@@ -941,18 +937,18 @@ def test_phasor_transform_more():
             ([1.0, 1.0, 1.0], [0.3, 0.2, 0.1], [0.4, 0.3, 0.2]),
         ),
         # fraction0 + fraction1 == 0
-        ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, 0.5, -0.5), (0.0, NAN, NAN)),
+        ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, 0.5, -0.5), (0.0, nan, nan)),
         # int0 + int1 == 0
-        ((0.5, 0.1, 0.2, -0.5, 0.3, 0.4, 1.0, 1.0), (0.0, NAN, NAN)),
-        # NAN input
-        ((NAN, 0.1, 0.2, 1.0, 0.3, 0.4, 0.5), (NAN, NAN, NAN)),
-        ((NAN, 0.1, 0.2, 1.0, 0.3, 0.4, 1.0, 1.0), (NAN, NAN, NAN)),
-        ((1.0, NAN, 0.2, 1.0, 0.3, 0.4, 0.5), (1.0, NAN, 0.3)),
-        ((1.0, NAN, 0.2, 1.0, 0.3, 0.4, 1.0, 1.0), (1.0, NAN, 0.3)),
-        ((1.0, 0.1, NAN, 1.0, 0.3, 0.4, 0.5), (1.0, 0.2, NAN)),
-        ((1.0, 0.1, NAN, 1.0, 0.3, 0.4, 1.0, 1.0), (1.0, 0.2, NAN)),
-        ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, NAN), (NAN, NAN, NAN)),
-        ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, 1.0, NAN), (NAN, NAN, NAN)),
+        ((0.5, 0.1, 0.2, -0.5, 0.3, 0.4, 1.0, 1.0), (0.0, nan, nan)),
+        # nan input
+        ((nan, 0.1, 0.2, 1.0, 0.3, 0.4, 0.5), (nan, nan, nan)),
+        ((nan, 0.1, 0.2, 1.0, 0.3, 0.4, 1.0, 1.0), (nan, nan, nan)),
+        ((1.0, nan, 0.2, 1.0, 0.3, 0.4, 0.5), (1.0, nan, 0.3)),
+        ((1.0, nan, 0.2, 1.0, 0.3, 0.4, 1.0, 1.0), (1.0, nan, 0.3)),
+        ((1.0, 0.1, nan, 1.0, 0.3, 0.4, 0.5), (1.0, 0.2, nan)),
+        ((1.0, 0.1, nan, 1.0, 0.3, 0.4, 1.0, 1.0), (1.0, 0.2, nan)),
+        ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, nan), (nan, nan, nan)),
+        ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, 1.0, nan), (nan, nan, nan)),
     ],
 )
 def test_phasor_combine(args, expected):
@@ -997,7 +993,7 @@ def test_phasor_combine_more():
 
 
 @pytest.mark.parametrize(
-    'real, imag, kwargs, expected_real_center, expected_imag_center',
+    ('real', 'imag', 'kwargs', 'expected_real_center', 'expected_imag_center'),
     [
         (1.0, 4.0, {'skip_axis': None, 'method': 'mean'}, 1.0, 4.0),
         (1.0, -4.0, {'skip_axis': None, 'method': 'median'}, 1.0, -4.0),
@@ -1078,7 +1074,7 @@ def test_phasor_center(
     real_copy = copy.deepcopy(real)
     imag_copy = copy.deepcopy(imag)
     mean = numpy.full_like(real_copy, 0.666, dtype=numpy.float64)
-    mean_center, real_center, imag_center = phasor_center(
+    _mean_center, real_center, imag_center = phasor_center(
         mean, real_copy, imag_copy, **kwargs
     )
     assert_array_equal(mean, 0.666)
@@ -1118,10 +1114,7 @@ def test_phasor_to_principal_plane():
     def distribution(values, stddev=0.05, samples=1000):
         return numpy.ascontiguousarray(
             numpy.vstack(
-                [
-                    numpy.random.normal(value, stddev, samples)
-                    for value in values
-                ]
+                [rng.normal(value, stddev, samples) for value in values]
             ).T
         )
 
@@ -1170,11 +1163,11 @@ def test_phasor_nearest_neighbor():
     # test scalar inputs
     assert_array_equal(phasor_nearest_neighbor(1, 1, 1, 1), 0)
     assert_array_equal(phasor_nearest_neighbor(1, 1, 1, 1, values=1), 1.0)
-    assert_array_equal(phasor_nearest_neighbor(NAN, 1, 1, 1), -1)
-    assert_array_equal(phasor_nearest_neighbor(NAN, 1, 1, 1, values=1), NAN)
+    assert_array_equal(phasor_nearest_neighbor(nan, 1, 1, 1), -1)
+    assert_array_equal(phasor_nearest_neighbor(nan, 1, 1, 1, values=1), nan)
 
     # Test input arrays are not modified, no values
-    arr = numpy.array([[NAN, 2], [3, 4]])
+    arr = numpy.array([[nan, 2], [3, 4]])
     original_arr = arr.copy()
     result = phasor_nearest_neighbor(arr, arr, arr, arr)
     assert result.dtype == numpy.int8
@@ -1187,20 +1180,20 @@ def test_phasor_nearest_neighbor():
     result = phasor_nearest_neighbor(arr, arr, arr / 2, arr / 2, values=values)
     assert_array_equal(arr, original_arr)
     assert_array_equal(values, original_values)
-    assert_array_equal(result, [[NAN, 8], [8, 8]])
+    assert_array_equal(result, [[nan, 8], [8, 8]])
 
     # test dtype parameter
     result = phasor_nearest_neighbor(
         arr, arr, arr / 2, arr / 2, values=values, dtype=numpy.float32
     )
     assert result.dtype == numpy.float32
-    assert_array_equal(result, [[NAN, 8], [8, 8]])
+    assert_array_equal(result, [[nan, 8], [8, 8]])
 
     # test num_threads parameter
     result = phasor_nearest_neighbor(
         arr, arr, arr / 2, arr / 2, values=values, num_threads=2
     )
-    assert_array_equal(result, [[NAN, 8], [8, 8]])
+    assert_array_equal(result, [[nan, 8], [8, 8]])
 
     # Test distance_max parameter
     result = phasor_nearest_neighbor(arr, arr, [2], [2], distance_max=2)
@@ -1210,12 +1203,12 @@ def test_phasor_nearest_neighbor():
     result = phasor_nearest_neighbor(
         arr, arr, [2, 2], [2, 2], values=[10, 20], distance_max=2
     )
-    assert_array_equal(result, [[NAN, 10], [10, NAN]])
+    assert_array_equal(result, [[nan, 10], [10, nan]])
 
-    # Test multi-dimensional inputs
+    # Test multidimensional inputs
     # TODO: modify this when multiple dimensions are supported
     arr = numpy.array(
-        [[[1, 1], [1, NAN]], [[2, 2], [2, 2]], [[3, 3], [NAN, 3]]]
+        [[[1, 1], [1, nan]], [[2, 2], [2, 2]], [[3, 3], [nan, 3]]]
     )
     neighbor_arr = numpy.array(
         [[[1, 2], [3, 4]], [[2, 3], [4, 5]], [[3, 4], [5, 6]]]
@@ -1227,7 +1220,7 @@ def test_phasor_nearest_neighbor():
         arr, arr, neighbor_arr, neighbor_arr, values=values
     )
     assert_array_equal(
-        result, [[[0, 0], [0, NAN]], [[1, 1], [1, 1]], [[2, 2], [NAN, 2]]]
+        result, [[[0, 0], [0, nan]], [[1, 1], [1, 1]], [[2, 2], [nan, 2]]]
     )
 
 
@@ -1235,7 +1228,7 @@ def test_phasor_nearest_neighbor():
 def test_phasor_nearest_neighbor_harmonics():
     """Test phasor_nearest_neighbor function with multiple harmonics."""
     arr = numpy.array(
-        [[[1, 1], [1, NAN]], [[2, 2], [2, 2]], [[3, 3], [NAN, 3]]]
+        [[[1, 1], [1, nan]], [[2, 2], [2, 2]], [[3, 3], [nan, 3]]]
     )
     neighbor_arr = numpy.array(
         [[[1, 2], [3, 4]], [[2, 3], [4, 5]], [[3, 4], [5, 6]]]
@@ -1246,7 +1239,7 @@ def test_phasor_nearest_neighbor_harmonics():
     )
     assert_array_equal(
         result,
-        [[[0, 0], [NAN, NAN]], [[0, 0], [NAN, NAN]], [[0, 0], [NAN, NAN]]],
+        [[[0, 0], [nan, nan]], [[0, 0], [nan, nan]], [[0, 0], [nan, nan]]],
     )
 
 
@@ -1274,7 +1267,7 @@ def test_phasor_nearest_neighbor_errors():
     with pytest.raises(ValueError):
         phasor_nearest_neighbor(arr, arr, arr, arr, distance_max=-1)
 
-    # not a floating point types
+    # not a floating-point types
     with pytest.raises(ValueError):
         phasor_nearest_neighbor(arr, arr, arr, arr, dtype=numpy.int8)
 

@@ -4,8 +4,9 @@ Benchmark phasor_from_signal
 
 Benchmark the ``phasor_from_signal`` function.
 
-The :py:func:`phasorpy.phasor.phasor_from_signal` function to calculate phasor
-coordinates from time-resolved or spectral signals can operate in two modes:
+The :py:func:`phasorpy.phasor.phasor_from_signal` function used to calculate
+phasor coordinates from time-resolved or spectral signals can operate in
+two modes:
 
 - using an internal Cython function optimized for calculating a small number
   of harmonics, optionally using multiple threads.
@@ -23,9 +24,9 @@ Import required modules and functions:
 from timeit import timeit
 
 import numpy
-from numpy.fft import rfft as numpy_fft  # noqa
+from numpy.fft import rfft as numpy_fft  # noqa: F401
 
-from phasorpy.phasor import phasor_from_signal  # noqa
+from phasorpy.phasor import phasor_from_signal  # noqa: F401
 from phasorpy.utils import number_threads
 
 try:
@@ -38,13 +39,15 @@ try:
 except ImportError:
     mkl_fft = None
 
+rng = numpy.random.default_rng(42)  # initialize random number generator
+
 # %%
 # Run benchmark
 # -------------
 #
-# Create a random signal with a size and dtype similar to real world data:
+# Create a random signal with a size and dtype similar to real-world data:
 
-signal = numpy.random.default_rng(1).random((384, 384, 384))
+signal = rng.random((384, 384, 384))
 signal += 1.1
 signal *= 3723  # ~12 bit
 signal = signal.astype(numpy.uint16)  # 108 MB
@@ -91,7 +94,7 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
 
 # %%
 # For reference, the results on a Core i7-14700K CPU, Windows 11,
-# Python 3.14.0, numpy 2.3.5, scipy 1.16.3, mkl-fft 2.1.1::
+# Python 3.14.0, numpy 2.3.5, scipy 1.16.3, mkl_fft 2.1.1::
 #
 #     harmonics 1
 #       axis -1
@@ -137,15 +140,15 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
 # -------
 #
 # - Using the Cython implementation is significantly faster than using the
-#   ``numpy.fft`` based implementation for single harmonics.
+#   ``numpy.fft``-based implementation for single harmonics.
 # - Using multiple threads can significantly speed up the Cython mode.
-# - The FFT functions from ``scipy`` and ``mkl_fft`` outperform numpy.fft.
-#   Specifically, ``mkl_fft`` is very performant.
-# - Using FFT becomes more competitive when calculating larger number of
+# - The FFT functions from ``scipy`` and ``mkl_fft`` outperform the
+#   ``numpy.fft`` function. Specifically, ``mkl_fft`` is very performant.
+# - Using FFT becomes more competitive when calculating a larger number of
 #   harmonics.
 # - Computing over the last axis is significantly faster compared to the first
-#   axis. That is because the samples in the last dimension are contiguous,
-#   closer together in memory.
+#   axis. That is because the samples in the last dimension are contiguous in
+#   memory.
 #
 # Note that these results were obtained on a single dataset of random numbers.
 
@@ -154,8 +157,10 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
 # -----------
 #
 # Using the Cython implementation is a reasonable default when calculating
-# a few harmonics. Using FFT is a better choice when computing large number
+# a few harmonics. Using FFT is a better choice when computing a large number
 # of harmonics, especially with an optimized FFT function.
 
+# sphinx_gallery_start_ignore
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore

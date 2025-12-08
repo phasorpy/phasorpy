@@ -1,5 +1,5 @@
 """
-Förster Resonance Energy Transfer
+Förster resonance energy transfer
 =================================
 
 Calculate and plot phasor coordinates of FRET donor and acceptor channels.
@@ -8,7 +8,7 @@ The :py:func:`phasorpy.lifetime.phasor_from_fret_donor`,
 :py:func:`phasorpy.lifetime.phasor_from_fret_acceptor`, and
 :py:class:`phasorpy.plot.PhasorPlotFret` functions and classes
 are used to calculate and plot phasor coordinates of
-FRET (Förster Resonance Energy Transfer) donor and acceptor channels
+Förster resonance energy transfer (FRET) donor and acceptor channels
 as a function of:
 
 - laser pulse or modulation frequency
@@ -16,8 +16,8 @@ as a function of:
 - FRET efficiency
 - fraction of donors undergoing FRET
 - fraction of directly excited acceptors (acceptor bleedthrough)
-- fraction of donor fluorescence in acceptor channel (donor bleedthrough)
-- fraction of background fluorescence
+- fraction of donor signal in acceptor channel (donor bleedthrough)
+- fraction of background signal
 
 """
 
@@ -36,23 +36,23 @@ settings = {
 # FRET efficiency trajectories
 # ----------------------------
 #
-# The lifetime :math:`\tau_{DA}` and fluorescence intensity :math:`F_{DA}`
-# of a FRET donor quenched by energy transfer of efficiency :math:`E` is given
+# The lifetime :math:`\tau_{DA}` and signal intensity :math:`F_{DA}`
+# of a FRET donor quenched by energy transfer of efficiency :math:`E` are given
 # by :math:`\tau_{DA} = \tau_{D} (1 - E)` and :math:`F_{DA} = F_{D} (1 - E)`,
 # where :math:`\tau_{D}` and :math:`F_{D}` are the donor lifetime and
 # intensity in the absence of energy transfer.
 #
-# Hence, in the absence of background fluorescence and donors not undergoing
+# Hence, in the absence of background signal and donors not undergoing
 # energy transfer, the phasor coordinates of the donor channel at different
 # FRET efficiencies lie on the universal semicircle.
-# At 100% energy transfer, the donor lifetime and fluorescence intensity are
+# At 100% energy transfer, the donor lifetime and signal intensity are
 # zero.
 #
 # The sensitized emission of a FRET acceptor is phase-shifted and demodulated
-# relative to the FRET donor because of the duration of, and dissipation
-# during, relaxation and energy transfer processes.
+# relative to the FRET donor due to time delays and energy dissipation
+# during relaxation and energy transfer processes.
 # Hence, in the absence of directly excited acceptor, donor bleedthrough,
-# and background fluorescence, the phasor coordinates of the acceptor channel
+# and background signal, the phasor coordinates of the acceptor channel
 # at different FRET efficiencies lie outside the universal semicircle of
 # the donor.
 
@@ -68,10 +68,10 @@ PhasorPlotFret(
 # Fractions not fretting
 # ----------------------
 #
-# Adding fractions of donors not participating in FRET and fractions
-# of directly excited acceptors (acceptor bleedthrough) pulls the
-# FRET trajectories of the donor and acceptor channels towards the
-# phasor coordinates of the donor and acceptor without FRET:
+# Adding fractions of donors not participating in FRET (not fretting)
+# and fractions of directly excited acceptors (acceptor bleedthrough)
+# pulls the FRET trajectories of the donor and acceptor channels towards
+# the phasor coordinates of the donor and acceptor without FRET:
 
 PhasorPlotFret(
     **settings,
@@ -85,7 +85,7 @@ PhasorPlotFret(
 # Donor bleedthrough
 # ------------------
 #
-# When the acceptor channel contains fractions of donor fluorescence
+# When the acceptor channel contains fractions of donor signal
 # (donor bleedthrough), the FRET efficiency trajectory of the acceptor
 # channel shifts towards the phasor coordinates of the donor channel:
 
@@ -97,15 +97,15 @@ PhasorPlotFret(
 
 
 # %%
-# Background fluorescence
-# -----------------------
+# Background signal
+# -----------------
 #
-# In the presence of background fluorescence, the FRET efficiency trajectories
+# In the presence of background signal, the FRET efficiency trajectories
 # are linear combinations with the background phasor coordinates.
 # At 100% energy transfer, the donor channel only contains background
-# fluorescence if all donors participate in FRET.
+# signal if all donors participate in FRET.
 # At 0% energy transfer, in the absence of donor bleedthrough and directly
-# excited acceptor, the acceptor channel only contains background fluorescence:
+# excited acceptor, the acceptor channel only contains background signal:
 
 PhasorPlotFret(
     **settings,
@@ -126,14 +126,14 @@ PhasorPlotFret(
 #
 # - donor not undergoing energy transfer
 # - donor quenched by energy transfer
-# - background fluorescence
+# - background signal
 #
 # The phasor coordinates of the acceptor channel may contain fractions of:
 #
 # - acceptor sensitized by energy transfer
 # - directly excited acceptor
 # - donor bleedthrough
-# - background fluorescence
+# - background signal
 
 PhasorPlotFret(
     **settings,
@@ -149,40 +149,18 @@ PhasorPlotFret(
 
 
 # %%
-# Interactive plot
-# ----------------
-#
-# Run the FRET phasor plot interactively::
-#
-#     $ python -m phasorpy fret
-#
-# or
-
-PhasorPlotFret(
-    **settings,
-    donor_fretting=0.9,
-    donor_bleedthrough=0.1,
-    interactive=True,
-    title='Interactive FRET phasor plot',
-).show()
-
-
-# %%
 # Multi-frequency plot
 # --------------------
 #
 # Since each component of the FRET model has a distinct frequency response,
 # the multi-frequency plots of donor and acceptor channels reveal
 # complex patterns.
-# Background fluorescence is omitted from this example to model an
-# in vitro experiment:
+# Background signal is omitted from this example to model an in vitro
+# experiment:
 
 import numpy
 
-from phasorpy.lifetime import (
-    phasor_from_fret_acceptor,
-    phasor_from_fret_donor,
-)
+from phasorpy.lifetime import phasor_from_fret_acceptor, phasor_from_fret_donor
 from phasorpy.phasor import phasor_to_polar
 from phasorpy.plot import plot_polar_frequency
 
@@ -194,6 +172,7 @@ donor_fretting = 0.9
 donor_bleedthrough = 0.1
 acceptor_bleedthrough = 0.1
 
+# phasor of donor channel
 donor_real, donor_imag = phasor_from_fret_donor(
     frequency,
     donor_lifetime,
@@ -214,8 +193,7 @@ acceptor_real, acceptor_imag = phasor_from_fret_acceptor(
 
 plot_polar_frequency(
     frequency,
-    phasor_to_polar(donor_real, donor_imag)[0],
-    phasor_to_polar(donor_real, donor_imag)[1],
+    *phasor_to_polar(donor_real, donor_imag),
     title='Donor channel',
 )
 
@@ -227,7 +205,8 @@ plot_polar_frequency(
     title='Acceptor channel',
 )
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = 5
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore

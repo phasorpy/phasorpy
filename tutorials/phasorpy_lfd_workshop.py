@@ -14,7 +14,7 @@ and Excel software.
 
 .. note::
 
-    This tutorial is work in progress. Not all of SimFCS' functionality is
+    This tutorial is a work in progress. Not all of SimFCS' functionality is
     available in the PhasorPy library yet.
 
 """
@@ -47,15 +47,15 @@ from phasorpy.plot import (
 # Phasor properties
 # -----------------
 #
-# The phasor is a frequency domain representation of the fluorescence
-# lifetime at a single frequency. For single exponential lifetimes, this
+# The phasor is a frequency-domain representation of the fluorescence
+# lifetime at a single frequency. For single-exponential lifetimes, this
 # completely describes the system.
-# For multiple exponentials, the phasor represents some intensity weighted
+# For multiple exponentials, the phasor represents some intensity-weighted
 # linear combination of the lifetimes in the system. Therefore, given the
 # phasor for a single multiexponential measurement, we cannot determine
 # the lifetimes for the system.
-# Nevertheless, given multiple measurements (e.g. multiple pixels in an
-# image), heterogeneity becomes obvious.
+# Nevertheless, given multiple measurements (for example, multiple pixels in
+# an image), heterogeneity becomes obvious.
 #
 # To demonstrate this effect, calculate:
 #
@@ -100,15 +100,15 @@ signal, instrument_response, times = lifetime_to_signal(
 
 fig, ax = pyplot.subplots()
 ax.set(
-    title='Multi-exponential decay',
-    xlabel='Times [ns]',
+    title='Multiexponential decay',
+    xlabel='Time [ns]',
     ylabel='Intensity [au]',
 )
 ax.plot(times, signal)
 pyplot.show()
 
 # %%
-# Two state equilibrium
+# Two-state equilibrium
 # ---------------------
 #
 # Fluorescent ion indicators often exist in two distinct states with
@@ -123,7 +123,7 @@ pyplot.show()
 #
 # Simulate the phasor for different combinations (relative amplitudes)
 # of a 4 ns lifetime state and a 1 ns lifetime state
-# (e.g. amplitude 1 = 0.2, amplitude 2 = 0.8).
+# (for example, amplitude 1 = 0.2, amplitude 2 = 0.8).
 
 frequency = 80.0  # MHz
 lifetimes = [4.0, 1.0]  # ns
@@ -134,7 +134,7 @@ real, imag = phasor_from_lifetime(
 )
 
 # %%
-# Record S (the phasor y coordinate) and G (the phasor x coordinate)
+# Record S (the phasor y-coordinate) and G (the phasor x-coordinate)
 # values for each combination.
 
 print('S:', imag)
@@ -163,7 +163,7 @@ plot_phasor(real, imag, fmt='o-', frequency=frequency)
 # three capillaries filled with different dye solutions.
 # The extension ``.ref``, for referenced, indicates that this file has been
 # corrected for phase shifts and detection efficiency relative to a reference
-# with a known lifetime (e.g., Fluorescein).
+# with a known lifetime (for example, Fluorescein).
 # Read the file, calculate phasor coordinates from phase and modulation,
 # display the images, and plot the phasor coordinates of first and second
 # harmonics:
@@ -200,7 +200,7 @@ plot_phasor(
 # MHz).
 #
 # The calculation of the phase and modulation is strongly dependent
-# on the signal-to-noise.
+# on the signal-to-noise ratio.
 # Therefore, it is a good idea to smooth noisy data by a moving average.
 # Note that this will also reduce the spatial resolution in the phasor.
 #
@@ -246,8 +246,8 @@ plot_phasor(
 # .. todo::
 #
 #     Select different components of the phasor using cursors.
-#     List the phase and modulation well as the apparent phase and modulation
-#     lifetimes for the selected components.
+#     List the phase and modulation as well as the apparent phase and
+#     modulation lifetimes for the selected components.
 #
 # All of the capillaries contain 10 mM Tris buffer, pH 8.0.
 # Fluorescein has a lifetime of 4.05 ns in basic solution.
@@ -255,7 +255,7 @@ plot_phasor(
 # - Which capillary contains Fluorescein?
 #
 # The shortest lifetime capillary contains Rhodamine B, which has a
-# single exponential lifetime around 1.5 ns in phosphate buffer at pH 7.0.
+# single-exponential lifetime around 1.5 ns in phosphate buffer at pH 7.0.
 #
 # - Is Rhodamine B single exponential in this solution?
 # - What does the center capillary contain?
@@ -263,7 +263,7 @@ plot_phasor(
 # .. todo::
 #
 #     The phasor cursors can be assigned different colors.
-#     This allows to have different phasor distributions displayed
+#     This allows one to have different phasor distributions displayed
 #     simultaneously.
 #
 # .. todo::
@@ -284,14 +284,14 @@ plot_phasor(
 #
 #     To visualize the linear combination of the two colors (species):
 #
-#     - Place the 2 cursors on the part of the image to link
+#     - Place the two cursors on the part of the image to link
 #       and show the linked cursor bitmap for harmonic 1.
 #
 #     The color bitmap shows the relative concentration of
 #     the selected species.
 #
 # The explanations in the last two paragraphs should help answer
-# the last question above, about the components in the middle channel.
+# the question above, about the components in the middle channel.
 
 # %%
 # Quenching, FRET
@@ -354,7 +354,7 @@ plot.show()
 # FRET. The others continue to fluoresce with an unquenched lifetime.
 # Simulate the situation where 50% of the donors remain unquenched.
 # Rationalize the results in terms of the quenching simulations done above
-# and the two state experiments we did earlier.
+# and the two-state experiments we did earlier.
 
 plot = PhasorPlot(frequency=frequency, title='Donors fretting')
 plot.plot(*phasor_from_lifetime(frequency, lifetime=4.0), label='no FRET')
@@ -369,7 +369,7 @@ plot.show()
 # CFP-YFP
 # .......
 #
-# Open the file ``CFPpax8651866.ref``, which contains referenced FLIM data
+# Load the file ``CFPpax8651866.ref``, which contains referenced FLIM data
 # for a cell transfected with a CFP paxillin construct.
 
 mean1, real1, imag1, attrs = phasor_from_simfcs_referenced(
@@ -379,7 +379,7 @@ mean1, real1, imag1, attrs = phasor_from_simfcs_referenced(
 plot_phasor_image(mean1, real1, imag1, title='CFPpax8651866.ref')
 
 # %%
-# Open the file ``1011rac1002.ref``, which contains referenced FLIM data
+# Load the file ``1011rac1002.ref``, which contains referenced FLIM data
 # for a cell transfected with a CFP-YFP fusion protein:
 
 mean2, real2, imag2, attrs = phasor_from_simfcs_referenced(
@@ -405,10 +405,22 @@ _, real1, imag1 = phasor_filter_median(mean1, real1, imag1, repeat=2)
 _, real2, imag2 = phasor_filter_median(mean2, real2, imag2, repeat=2)
 
 _, real1, imag1 = phasor_threshold(
-    mean, real1, imag1, mean_min=32, real_min=0, imag_min=0, open_interval=True
+    mean1,
+    real1,
+    imag1,
+    mean_min=32,
+    real_min=0,
+    imag_min=0,
+    open_interval=True,
 )
 _, real2, imag2 = phasor_threshold(
-    mean, real2, imag2, mean_min=32, real_min=0, imag_min=0, open_interval=True
+    mean2,
+    real2,
+    imag2,
+    mean_min=32,
+    real_min=0,
+    imag_min=0,
+    open_interval=True,
 )
 
 plot = PhasorPlot(
@@ -420,8 +432,8 @@ plot.hist2d(real1, imag1, cmap='Blues', cmin=20)  # label='CFPpax8651866'
 plot.show()
 
 # %%
-# Load ``CFP and CFP-YFP.ref`` and ``CFP-YFP many cells with background.ref``.
-# These files were acquired using the Lambert frequency domain FLIM instrument
+# Load ``CFP and CFP-YFp.ref`` and ``CFP-YFP many cells with background.ref``.
+# These files were acquired using the Lambert frequency-domain FLIM instrument
 # and were referenced using a solution of Fluorescein at pH>9.
 # They contain fixed samples of CFP and CFP-YFP expressing cells with
 # various amounts of background.
@@ -459,7 +471,7 @@ _, real, imag = phasor_threshold(
 
 plot = PhasorPlot(
     frequency=frequency,
-    title='"CFP and CFP-YFp" and "CFP-YFP many cells"',
+    title='"CFP and CFP-YFP" and "CFP-YFP many cells"',
 )
 plot.hist2d(real, imag, cmin=1)
 plot.show()
@@ -495,7 +507,8 @@ plot.show()
 #
 # The FRET efficiency for the file with very little background is about 0.23.
 # Instead, the best agreement for the file with large background is obtained
-# with the combination shown below, that results in about 0.32 FRET efficiency.
+# with the combination shown below, which results in a FRET efficiency of
+# about 0.32.
 
 settings = {
     'frequency': frequency,
@@ -562,12 +575,13 @@ plot.show()
 # This could be due to the media used for fixing the samples.
 # The spatial distribution due to FRET is always obtained at the entire
 # cell level, not internal to a cell since in these samples either a cell
-# expresses one protein of the other.
+# expresses one protein or the other.
 #
 # - What percentage of the species is fretting in the CFP-YFP image?
 # - Is the FRET efficiency high or low?
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -1
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore

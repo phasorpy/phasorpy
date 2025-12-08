@@ -205,7 +205,7 @@ def test_signal_from_flif():
     signal = signal_from_flif(filename)
     signal = signal_from_flif(fetch('flimfast.flif'))
     assert signal.values.sum(dtype=numpy.uint64) == 706233156
-    assert signal.dtype == 'uint16'
+    assert signal.dtype == numpy.uint16
     assert signal.shape == (32, 220, 300)
     assert signal.dims == ('H', 'Y', 'X')
     assert_almost_equal(

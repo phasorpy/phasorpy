@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phasorpy"
-description = "Analysis of fluorescence lifetime and hyperspectral images using the phasor approach"
+description = "Analysis of luminescence lifetime and hyperspectral images using the phasor approach"
 readme = { file = "README.md", content-type = "text/markdown" }
 dynamic = ["version"]
 dependencies = [
@@ -132,7 +132,7 @@ docs = [
     # documentation build requirements
     "numpydoc",
     "pydata-sphinx-theme>=0.16.0",
-    "sphinx<9",
+    "sphinx",
     "sphinx-copybutton",
     "sphinx-design",
     "sphinx-inline-tabs",
@@ -153,6 +153,7 @@ lint = [
     "pre-commit",
     "pre-commit-hooks",
     "pyupgrade",
+    "ruff",
 ]
 dev = [
     # all development requirements
@@ -173,8 +174,106 @@ version = { attr = "phasorpy.__version__" }
 [tool.setuptools.package-data]
 phasorpy = ["py.typed"]
 
+[tool.ruff]
+src = ["src"]
+target-version = "py312"
+line-length = 79
+exclude = [
+    # similar to [tool.pytest.ini_options.norecursedirs]
+    "._",
+    "__pycache__",
+    "_htmlcov",
+    ".git",
+    ".github",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".vscode",
+    "adhoc",
+    "build",
+    "docs/_build",
+    "fixture",
+    "htmlcov",
+    "phasorpy-dev",
+    "phasorpy.egg-info",
+    "phasorpy_dev",
+]
+
 [tool.ruff.lint]
-select = []
+select = [
+    "ALL",
+    # "A",  # flake8-builtins
+    # "ANN",  # flake8-annotations
+    # "B",  # flake8-bugbear
+    # "C4",  # flake8-comprehensions
+    # "D",  # pydocstyle
+    # "DTZ",  # flake8-datetimez
+    # "E",  # pycodestyle errors
+    # "F",  # Pyflakes
+    # "FA",  # flake8-future-annotations
+    # "G",  # flake8-logging-format
+    # "I",  # isort
+    # "ISC",  # flake8-import-conventions
+    # "N",  # pep8-naming
+    # "NPY",  # NumPy-specific rules
+    # "PIE",  # flake8-pie
+    # "RET",  # flake8-return
+    # "RUF100",  # unused-noqa
+    # "S",  # flake8-bandit
+    # "SIM",  # flake8-simplify
+    # "UP",  # pyupgrade
+    # "W",  # pycodestyle warnings
+    # "YTT",  # flake8-2020
+]
+ignore = [
+    "C901",  # complex-structure
+    "COM812",  # missing-trailing-comma
+    "ERA001",  # commented-out-code
+    "F821", # undefined-name in Literal type hints
+    "FIX002",  # todo
+    "ICN001",  # import-convention
+    "PLC0415",  # import-outside-top-level
+    "PLR0911",  # too-many-return-statements
+    "PLR0912",  # too-many-branches
+    "PLR0913",  # too-many-arguments
+    "PLR0915",  # too-many-statements
+    "PLR2004",  # magic-value-comparison
+    "S101",  # assert
+    "SIM105",  # suppressible-exception
+    "TD",  # todo
+    "TID252",  # relative-imports
+    "TRY003",  # tryceratops
+    "UP037",  # quoted-annotation
+    # TODO: consider enabling these later
+    "ARG002",  # unused-method-argument
+    "EM101",  # raw-string-in-exception
+    "EM102",  # f-string-in-exception
+    "PLR1714",  # repeated-equality-comparison
+    "PLW2901",  # redefined-loop-name
+    "PTH",  # pathlib
+]
+typing-modules = ["_typing"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"conftest.py" = ["ARG001"]
+"setup.py" = ["T201"]
+"tests/*" = ["ANN", "D", "INP001", "PT011", "SLF001"]
+"tools/*" = ["ANN", "INP001", "T201"]
+"tutorials/*" = ["ANN", "D", "E402", "INP001", "T201"]
+"docs/conf.py" = ["A001", "ANN204", "D102", "E402", "INP001", "RUF012"]
+
+[tool.ruff.format]
+quote-style = "single"
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.isort]
+known-first-party = ["phasorpy"]
 
 [tool.pylint.format]
 max-line-length = 79
@@ -213,7 +312,7 @@ line_length = 79
 
 [tool.codespell]
 skip = "*.html,*.css,*.js,*.r64,*.map,./.git,./data,./docs/_build,./docs/tutorials,PKG-INFO,_htmlcov,pyproject.toml"
-ignore-words-list = "ba,compiletime,hist,nd,unparseable,HSI,coo"
+ignore-words-list = "ba,compiletime,hist,nd,unparseable,HSI,coo,aHd"
 
 [tool.mypy]
 packages = ["phasorpy"]
@@ -224,7 +323,13 @@ strict = true
 warn_unreachable = true
 
 [[tool.mypy.overrides]]
-module = ["phasorpy._phasorpy", "pooch.*", "scipy.*", "mkl_fft.*", "sklearn.*"]
+module = [
+    "phasorpy._phasorpy",
+    "pooch.*",
+    "scipy.*",
+    "mkl_fft.*",
+    "sklearn.*",
+]
 ignore_missing_imports = true
 
 [tool.coverage.run]
@@ -232,7 +337,12 @@ plugins = ["Cython.Coverage"]
 omit = ["conftest.py", "__main__.py"]
 
 [tool.coverage.report]
-exclude_lines = ["if TYPE_CHECKING:", "plot.show()", "pragma: no cover", "pragma: ${PY_MAJOR_VERSION} no cover"]
+exclude_lines = [
+    "if TYPE_CHECKING:",
+    "plot.show()",
+    "pragma: no cover",
+    "pragma: ${PY_MAJOR_VERSION} no cover"
+]
 
 [tool.coverage.html]
 directory = "_htmlcov"
@@ -250,29 +360,59 @@ doctest_optionflags = [
 ]
 testpaths = ["src/phasorpy", "tests", "docs"]
 norecursedirs = [
+    # similar to [tool.ruff.exclude]
     "._",
+    "__pycache__",
+    "_htmlcov",
     ".git",
     ".github",
-    ".vscode",
     ".mypy_cache",
     ".pytest_cache",
+    ".ruff_cache",
+    ".vscode",
+    "htmlcov",
     "adhoc",
     "build",
     "docs/_build",
     "fixture",
     "htmlcov",
-    "_htmlcov",
-    "tutorials",
+    "phasorpy-dev",
     "phasorpy.egg-info",
     "phasorpy_dev",
-    "phasorpy-dev",
+    "tutorials",
 ]
 
 [tool.cibuildwheel]
-skip = "cp38* cp39* cp310* cp311* cp313* cp314-* *musllinux* *i686 *ppc64le *s390x"
-test-requires = ["scikit-learn", "lfdfiles", "fbdfile", "sdtfile", "ptufile", "liffile", "pawflim", "pytest", "pytest-cov", "pytest-runner", "pytest-doctestplus", "coverage"]
+skip = [
+    "cp38*",
+    "cp39*",
+    "cp310*",
+    "cp311*",
+    "cp313*",
+    "cp314-*",
+    "*musllinux*",
+    "*i686*",
+    "*ppc64le*",
+    "*s390x*",
+]
 test-command = "pytest {project}/tests"
 test-skip = ["cp314t*"]
+test-requires = [
+    # sync with [dependency-groups.optional]
+    "fbdfile",
+    "lfdfiles",
+    "liffile",
+    "ptufile",
+    "sdtfile",
+    "pawflim",
+    # sync with [dependency-groups.test]
+    "coverage",
+    "cython",  # for Cython.Coverage plugin
+    "pytest",
+    "pytest-cov",
+    "pytest-doctestplus",
+    "pytest-runner",
+]
 
 [tool.cibuildwheel.test-environment]
 SKIP_FETCH = "1"

@@ -1,4 +1,4 @@
-"""Tests for the phasorpy.datasets module."""
+"""Test the phasorpy.datasets module."""
 
 import os
 
@@ -6,11 +6,11 @@ import pytest
 
 from phasorpy.datasets import DATA_ON_GITHUB, fetch
 
-if os.environ.get('SKIP_FETCH', False):
+if os.environ.get('SKIP_FETCH', ''):
     pytest.skip('fetch is disabled', allow_module_level=True)
 
 # skip large downloads by default
-SKIP_LARGE = bool(int(os.environ.get('SKIP_LARGE', 1)))
+SKIP_LARGE = bool(os.environ.get('SKIP_LARGE', '1'))
 
 
 @pytest.mark.skipif(not DATA_ON_GITHUB, reason='not using GitHub Actions')

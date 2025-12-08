@@ -29,6 +29,8 @@ from libc.math cimport (
     exp,
     fabs,
     floor,
+    fmax,
+    fmin,
     hypot,
     isnan,
     sin,
@@ -88,7 +90,7 @@ def _phasor_from_signal(
 
     Parameters
     ----------
-    phasor : 3D memoryview of float32 or float64
+    phasor : 3D memoryview of `float32` or `float64`
         Writable buffer of three dimensions where calculated phasor
         coordinates are stored:
 
@@ -96,7 +98,7 @@ def _phasor_from_signal(
         1. lower dimensions flat
         2. upper dimensions flat
 
-    signal : 3D memoryview of float32 or float64
+    signal : 3D memoryview of `float32` or `float64`
         Buffer of three dimensions containing signal:
 
         0. lower dimensions flat
@@ -129,7 +131,7 @@ def _phasor_from_signal(
         ssize_t i, j, k, h
         double dc, re, im, sample
 
-    # TODO: use Numpy iterator API?
+    # TODO: use NumPy iterator API?
     # https://numpy.org/devdocs/reference/c-api/iterator.html
 
     if (
@@ -163,7 +165,7 @@ def _phasor_from_signal(
                             im = im + sample * sincos[h, k, 1]
                         if normalize:
                             if dc != 0.0:
-                                # includes isnan(dc)
+                                # this includes the isnan(dc) case
                                 re = re / dc
                                 im = im / dc
                                 dc = dc / samples
@@ -193,7 +195,7 @@ def _phasor_from_signal(
                             im = im + sample * sincos[h, k, 1]
                         if normalize:
                             if dc != 0.0:
-                                # includes isnan(dc)
+                                # this includes the isnan(dc) case
                                 re = re / dc
                                 im = im / dc
                                 dc = dc / samples
@@ -223,7 +225,7 @@ def _phasor_from_signal(
                             im += sample * sincos[h, k, 1]
                         if normalize:
                             if dc != 0.0:
-                                # includes isnan(dc)
+                                # this includes the isnan(dc) case
                                 re /= dc
                                 im /= dc
                                 dc = dc / samples
@@ -249,7 +251,7 @@ def _phasor_from_lifetime(
 
     Parameters
     ----------
-    phasor : 3D memoryview of float32 or float64
+    phasor : 3D memoryview of `float32` or `float64`
         Writable buffer of three dimensions where calculated phasor
         coordinates are stored:
 
@@ -258,7 +260,7 @@ def _phasor_from_lifetime(
         2. lifetimes or fractions
 
     frequency : 2D memoryview of float64
-        One-dimensional sequence of laser-pulse or modulation frequencies.
+        One-dimensional sequence of frequencies.
     lifetime : 2D memoryview of float64
         Buffer of two dimensions:
 
@@ -275,7 +277,7 @@ def _phasor_from_lifetime(
         Product of `frequency` and `lifetime` units' prefix factors.
         1e-3 for MHz and ns. 1.0 for Hz and s.
     preexponential : bool
-        If true, fractions are pre-exponential amplitudes, else fractional
+        Fractions are pre-exponential amplitudes instead of fractional
         intensities.
 
     """
@@ -289,9 +291,7 @@ def _phasor_from_lifetime(
         ssize_t f, t, s
 
     if phasor.shape[0] != 2 or phasor.shape[1] != nfreq:
-        raise ValueError(
-            f'invalid {phasor.shape=!r} != (2, {nfreq}, -1))'
-        )
+        raise ValueError(f'{phasor.shape=} != (2, {nfreq}, -1))')
     if fraction.shape[1] != ncomp:
         raise ValueError(f'{lifetime.shape[1]=} != {fraction.shape[1]=}')
 
@@ -420,7 +420,7 @@ def _gaussian_signal(
 
     Parameters
     ----------
-    signal : memoryview of float32 or float64
+    signal : memoryview of `float32` or `float64`
         Writable buffer where calculated signal samples are stored.
     mean : float
         Mean of normal distribution.
@@ -997,7 +997,7 @@ cdef (float_t, float_t) _phasor_divide(
         float_t divisor = real2 * real2 + imag2 * imag2
 
     if divisor != 0.0:
-        # includes isnan(divisor)
+        # this includes the isnan(divisor) case
         return (
             (real * real2 + imag * imag2) / divisor,
             (imag * real2 - real * imag2) / divisor
@@ -1120,7 +1120,7 @@ cdef unsigned char _is_inside_polar_rectangle(
 ) noexcept nogil:
     """Return whether point is inside polar rectangle.
 
-    Angles should be in range [-pi, pi], else performance is degraded.
+    Angles should be in the range [-pi, pi]. Otherwise performance is degraded.
 
     """
     cdef:
@@ -1264,7 +1264,7 @@ cdef unsigned char _is_inside_stadium(
         return x * x + y * y <= r * r
     # projection of point on line using clamped dot product
     t = (x * x0 + y * y0) / t
-    t = <float_t> max(0.0, min(1.0, t))
+    t = <float_t> fmax(0.0, fmin(1.0, t))
     # compare square of lengths of projection and radius
     x -= t * x0
     y -= t * y0
@@ -1770,13 +1770,13 @@ def _lifetime_search_2(
         double dmin, d, f, t
 
     if lifetime.shape[0] != 2 or lifetime.shape[1] != real.shape[1]:
-        raise ValueError('lifetime shape invalid')
+        raise ValueError('invalid lifetime shape')
     if fraction.shape[0] != 2 or fraction.shape[1] != real.shape[1]:
-        raise ValueError('fraction shape invalid')
+        raise ValueError('invalid fraction shape')
     if real.shape[0] != imag.shape[0] != 2:
-        raise ValueError('phasor harmonics invalid')
+        raise ValueError('invalid phasor harmonics')
     if real.shape[1] != imag.shape[1]:
-        raise ValueError('phasor size invalid')
+        raise ValueError('invalid phasor size')
     if candidate.shape[0] < 1:
         raise ValueError('candidate size < 1')
 
@@ -1892,7 +1892,7 @@ cdef inline double phasor_to_single_lifetime(
     const double real,
     const double omega_sqr,
 ) noexcept nogil:
-    """Return single exponential lifetime from real coordinate."""
+    """Return single-exponential lifetime from real coordinate."""
     cdef:
         double t
 
@@ -2134,7 +2134,7 @@ cdef float_t _blend_darken(
     """Return blended layers using `darken` mode."""
     if isnan(b) or isnan(a):
         return a
-    return <float_t> min(a, b)
+    return <float_t> fmin(a, b)
 
 
 @cython.ufunc
@@ -2145,7 +2145,7 @@ cdef float_t _blend_lighten(
     """Return blended layers using `lighten` mode."""
     if isnan(b) or isnan(a):
         return a
-    return <float_t> max(a, b)
+    return <float_t> fmax(a, b)
 
 
 ###############################################################################
@@ -2334,9 +2334,7 @@ cdef (float_t, float_t, float_t) _phasor_threshold_nan(
 
 
 @cython.ufunc
-cdef float_t _anscombe(
-    float_t x,
-) noexcept nogil:
+cdef float_t _anscombe(float_t x) noexcept nogil:
     """Return anscombe variance stabilizing transformation."""
     if isnan(x):
         return <float_t> NAN
@@ -2345,9 +2343,7 @@ cdef float_t _anscombe(
 
 
 @cython.ufunc
-cdef float_t _anscombe_inverse(
-    float_t x,
-) noexcept nogil:
+cdef float_t _anscombe_inverse(float_t x) noexcept nogil:
     """Return inverse anscombe transformation."""
     if isnan(x):
         return <float_t> NAN
@@ -2356,9 +2352,7 @@ cdef float_t _anscombe_inverse(
 
 
 @cython.ufunc
-cdef float_t _anscombe_inverse_approx(
-    float_t x,
-) noexcept nogil:
+cdef float_t _anscombe_inverse_approx(float_t x) noexcept nogil:
     """Return inverse anscombe transformation.
 
     Using approximation of exact unbiased inverse.
@@ -2390,14 +2384,14 @@ def _phasor_from_signal_vector(
 
     Parameters
     ----------
-    phasor : 2D memoryview of float32 or float64
+    phasor : 2D memoryview of `float32` or `float64`
         Writable buffer of two dimensions where calculated phasor
         vectors are stored:
 
         0. other dimensions flat
         1. real and imaginary components
 
-    signal : 2D memoryview of float32 or float64
+    signal : 2D memoryview of `float32` or `float64`
         Buffer of two dimensions containing signal:
 
         0. other dimensions flat
@@ -2483,9 +2477,9 @@ def _signal_denoise_vector(
     if denoised.shape[0] != size or denoised.shape[1] != samples:
         raise ValueError('signal and denoised shape mismatch')
     if integrated.shape[0] != size:
-        raise ValueError('integrated.shape[0] != signal.shape[0]')
+        raise ValueError(f'{integrated.shape[0]=} != {signal.shape[0]=}')
     if spectral_vector.shape[0] != size:
-        raise ValueError('spectral_vector.shape[0] != signal.shape[0]')
+        raise ValueError(f'{spectral_vector.shape[0]=} != {signal.shape[0]=}')
 
     with nogil, parallel(num_threads=num_threads):
 
@@ -2540,7 +2534,7 @@ def _signal_denoise_vector(
                 for m in range(samples):
                     denoised[i, m] += <float_t> (weight * signal[j, m])
 
-            # re-normalize to original intensity
+            # renormalize to original intensity
             # sum cannot be zero because integrated == 0 was filtered
             sum = 0.0
             for m in range(samples):
@@ -2554,7 +2548,10 @@ def _signal_denoise_vector(
 # Filtering functions
 
 
-cdef float_t _median(float_t *values, const ssize_t size) noexcept nogil:
+cdef float_t _median(
+    float_t* values,
+    const ssize_t size
+) noexcept nogil:
     """Return median of array values using Quickselect algorithm."""
     cdef:
         ssize_t i, pivot_index, pivot_index_new
@@ -2609,10 +2606,10 @@ def _median_filter_2d(
         ssize_t k = kernel_size // 2
         ssize_t i, j, r, di, dj, ki, kj, valid_count
         float_t element
-        float_t *kernel
+        float_t* kernel
 
     if kernel_size <= 0:
-        raise ValueError('kernel_size must be greater than 0')
+        raise ValueError(f'{kernel_size=} <= 0')
 
     with nogil, parallel(num_threads=num_threads):
 

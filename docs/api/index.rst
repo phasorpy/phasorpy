@@ -1,8 +1,8 @@
 API reference
 =============
 
-This documents the application programming and command line interfaces of the
-PhasorPy library version |version|.
+This documents the application programming and command-line interfaces of
+the PhasorPy library version |version|.
 
 .. note::
     The PhasorPy library is still under construction. Backwards-incompatible

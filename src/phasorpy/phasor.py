@@ -1,6 +1,6 @@
-"""Calculate, convert, and reduce phasor coordinates.
+"""Process phasor coordinates.
 
-The ``phasorpy.phasor`` module provides functions to:
+The ``phasorpy.phasor`` module provides fundamental functions to:
 
 - calculate phasor coordinates from time-resolved and spectral signals:
 
@@ -10,10 +10,14 @@ The ``phasorpy.phasor`` module provides functions to:
 
   - :py:func:`phasor_to_signal`
 
-- convert to and from polar coordinates (phase and modulation):
+- convert between phasor and polar coordinates (phase and modulation):
 
   - :py:func:`phasor_from_polar`
   - :py:func:`phasor_to_polar`
+
+- convert phasor coordinates to complex number representation:
+
+  - :py:func:`phasor_to_complex`
 
 - transform phasor coordinates:
 
@@ -26,12 +30,12 @@ The ``phasorpy.phasor`` module provides functions to:
 
   - :py:func:`phasor_combine`
 
-- reduce dimensionality of arrays of phasor coordinates:
+- reduce the dimensionality of arrays of phasor coordinates:
 
   - :py:func:`phasor_center`
   - :py:func:`phasor_to_principal_plane`
 
-- find nearest neighbor phasor coordinates from other phasor coordinates:
+- find nearest-neighbor phasor coordinates to other phasor coordinates:
 
   - :py:func:`phasor_nearest_neighbor`
 
@@ -41,10 +45,10 @@ from __future__ import annotations
 
 __all__ = [
     'phasor_center',
+    'phasor_combine',
     'phasor_divide',
     'phasor_from_polar',
     'phasor_from_signal',
-    'phasor_combine',
     'phasor_multiply',
     'phasor_nearest_neighbor',
     'phasor_normalize',
@@ -56,17 +60,17 @@ __all__ = [
 ]
 
 import math
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ._typing import (
         Any,
-        NDArray,
         ArrayLike,
-        DTypeLike,
         Callable,
+        DTypeLike,
         Literal,
+        NDArray,
+        Sequence,
     )
 
 import numpy
@@ -110,10 +114,10 @@ def phasor_from_signal(
         The samples must be uniformly spaced.
     axis : int or str, optional
         Axis over which to compute phasor coordinates.
-        By default, the 'H' or 'C' axes if signal contains such dimension
+        By default, the 'H' or 'C' axis if `signal` contains such dimension
         names, else the last axis (-1).
     harmonic : int, sequence of int, or 'all', optional
-        Harmonics to return.
+        Harmonics for which to return phasor coordinates.
         If `'all'`, return all harmonics for `signal` samples along `axis`.
         Else, harmonics must be at least one and no larger than half the
         number of `signal` samples along `axis`.
@@ -122,14 +126,14 @@ def phasor_from_signal(
         to calculate correct phasor coordinates at `harmonic`.
     sample_phase : array_like, optional
         Phase values (in radians) of `signal` samples along `axis`.
-        If None (default), samples are assumed to be uniformly spaced along
+        By default, samples are assumed to be uniformly spaced along
         one period.
-        The array size must equal the number of samples along `axis`.
+        The array length must equal the number of samples along `axis`.
         Cannot be used with `harmonic!=1` or `use_fft=True`.
     use_fft : bool, optional
-        If true, use a real forward Fast Fourier Transform (FFT).
-        If false, use a Cython implementation that is optimized (faster and
-        resource saving) for calculating few harmonics.
+        Use a real-valued forward Fast Fourier Transform (FFT).
+        Else, use a Cython implementation that is optimized (faster and
+        memory-efficient) for calculating few harmonics.
         By default, FFT is only used when all or at least 8 harmonics are
         calculated, or `rfft` is specified.
     rfft : callable, optional
@@ -138,19 +142,20 @@ def phasor_from_signal(
         ``mkl_fft.interfaces.numpy_fft.rfft``.
         Used to calculate the real forward FFT.
     dtype : dtype_like, optional
-        Data type of output arrays. Either float32 or float64.
-        The default is float64 unless the `signal` is float32.
-    normalize : bool, optional
+        Data type of output arrays. Either `float32` or `float64`.
+        The default is `float64` unless the `signal` is `float32`.
+    normalize : bool, optional, default: True
         Return normalized phasor coordinates.
-        If true (default), return average of `signal` along `axis` and
-        Fourier coefficients divided by sum of `signal` along `axis`.
+        Return average of `signal` along `axis` and Fourier coefficients
+        divided by sum of `signal` along `axis`.
         Else, return sum of `signal` along `axis` and unscaled Fourier
         coefficients.
-        Un-normalized phasor coordinates cannot be used with most of PhasorPy's
-        functions but may be required for intermediate processing.
+        Unnormalized phasor coordinates cannot be used with most of PhasorPy's
+        functions (which expect normalized coordinates) but may be required
+        for intermediate processing.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization when not using FFT.
-        By default, multi-threading is disabled.
+        By default, multithreading is disabled.
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
 
@@ -202,9 +207,9 @@ def phasor_from_signal(
     (resulting in NaN or infinity).
     Use NaN-aware software to further process the phasor coordinates.
 
-    The phasor coordinates may be zero, for example, in case of only constant
-    background in time-resolved signals, or as the result of linear
-    combination of non-zero spectral phasors coordinates.
+    The phasor coordinates may be zero, for example, in the case of only
+    constant background in time-resolved signals, or as the result of a
+    linear combination of non-zero spectral phasor coordinates.
 
     Examples
     --------
@@ -228,7 +233,7 @@ def phasor_from_signal(
 
     signal = numpy.asarray(signal, order='C')
     if signal.dtype.kind not in 'uif':
-        raise TypeError(f'signal must be real valued, not {signal.dtype=}')
+        raise TypeError(f'{signal.dtype=} is not real-valued')
     samples = numpy.size(signal, axis)  # this also verifies axis and ndim >= 1
     if samples < 3:
         raise ValueError(f'not enough {samples=} along {axis=}')
@@ -237,7 +242,7 @@ def phasor_from_signal(
         dtype = numpy.float32 if signal.dtype.char == 'f' else numpy.float64
     dtype = numpy.dtype(dtype)
     if dtype.kind != 'f':
-        raise TypeError(f'{dtype=} not supported')
+        raise TypeError(f'{dtype=} is not a floating-point type')
 
     harmonic, keepdims = parse_harmonic(harmonic, samples // 2)
     num_harmonics = len(harmonic)
@@ -269,7 +274,7 @@ def phasor_from_signal(
         )
 
         mean = fft.take(0, axis=axis).real
-        if not mean.ndim == 0:
+        if mean.ndim != 0:
             mean = numpy.ascontiguousarray(mean, dtype=dtype)
         fft = fft.take(harmonic, axis=axis)
         real = numpy.ascontiguousarray(fft.real, dtype=dtype)
@@ -329,7 +334,7 @@ def phasor_from_signal(
     shape = shape0 + shape1
     mean = phasor[0].reshape(shape)
     if keepdims:
-        shape = (num_harmonics,) + shape
+        shape = (num_harmonics, *shape)
     real = phasor[1 : num_harmonics + 1].reshape(shape)
     imag = phasor[1 + num_harmonics :].reshape(shape)
     if shape:
@@ -361,20 +366,20 @@ def phasor_to_signal(
     imag : array_like
         Imaginary component of phasor coordinates.
         Must be same shape as `real`.
-    samples : int, default: 64
+    samples : int, optional, default: 64
         Number of signal samples to return. Must be at least three.
     harmonic : int, sequence of int, or 'all', optional
         Harmonics included in first axis of `real` and `imag`.
-        If None, lower harmonics are inferred from the shapes of phasor
+        By default, lower harmonics are inferred from the shapes of phasor
         coordinates (most commonly, lower harmonics are present if the number
         of dimensions of `mean` is one less than `real`).
         If `'all'`, the harmonics in the first axis of phasor coordinates are
         the lower harmonics necessary to synthesize `samples`.
         Else, harmonics must be at least one and no larger than half of
         `samples`.
-        The phasor coordinates of missing harmonics are zeroed
+        The phasor coordinates of missing harmonics are set to zero
         if `samples` is greater than twice the number of harmonics.
-    axis : int, optional
+    axis : int, optional, default: -1
         Axis at which to return signal samples.
         The default is the last axis (-1).
     irfft : callable, optional
@@ -394,12 +399,12 @@ def phasor_to_signal(
 
     Notes
     -----
-    The reconstructed signal may be undefined if the input phasor coordinates,
-    or signal mean contain NaN values.
+    The reconstructed signal may be undefined if the input phasor coordinates
+    or the signal mean contain NaN values.
 
     Examples
     --------
-    Reconstruct exact signal from phasor coordinates at all harmonics:
+    Reconstruct the exact signal from phasor coordinates at all harmonics:
 
     >>> sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
     >>> signal = 1.1 * (numpy.cos(sample_phase - 0.785398) * 2 * 0.707107 + 1)
@@ -412,7 +417,7 @@ def phasor_to_signal(
     ... )  # doctest: +NUMBER
     array([2.2, 2.486, 0.8566, -0.4365, 0.3938])
 
-    Reconstruct a single-frequency waveform from phasor coordinates at
+    Reconstruct a single-frequency waveform from phasor coordinates at the
     first harmonic:
 
     >>> phasor_to_signal(1.1, 0.5, 0.5, samples=5)  # doctest: +NUMBER
@@ -443,7 +448,9 @@ def phasor_to_signal(
     real = numpy.array(real, ndmin=1, copy=False)
 
     if real.dtype.kind != 'f' or imag.dtype.kind != 'f':
-        raise ValueError(f'{real.dtype=} or {imag.dtype=} not floating point')
+        raise ValueError(
+            f'{real.dtype=} or {imag.dtype=} are not floating-point types'
+        )
     if real.shape != imag.shape:
         raise ValueError(f'{real.shape=} != {imag.shape=}')
 
@@ -503,9 +510,9 @@ def phasor_to_complex(
     imag : array_like
         Imaginary component of phasor coordinates.
     dtype : dtype_like, optional
-        Data type of output array. Either complex64 or complex128.
-        By default, complex64 if `real` and `imag` are float32,
-        else complex128.
+        Data type of output array. Either `complex64` or `complex128`.
+        By default, `complex64` if `real` and `imag` are `float32`,
+        else `complex128`.
 
     Returns
     -------
@@ -514,7 +521,7 @@ def phasor_to_complex(
 
     Examples
     --------
-    Convert phasor coordinates to complex number arrays:
+    Convert phasor coordinates to an array of complex numbers:
 
     >>> phasor_to_complex([0.4, 0.5], [0.2, 0.3])
     array([0.4+0.2j, 0.5+0.3j])
@@ -530,7 +537,7 @@ def phasor_to_complex(
     else:
         dtype = numpy.dtype(dtype)
         if dtype.kind != 'c':
-            raise ValueError(f'{dtype=} not a complex type')
+            raise ValueError(f'{dtype=} is not a complex type')
 
     c = numpy.empty(numpy.broadcast(real, imag).shape, dtype=dtype)
     c.real = real
@@ -548,7 +555,7 @@ def phasor_multiply(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     r"""Return complex multiplication of two phasors.
 
-    Complex multiplication can be used, for example, to convolve two signals
+    Complex multiplication can be used, for example, to convolve two signals,
     such as exponential decay and instrument response functions.
 
     Parameters
@@ -562,7 +569,7 @@ def phasor_multiply(
     factor_imag : array_like
         Imaginary component of phasor coordinates to multiply by.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -611,7 +618,7 @@ def phasor_divide(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     r"""Return complex division of two phasors.
 
-    Complex division can be used, for example, to deconvolve two signals
+    Complex division can be used, for example, to deconvolve two signals,
     such as exponential decay and instrument response functions.
 
     Parameters
@@ -625,7 +632,7 @@ def phasor_divide(
     divisor_imag : array_like
         Imaginary component of phasor coordinates to divide by.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -676,7 +683,7 @@ def phasor_normalize(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     r"""Return normalized phasor coordinates.
 
-    Use to normalize the phasor coordinates returned by
+    Use this to normalize the phasor coordinates returned by
     ``phasor_from_signal(..., normalize=False)``.
 
     Parameters
@@ -687,11 +694,11 @@ def phasor_normalize(
         Unnormalized real component of phasor coordinates.
     imag_unnormalized : array_like
         Unnormalized imaginary component of phasor coordinates.
-    samples : int, default: 1
-        Number of signal samples over which `mean` was integrated.
+    samples : int, optional, default: 1
+        Number of signal samples over which `mean_unnormalized` was integrated.
     dtype : dtype_like, optional
-        Data type of output arrays. Either float32 or float64.
-        The default is float64 unless the `real` is float32.
+        Data type of output arrays. Either `float32` or `float64`.
+        The default is `float64` unless `real_unnormalized` is `float32`.
 
     Returns
     -------
@@ -706,9 +713,9 @@ def phasor_normalize(
     -----
     The average intensity `mean` (:math:`F_{DC}`) and normalized phasor
     coordinates `real` (:math:`G`) and `imag` (:math:`S`) are calculated from
-    the signal `intensity` (:math:`F`), the  number of `samples` (:math:`K`),
-    `real_unnormalized` (:math:`G'`), and `imag_unnormalized` (:math:`S'`)
-    according to:
+    the signal intensity `mean_unnormalized` (:math:`F`), the number of
+    `samples` (:math:`K`), `real_unnormalized` (:math:`G'`), and
+    `imag_unnormalized` (:math:`S'`) according to:
 
     .. math::
 
@@ -718,8 +725,8 @@ def phasor_normalize(
 
         S &= S' / F
 
-    If :math:`F = 0`, the normalized phasor coordinates (:math:`G`)
-    and (:math:`S`) are undefined (NaN or infinity).
+    If :math:`F = 0`, the normalized phasor coordinates :math:`G`
+    and :math:`S` are undefined (NaN or infinity).
 
     Examples
     --------
@@ -792,10 +799,10 @@ def phasor_combine(
         Fraction of first phasor coordinates.
     fraction1 : array_like, optional
         Fraction of second phasor coordinates.
-        The default is `1 - fraction0`.
+        By default, `fraction1` is set to `1 - fraction0`.
 
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -806,6 +813,10 @@ def phasor_combine(
         Real component of the linearly combined phasor coordinates.
     imag : ndarray
         Imaginary component of the linearly combined phasor coordinates.
+
+    See Also
+    --------
+    phasorpy.component.phasor_from_component
 
     Notes
     -----
@@ -829,12 +840,8 @@ def phasor_combine(
         S &= (S_{0} \cdot I_{0} \cdot f'_{0}
              + S_{1} \cdot I_{1} \cdot f'_{1}) / I
 
-    If the intensity :math:`I` is zero, the linear combined phasor coordinates
-    are undefined (NaN).
-
-    See Also
-    --------
-    phasorpy.component.phasor_from_component
+    If the intensity :math:`I` is zero, the linearly combined phasor
+    coordinates are undefined (NaN).
 
     Examples
     --------
@@ -874,12 +881,12 @@ def phasor_transform(
         Real component of phasor coordinates to transform.
     imag : array_like
         Imaginary component of phasor coordinates to transform.
-    phase : array_like, optional, default: 0.0
+    phase : array_like, optional, default: 0
         Rotation angle in radians.
-    modulation : array_like, optional, default: 1.0
+    modulation : array_like, optional, default: 1
         Uniform scale factor.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -893,8 +900,7 @@ def phasor_transform(
     -----
     The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
     are rotated by `phase` (:math:`\phi`)
-    and scaled by `modulation_zero` (:math:`M`)
-    around the origin according to:
+    and scaled by `modulation` (:math:`M`) about the origin according to:
 
     .. math::
 
@@ -950,20 +956,8 @@ def phasor_to_polar(
     imag : array_like
         Imaginary component of phasor coordinates.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
-
-    Notes
-    -----
-    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
-    are converted to polar coordinates `phase` (:math:`\phi`) and
-    `modulation` (:math:`M`) according to:
-
-    .. math::
-
-        \phi &= \arctan(S / G)
-
-        M &= \sqrt{G^2 + S^2}
 
     Returns
     -------
@@ -976,6 +970,18 @@ def phasor_to_polar(
     --------
     phasorpy.phasor.phasor_from_polar
     :ref:`sphx_glr_tutorials_phasorpy_lifetime_geometry.py`
+
+    Notes
+    -----
+    The phasor coordinates `real` (:math:`G`) and `imag` (:math:`S`)
+    are converted to polar coordinates `phase` (:math:`\phi`) and
+    `modulation` (:math:`M`) according to:
+
+    .. math::
+
+        \phi &= \operatorname{atan2}(S, G)
+
+        M &= \sqrt{G^2 + S^2}
 
     Examples
     --------
@@ -1005,7 +1011,7 @@ def phasor_from_polar(
     modulation : array_like
         Radial component of polar coordinates.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -1055,39 +1061,40 @@ def phasor_to_principal_plane(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return multi-harmonic phasor coordinates projected onto principal plane.
 
-    Principal component analysis (PCA) is used to project
-    multi-harmonic phasor coordinates onto a plane, along which
-    coordinate axes the phasor coordinates have the largest variations.
+    Principal component analysis (PCA) is used to project multi-harmonic
+    phasor coordinates onto a plane whose two coordinate axes (the first
+    two principal components) capture the largest variance.
 
-    The transformed coordinates are not phasor coordinates. However, the
-    coordinates can be used in visualization and cursor analysis since
-    the transformation is affine (preserving collinearity and ratios
-    of distances).
+    The transformed coordinates are no longer phasor coordinates.
+    However, they can be used for visualization and cursor analysis because
+    the transformation is affine (it preserves collinearity and distance
+    ratios).
 
     Parameters
     ----------
     real : array_like
         Real component of multi-harmonic phasor coordinates.
         The first axis is the frequency dimension.
-        If less than 2-dimensional, size-1 dimensions are prepended.
+        If less than two-dimensional, length-1 dimensions are prepended.
     imag : array_like
         Imaginary component of multi-harmonic phasor coordinates.
-        Must be of same shape as `real`.
+        Must have the same shape as `real`.
     reorient : bool, optional, default: True
         Reorient coordinates for easier visualization.
         The projected coordinates are rotated and scaled, such that
-        the center lies in same quadrant and the projection
+        the center lies in the same quadrant and the projection
         of [1, 0] lies at [1, 0].
 
     Returns
     -------
     x : ndarray
         X-coordinates of projected phasor coordinates.
-        If not `reorient`, this is the coordinate on the first principal axis.
-        The shape is ``real.shape[1:]``.
+        If `reorient` is False, this is the coordinate on the first principal
+        component axis. The shape is ``real.shape[1:]``.
     y : ndarray
         Y-coordinates of projected phasor coordinates.
-        If not `reorient`, this is the coordinate on the second principal axis.
+        If `reorient` is False, this is the coordinate on the second principal
+        component axis. The shape is ``real.shape[1:]``.
     transformation_matrix : ndarray
         Affine transformation matrix used to project phasor coordinates.
         The shape is ``(2, 2 * real.shape[0])``.
@@ -1098,9 +1105,8 @@ def phasor_to_principal_plane(
 
     Notes
     -----
-
     This implementation does not work with coordinates containing
-    undefined NaN values.
+    undefined values (NaN).
 
     The transformation matrix can be used to project multi-harmonic phasor
     coordinates, where the first axis is the frequency:
@@ -1116,15 +1122,15 @@ def phasor_to_principal_plane(
         ).reshape(2, *real.shape[1:])
 
     An application of PCA to full-harmonic phasor coordinates from MRI signals
-    can be found in [1]_.
+    is described in [1]_.
 
     References
     ----------
     .. [1] Franssen WMJ, Vergeldt FJ, Bader AN, van Amerongen H, and Terenzi C.
-      `Full-harmonics phasor analysis: unravelling multiexponential trends
-      in magnetic resonance imaging data
-      <https://doi.org/10.1021/acs.jpclett.0c02319>`_.
-      *J Phys Chem Lett*, 11(21): 9152-9158 (2020)
+       `Full-harmonics phasor analysis: unravelling multiexponential trends
+       in magnetic resonance imaging data
+       <https://doi.org/10.1021/acs.jpclett.0c02319>`_.
+       *J Phys Chem Lett*, 11(21): 9152-9158 (2020)
 
     Examples
     --------
@@ -1145,7 +1151,7 @@ def phasor_to_principal_plane(
     if re.shape != im.shape:
         raise ValueError(f'real={re.shape} != imag={im.shape}')
 
-    # reshape to variables in row, observations in column
+    # reshape to variables in rows, observations in columns
     frequencies = re.shape[0]
     shape = re.shape[1:]
     re = re.reshape(re.shape[0], -1)
@@ -1190,7 +1196,7 @@ def phasor_to_principal_plane(
             [[scale_factor, 0], [0, scale_factor]], transformation_matrix
         )
 
-        # 2. mirror such that projected center lies in same quadrant
+        # 2. mirror such that projected center lies in the same quadrant
         cs = math.copysign
         x, y = numpy.dot(transformation_matrix, center)
         x = x.item()
@@ -1232,10 +1238,10 @@ def phasor_nearest_neighbor(
     phasor coordinates and return its flat index. If more than one neighbor
     has the same distance, return the smallest index.
 
-    For phasor coordinates that are NaN, or have a distance to the nearest
+    For phasor coordinates that are NaN or have a distance to the nearest
     neighbor that is larger than `distance_max`, return an index of -1.
 
-    If `values` are provided, return the values corresponding to the nearest
+    If `values` is provided, return the values corresponding to the nearest
     neighbor coordinates instead of indices. Return NaN values for indices
     that are -1.
 
@@ -1264,7 +1270,7 @@ def phasor_nearest_neighbor(
         Either `float32` or `float64`. The default is `float64`.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
-        By default, multi-threading is disabled.
+        By default, multithreading is disabled.
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
 
@@ -1288,11 +1294,11 @@ def phasor_nearest_neighbor(
 
     Notes
     -----
-    This function uses linear search, which is inefficient for large
+    This function uses a linear search, which is inefficient for a large
     number of coordinates or neighbors.
     ``scipy.spatial.KDTree.query()`` would be more efficient in those cases.
-    However, KDTree is known to return non-deterministic results in case of
-    multiple neighbors with the same distance.
+    However, KDTree is known to return non-deterministic results when
+    multiple neighbors have the same distance.
 
     Examples
     --------
@@ -1308,7 +1314,7 @@ def phasor_nearest_neighbor(
     """
     dtype = numpy.dtype(dtype)
     if dtype.char not in {'f', 'd'}:
-        raise ValueError(f'{dtype=} is not a floating point type')
+        raise ValueError(f'{dtype=} is not a floating-point type')
 
     real = numpy.ascontiguousarray(real, dtype=dtype)
     imag = numpy.ascontiguousarray(imag, dtype=dtype)
@@ -1384,7 +1390,7 @@ def phasor_center(
     imag : array_like
         Imaginary component of phasor coordinates.
     skip_axis : int or sequence of int, optional
-        Axes in `mean` to excluded from center calculation.
+        Axes in `mean` to be excluded from center calculation.
         By default, all axes except harmonics are included.
     method : str, optional
         Method used for center calculation:
@@ -1393,10 +1399,10 @@ def phasor_center(
         - ``'median'``: Spatial median of phasor coordinates.
 
     nan_safe : bool, optional
-        Ensure `method` is applied to same elements of input arrays.
-        By default, distribute NaNs among input arrays before applying
-        `method`. May be disabled if phasor coordinates were filtered by
-        :py:func:`phasor_threshold`.
+        Ensure that `method` is applied to same elements of input arrays.
+        By default, NaNs are distributed among input arrays before applying
+        `method`. This may be disabled if the phasor coordinates were
+        previously filtered by :py:func:`phasor_threshold`.
     **kwargs
         Optional arguments passed to :py:func:`numpy.nanmean` or
         :py:func:`numpy.nanmedian`.
@@ -1438,10 +1444,7 @@ def phasor_center(
         'median': _median,
     }
     if method not in methods:
-        raise ValueError(
-            f'Method not supported, supported methods are: '
-            f"{', '.join(methods)}"
-        )
+        raise ValueError(f'method {method!r} not in {set(methods.keys())!r}')
 
     mean = numpy.asarray(mean)
     real = numpy.asarray(real)
@@ -1452,7 +1455,7 @@ def phasor_center(
         raise ValueError(f'{mean.shape=} != {real.shape=}')
 
     prepend_axis = mean.ndim + 1 == real.ndim
-    _, axis = parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
+    _, axis = parse_skip_axis(skip_axis, mean.ndim, prepend=prepend_axis)
     if prepend_axis:
         mean = numpy.expand_dims(mean, axis=0)
 
@@ -1473,7 +1476,7 @@ def _mean(
     /,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-    """Return mean center of phasor coordinates."""
+    """Return intensity-weighted mean of phasor coordinates."""
     real = numpy.nanmean(real * mean, **kwargs)
     imag = numpy.nanmean(imag * mean, **kwargs)
     mean = numpy.nanmean(mean, **kwargs)
@@ -1490,7 +1493,7 @@ def _median(
     /,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-    """Return spatial median center of phasor coordinates."""
+    """Return spatial median of phasor coordinates."""
     return (
         numpy.nanmedian(mean, **kwargs),
         numpy.nanmedian(real, **kwargs),

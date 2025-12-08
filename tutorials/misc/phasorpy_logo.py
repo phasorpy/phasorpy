@@ -8,10 +8,11 @@ This script generates the PhasorPy logo using the PhasorPy library and
 matplotlib.
 The schematic logo shows a universal semicircle and a cursor around the
 phasor coordinates of a mixture of two lifetime components.
-The corresponding time-domain and first harmonic signals are shown in insets.
-An optional arrow is drawn between the time-domain signal and phasor
-coordinates to indicate the phasor transformation.
-The logo is scalable, works with white and dark backgrounds, and can be
+The corresponding time-domain and first harmonic signals are shown in two
+inset plots.
+An optional arrow between the time-domain signal and phasor coordinates
+indicates the phasor transformation.
+The logo is scalable, works with light and dark backgrounds, and can be
 cropped to a circle.
 
 """
@@ -33,7 +34,7 @@ lifetime = [0.5, 6.0]  # ns
 fraction = [0.66, 0.34]
 samples = 256  # number of signal samples
 
-signal, irf, times = lifetime_to_signal(
+signal, _irf, times = lifetime_to_signal(
     frequency * 4,  # spread out the decay
     lifetime,
     fraction,
@@ -48,15 +49,15 @@ harmonic = phasor_to_signal(*phasor_from_signal(signal), samples=samples)
 harmonic /= harmonic.max()
 
 # %%
-# Create the PhasorPy logo and save it as a scalable vector graphics (SVG)
-# file:
+# Create the PhasorPy logo and save it as a scalable vector graphics
+# file (SVG):
 
 semicircle_color = 'tab:blue'
 cursor_color = 'tab:blue'
 signal_color = 'tab:orange'
 harmonic_color = 'tab:green'
-arrow_color = None  # set to show arrow
-background_color = None  # set to fill circle
+arrow_color = None  # set to a color to draw arrow
+background_color = None  # set to a color to fill circle
 linewidth = 25
 
 fig, ax = pyplot.subplots(figsize=(6.4, 6.4))
@@ -72,7 +73,7 @@ plot.semicircle(
     capstyle='round',
 )
 
-# draw cursor around phasor coordinate of mixture
+# draw cursor around phasor coordinates of mixture
 plot.cursor(*phasor, radius=0.08, linewidth=linewidth, color=cursor_color)
 
 # draw time-domain signal in inset
@@ -88,7 +89,7 @@ cax.plot(
     solid_capstyle='round',
 )
 
-# draw harmonics in second inset
+# draw harmonic in second inset
 cax = ax.inset_axes((0.125, 0.113, 0.75, 0.25))
 cax.set_ylim(-0.11, 1.14)
 cax.set_axis_off()
@@ -137,5 +138,6 @@ pyplot.tight_layout(pad=0.0, w_pad=0.0, h_pad=0.0)
 plot.save('phasorpy_logo.svg', dpi=160, transparent=True, bbox_inches='tight')
 plot.show()
 
-# %%
+# sphinx_gallery_start_ignore
 # mypy: disable-error-code="unreachable"
+# sphinx_gallery_end_ignore

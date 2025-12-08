@@ -8,7 +8,6 @@ import pytest
 from numpy import nan
 from numpy.testing import assert_allclose, assert_array_equal
 
-from phasorpy._phasorpy import _is_near_segment  # same as _is_inside_stadium
 from phasorpy._phasorpy import (
     _blend_darken,
     _blend_lighten,
@@ -33,6 +32,7 @@ from phasorpy._phasorpy import (
     _is_inside_semicircle,
     _is_inside_stadium,
     _is_near_line,
+    _is_near_segment,
     _is_near_semicircle,
     _point_on_line,
     _point_on_segment,
@@ -124,7 +124,7 @@ def test_is_inside_stadium():
         _is_inside_stadium(0.9, 0.4, *stadium).astype(bool),
         [False],
     )
-    assert _is_near_segment is _is_near_segment
+    assert _is_near_segment is _is_inside_stadium
 
 
 def test_is_inside_semicircle():
@@ -265,7 +265,7 @@ def test_point_on_segment():
 
 
 @pytest.mark.parametrize(
-    'segment, expected',
+    ('segment', 'expected'),
     [
         (LINE, [0.98994949, -0.14142136, 0.70710678]),
         ((0.9, 0.3, 0.2, 0.4), [-0.98994949, 0.14142136, 0.70710678]),
@@ -424,7 +424,7 @@ def test_geometric_ufunc_on_grid():
 
 
 @pytest.mark.parametrize(
-    'a, b, expected',
+    ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.6), (0.6, 0.1, 0.1), (0.1, nan, 0.1), (nan, 0.6, 0.6)],
 )
 def test_blend_normal(a, b, expected):
@@ -433,7 +433,7 @@ def test_blend_normal(a, b, expected):
 
 
 @pytest.mark.parametrize(
-    'a, b, expected',
+    ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.06), (0.6, 0.1, 0.06), (0.1, nan, 0.1), (nan, 0.6, nan)],
 )
 def test_blend_multiply(a, b, expected):
@@ -442,7 +442,7 @@ def test_blend_multiply(a, b, expected):
 
 
 @pytest.mark.parametrize(
-    'a, b, expected',
+    ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.64), (0.6, 0.1, 0.64), (0.1, nan, 0.1), (nan, 0.6, nan)],
 )
 def test_blend_screen(a, b, expected):
@@ -451,7 +451,7 @@ def test_blend_screen(a, b, expected):
 
 
 @pytest.mark.parametrize(
-    'a, b, expected',
+    ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.12), (0.6, 0.1, 0.28), (0.1, nan, 0.1), (nan, 0.6, nan)],
 )
 def test_blend_overlay(a, b, expected):
@@ -461,7 +461,7 @@ def test_blend_overlay(a, b, expected):
 
 @pytest.mark.skipif(sys.platform == 'darwin', reason='github #115')
 @pytest.mark.parametrize(
-    'a, b, expected',
+    ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.1), (0.6, 0.1, 0.1), (0.1, nan, 0.1), (nan, 0.6, nan)],
 )
 def test_blend_darken(a, b, expected):
@@ -471,7 +471,7 @@ def test_blend_darken(a, b, expected):
 
 @pytest.mark.skipif(sys.platform == 'darwin', reason='github #115')
 @pytest.mark.parametrize(
-    'a, b, expected',
+    ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.6), (0.6, 0.1, 0.6), (0.1, nan, 0.1), (nan, 0.6, nan)],
 )
 def test_blend_lighten(a, b, expected):

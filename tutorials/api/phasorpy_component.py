@@ -9,9 +9,7 @@ An introduction to component analysis in phasor space.
 # %%
 # Import required modules, functions, and classes:
 
-import math
-
-import matplotlib.animation as animation
+import matplotlib.animation
 import numpy
 from matplotlib import pyplot
 
@@ -23,7 +21,8 @@ from phasorpy.component import (
 from phasorpy.lifetime import phasor_from_lifetime
 from phasorpy.plot import PhasorPlot, plot_histograms
 
-numpy.random.seed(42)
+rng = numpy.random.default_rng(42)  # initialize random number generator
+
 component_style = {
     'linestyle': '-',
     'marker': 'o',
@@ -35,7 +34,7 @@ component_style = {
 # Fractions of two components
 # ---------------------------
 #
-# The phasor coordinates of combinations of two lifetime components lie on
+# The phasor coordinates of a combination of two lifetime components lie on
 # the line between the two components. For example, a mixture of:
 #
 # - Component A: 1.0 ns lifetime, 60% contribution
@@ -61,7 +60,7 @@ plot.show()
 
 # %%
 # If the location of both components is known, their contributions (fractions)
-# to the phasor point that lies on the line between the components
+# to a phasor point that lies on the line between the components
 # can be calculated:
 
 real, imag = phasor_from_lifetime(
@@ -72,16 +71,16 @@ fraction_of_first_component = phasor_component_fraction(
     real, imag, component_real, component_imag
 )
 
-assert math.isclose(fraction_of_first_component, component_fractions[0])
+assert numpy.isclose(fraction_of_first_component, component_fractions[0])
 
 # %%
 # Distribution of fractions of two components
 # -------------------------------------------
 #
-# Phasor coordinates can represent different contributions from
-# two components with known phasor coordinates:
+# A distribution of phasor coordinates can represent varying contributions
+# from two components with known phasor coordinates:
 
-real, imag = numpy.random.multivariate_normal(
+real, imag = rng.multivariate_normal(
     [real, imag], [[5e-3, 1e-3], [1e-3, 1e-3]], (100, 100)
 ).T
 
@@ -97,7 +96,7 @@ plot.show()
 # %%
 # When the phasor coordinates of two contributing components are known,
 # their fractional contributions to phasor coordinates can be calculated by
-# projecting the phasor coordinate onto the line connecting the components.
+# projecting the phasor coordinates onto the line connecting the components.
 # Fractions are calculated using
 # :py:func:`phasorpy.component.phasor_component_fraction`
 # and plotted as histograms:
@@ -127,7 +126,7 @@ plot_histograms(
 # their fractional contributions to phasor coordinates can be obtained by
 # solving a linear system of equations, using multiple harmonics if necessary.
 #
-# Fractions of 2 components are fitted using
+# Fractions of two components are fitted using
 # :py:func:`phasorpy.component.phasor_component_fit`
 # and plotted as histograms:
 
@@ -148,9 +147,9 @@ plot_histograms(
 )
 
 # %%
-# Up to three components can be fit to single harmonics phasor coordinates.
+# Up to three components can be fitted to single-harmonic phasor coordinates.
 # The :ref:`sphx_glr_tutorials_applications_phasorpy_component_fit.py`
-# tutorial demonstrates how to fit 5 components using two-harmonics.
+# tutorial demonstrates how to fit five components using two harmonics.
 
 # %%
 # Graphical analysis of two components
@@ -160,7 +159,8 @@ plot_histograms(
 # function for two components counts the number of phasor coordinates
 # that fall within a radius at given fractions along the line between
 # the components.
-# Compare the plot of counts vs fraction to the previous histogram:
+# The plot below shows counts versus fraction, which can be compared to the
+# previous histogram:
 
 radius = 0.025
 fractions = numpy.linspace(0.0, 1.0, 20)
@@ -186,7 +186,7 @@ pyplot.show()
 # Graphical analysis of three components
 # --------------------------------------
 #
-# The graphical method can similarly be applied to the contributions of
+# The graphical method similarly applies to the contributions of
 # three components:
 
 component_lifetimes = [1.0, 4.0, 15.0]
@@ -204,8 +204,8 @@ plot.components(
 plot.show()
 
 # %%
-# The results of the graphical component analysis are plotted as
-# histograms for each component pair:
+# The results of the graphical component analysis are shown as
+# line plots for each component pair:
 
 counts = phasor_component_graphical(
     real,
@@ -227,11 +227,11 @@ ax.legend()
 pyplot.show()
 
 # %%
-# The graphical method for resolving the contribution of three components
-# (pairwise) to a phasor coordinate is based on the quantification of moving
-# circular cursors along the line between the components, demonstrated in the
-# following animation for component A vs B.
-# For the full analysis, the process is repeated for the other combinations
+# The graphical method for resolving the contributions of three components
+# (pairwise) to phasor coordinates is based on counting phasor coordinates
+# within moving circular cursors along the line between the components,
+# demonstrated in the following animation for component A vs B.
+# To complete the analysis, the process is repeated for the other combinations
 # of components, A vs C and B vs C:
 
 fig, (ax, hist) = pyplot.subplots(nrows=2, ncols=1, figsize=(5.5, 8))
@@ -277,11 +277,12 @@ for i in range(fractions.size):
     )
     plots.append(plot_lines + hist_artists)
 
-_ = animation.ArtistAnimation(fig, plots, interval=100, blit=True)
+_ = matplotlib.animation.ArtistAnimation(fig, plots, interval=100, blit=True)
 pyplot.tight_layout()
 pyplot.show()
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = 6
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore

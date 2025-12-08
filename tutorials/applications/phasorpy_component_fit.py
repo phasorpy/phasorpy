@@ -4,16 +4,16 @@ Multi-component fit
 
 Spectral unmixing using multi-component analysis in phasor space.
 
-Fluorescent components in a fluorescence spectrum can be unmixed
-if the spectra of the individual components are known.
+The components in a luminescence spectrum can be unmixed if the spectra
+of the individual components are known.
 This can be achieved by solving a system of linear equations that fits
 the fractional contributions of the phasor coordinates of the component
 spectra to the phasor coordinates of the mixture spectrum.
 Phasor coordinates at multiple harmonics may be used to ensure the
 linear system is not underdetermined.
 
-This analysis method is demonstrated using a hyperspectral imaging dataset
-containing five fluorescent markers as presented in:
+This method is demonstrated using a hyperspectral imaging dataset
+of cells containing five fluorescent markers as presented in:
 
   Vallmitjana A, Lepanto P, Irigoin F, and Malacrida L.
   `Phasor-based multi-harmonic unmixing for in-vivo hyperspectral imaging
@@ -48,7 +48,7 @@ samplefile = '38_Hoechst_Golgi_Mito_Lyso_CellMAsk_404_488_561_633_SP.lsm'
 
 # hyperspectral images of individual components
 components = {
-    'Hoechst': 'spectral hoehst.lsm',
+    'Hoechst': 'spectral hoehst.lsm',  # filename contains spelling error
     'LysoTracker': 'spectral lyso tracker green.lsm',
     'Golgi': 'spectral golgi.lsm',
     'MitoTracker': 'spectral mito tracker.lsm',
@@ -56,7 +56,7 @@ components = {
 }
 
 # analysis parameters
-harmonic = [1, 2]  # which harmonics to use for analysis
+harmonic = [1, 2]  # harmonics to use for unmixing
 median_size = 5  # size of median filter window
 median_repeat = 3  # number of times to apply median filter
 threshold = 3  # minimum signal threshold
@@ -66,7 +66,7 @@ threshold = 3  # minimum signal threshold
 # ---------------------
 #
 # Calculate and plot phasor coordinates for each component and harmonic.
-# For each component:
+# For each component, the following steps are performed:
 #
 # 1. Load spectral data and calculate phasor coordinates
 # 2. Apply median filtering to reduce noise
@@ -129,7 +129,8 @@ mean, real, imag = phasor_from_signal(signal, axis=0, harmonic=harmonic)
 mean, real, imag = phasor_filter_median(
     mean, real, imag, size=median_size, repeat=median_repeat
 )
-# optional: apply threshold to remove low-intensity pixels
+
+# optionally apply a threshold to remove low-intensity pixels
 # mean, real, imag = phasor_threshold(mean, real, imag, mean_min=threshold)
 
 fig, axs = pyplot.subplots(
@@ -157,8 +158,8 @@ fig.show()
 # Fractions of components in mixture
 # ----------------------------------
 #
-# Fit fractions of each component to the phasor coordinates at each pixel
-# of the mixture and plot the component fraction images:
+# Fit the fractional contribution of each component to the phasor coordinates
+# at each pixel of the mixture and plot the component fraction images:
 
 fractions = phasor_component_fit(
     mean, real, imag, component_real, component_imag
@@ -169,7 +170,7 @@ plot_image(
     *fractions,
     vmin=0,
     vmax=1,
-    labels=['Mixture'] + list(components.keys()),
+    labels=['Mixture', *list(components.keys())],
     title='Fractions of components in mixture',
 )
 
@@ -181,22 +182,26 @@ plot_image(
     *(f * mean for f in fractions),
     vmin=0,
     vmax=mean.max(),
-    labels=['Mixture'] + list(components.keys()),
+    labels=['Mixture', *list(components.keys())],
     title='Intensity of components in mixture',
 )
 
 # %%
-# Assert that the experimental phasor coordinates can be approximately
-# restored from the components' coordinates and fitted fractions:
+# Validate component fit
+# ----------------------
+#
+# Verify that the experimental phasor coordinates can be approximately
+# reconstructed from the component coordinates and fitted fractions:
 
 from phasorpy.component import phasor_from_component
 
 restored_real, restored_imag = phasor_from_component(
     component_real[0], component_imag[0], fractions, axis=0
 )
-numpy.testing.assert_allclose(restored_real, real[0], atol=1e-3)
-numpy.testing.assert_allclose(restored_imag, imag[0], atol=1e-3)
+assert numpy.allclose(restored_real, real[0], atol=1e-3, equal_nan=True)
+assert numpy.allclose(restored_imag, imag[0], atol=1e-3, equal_nan=True)
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -2
 # mypy: allow-untyped-defs, allow-untyped-calls
+# sphinx_gallery_end_ignore

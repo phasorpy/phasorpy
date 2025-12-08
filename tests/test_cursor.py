@@ -1,4 +1,4 @@
-"""Tests for the phasorpy.cursor module."""
+"""Test the phasorpy.cursor module."""
 
 import numpy
 import pytest
@@ -18,7 +18,7 @@ from phasorpy.phasor import phasor_from_polar
     'func', [mask_from_circular_cursor, mask_from_elliptic_cursor]
 )
 @pytest.mark.parametrize(
-    'real, imag, center_real, center_imag, radius, expected',
+    ('real', 'imag', 'center_real', 'center_imag', 'radius', 'expected'),
     [
         (
             -0.5,
@@ -91,7 +91,7 @@ def test_mask_from_circular_cursor(
     'func', [mask_from_circular_cursor, mask_from_elliptic_cursor]
 )
 @pytest.mark.parametrize(
-    'real, imag, center_real, center_imag, radius',
+    ('real', 'imag', 'center_real', 'center_imag', 'radius'),
     [
         ([0.0], [0, 0], 0, 0, 0.1),
         ([0.0, 0.0], [0], 0, 0, 0.1),
@@ -107,7 +107,7 @@ def test_mask_from_circular_cursor_errors(
 
 
 @pytest.mark.parametrize(
-    'radius, radius_minor, angle, expected',
+    ('radius', 'radius_minor', 'angle', 'expected'),
     [
         ([0.1, 0.05], 0.15, None, [[True, False], [False, True]]),
         (0.1, [0.15, 0.1], 'phase', [[True, False], [False, True]]),
@@ -157,10 +157,15 @@ def test_mask_from_elliptic_cursor_error():
 
 
 @pytest.mark.parametrize(
-    'phase, modulation, '
-    'phase_min, phase_max, '
-    'modulation_min, modulation_max, '
-    'expected',
+    (
+        'phase',
+        'modulation',
+        'phase_min',
+        'phase_max',
+        'modulation_min',
+        'modulation_max',
+        'expected',
+    ),
     [
         (
             10,
@@ -260,7 +265,7 @@ def test_mask_from_polar_cursor(
 
 
 @pytest.mark.parametrize(
-    'real, imag, phase_range, modulation_range',
+    ('real', 'imag', 'phase_range', 'modulation_range'),
     [
         (
             [0],
@@ -372,7 +377,7 @@ def test_cursors_on_grid():
 
 
 @pytest.mark.parametrize(
-    'masks, mean, colors, expected',
+    ('masks', 'mean', 'colors', 'expected'),
     [
         ([True], None, None, CATEGORICAL[0]),  # single value true
         ([False], None, None, [0, 0, 0]),  # single value false
@@ -444,9 +449,15 @@ def test_pseudo_color(masks, mean, colors, expected):
 
 def test_pseudo_color_overlay():
     """Test pseudo_color function with intensity."""
-    assert_allclose(pseudo_color(True, intensity=1.0), [1, 1, 1])
-    assert_allclose(pseudo_color(True, intensity=0.5), CATEGORICAL[0])
-    assert_allclose(pseudo_color(False, intensity=0.4), [0.4, 0.4, 0.4])
+    assert_allclose(
+        pseudo_color(True, intensity=1.0), [1, 1, 1]  # noqa: FBT003
+    )
+    assert_allclose(
+        pseudo_color(True, intensity=0.5), CATEGORICAL[0]  # noqa: FBT003
+    )
+    assert_allclose(
+        pseudo_color(False, intensity=0.4), [0.4, 0.4, 0.4]  # noqa: FBT003
+    )
     assert_allclose(
         pseudo_color(
             [True, True, True],

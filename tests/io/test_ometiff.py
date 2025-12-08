@@ -9,11 +9,13 @@ from numpy.testing import assert_almost_equal
 from phasorpy.datasets import fetch
 from phasorpy.io import phasor_from_ometiff, phasor_to_ometiff
 
+rng = numpy.random.default_rng(42)
+
 
 def test_phasor_ometiff_multiharmonic():
     """Test storing multi-harmonic phasor coordinates as OME-TIFF."""
     description = 'PhasorPy\n  <&test> test'
-    data = numpy.random.random_sample((3, 31, 35, 31))
+    data = rng.random((3, 31, 35, 31))
     data[:, 0, 0] = numpy.nan
 
     with TempFileName('multiharmonic.ome.tif') as filename:
@@ -79,7 +81,7 @@ def test_phasor_ometiff_multiharmonic():
 
 def test_phasor_ometiff_tiled():
     """Test storing phasor coordinates as tiled OME-TIFF."""
-    data = numpy.random.random_sample((1281, 1283))
+    data = rng.random((1281, 1283))
     data[0, 0] = numpy.nan
 
     with TempFileName('tiled.ome.tif') as filename:
@@ -129,7 +131,7 @@ def test_phasor_ometiff_tiled():
 
 def test_phasor_ometiff_scalar():
     """Test scalar storing phasor coordinates as OME-TIFF."""
-    data = numpy.random.random_sample((1,))
+    data = rng.random((1,))
 
     # no harmonic dimension
     with TempFileName('scalar.ome.tif') as filename:
@@ -163,7 +165,7 @@ def test_phasor_ometiff_scalar():
 
 def test_phasor_ometiff_scalar_multiharmonic():
     """Test scalar storing phasor coordinates as OME-TIFF."""
-    data = numpy.random.random_sample((3, 1))
+    data = rng.random((3, 1))
 
     with TempFileName('scalar.ome.tif') as filename:
         phasor_to_ometiff(
@@ -212,11 +214,11 @@ def test_phasor_ometiff_scalar_multiharmonic():
 
 def test_phasor_to_ometiff_exceptions():
     """Test phasor_to_ometiff function exceptions."""
-    data = numpy.random.random_sample((3, 35, 31))
+    data = rng.random((3, 35, 31))
 
     with TempFileName('exception.ome.tif') as filename:
 
-        # not a floating point type
+        # not a floating-point type
         with pytest.raises(ValueError):
             phasor_to_ometiff(filename, *data, dtype=numpy.int16)
 
@@ -249,7 +251,7 @@ def test_phasor_to_ometiff_exceptions():
 
 def test_phasor_from_ometiff_exceptions(caplog):
     """Test phasor_from_ometiff function exceptions and warnings."""
-    data = numpy.random.random_sample((3, 35, 31)).astype(numpy.float32)
+    data = rng.random((3, 35, 31)).astype(numpy.float32)
     kwargs = {'photometric': 'minisblack'}
 
     with TempFileName('invalid.ome.tif') as filename:

@@ -1,4 +1,4 @@
-"""Test higher level plot functions."""
+"""Test higher-level plot functions."""
 
 import math
 
@@ -16,12 +16,14 @@ from phasorpy.plot import (
     plot_signal_image,
 )
 
+rng = numpy.random.default_rng(42)
+
 INTERACTIVE = False  # enable for interactive plotting
 
 
 def test_plot_phasor():
     """Test plot_phasor function."""
-    real, imag = numpy.random.multivariate_normal(
+    real, imag = rng.multivariate_normal(
         [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], 32
     ).T
     plot_phasor(
@@ -36,7 +38,7 @@ def test_plot_phasor():
     pyplot.close()
 
     _, ax = pyplot.subplots()
-    real, imag = numpy.random.multivariate_normal(
+    real, imag = rng.multivariate_normal(
         [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
     ).T
     plot_phasor(
@@ -216,7 +218,7 @@ def test_plot_phasor_image():
 
 def test_plot_plot_histograms():
     """Test plot_histograms function."""
-    data = (numpy.random.normal(0, 1, 1000), numpy.random.normal(4, 2, 1000))
+    data = (rng.normal(0, 1, 1000), rng.normal(4, 2, 1000))
     plot_histograms(data[0], show=INTERACTIVE)
     pyplot.close()
     plot_histograms(*data, show=INTERACTIVE)
@@ -233,14 +235,14 @@ def test_plot_plot_histograms():
     pyplot.close()
 
 
-@pytest.mark.parametrize('percentile', (None, 0.9))
-@pytest.mark.parametrize('labels', (None, 'Label'))
-@pytest.mark.parametrize('location', ('right', 'bottom'))
-@pytest.mark.parametrize('aspect', (1.0, 0.75))
-@pytest.mark.parametrize('nimages', (1, 2, 4, 5))
+@pytest.mark.parametrize('percentile', [None, 0.9])
+@pytest.mark.parametrize('labels', [None, 'Label'])
+@pytest.mark.parametrize('location', ['right', 'bottom'])
+@pytest.mark.parametrize('aspect', [1.0, 0.75])
+@pytest.mark.parametrize('nimages', [1, 2, 4, 5])
 def test_plot_image(percentile, labels, location, aspect, nimages):
     """Test plot_image function."""
-    images = numpy.random.normal(1.0, 0.2, (nimages, int(100 * aspect), 100))
+    images = rng.normal(1.0, 0.2, (nimages, int(100 * aspect), 100))
     images[0] *= 2
     title = f'{nimages=}, {aspect=}, {percentile=}, {labels=}, {location=}'
     if labels is not None:
@@ -256,12 +258,12 @@ def test_plot_image(percentile, labels, location, aspect, nimages):
     pyplot.close()
 
 
-@pytest.mark.parametrize('columns', (None, 4))
-@pytest.mark.parametrize('percentile', (None, 0.9))
+@pytest.mark.parametrize('columns', [None, 4])
+@pytest.mark.parametrize('percentile', [None, 0.9])
 def test_plot_image_shapes(columns, percentile):
     """Test plot_image function with images of different shapes."""
     images = [
-        numpy.random.normal(0.5, 0.1, shape)
+        rng.normal(0.5, 0.1, shape)
         for shape in (
             (100, 100, 3),
             (100, 100),
@@ -284,7 +286,7 @@ def test_plot_image_shapes(columns, percentile):
 
 def test_plot_image_other():
     """Test plot_image function with special cases."""
-    images = [numpy.random.normal(0.5, 0.1, (100, 100, 3))] * 7
+    images = [rng.normal(0.5, 0.1, (100, 100, 3))] * 7
     plot_image(*images, title='RGB only', show=INTERACTIVE)
     pyplot.close()
 

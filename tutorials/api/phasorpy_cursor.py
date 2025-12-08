@@ -23,7 +23,7 @@ from phasorpy.phasor import phasor_from_signal
 from phasorpy.plot import PhasorPlot, plot_image
 
 # %%
-# Open a hyperspectral dataset used throughout this tutorial:
+# Load a hyperspectral dataset used throughout this tutorial:
 
 signal = signal_from_lsm(fetch('paramecium.lsm'))
 mean, real, imag = phasor_from_signal(signal, axis=0)
@@ -35,7 +35,9 @@ mean_thresholded, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 # Circular cursors
 # ----------------
 #
-# Use circular cursors to mask regions of interest in the phasor space:
+# Use circular cursors to mask regions of interest in the phasor space.
+# Define two cursors by specifying their real and imaginary coordinates
+# and radii:
 
 cursor_real = [-0.33, 0.54]
 cursor_imag = [-0.72, -0.74]
@@ -61,7 +63,8 @@ plot.show()
 
 # %%
 #
-# The cursor masks can be blended to produce a pseudo-colored image:
+# The cursor masks can be blended to produce a pseudo-colored image.
+# Each cursor's region is assigned a different color:
 
 pseudo_color_image = pseudo_color(*circular_mask)
 
@@ -70,14 +73,19 @@ plot_image(
 )
 
 # %%
-# Elliptic cursors
-# ----------------
-#
-# Use elliptic cursors to mask more defined regions of interest in the
-# phasor space:
+# The pseudo-color image is numpy array with values between 0 and 1 (RGB)
+# that can be further processed or saved as needed.
 
-radius = [0.1, 0.06]
-radius_minor = [0.3, 0.25]
+# %%
+# Elliptical cursors
+# ------------------
+#
+# Use elliptical cursors to mask better-defined regions of interest in the
+# phasor space. Elliptical cursors allow independent control of the radii,
+# which can better match elongated clusters in phasor space:
+
+radius = [0.1, 0.06]  # major axis
+radius_minor = [0.3, 0.25]  # minor axis
 
 elliptic_mask = mask_from_elliptic_cursor(
     real,
@@ -89,9 +97,9 @@ elliptic_mask = mask_from_elliptic_cursor(
 )
 
 # %%
-# Show the elliptic cursors in a phasor plot:
+# Show the elliptical cursors in a phasor plot:
 
-plot = PhasorPlot(allquadrants=True, title='Elliptic cursors')
+plot = PhasorPlot(allquadrants=True, title='Elliptical cursors')
 plot.hist2d(real, imag, cmap='Greys')
 plot.cursor(
     cursor_real,
@@ -106,20 +114,21 @@ plot.show()
 # %%
 #
 # The mean intensity image can be used as a base layer to overlay
-# the masks from the elliptic cursors:
+# the masks from the elliptical cursors:
 
 pseudo_color_image = pseudo_color(*elliptic_mask, intensity=mean)
 
 plot_image(
     pseudo_color_image,
-    title='Pseudo-color image from elliptic cursors and intensity',
+    title='Pseudo-color image from elliptical cursors and intensity',
 )
 
 # %%
 # Polar cursors
 # -------------
 #
-# Create a mask with two ranges of phase and modulation values:
+# Use polar cursors to select regions of interest in the phasor space based
+# on phase and modulation ranges:
 
 phase_min = [-2.27, -1.22]
 phase_max = [-1.57, -0.70]
@@ -140,7 +149,7 @@ plot.polar_cursor(
     phase_limit=phase_max,
     modulation=modulation_min,
     modulation_limit=modulation_max,
-    color=CATEGORICAL[2:4],
+    color=CATEGORICAL[2:4],  # use different colors
     label=['cursor 0', 'cursor 1'],
 )
 plot.show()
@@ -159,7 +168,8 @@ plot_image(
     title='Pseudo-color image from\npolar cursors and thresholded intensity',
 )
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = 1
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore

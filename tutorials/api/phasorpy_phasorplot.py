@@ -21,7 +21,7 @@ import numpy
 
 from phasorpy.plot import PhasorPlot
 
-numpy.random.seed(42)
+rng = numpy.random.default_rng(42)  # initialize random number generator
 
 # %%
 # Empty phasor plot
@@ -74,7 +74,7 @@ plot.show()
 # Scatter and line plots
 # ----------------------
 #
-# Plot phasor coordinates as scatter or lines:
+# Plot phasor coordinates as scattered points or lines:
 
 plot = PhasorPlot(frequency=80.0, title='Scatter and line plots')
 plot.plot(0.6, 0.4, label='1')
@@ -142,7 +142,7 @@ plot.cursor(
 plot.show()
 
 # %%
-# Multiple cursors sharing the same style may be plotted at once:
+# Multiple cursors sharing the same style can be plotted at once:
 
 plot = PhasorPlot(frequency=80.0, title='Multiple cursors')
 plot.cursor(
@@ -203,9 +203,9 @@ plot.show()
 # Two-dimensional histogram
 # -------------------------
 #
-# Plot large number of phasor coordinates as a two-dimensional histogram:
+# Plot a large number of phasor coordinates as a two-dimensional histogram:
 
-real, imag = numpy.random.multivariate_normal(
+real, imag = rng.multivariate_normal(
     [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
 ).T
 plot = PhasorPlot(frequency=80.0, title='Two-dimensional histogram')
@@ -226,7 +226,8 @@ plot.show()
 # Image
 # -----
 #
-# Plot a custom-colored image of a two-dimensional histogram (not implemented):
+# Plot a custom-colored image of a two-dimensional histogram (this
+# functionality is planned for a future release):
 
 plot = PhasorPlot(frequency=80.0, title='Image (not implemented yet)')
 # plot.imshow(image)
@@ -238,7 +239,7 @@ plot.show()
 #
 # Multiple plots can be combined:
 
-real2, imag2 = numpy.random.multivariate_normal(
+real2, imag2 = rng.multivariate_normal(
     [0.9, 0.2], [[2e-4, -1e-4], [-1e-4, 2e-4]], 4096
 ).T
 
@@ -289,9 +290,9 @@ plot.show()
 # Matplotlib axes
 # ---------------
 #
-# The PhasorPlot class can use an existing matlotlib axes.
+# The PhasorPlot class can use an existing matplotlib axes.
 # The `PhasorPlot.ax` attribute provides access to the underlying
-# matplotlib axes, for example, to add annotations:
+# matplotlib axes object, for example, to add annotations:
 
 from matplotlib import pyplot
 
@@ -323,7 +324,8 @@ plot_phasor(
     title='plot_phasor function',
 )
 
-# %%
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -5
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore

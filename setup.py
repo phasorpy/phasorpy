@@ -8,7 +8,7 @@ import sysconfig
 import numpy
 from setuptools import Extension, setup
 
-DEBUG = bool(os.environ.get('PHASORPY_DEBUG', False))
+DEBUG = bool(os.environ.get('PHASORPY_DEBUG', ''))
 LIMITED_API = not sysconfig.get_config_var('Py_GIL_DISABLED')
 
 print()

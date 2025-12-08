@@ -1,6 +1,6 @@
 """Filter signals and phasor coordinates.
 
-The ``phasorpy.filter`` module provides functions to filter
+The ``phasorpy.filter`` module provides functions to filter:
 
 - phasor coordinates:
 
@@ -31,11 +31,10 @@ __all__ = [
 ]
 
 import math
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, NDArray, ArrayLike, DTypeLike, Literal
+    from ._typing import Any, ArrayLike, DTypeLike, Literal, NDArray, Sequence
 
 import numpy
 
@@ -69,9 +68,9 @@ def phasor_filter_median(
     """Return median-filtered phasor coordinates.
 
     By default, apply a NaN-aware median filter independently to the real
-    and imaginary components of phasor coordinates once with a kernel size of 3
-    multiplied by the number of dimensions of the input arrays. Return the
-    intensity unchanged.
+    and imaginary components of phasor coordinates once, with a kernel size
+    of 3 multiplied by the number of dimensions of the input arrays.
+    Return the intensity unchanged.
 
     Parameters
     ----------
@@ -81,22 +80,22 @@ def phasor_filter_median(
         Real component of phasor coordinates to be filtered.
     imag : array_like
         Imaginary component of phasor coordinates to be filtered.
-    repeat : int, optional
-        Number of times to apply median filter. The default is 1.
-    size : int, optional
-        Size of median filter kernel. The default is 3.
+    repeat : int, optional, default: 1
+        Number of times to apply median filter.
+    size : int, optional, default: 3
+        Size of median filter kernel.
     skip_axis : int or sequence of int, optional
-        Axes in `mean` to exclude from filter.
+        Axes in `mean` to exclude from filtering.
         By default, all axes except harmonics are included.
-    use_scipy : bool, optional
+    use_scipy : bool, optional, default: False
         Use :py:func:`scipy.ndimage.median_filter`.
         This function has undefined behavior if the input arrays contain
-        NaN values but is faster when filtering more than 2 dimensions.
+        NaN values, but is faster when filtering more than two dimensions.
         See `issue #87 <https://github.com/phasorpy/phasorpy/issues/87>`_.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
         Applies to filtering in two dimensions when not using scipy.
-        By default, multi-threading is disabled.
+        By default, multithreading is disabled.
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
     **kwargs
@@ -171,7 +170,7 @@ def phasor_filter_median(
         raise ValueError(f'{real.shape=} != {imag.shape=}')
 
     prepend_axis = mean.ndim + 1 == real.ndim
-    _, axes = parse_skip_axis(skip_axis, mean.ndim, prepend_axis)
+    _, axes = parse_skip_axis(skip_axis, mean.ndim, prepend=prepend_axis)
 
     # in case mean is also filtered
     # if prepend_axis:
@@ -224,7 +223,7 @@ def phasor_filter_median(
 
         return mean, real, imag
 
-    # 2-dimensional median filter using optimized Cython implementation
+    # two-dimensional median filter using optimized Cython implementation
     num_threads = number_threads(num_threads)
 
     buffer = numpy.empty(
@@ -236,7 +235,7 @@ def phasor_filter_median(
     ):
         index_list: list[int | slice] = list(index)
         for ax in axes:
-            index_list = index_list[:ax] + [slice(None)] + index_list[ax:]
+            index_list = [*index_list[:ax], slice(None), *index_list[ax:]]
         full_index = tuple(index_list)
 
         _median_filter_2d(real[full_index], buffer, size, repeat, num_threads)
@@ -274,21 +273,21 @@ def phasor_filter_pawflim(
     imag : array_like
         Imaginary component of phasor coordinates to be filtered.
         Must have at least two harmonics in the first axis.
-    sigma : float, optional
+    sigma : float, optional, default: 2
         Significance level to test difference between two phasors.
         Given in terms of the equivalent 1D standard deviations.
-        sigma=2 corresponds to ~95% (or 5%) significance.
-    levels : int, optional
+        sigma=2 corresponds to ~95% significance.
+    levels : int, optional, default: 1
         Number of levels for wavelet decomposition.
         Controls the maximum averaging area, which has a length of
-        :math:`2^level`.
+        :math:`2^{levels}`.
     harmonic : sequence of int or None, optional
         Harmonics included in first axis of `real` and `imag`.
-        If None (default), the first axis of `real` and `imag` contains lower
-        harmonics starting at and increasing by one.
+        By default, the first axis of `real` and `imag` contains lower
+        harmonics starting at one and increasing by one.
         All harmonics must have a corresponding half or double harmonic.
     skip_axis : int or sequence of int, optional
-        Axes in `mean` to exclude from filter.
+        Axes in `mean` to exclude from filtering.
         By default, all axes except harmonics are included.
 
     Returns
@@ -303,7 +302,7 @@ def phasor_filter_pawflim(
     Raises
     ------
     ValueError
-        If `level` is less than 0.
+        If `levels` is less than 0.
         The array shapes of `mean`, `real`, and `imag` do not match.
         If `real` and `imag` have no harmonic axis.
         Number of harmonics in `harmonic` is less than 2 or does not match
@@ -314,9 +313,9 @@ def phasor_filter_pawflim(
     References
     ----------
     .. [1] Silberberg M, and Grecco H. `pawFLIM: reducing bias and
-      uncertainty to enable lower photon count in FLIM experiments
-      <https://doi.org/10.1088/2050-6120/aa72ab>`_.
-      *Methods Appl Fluoresc*, 5(2): 024016 (2017)
+       uncertainty to enable lower photon count in FLIM experiments
+       <https://doi.org/10.1088/2050-6120/aa72ab>`_.
+       *Methods Appl Fluoresc*, 5(2): 024016 (2017)
 
     Examples
     --------
@@ -370,13 +369,9 @@ def phasor_filter_pawflim(
     else:
         harmonics, _ = parse_harmonic(harmonic, None)
     if len(harmonics) < 2:
-        raise ValueError(
-            'at least two harmonics required, ' f'got {len(harmonics)}'
-        )
+        raise ValueError(f'{len(harmonics)=} < 2')
     if len(harmonics) != real.shape[0]:
-        raise ValueError(
-            'number of harmonics does not match first axis of real and imag'
-        )
+        raise ValueError(f'{len(harmonics)=} != {real.shape[0]=}')
 
     mean = numpy.asarray(numpy.nan_to_num(mean, copy=False))
     real = numpy.asarray(numpy.nan_to_num(real, copy=False))
@@ -389,7 +384,7 @@ def phasor_filter_pawflim(
     real_filtered = real.copy()
     imag_filtered = imag.copy()
 
-    _, axes = parse_skip_axis(skip_axis, mean.ndim, True)
+    _, axes = parse_skip_axis(skip_axis, mean.ndim, prepend=True)
 
     for index in numpy.ndindex(
         *(
@@ -400,7 +395,7 @@ def phasor_filter_pawflim(
     ):
         index_list: list[int | slice] = list(index)
         for ax in axes:
-            index_list = index_list[:ax] + [slice(None)] + index_list[ax:]
+            index_list = [*index_list[:ax], slice(None), *index_list[ax:]]
         full_index = tuple(index_list)
 
         processed_harmonics = set()
@@ -507,17 +502,15 @@ def phasor_threshold(
         Lower threshold for modulation.
     modulation_max : array_like, optional
         Upper threshold for modulation.
-    open_interval : bool, optional
-        If true, the interval is open, and the threshold values are
-        not included in the interval.
-        If false (default), the interval is closed, and the threshold values
-        are included in the interval.
-    detect_harmonics : bool, optional
-        By default, detect presence of multiple harmonics from array shapes.
-        If false, no harmonics are assumed to be present, and the function
+    open_interval : bool, optional, default: False
+        Exclude threshold values from the interval.
+        By default, the interval is closed and includes the threshold values.
+    detect_harmonics : bool, optional, default: True
+        Detect presence of multiple harmonics from array shapes.
+        Otherwise, no harmonics are assumed to be present, and the function
         behaves like a numpy universal function.
     **kwargs
-        Optional `arguments passed to numpy universal functions
+        Optional arguments passed to `numpy universal functions
         <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
 
     Returns
@@ -548,7 +541,7 @@ def phasor_threshold(
     ... )
     (array([nan, 2, nan]), array([nan, 0.2, nan]), array([nan, 0.5, nan]))
 
-    Apply NaNs to other input arrays:
+    Propagate NaNs to other input arrays:
 
     >>> phasor_threshold(
     ...     [numpy.nan, 2, 3], [0.1, 0.2, 0.3], [0.4, 0.5, numpy.nan]
@@ -693,12 +686,11 @@ def signal_filter_svd(
         The samples must be uniformly spaced.
     spectral_vector : array_like, optional
         Spectral vector.
-        For example, phasor coordinates, PCA projected phasor coordinates,
+        For example, phasor coordinates, PCA-projected phasor coordinates,
         or Chebyshev coefficients.
-        Must be of the same shape as `signal` with `axis` removed and an axis
+        Must have the same shape as `signal` with `axis` removed and an axis
         containing spectral space appended.
-        If None (default), phasor coordinates are calculated at specified
-        `harmonic`.
+        By default, phasor coordinates are calculated at specified `harmonic`.
     axis : int, optional, default: -1
         Axis over which `spectral_vector` is computed if not provided.
         The default is the last axis (-1).
@@ -710,7 +702,7 @@ def signal_filter_svd(
         The default is the first harmonic (fundamental frequency).
         A minimum of `harmonic * 2 + 1` samples are required along `axis`
         to calculate correct phasor coordinates at `harmonic`.
-    sigma : float, default: 0.05
+    sigma : float, optional, default: 0.05
         Width of Gaussian filter in spectral vector space.
         Weighted averages are calculated using the spectra of signal items
         within a spectral vector Euclidean distance of `3 * sigma` and
@@ -719,11 +711,11 @@ def signal_filter_svd(
         Signal intensity along `axis` below which spectra are excluded from
         denoising.
     dtype : dtype_like, optional
-        Data type of output arrays. Either float32 or float64.
-        The default is float64 unless the `signal` is float32.
+        Data type of output arrays. Either `float32` or `float64`.
+        The default is `float64` unless the `signal` is `float32`.
     num_threads : int, optional
         Number of OpenMP threads to use for parallelization.
-        By default, multi-threading is disabled.
+        By default, multithreading is disabled.
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
 
@@ -779,13 +771,10 @@ def signal_filter_svd(
     size = signal.shape[0]
 
     if dtype is None:
-        if signal.dtype.char == 'f':
-            dtype = signal.dtype
-        else:
-            dtype = numpy.float64
+        dtype = signal.dtype if signal.dtype.char == 'f' else numpy.float64
     dtype = numpy.dtype(dtype)
     if dtype.char not in {'d', 'f'}:
-        raise ValueError('dtype is not floating point')
+        raise ValueError(f'{dtype=} is not a floating-point type')
 
     if spectral_vector is None:
         sincos = numpy.empty((num_harmonics, samples, 2))
@@ -807,7 +796,7 @@ def signal_filter_svd(
     else:
         spectral_vector = numpy.ascontiguousarray(spectral_vector, dtype=dtype)
         if spectral_vector.shape[:-1] != shape[:-1]:
-            raise ValueError('signal and spectral_vector shape mismatch')
+            raise ValueError(f'{spectral_vector.shape[:-1]=} != {shape[:-1]=}')
         spectral_vector = spectral_vector.reshape(
             -1, spectral_vector.shape[-1]
         )
@@ -831,7 +820,7 @@ def signal_filter_svd(
 def signal_filter_ncpca(
     signal: ArrayLike,
     /,
-    n_components: int | float | str | None = 3,
+    n_components: float | str | None = 3,
     *,
     axis: int = -1,
     dtype: DTypeLike | None = None,
@@ -840,7 +829,7 @@ def signal_filter_ncpca(
     """Return signal filtered by noise-corrected principal component analysis.
 
     Apply noise-corrected Principal Component Analysis (NC-PCA) to denoise
-    signal containing shot noise. The signal is Poisson-normalized,
+    a signal containing shot noise. The signal is Poisson-normalized,
     its dimensionality reduced by PCA with a specified number of components,
     and then reconstructed according to [3]_.
 
@@ -848,12 +837,12 @@ def signal_filter_ncpca(
     ----------
     signal : array_like
         Data containing Poisson noise to be filtered.
-        Must have at least 3 samples along the specified `axis`.
+        Must have at least three samples along the specified `axis`.
     n_components : int, float, or str, optional, default: 3
         Number of principal components to retain.
         The default is 3, matching the reference implementation.
         If None, all components are kept (no denoising).
-        If 'mle', use Minka's MLE to guess the dimension.
+        If `'mle'`, use Minka's MLE to guess the dimension.
         If 0 < n_components < 1 and svd_solver == 'full', select the number
         of components such that the amount of variance that needs to be
         explained is greater than the percentage specified by n_components.
@@ -861,12 +850,13 @@ def signal_filter_ncpca(
         <https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html>`_
         for more details.
     axis : int, optional, default: -1
-        Axis containing PCA features, for example, FLIM histogram bins.
+        Axis containing PCA features (for example, FLIM histogram bins).
         The default is the last axis (-1).
         Other axes are flattened and used as PCA samples.
     dtype : dtype_like, optional
-        Data type of computation and output arrays. Either float32 or float64.
-        The default is float64 unless the input `signal` is float32.
+        Data type of computation and output arrays.
+        Either `float32` or `float64`.
+        The default is `float64` unless the input `signal` is `float32`.
     **kwargs
         Optional arguments passed to :py:class:`sklearn.decomposition.PCA`.
 
@@ -879,13 +869,13 @@ def signal_filter_ncpca(
     Raises
     ------
     ValueError
-        If `dtype` is not a floating point type.
-        If `signal` has fewer than 3 samples along specified axis.
+        If `dtype` is not a floating-point type.
+        If `signal` has fewer than three samples along specified axis.
         If `n_components` is invalid for the data size.
 
     References
     ----------
-    .. [3] Soltani S, Paulson J, Fong E, Mumenthaler, S, and Armani A.
+    .. [3] Soltani S, Paulson J, Fong E, Mumenthaler S, and Armani A.
        `Denoising of fluorescence lifetime imaging data via principal
        component analysis <https://doi.org/10.21203/rs.3.rs-7143126/v1>`_.
        *Preprint*, (2025)
@@ -899,7 +889,7 @@ def signal_filter_ncpca(
 
     Examples
     --------
-    Denoise FLIM data using 3 principal components:
+    Denoise FLIM data using three principal components:
 
     >>> signal = numpy.random.poisson(100, (32, 32, 64))
     >>> denoised = signal_filter_ncpca(signal, n_components=3)
@@ -919,7 +909,7 @@ def signal_filter_ncpca(
     else:
         dtype = numpy.dtype(dtype)
         if dtype.char not in {'f', 'd'}:
-            raise ValueError(f'{dtype=} is not a floating point type')
+            raise ValueError(f'{dtype=} is not a floating-point type')
         signal = numpy.asarray(signal, dtype=dtype, copy=True)
 
     if axis == -1 or axis == signal.ndim - 1:
@@ -930,7 +920,7 @@ def signal_filter_ncpca(
     shape = signal.shape
 
     if signal.size == 0:
-        raise ValueError('signal array is empty')
+        raise ValueError(f'{signal.size=} == 0')
     if signal.shape[-1] < 3:
         raise ValueError(f'{signal.shape[-1]=} < 3')
 

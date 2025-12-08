@@ -37,10 +37,10 @@ if TYPE_CHECKING:
     from ._typing import (
         Any,
         ArrayLike,
+        Container,
+        Iterator,
         Literal,
         NDArray,
-        Iterator,
-        Container,
         PathLike,
     )
 
@@ -56,17 +56,15 @@ def parse_kwargs(
 ) -> dict[str, Any]:
     """Return dict with keys from keys|keyvals and values from kwargs|keyvals.
 
-    If `_del` is true (default), existing keys are deleted from `kwargs`.
-
     Parameters
     ----------
     kwargs : dict
         Source dictionary to extract keys from.
     *keys : str
         Keys to extract from kwargs if present.
-    _del : bool, default: True
-        If True, remove extracted keys from kwargs.
-    **keyvalues : Any
+    _del : bool, optional, default: True
+        Remove extracted keys from kwargs.
+    **keyvalues
         Key-value pairs. If key exists in kwargs, use kwargs value,
         otherwise use provided default value.
 
@@ -99,7 +97,11 @@ def parse_kwargs(
     return result
 
 
-def update_kwargs(kwargs: dict[str, Any], /, **keyvalues: Any) -> None:
+def update_kwargs(
+    kwargs: dict[str, Any],
+    /,
+    **keyvalues: Any,
+) -> None:
     """Update dict with keys and values if keys do not already exist.
 
     >>> kwargs = {'one': 1}
@@ -114,7 +116,7 @@ def update_kwargs(kwargs: dict[str, Any], /, **keyvalues: Any) -> None:
 
 
 def kwargs_notnone(**kwargs: Any) -> dict[str, Any]:
-    """Return dict of kwargs which values are not None.
+    """Return dict of kwargs whose values are not None.
 
     >>> kwargs_notnone(one=1, none=None)
     {'one': 1}
@@ -123,7 +125,11 @@ def kwargs_notnone(**kwargs: Any) -> dict[str, Any]:
     return dict(item for item in kwargs.items() if item[1] is not None)
 
 
-def scale_matrix(factor: float, origin: Sequence[float]) -> NDArray[Any]:
+def scale_matrix(
+    factor: float,
+    origin: Sequence[float],
+    /,
+) -> NDArray[Any]:
     """Return matrix to scale homogeneous coordinates by factor around origin.
 
     Parameters
@@ -158,7 +164,7 @@ def sort_coordinates(
     /,
     origin: ArrayLike | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-    """Return cartesian coordinates sorted counterclockwise around origin.
+    """Return Cartesian coordinates sorted counterclockwise around origin.
 
     Parameters
     ----------
@@ -264,17 +270,17 @@ def phasor_to_polar_scalar(
         Real component of phasor coordinate.
     imag : float
         Imaginary component of phasor coordinate.
-    degree : bool, optional
-        If true, return phase in degrees instead of radians.
-    percent : bool, optional
-        If true, return modulation as percentage instead of fraction.
+    degree : bool, optional, default: False
+        Return phase in degrees instead of radians.
+    percent : bool, optional, default: False
+        Return modulation as percentage instead of fraction.
 
     Returns
     -------
     phase : float
-        Phase angle in radians (or degrees if degree=True).
+        Phase angle in radians (or degrees if `degree=True`).
     modulation : float
-        Modulation depth as fraction (or percentage if percent=True).
+        Modulation depth as fraction (or percentage if `percent=True`).
 
     Examples
     --------
@@ -304,13 +310,13 @@ def phasor_from_polar_scalar(
     Parameters
     ----------
     phase : float
-        Phase angle in radians (or degrees if degree=True).
+        Phase angle in radians (or degrees if `degree=True`).
     modulation : float
-        Modulation depth as fraction (or percentage if percent=True).
-    degree : bool, optional
-        If true, phase is in degrees instead of radians.
-    percent : bool, optional
-        If true, modulation is as percentage instead of fraction.
+        Modulation depth as fraction (or percentage if `percent=True`).
+    degree : bool, optional, default: False
+        `phase` is in degrees instead of radians.
+    percent : bool, optional, default: False
+        `modulation` is in percentage instead of fraction.
 
     Returns
     -------
@@ -348,12 +354,12 @@ def parse_signal_axis(
     signal : array_like
         Signal array.
         Axis names are used if it has a `dims` attribute.
-    axis : int, str, or None, default: None
+    axis : int or str, optional
         Axis over which to compute phasor coordinates.
-        If None, automatically selects 'H' or 'C' axis if available,
-        otherwise uses the last axis (-1).
-        If int, specifies axis index.
-        If str, specifies axis name (requires `signal.dims`).
+        If an integer, specifies axis index.
+        If a string, specifies axis name (requires `signal.dims`).
+        By default, automatically select `'H'` or `'C'` axis if available,
+        otherwise use the last axis (-1).
 
     Returns
     -------
@@ -365,8 +371,8 @@ def parse_signal_axis(
     Raises
     ------
     ValueError
-        If axis string is not found in signal.dims.
-        If axis string is provided but signal has no dims attribute.
+        If axis string is not found in `signal.dims`.
+        If axis string is provided but `signal` has no `dims` attribute.
 
     Examples
     --------
@@ -396,19 +402,20 @@ def parse_signal_axis(
             return axis, signal.dims[axis]
         if axis in signal.dims:
             return signal.dims.index(axis), axis
-        raise ValueError(f'{axis=} not found in {signal.dims}')
+        raise ValueError(f'{axis=} not found in {signal.dims!r}')
     if axis is None:
         return -1, ''
     if isinstance(axis, int):
         return axis, ''
-    raise ValueError(f'{axis=} not valid for {type(signal)=}')
+    raise ValueError(f'invalid {axis=} for {type(signal)=}')
 
 
 def parse_skip_axis(
     skip_axis: int | Sequence[int] | None,
-    /,
     ndim: int,
-    prepend_axis: bool = False,
+    /,
+    *,
+    prepend: bool = False,
 ) -> tuple[tuple[int, ...], tuple[int, ...]]:
     """Return axes to skip and not to skip.
 
@@ -417,11 +424,11 @@ def parse_skip_axis(
 
     Parameters
     ----------
-    skip_axis : int or sequence of int, optional
+    skip_axis : int or sequence of int or None
         Axes to skip. If None, no axes are skipped.
     ndim : int
         Dimensionality of array in which to skip axes.
-    prepend_axis : bool, optional
+    prepend : bool, optional, default: False
         Prepend one dimension and include in `skip_axis`.
 
     Returns
@@ -436,29 +443,29 @@ def parse_skip_axis(
     ValueError
         If ndim is negative.
     IndexError
-        If any `skip_axis` value is out of bounds of `ndim`.
+        If any `skip_axis` value is out of bounds for `ndim`.
 
     Examples
     --------
     >>> parse_skip_axis([1, -2], 5)
     ((1, 3), (0, 2, 4))
 
-    >>> parse_skip_axis([1, -2], 5, True)
+    >>> parse_skip_axis([1, -2], 5, prepend=True)
     ((0, 2, 4), (1, 3, 5))
 
     """
     if ndim < 0:
-        raise ValueError(f'invalid {ndim=}')
+        raise ValueError(f'{ndim=} < 0')
     if skip_axis is None:
-        if prepend_axis:
+        if prepend:
             return (0,), tuple(range(1, ndim + 1))
         return (), tuple(range(ndim))
     if not isinstance(skip_axis, Sequence):
         skip_axis = (skip_axis,)
     if any(i >= ndim or i < -ndim for i in skip_axis):
-        raise IndexError(f'skip_axis={skip_axis} out of range for {ndim=}')
+        raise IndexError(f'{skip_axis=} is out of bounds for {ndim=}')
     skip_axis = sorted(int(i % ndim) for i in skip_axis)
-    if prepend_axis:
+    if prepend:
         skip_axis = [0] + [i + 1 for i in skip_axis]
         ndim += 1
     other_axis = tuple(i for i in range(ndim) if i not in skip_axis)
@@ -481,9 +488,9 @@ def parse_harmonic(
         Harmonic parameter to parse.
     harmonic_max : int, optional
         Maximum value allowed in `harmonic`. Must be one or greater.
-        To verify against known number of signal samples,
+        To verify against a known number of signal samples,
         pass ``samples // 2``.
-        If `harmonic='all'`, a range of harmonics from one to `harmonic_max`
+        If `harmonic='all'`, a range of harmonics from 1 to `harmonic_max`
         (included) is returned.
 
     Returns
@@ -517,7 +524,9 @@ def parse_harmonic(
         if harmonic < 1 or (
             harmonic_max is not None and harmonic > harmonic_max
         ):
-            raise IndexError(f'{harmonic=} out of range [1, {harmonic_max}]')
+            raise IndexError(
+                f'{harmonic=!r} is out of bounds [1, {harmonic_max}]'
+            )
         return [int(harmonic)], False
 
     if isinstance(harmonic, str):
@@ -527,19 +536,19 @@ def parse_harmonic(
                     f'maximum harmonic must be specified for {harmonic=!r}'
                 )
             return list(range(1, harmonic_max + 1)), True
-        raise ValueError(f'{harmonic=!r} is not a valid harmonic')
+        raise ValueError(f'invalid {harmonic=!r}')
 
     h = numpy.atleast_1d(harmonic)
     if h.size == 0:
-        raise ValueError(f'{harmonic=} is empty')
+        raise ValueError(f'{harmonic=!r} is empty')
     if h.dtype.kind not in 'iu' or h.ndim != 1:
-        raise TypeError(f'{harmonic=} element not an integer')
+        raise TypeError(f'{harmonic=!r} element is not an integer')
     if numpy.any(h < 1):
-        raise IndexError(f'{harmonic=} element < 1')
+        raise IndexError(f'{harmonic=!r} contains element < 1')
     if harmonic_max is not None and numpy.any(h > harmonic_max):
-        raise IndexError(f'{harmonic=} element > {harmonic_max}]')
+        raise IndexError(f'{harmonic=!r} contains element > {harmonic_max}]')
     if numpy.unique(h).size != h.size:
-        raise ValueError(f'{harmonic=} elements must be unique')
+        raise ValueError(f'{harmonic=!r} elements must be unique')
     return [int(i) for i in harmonic], True
 
 
@@ -565,13 +574,13 @@ def chunk_iter(
         Labels for each axis in shape if `pattern` is None.
     pattern : str, optional
         String to format chunk indices.
-        If None, use ``_[{dims[index]}{chunk_index[index]}]`` for each axis.
-    squeeze : bool, optional
-        If true, do not include length-1 chunked dimensions in label
+        By default, use ``_[{dims[index]}{chunk_index[index]}]`` for each axis.
+    squeeze : bool, optional, default: False
+        Do not include length-1 chunked dimensions in label
         unless dimensions are part of `chunk_shape`.
         Applies only if `pattern` is None.
-    use_index : bool, optional
-        If true, use indices of chunks in `shape` instead of chunk indices to
+    use_index : bool, optional, default: False
+        Use indices of chunks in `shape` instead of chunk indices to
         format pattern.
 
     Yields
@@ -587,7 +596,6 @@ def chunk_iter(
 
     Examples
     --------
-
     >>> list(chunk_iter((2, 2), (2,), pattern='Y{}'))
     [((0, slice(0, 2, 1)), 'Y0', False), ((1, slice(0, 2, 1)), 'Y1', False)]
 
@@ -612,9 +620,9 @@ def chunk_iter(
         try:
             pattern.format(*shape)
         except Exception as exc:
-            raise ValueError('pattern cannot be formatted') from exc
+            raise ValueError('failed to format pattern') from exc
 
-    # number of high dimensions not included in chaunk_shape
+    # number of high dimensions not included in chunk_shape
     hdim = ndim - len(chunk_shape)
     if hdim < 0:
         raise ValueError(f'{len(shape)=} < {len(chunk_shape)=}')
@@ -624,11 +632,13 @@ def chunk_iter(
 
     chunked_shape = []
     pattern_list = []
-    for i, (size, chunk_size, ax) in enumerate(zip(shape, chunk_shape, dims)):
+    for i, (size, chunk_size, ax) in enumerate(
+        zip(shape, chunk_shape, dims, strict=True)
+    ):
         if size <= 0:
-            raise ValueError('shape must contain positive sizes')
+            raise ValueError('shape must contain only positive sizes')
         if chunk_size <= 0:
-            raise ValueError('chunk_shape must contain positive sizes')
+            raise ValueError('chunk_shape must contain only positive sizes')
         div, mod = divmod(size, chunk_size)
         chunked_shape.append(div + 1 if mod else div)
 
@@ -705,7 +715,7 @@ def init_module(globs: dict[str, Any], /) -> None:
 
 
 def xarray_metadata(
-    dims: Sequence[str] | None,
+    dims: Sequence[str],
     shape: tuple[int, ...],
     /,
     name: str | PathLike[Any] | None = None,
@@ -718,12 +728,9 @@ def xarray_metadata(
     {'dims': ('S', 'Y', 'X'), 'coords': {'S': ['0', '1', '2']}, 'attrs': {}}
 
     """
-    assert dims is not None
     dims = tuple(dims)
-    if len(dims) != len(shape):
-        raise ValueError(
-            f'dims do not match shape {len(dims)} != {len(shape)}'
-        )
+    if len(shape) != len(dims):
+        raise ValueError(f'{len(shape)=} != {len(dims)=}')
     coords = {dim: coords[dim] for dim in dims if dim in coords}
     if attrs is None:
         attrs = {}
@@ -752,9 +759,9 @@ def squeeze_dims(
         Sequence of dimension sizes.
     dims : sequence of str
         Character codes for dimensions in `shape`.
-    skip : container of str, optional
+    skip : container of str, optional, default: 'XY'
         Character codes for dimensions whose length-1 dimensions are
-        not removed. The default is 'XY'.
+        not removed.
 
     Returns
     -------
@@ -762,7 +769,7 @@ def squeeze_dims(
         Sequence of dimension sizes with length-1 dimensions removed.
     dims : tuple of str
         Character codes for dimensions in output `shape`.
-    squeezed : str
+    squeezed : tuple of bool
         Dimensions were kept (True) or removed (False).
 
     Examples
@@ -780,7 +787,7 @@ def squeeze_dims(
     squeezed: list[bool] = []
     shape_squeezed: list[int] = []
     dims_squeezed: list[str] = []
-    for size, ax in zip(shape, dims):
+    for size, ax in zip(shape, dims, strict=True):
         if size > 1 or ax in skip:
             squeezed.append(True)
             shape_squeezed.append(size)

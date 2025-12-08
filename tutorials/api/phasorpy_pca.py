@@ -2,12 +2,12 @@
 Principal component analysis
 ============================
 
-Project multi-harmonic phasor coordinates onto principal plane.
+Project multi-harmonic phasor coordinates onto the principal plane.
 
-The :py:func:`phasorpy.phasor.phasor_to_principal_plane` function is used
-to project multi-harmonic phasor coordinates onto a plane, along which
-coordinate axes the phasor coordinates have the largest variations
-(the first two axes of a Principal Component Analysis).
+The :py:func:`phasorpy.phasor.phasor_to_principal_plane` function is
+used to project multi-harmonic phasor coordinates onto a plane whose
+two coordinate axes (the first two principal components) capture the
+largest variance.
 
 """
 
@@ -24,23 +24,24 @@ from phasorpy.lifetime import (
 from phasorpy.phasor import phasor_to_principal_plane
 from phasorpy.plot import PhasorPlot
 
+rng = numpy.random.default_rng(42)  # initialize random number generator
+
 
 def distribution(values, stddev=0.05, samples=100):
+    """Return normally distributed samples around each value in values."""
     return numpy.ascontiguousarray(
         numpy.vstack(
-            [numpy.random.normal(value, stddev, samples) for value in values]
+            [rng.normal(value, stddev, samples) for value in values]
         ).T
     )
 
-
-numpy.random.seed(42)
 
 # %%
 # Overlapping phasor distributions
 # --------------------------------
 #
 # The phasor coordinates of different multi-exponential decays may be
-# overlapping, indistinguishable at a certain frequency:
+# overlapping and indistinguishable at a given frequency:
 
 frequency = [80, 160, 240, 320, 400]
 
@@ -81,7 +82,7 @@ plot.show()
 # ----------------------------
 #
 # The projection of the multi-harmonic phasor coordinates onto the
-# principal plane should give an overall good representation of the
+# principal plane provides a good overall representation of the
 # distribution.
 #
 # The transformation matrix can be used to project other multi-harmonic
@@ -93,7 +94,7 @@ x0, y0, transformation_matrix = phasor_to_principal_plane(real, imag)
 lifetimes, _ = phasor_to_apparent_lifetime(
     *phasor_semicircle(), frequency=frequency[0]
 )
-lifetimes[0] = 1e9
+lifetimes[0] = 1e9  # avoid infinite lifetime
 x1, y1 = numpy.dot(
     transformation_matrix,
     numpy.vstack(phasor_from_lifetime(frequency, lifetimes)),
@@ -112,8 +113,8 @@ plot.plot(x2, y2, '.', color='0.5')
 plot.show()
 
 # %%
-# For single harmonic input, the projected, reoriented coordinates
-# match the original, single harmonics phasor coordinates
+# For single-harmonic input, the projected, reoriented coordinates
+# match the original single-harmonic phasor coordinates
 # (compare to the first figure):
 
 x0, y0, transformation_matrix = phasor_to_principal_plane(real[:1], imag[:1])
@@ -141,10 +142,13 @@ plot.plot(x1, y1, '-', color='0.5', label='Universal semicircle')
 plot.plot(x2, y2, '.', color='0.5')
 plot.show()
 
-# %%
+# sphinx_gallery_start_ignore
 # TODO: demonstrate on real data that linearity is preserved and
 # visualization by cursors is applicable.
-#
+# sphinx_gallery_end_ignore
+
+# sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -2
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
+# sphinx_gallery_end_ignore
