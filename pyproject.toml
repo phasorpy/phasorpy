@@ -175,18 +175,27 @@ version = { attr = "phasorpy.__version__" }
 phasorpy = ["py.typed"]
 
 [tool.ruff]
+src = ["src"]
 target-version = "py312"
 line-length = 79
 exclude = [
-    ".git",
+    # similar to [tool.pytest.ini_options.norecursedirs]
+    "._",
     "__pycache__",
+    "_htmlcov",
+    ".git",
+    ".github",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".vscode",
+    "adhoc",
     "build",
-    "dist",
-    "phasorpy.egg-info",
-    "docs/conf.py",
     "docs/_build",
-    "data",
+    "fixture",
+    "htmlcov",
     "phasorpy-dev",
+    "phasorpy.egg-info",
     "phasorpy_dev",
 ]
 
@@ -252,6 +261,7 @@ typing-modules = ["_typing"]
 "tests/*" = ["ANN", "D", "INP001", "PT011", "SLF001"]
 "tools/*" = ["ANN", "INP001", "T201"]
 "tutorials/*" = ["ANN", "D", "E402", "INP001", "T201"]
+"docs/conf.py" = ["A001", "ANN204", "D102", "E402", "INP001", "RUF012"]
 
 [tool.ruff.format]
 quote-style = "single"
@@ -350,22 +360,26 @@ doctest_optionflags = [
 ]
 testpaths = ["src/phasorpy", "tests", "docs"]
 norecursedirs = [
+    # similar to [tool.ruff.exclude]
     "._",
+    "__pycache__",
+    "_htmlcov",
     ".git",
     ".github",
-    ".vscode",
     ".mypy_cache",
     ".pytest_cache",
+    ".ruff_cache",
+    ".vscode",
+    "htmlcov",
     "adhoc",
     "build",
     "docs/_build",
     "fixture",
     "htmlcov",
-    "_htmlcov",
-    "tutorials",
+    "phasorpy-dev",
     "phasorpy.egg-info",
     "phasorpy_dev",
-    "phasorpy-dev",
+    "tutorials",
 ]
 
 [tool.cibuildwheel]

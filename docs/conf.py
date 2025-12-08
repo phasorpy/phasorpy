@@ -1,5 +1,9 @@
-# Configuration file for the Sphinx documentation builder.
-# https://www.sphinx-doc.org/en/master/usage/configuration.html
+"""Sphinx build configuration file.
+
+https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+"""
+
 # pylint: skip-file
 
 import os
@@ -239,7 +243,7 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
     except (OSError, TypeError):
         lineno = None
 
-    linespec = f"#L{lineno:d}-L{lineno + len(source) - 1:d}" if lineno else ''
+    linespec = f'#L{lineno:d}-L{lineno + len(source) - 1:d}' if lineno else ''
 
     startdir = Path(phasorpy.__file__).parent.parent
     try:
@@ -247,10 +251,7 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
     except ValueError:
         return None
 
-    if '.dev' in version or '.rc' in version:
-        tag = 'main'
-    else:
-        tag = f'v{version}'
+    tag = 'main' if '.dev' in version or '.rc' in version else f'v{version}'
     return (
         f'https://github.com/phasorpy/phasorpy/blob/{tag}/src/{fn}{linespec}'
     )
