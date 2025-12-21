@@ -175,8 +175,6 @@ version = { attr = "phasorpy.__version__" }
 phasorpy = ["py.typed"]
 
 [tool.ruff]
-src = ["src"]
-target-version = "py312"
 line-length = 79
 exclude = [
     # similar to [tool.pytest.ini_options.norecursedirs]
@@ -197,6 +195,7 @@ exclude = [
     "phasorpy-dev",
     "phasorpy.egg-info",
     "phasorpy_dev",
+    "venv",
 ]
 
 [tool.ruff.lint]
@@ -307,12 +306,26 @@ target-version = ["py312", "py313"]
 skip-string-normalization = true
 
 [tool.isort]
+known_first_party = ["phasorpy"]
 profile = "black"
 line_length = 79
 
 [tool.codespell]
-skip = "*.html,*.css,*.js,*.r64,*.map,./.git,./data,./docs/_build,./docs/tutorials,PKG-INFO,_htmlcov,pyproject.toml"
+skip = "*.html,*.css,*.js,*.r64,*.map,./.git,./data,./venv,./phasorpy-dev,./phasorpy_dev,./docs/_build,./docs/tutorials,PKG-INFO,_htmlcov,pyproject.toml"
 ignore-words-list = "ba,compiletime,hist,nd,unparseable,HSI,coo,aHd"
+
+[tool.typos]
+
+[tool.typos.files]
+extend-exclude = []
+
+[tool.typos.default.extend-words]
+ome = "ome"
+OME = "OME"
+HSI = "HSI"
+NDTiff = "NDTiff"
+ND = "ND"
+ND2 = "ND2"
 
 [tool.mypy]
 packages = ["phasorpy"]
@@ -380,6 +393,7 @@ norecursedirs = [
     "phasorpy.egg-info",
     "phasorpy_dev",
     "tutorials",
+    "venv"
 ]
 
 [tool.cibuildwheel]
@@ -415,5 +429,6 @@ test-requires = [
 ]
 
 [tool.cibuildwheel.test-environment]
+PHASORPY_DATA_ON_GITHUB = "1"
 SKIP_FETCH = "1"
 MPLBACKEND = "agg"

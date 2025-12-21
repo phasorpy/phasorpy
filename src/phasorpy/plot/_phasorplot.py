@@ -448,11 +448,11 @@ class PhasorPlot:
 
         Parameters
         ----------
-        real : (N,) array_like
+        real : array_like, shape (n,)
             Real component of phasor coordinates.
-        imag : (N,) array_like
+        imag : array_like, shape (n,)
             Imaginary component of phasor coordinates.
-        fraction : (N,) array_like, optional
+        fraction : array_like, shape (n,), optional
             Weight associated with each component.
             By default, outline the polygon area of possible linear
             combinations of components.
@@ -539,7 +539,9 @@ class PhasorPlot:
             linewidth=linewidth,
         )
         center_re, center_im = numpy.average(
-            numpy.vstack([real, imag]), axis=-1, weights=fraction
+            numpy.vstack([real, imag]),
+            axis=-1,
+            weights=fraction,  # type: ignore[arg-type]
         )
         for re, im in zip(real, imag, strict=True):
             self._ax.add_line(

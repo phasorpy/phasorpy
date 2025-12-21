@@ -185,13 +185,13 @@ def phasor_from_flimlabs_json(
     if 'intensities_data' in data:
         from .._phasorpy import _flimlabs_mean
 
-        mean.shape = nchannels, height * width
+        mean = mean.reshape((nchannels, height * width))
         _flimlabs_mean(
             mean,
             data['intensities_data'],
             -1 if channel is None else channels.index(channel),
         )
-        mean.shape = shape[1:]
+        mean = mean.reshape(shape[1:])
         # JSON cannot store NaN values; zeros indicate invalid data
         nan_mask = mean == 0
         real[:, nan_mask] = numpy.nan
@@ -349,10 +349,10 @@ def signal_from_flimlabs_json(
     )
 
     if channel is None and nchannels > 1:
-        signal.shape = (nchannels, height, width, 256)
+        signal = signal.reshape((nchannels, height, width, 256))
         axes = 'CYXH'
     else:
-        signal.shape = (height, width, 256)
+        signal = signal.reshape((height, width, 256))
         axes = 'YXH'
 
     coords: dict[str, Any] = {}

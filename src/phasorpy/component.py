@@ -590,7 +590,7 @@ def phasor_component_mvc(
     component_imag: ArrayLike,
     /,
     *,
-    dtype: DTypeLike = None,
+    dtype: DTypeLike | None = None,
     num_threads: int | None = None,
 ) -> NDArray[Any]:
     """Return mean value coordinates of phasor coordinates from components.
