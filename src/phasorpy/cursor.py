@@ -397,7 +397,7 @@ def pseudo_color(
     intensity : array_like, optional
         Intensity used as base layer to blend cursor colors in "overlay" mode.
         By default, cursor masks are blended using "screen" mode.
-    colors : array_like, optional, shape (n, 3)
+    colors : array_like, shape (n, 3), optional
         RGB colors assigned to each cursor.
         The last dimension contains the normalized RGB floating point values.
         The default is :py:data:`phasorpy.color.CATEGORICAL`.

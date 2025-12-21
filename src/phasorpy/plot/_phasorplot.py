@@ -452,7 +452,7 @@ class PhasorPlot:
             Real component of phasor coordinates.
         imag : array_like, shape (n,)
             Imaginary component of phasor coordinates.
-        fraction : array_like, optional, shape (n,)
+        fraction : array_like, shape (n,), optional
             Weight associated with each component.
             By default, outline the polygon area of possible linear
             combinations of components.
