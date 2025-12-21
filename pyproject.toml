@@ -429,5 +429,6 @@ test-requires = [
 ]
 
 [tool.cibuildwheel.test-environment]
+PHASORPY_DATA_ON_GITHUB = "1"
 SKIP_FETCH = "1"
 MPLBACKEND = "agg"
