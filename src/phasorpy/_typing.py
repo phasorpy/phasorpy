@@ -11,9 +11,6 @@ This module should only be imported when type-checking, for example::
 
 """
 
-# pylint: disable=unused-import
-# autoflake: skip_file
-
 from __future__ import annotations
 
 __all__ = [
@@ -74,3 +71,6 @@ from typing import (
 from numpy.typing import ArrayLike, DTypeLike, NDArray
 from pooch import Pooch
 from xarray import DataArray
+
+# pylint: disable=unused-import
+# autoflake: skip_file

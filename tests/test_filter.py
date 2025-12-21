@@ -262,7 +262,7 @@ rng = numpy.random.default_rng(42)
                 skip_axis=0,
             )[1:],
         ),
-        # non-contiguos axes for 2D filtering
+        # non-contiguous axes for 2D filtering
         (
             numpy.arange(81).reshape(3, 3, 3, 3),
             numpy.arange(10, 91).reshape(3, 3, 3, 3),

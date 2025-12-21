@@ -100,7 +100,7 @@ def phasor_from_signal(
     sample_phase: ArrayLike | None = None,
     use_fft: bool | None = None,
     rfft: Callable[..., NDArray[Any]] | None = None,
-    dtype: DTypeLike = None,
+    dtype: DTypeLike | None = None,
     normalize: bool = True,
     num_threads: int | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
@@ -499,7 +499,7 @@ def phasor_to_complex(
     imag: ArrayLike,
     /,
     *,
-    dtype: DTypeLike = None,
+    dtype: DTypeLike | None = None,
 ) -> NDArray[numpy.complex64 | numpy.complex128]:
     """Return phasor coordinates as complex numbers.
 
@@ -679,7 +679,7 @@ def phasor_normalize(
     imag_unnormalized: ArrayLike,
     /,
     samples: int = 1,
-    dtype: DTypeLike = None,
+    dtype: DTypeLike | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     r"""Return normalized phasor coordinates.
 

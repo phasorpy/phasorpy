@@ -64,7 +64,7 @@ def wavelength2rgb(
         rgb = float2int(rgb) if dtype.kind in {'u', 'i'} else rgb.astype(dtype)
     if astuple:
         return tuple(rgb.tolist()[:3])
-    return rgb
+    return numpy.asarray(rgb)
 
 
 def float2int(

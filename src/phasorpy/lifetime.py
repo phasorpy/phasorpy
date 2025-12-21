@@ -927,7 +927,7 @@ def phasor_to_lifetime_search(
     *,
     lifetime_range: tuple[float, float, float] | None = None,
     unit_conversion: float = 1e-3,
-    dtype: DTypeLike = None,
+    dtype: DTypeLike | None = None,
     num_threads: int | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return two lifetime components from multi-harmonic phasor coordinates.

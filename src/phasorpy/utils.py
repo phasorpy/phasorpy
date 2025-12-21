@@ -157,7 +157,7 @@ def versions(
     ):
         try:
             __import__(module)
-        except ModuleNotFoundError:
+        except (ModuleNotFoundError, ImportError, ValueError):
             version_strings.append(f'{module}{dash}n/a')
             continue
         lib = sys.modules[module]

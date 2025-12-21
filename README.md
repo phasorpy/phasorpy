@@ -1,4 +1,4 @@
-# PhasorPy
+# <img src="docs/_static/phasorpy_logo.svg" alt="PhasorPy" width="48" height="48" align="left"> PhasorPy
 
 PhasorPy is an open-source Python library for the analysis of luminescence
 lifetime and hyperspectral images using the phasor approach.
@@ -9,6 +9,9 @@ lifetime and hyperspectral images using the phasor approach.
 - [Install with pip](https://pypi.org/project/phasorpy/) or [conda](https://anaconda.org/conda-forge/phasorpy).
 - [Data files](https://zenodo.org/communities/phasorpy/)
 - [Issues and questions](https://github.com/phasorpy/phasorpy/issues)
+
+Please cite [doi: 10.5281/zenodo.13862586](https://doi.org/10.5281/zenodo.13862586)
+if PhasorPy contributes to research that leads to a publication.
 
 PhasorPy is a community-maintained project.
 [Contributions](https://www.phasorpy.org/docs/stable/contributing/)
