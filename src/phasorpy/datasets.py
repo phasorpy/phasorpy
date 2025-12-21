@@ -208,7 +208,11 @@ LFD_WORKSHOP = pooch.create(
 
 FLUTE = pooch.create(
     path=pooch.os_cache('phasorpy'),
-    base_url='doi:10.5281/zenodo.8046636',
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/zenodo_8046636'
+        if DATA_ON_GITHUB
+        else 'doi:10.5281/zenodo.8046636'
+    ),
     env=ENV,
     registry={
         'Embryo.tif': (
