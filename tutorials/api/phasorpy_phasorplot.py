@@ -265,7 +265,6 @@ plot.show()
 plot = PhasorPlot(allquadrants=True, title='All quadrants')
 plot.show()
 
-
 # %%
 # Custom grid
 # -----------

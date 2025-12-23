@@ -120,8 +120,8 @@ def test_phasor_ometiff_tiled():
         mean, real, imag, attrs = phasor_from_ometiff(filename, harmonic=[2])
         assert attrs['harmonic'] == [2]
         assert_almost_equal(mean, data)
-        assert_almost_equal(real, data.reshape(1, *mean.shape))
-        assert_almost_equal(imag, data.reshape(1, *mean.shape))
+        assert_almost_equal(real, data.reshape((1, *mean.shape)))
+        assert_almost_equal(imag, data.reshape((1, *mean.shape)))
 
         with pytest.raises(IndexError):
             mean, real, imag, attrs = phasor_from_ometiff(filename, harmonic=0)
@@ -156,8 +156,8 @@ def test_phasor_ometiff_scalar():
         assert attrs['harmonic'] == [1]
         assert mean.shape == (1, 1)
         assert_almost_equal(mean, data.reshape(mean.shape))
-        assert_almost_equal(real, data.reshape(1, *mean.shape))
-        assert_almost_equal(imag, data.reshape(1, *mean.shape))
+        assert_almost_equal(real, data.reshape((1, *mean.shape)))
+        assert_almost_equal(imag, data.reshape((1, *mean.shape)))
 
         with pytest.raises(IndexError):
             mean, real, imag, attrs = phasor_from_ometiff(filename, harmonic=2)
@@ -208,8 +208,8 @@ def test_phasor_ometiff_scalar_multiharmonic():
         mean, real, imag, attrs = phasor_from_ometiff(filename, harmonic=[3])
         assert attrs['harmonic'] == [3]
         assert_almost_equal(mean, data[0].reshape(mean.shape))
-        assert_almost_equal(real, data[1].reshape(1, *mean.shape))
-        assert_almost_equal(imag, data[1].reshape(1, *mean.shape))
+        assert_almost_equal(real, data[1].reshape((1, *mean.shape)))
+        assert_almost_equal(imag, data[1].reshape((1, *mean.shape)))
 
 
 def test_phasor_to_ometiff_exceptions():

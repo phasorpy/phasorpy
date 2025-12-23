@@ -166,9 +166,9 @@ class TutorialOrder:
         'fret_efficiency',
         'multidimensional',
         # misc
-        'phasor_from_signal',
-        'apps',
         'logo',
+        'apps',
+        'phasor_from_signal',
     ]
 
     def __init__(self, srcdir: str): ...

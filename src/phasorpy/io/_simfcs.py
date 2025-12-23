@@ -108,15 +108,15 @@ def phasor_to_simfcs_referenced(
     if mean.shape != phi.shape[-mean.ndim :]:
         raise ValueError(f'{mean.shape=} != {phi.shape[-mean.ndim:]=}')
     if phi.ndim == mean.ndim:
-        phi = phi.reshape(1, *phi.shape)
-        mod = mod.reshape(1, *mod.shape)
+        phi = phi.reshape((1, *phi.shape))
+        mod = mod.reshape((1, *mod.shape))
     nharmonic = phi.shape[0]
 
     if mean.ndim < 2:
         # not an image
-        mean = mean.reshape(1, -1)
-        phi = phi.reshape(nharmonic, 1, -1)
-        mod = mod.reshape(nharmonic, 1, -1)
+        mean = mean.reshape((1, -1))
+        phi = phi.reshape((nharmonic, 1, -1))
+        mod = mod.reshape((nharmonic, 1, -1))
 
     # TODO: investigate actual size and harmonics limits of SimFCS
     sizey, sizex = mean.shape[-2:]

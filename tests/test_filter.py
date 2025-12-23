@@ -67,8 +67,8 @@ rng = numpy.random.default_rng(42)
         ),
         # 5x5 array with 3x3 filter
         (
-            numpy.arange(25).reshape(5, 5),
-            numpy.arange(25, 50).reshape(5, 5),
+            numpy.arange(25).reshape((5, 5)),
+            numpy.arange(25, 50).reshape((5, 5)),
             False,
             1,
             3,
@@ -93,8 +93,8 @@ rng = numpy.random.default_rng(42)
         ),
         # 5x5 array with 3x3 filter repeated 5 times
         (
-            numpy.arange(25).reshape(5, 5),
-            numpy.arange(25, 50).reshape(5, 5),
+            numpy.arange(25).reshape((5, 5)),
+            numpy.arange(25, 50).reshape((5, 5)),
             False,
             5,
             3,
@@ -119,8 +119,8 @@ rng = numpy.random.default_rng(42)
         ),
         # 5x5 array with 5x5 filter repeated 1 time
         (
-            numpy.arange(25).reshape(5, 5),
-            numpy.arange(25, 50).reshape(5, 5),
+            numpy.arange(25).reshape((5, 5)),
+            numpy.arange(25, 50).reshape((5, 5)),
             False,
             1,
             5,
@@ -145,8 +145,8 @@ rng = numpy.random.default_rng(42)
         ),
         # 5x5 array with float32 dtype values
         (
-            numpy.arange(25, dtype=numpy.float32).reshape(5, 5),
-            numpy.arange(25, 50, dtype=numpy.float32).reshape(5, 5),
+            numpy.arange(25, dtype=numpy.float32).reshape((5, 5)),
+            numpy.arange(25, 50, dtype=numpy.float32).reshape((5, 5)),
             False,
             5,
             3,
@@ -171,8 +171,8 @@ rng = numpy.random.default_rng(42)
         ),
         # 3x3x3 array with 3x3 filter repeated 3x with first axis skipped
         (
-            numpy.arange(27).reshape(3, 3, 3),
-            numpy.arange(10, 37).reshape(3, 3, 3),
+            numpy.arange(27).reshape((3, 3, 3)),
+            numpy.arange(10, 37).reshape((3, 3, 3)),
             False,
             3,
             3,
@@ -193,8 +193,8 @@ rng = numpy.random.default_rng(42)
         ),
         # 'median_scipy' method with axes as kwarg
         (
-            numpy.arange(27).reshape(3, 3, 3),
-            numpy.arange(10, 37).reshape(3, 3, 3),
+            numpy.arange(27).reshape((3, 3, 3)),
+            numpy.arange(10, 37).reshape((3, 3, 3)),
             True,
             3,
             3,
@@ -215,8 +215,8 @@ rng = numpy.random.default_rng(42)
         ),
         # same output for methods from 2D array without NaN
         (
-            numpy.arange(25).reshape(5, 5),
-            numpy.arange(25, 50).reshape(5, 5),
+            numpy.arange(25).reshape((5, 5)),
+            numpy.arange(25, 50).reshape((5, 5)),
             False,
             1,
             3,
@@ -224,15 +224,15 @@ rng = numpy.random.default_rng(42)
             {},
             phasor_filter_median(
                 numpy.ones((5, 5)),
-                numpy.arange(25).reshape(5, 5),
-                numpy.arange(25, 50).reshape(5, 5),
+                numpy.arange(25).reshape((5, 5)),
+                numpy.arange(25, 50).reshape((5, 5)),
                 use_scipy=True,
             )[1:],
         ),
         # same output for methods from 3D array without NaN
         (
-            numpy.arange(27).reshape(3, 3, 3),
-            numpy.arange(10, 37).reshape(3, 3, 3),
+            numpy.arange(27).reshape((3, 3, 3)),
+            numpy.arange(10, 37).reshape((3, 3, 3)),
             False,
             1,
             3,
@@ -240,15 +240,15 @@ rng = numpy.random.default_rng(42)
             {},
             phasor_filter_median(
                 numpy.ones((3, 3, 3)),
-                numpy.arange(27).reshape(3, 3, 3),
-                numpy.arange(10, 37).reshape(3, 3, 3),
+                numpy.arange(27).reshape((3, 3, 3)),
+                numpy.arange(10, 37).reshape((3, 3, 3)),
                 use_scipy=True,
             )[1:],
         ),
         # same output for methods from 3D array without NaN and skip axes
         (
-            numpy.arange(27).reshape(3, 3, 3),
-            numpy.arange(10, 37).reshape(3, 3, 3),
+            numpy.arange(27).reshape((3, 3, 3)),
+            numpy.arange(10, 37).reshape((3, 3, 3)),
             False,
             1,
             3,
@@ -256,16 +256,16 @@ rng = numpy.random.default_rng(42)
             {},
             phasor_filter_median(
                 numpy.ones((3, 3, 3)),
-                numpy.arange(27).reshape(3, 3, 3),
-                numpy.arange(10, 37).reshape(3, 3, 3),
+                numpy.arange(27).reshape((3, 3, 3)),
+                numpy.arange(10, 37).reshape((3, 3, 3)),
                 use_scipy=True,
                 skip_axis=0,
             )[1:],
         ),
         # non-contiguous axes for 2D filtering
         (
-            numpy.arange(81).reshape(3, 3, 3, 3),
-            numpy.arange(10, 91).reshape(3, 3, 3, 3),
+            numpy.arange(81).reshape((3, 3, 3, 3)),
+            numpy.arange(10, 91).reshape((3, 3, 3, 3)),
             False,
             1,
             3,
@@ -273,38 +273,38 @@ rng = numpy.random.default_rng(42)
             {},
             phasor_filter_median(
                 numpy.ones((3, 3, 3, 3)),
-                numpy.arange(81).reshape(3, 3, 3, 3),
-                numpy.arange(10, 91).reshape(3, 3, 3, 3),
+                numpy.arange(81).reshape((3, 3, 3, 3)),
+                numpy.arange(10, 91).reshape((3, 3, 3, 3)),
                 use_scipy=True,
                 skip_axis=[0, 2],
             )[1:],
         ),
         # repeat = 0
         (
-            numpy.arange(9).reshape(3, 3),
-            numpy.arange(10, 19).reshape(3, 3),
+            numpy.arange(9).reshape((3, 3)),
+            numpy.arange(10, 19).reshape((3, 3)),
             False,
             0,
             3,
             None,
             {},
             (
-                numpy.arange(9).reshape(3, 3),
-                numpy.arange(10, 19).reshape(3, 3),
+                numpy.arange(9).reshape((3, 3)),
+                numpy.arange(10, 19).reshape((3, 3)),
             ),
         ),
         # size = 1
         (
-            numpy.arange(9).reshape(3, 3),
-            numpy.arange(10, 19).reshape(3, 3),
+            numpy.arange(9).reshape((3, 3)),
+            numpy.arange(10, 19).reshape((3, 3)),
             False,
             1,
             1,
             None,
             {},
             (
-                numpy.arange(9).reshape(3, 3),
-                numpy.arange(10, 19).reshape(3, 3),
+                numpy.arange(9).reshape((3, 3)),
+                numpy.arange(10, 19).reshape((3, 3)),
             ),
         ),
     ],

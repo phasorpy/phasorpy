@@ -20,7 +20,7 @@ and Excel software.
 """
 
 # %%
-# Import required modules and functions:
+# Import required modules, functions, and classes:
 
 import numpy
 from matplotlib import pyplot

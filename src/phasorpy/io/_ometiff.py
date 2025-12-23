@@ -152,13 +152,13 @@ def phasor_to_ometiff(
 
     if mean.ndim < 2:
         # not an image
-        mean = mean.reshape(1, -1)
+        mean = mean.reshape((1, -1))
         if has_harmonic_dim:
-            real = real.reshape(real.shape[0], 1, -1)
-            imag = imag.reshape(imag.shape[0], 1, -1)
+            real = real.reshape((real.shape[0], 1, -1))
+            imag = imag.reshape((imag.shape[0], 1, -1))
         else:
-            real = real.reshape(1, -1)
-            imag = imag.reshape(1, -1)
+            real = real.reshape((1, -1))
+            imag = imag.reshape((1, -1))
 
     if harmonic is not None:
         harmonic, _ = parse_harmonic(harmonic)
@@ -430,9 +430,9 @@ def phasor_from_ometiff(
                     imag = tif.series[2].asarray()[index[0]].copy()
             elif keepdims:
                 real = tif.series[1].asarray()
-                real = real.reshape(1, *real.shape)
+                real = real.reshape((1, *real.shape))
                 imag = tif.series[2].asarray()
-                imag = imag.reshape(1, *imag.shape)
+                imag = imag.reshape((1, *imag.shape))
                 attrs['harmonic'] = [harmonic_stored]
             else:
                 real = tif.series[1].asarray()

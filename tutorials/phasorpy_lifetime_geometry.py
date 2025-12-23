@@ -17,7 +17,7 @@ of lifetimes and other quantities in the phasor plot:
 """
 
 # %%
-# Import required modules and functions:
+# Import required modules, functions, and classes:
 
 import numpy
 

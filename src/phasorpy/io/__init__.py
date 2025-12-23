@@ -135,5 +135,3 @@ from ._simfcs import *
 
 init_module(globals())
 del init_module
-
-# flake8: noqa: F403

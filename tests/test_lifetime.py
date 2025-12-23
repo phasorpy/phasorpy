@@ -1730,10 +1730,10 @@ def test_phasor_to_lifetime_search_two_distribution(exact):
     fraction = numpy.clip(fraction, 0.0, 1.0)
 
     real, imag = phasor_from_lifetime(
-        [frequency, 2 * frequency], lifetime, fraction.reshape(-1, 2)
+        [frequency, 2 * frequency], lifetime, fraction.reshape((-1, 2))
     )
-    real = real.reshape(2, *shape)
-    imag = imag.reshape(2, *shape)
+    real = real.reshape((2, *shape))
+    imag = imag.reshape((2, *shape))
     if not exact:
         # add noise to the imaginary parts
         imag += rng.normal(0.0, 0.005, (2, *shape))
@@ -1754,8 +1754,8 @@ def test_phasor_to_lifetime_search_two_distribution(exact):
     component_real, component_imag = phasor_from_lifetime(
         frequency, lifetimes.reshape(-1)
     )
-    component_real = component_real.reshape(2, *shape)
-    component_imag = component_imag.reshape(2, *shape)
+    component_real = component_real.reshape((2, *shape))
+    component_imag = component_imag.reshape((2, *shape))
     # _plot(frequency, real, imag, component_real, component_imag)
 
     assert_allclose(lifetimes[0].mean(), lifetime[0], atol=atol)

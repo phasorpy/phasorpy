@@ -772,7 +772,7 @@ def signal_from_flif(
             raise ValueError(f'measured phases {data.shape[0]} < {nphases=}')
         if data.shape[0] % nphases != 0:
             data = data[: (data.shape[0] // nphases) * nphases]
-        data = data.reshape(-1, nphases, data.shape[1], data.shape[2])
+        data = data.reshape((-1, nphases, data.shape[1], data.shape[2]))
         if data.shape[0] == 1:
             data = data[0]
             axes = 'HYX'

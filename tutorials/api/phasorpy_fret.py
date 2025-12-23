@@ -31,7 +31,6 @@ settings = {
     'fret_efficiency': 0.5,  # 50%
 }
 
-
 # %%
 # FRET efficiency trajectories
 # ----------------------------
@@ -63,7 +62,6 @@ PhasorPlotFret(
     title='FRET efficiency trajectories',
 ).show()
 
-
 # %%
 # Fractions not fretting
 # ----------------------
@@ -80,7 +78,6 @@ PhasorPlotFret(
     title='FRET efficiency trajectories with fractions not fretting',
 ).show()
 
-
 # %%
 # Donor bleedthrough
 # ------------------
@@ -94,7 +91,6 @@ PhasorPlotFret(
     donor_bleedthrough=0.1,  # 10%
     title='FRET efficiency trajectories with donor bleedthrough',
 ).show()
-
 
 # %%
 # Background signal
@@ -116,7 +112,6 @@ PhasorPlotFret(
     background_imag=0.2,
     title='FRET efficiency trajectories with background',
 ).show()
-
 
 # %%
 # Many parameters
@@ -147,7 +142,6 @@ PhasorPlotFret(
     title='FRET efficiency trajectories with many parameters',
 ).show()
 
-
 # %%
 # Multi-frequency plot
 # --------------------
@@ -164,8 +158,8 @@ from phasorpy.lifetime import phasor_from_fret_acceptor, phasor_from_fret_donor
 from phasorpy.phasor import phasor_to_polar
 from phasorpy.plot import plot_polar_frequency
 
-frequency = numpy.logspace(0, 4, 64).reshape(-1, 1)  # 1-10000 MHz
-fret_efficiency = numpy.array([0.05, 0.95]).reshape(1, -1)  # 5% and 95%
+frequency = numpy.logspace(0, 4, 64).reshape((-1, 1))  # 1-10000 MHz
+fret_efficiency = numpy.array([0.05, 0.95]).reshape((1, -1))  # 5% and 95%
 donor_lifetime = 4.2
 acceptor_lifetime = 3.0
 donor_fretting = 0.9

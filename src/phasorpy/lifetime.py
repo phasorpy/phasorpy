@@ -291,7 +291,7 @@ def phasor_from_lifetime(
             raise ValueError(
                 'lifetime must be one-dimensional array if fraction is None'
             )
-        lifetime = lifetime.reshape(-1, 1)  # move components to last axis
+        lifetime = lifetime.reshape((-1, 1))  # move components to last axis
         fraction = numpy.ones_like(lifetime)  # not really used
     else:
         fraction = numpy.array(
@@ -306,8 +306,8 @@ def phasor_from_lifetime(
             raise ValueError(
                 f'{lifetime.shape=} does not match {fraction.shape=}'
             )
-        lifetime = lifetime.reshape(1, -1)
-        fraction = fraction.reshape(1, -1)
+        lifetime = lifetime.reshape((1, -1))
+        fraction = fraction.reshape((1, -1))
         nvar = 1
     elif lifetime.ndim == 2 and fraction.ndim == 2:
         # multiple, multi-component lifetimes
@@ -316,11 +316,11 @@ def phasor_from_lifetime(
         nvar = lifetime.shape[0]
     elif lifetime.ndim == 2 and fraction.ndim == 1:
         # variable components, same fractions
-        fraction = fraction.reshape(1, -1)
+        fraction = fraction.reshape((1, -1))
         nvar = lifetime.shape[0]
     elif lifetime.ndim == 1 and fraction.ndim == 2:
         # same components, varying fractions
-        lifetime = lifetime.reshape(1, -1)
+        lifetime = lifetime.reshape((1, -1))
         nvar = fraction.shape[0]
     else:
         # unreachable code
@@ -1051,8 +1051,8 @@ def phasor_to_lifetime_search(
         lifetime, fraction, real, imag, candidate, omega, num_threads
     )
 
-    lifetime = lifetime.reshape(num_components, *shape)
-    fraction = fraction.reshape(num_components, *shape)
+    lifetime = lifetime.reshape((num_components, *shape))
+    fraction = fraction.reshape((num_components, *shape))
 
     return lifetime, fraction
 

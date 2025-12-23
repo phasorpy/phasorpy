@@ -520,8 +520,8 @@ def phasor_component_fit(
         )
 
     if component_real.ndim == 1:
-        component_real = component_real.reshape(1, -1)
-        component_imag = component_imag.reshape(1, -1)
+        component_real = component_real.reshape((1, -1))
+        component_imag = component_imag.reshape((1, -1))
     elif component_real.ndim > 2:
         raise ValueError(f'{component_real.ndim=} > 2')
 
@@ -555,19 +555,20 @@ def phasor_component_fit(
     real = numpy.nan_to_num(real, nan=0.0, copy=False)
     imag = numpy.nan_to_num(imag, nan=0.0, copy=False)
 
+    real = numpy.asarray(real)  # for mypy
+    imag = numpy.asarray(imag)
+
     # create coordinates matrix for least squares solving:
     # [real coordinates (for each harmonic)] +
     # [imaginary coordinates (for each harmonic)] +
     # [ones for intensity constraint]
-    coords = numpy.ones(
-        (2 * num_harmonics + 1, *real.shape[1:])  # type: ignore[union-attr]
-    )
+    coords = numpy.ones((2 * num_harmonics + 1, *real.shape[1:]))
     coords[:num_harmonics] = real
     coords[num_harmonics : 2 * num_harmonics] = imag
 
     fractions = lstsq(
         component_matrix,
-        coords.reshape(coords.shape[0], -1),  # type: ignore[misc]
+        coords.reshape((coords.shape[0], -1)),
         **kwargs,
     )[0]
 

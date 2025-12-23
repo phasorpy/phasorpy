@@ -143,49 +143,46 @@ Software
 Besides the PhasorPy library, several other software implemented the phasor
 approach to analyze fluorescence time-resolved or spectral images:
 
-- **Desktop Applications**:
-  :ref:`SimFCS <simfcs>`,
-  :ref:`FLUTE <flute>`,
-  :ref:`FLIMPA <flimpa>`,
-  :ref:`GSLab <gslab>`,
-  :ref:`AlliGator <alligator>`,
-  :ref:`BrightEyes <brighteyes>`,
-  :ref:`FLIM Playground <flim_playground>`,
-  :ref:`HySP <hysp>`,
-  :ref:`FlimFast <flimfast>`
+.. list-table::
+   :header-rows: 0
 
-- **Commercial Software**:
-  :ref:`FLIM Studio <flim_studio>`,
-  :ref:`VistaVision <vistavision>`,
-  :ref:`SPCImage <spcimage>`,
-  :ref:`LAS X <lasx>`,
-  :ref:`Luminosa <luminosa>`,
-  :ref:`EzTime <eztime>`,
-  :ref:`LIFA <lifa>`
-
-- **Napari Plugins**:
-  :ref:`Napari-phasors <napari_phasors>`,
-  :ref:`Napari-flim-phasor-plotter <napari_flim_phasor_plotter>`,
-  :ref:`Napari-live-flim <napari_live_flim>`,
-  :ref:`FLOPA <flopa>`
-
-- **ImageJ Plugins**:
-  :ref:`Spectral Phasor PlugIn / Time Gated Phasor PlugIn <phasor_plugins>`
-
-- **Libraries**:
-  :ref:`FLIMLib <flimlib>`,
-  :ref:`tttrlib <tttrlib>`,
-  :ref:`FLIM_tools <flim_tools>`,
-  :ref:`Cell-analysis-tools <cell_analysis_tools>`
-
-- **MATLAB Tools**:
-  :ref:`FLIMfit <flimfit>`,
-  :ref:`PAM <pam>`,
-  :ref:`Instant-FLIM-Analysis <instant_flim_analysis>`
-
-- **Notebooks**:
-  :ref:`PhasorIdentifier <phasor_identifier>`,
-  :ref:`PhasorPlots for dummies <phasorplots_for_dummies>`
+   * - **Desktop**
+     - :ref:`SimFCS <simfcs>`,
+       :ref:`FLUTE <flute>`,
+       :ref:`FLIMPA <flimpa>`,
+       :ref:`GSLab <gslab>`,
+       :ref:`AlliGator <alligator>`,
+       :ref:`BrightEyes <brighteyes>`,
+       :ref:`FLIM Playground <flim_playground>`,
+       :ref:`HySP <hysp>`,
+       :ref:`FlimFast <flimfast>`
+   * - **Commercial**
+     - :ref:`FLIM Studio <flim_studio>`,
+       :ref:`VistaVision <vistavision>`,
+       :ref:`SPCImage <spcimage>`,
+       :ref:`LAS X <lasx>`,
+       :ref:`Luminosa <luminosa>`,
+       :ref:`EzTime <eztime>`,
+       :ref:`LIFA <lifa>`
+   * - **Napari**
+     - :ref:`Napari-phasors <napari_phasors>`,
+       :ref:`Napari-flim-phasor-plotter <napari_flim_phasor_plotter>`,
+       :ref:`Napari-live-flim <napari_live_flim>`,
+       :ref:`FLOPA <flopa>`
+   * - **ImageJ**
+     - :ref:`Spectral/Time Gated Phasor PlugIns <phasor_plugins>`
+   * - **Matlab**
+     - :ref:`FLIMfit <flimfit>`,
+       :ref:`PAM <pam>`,
+       :ref:`Instant-FLIM-Analysis <instant_flim_analysis>`
+   * - **Library**
+     - :ref:`FLIMLib <flimlib>`,
+       :ref:`tttrlib <tttrlib>`,
+       :ref:`FLIM_tools <flim_tools>`,
+       :ref:`Cell-analysis-tools <cell_analysis_tools>`
+   * - **Notebook**
+     - :ref:`PhasorIdentifier <phasor_identifier>`,
+       :ref:`PhasorPlots for dummies <phasorplots_for_dummies>`
 
 Details:
 
