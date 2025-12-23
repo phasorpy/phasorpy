@@ -145,10 +145,7 @@ def phasor_to_ometiff(
     if mean.shape != real.shape[-mean.ndim :]:
         raise ValueError(f'{mean.shape=} != {real.shape[-mean.ndim:]=}')
     has_harmonic_dim = real.ndim == mean.ndim + 1
-    if mean.ndim == real.ndim or real.ndim == 0:
-        nharmonic = 1
-    else:
-        nharmonic = real.shape[0]
+    nharmonic = 1 if real.ndim in {0, mean.ndim} else real.shape[0]
 
     if mean.ndim < 2:
         # not an image

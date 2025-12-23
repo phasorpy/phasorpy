@@ -473,7 +473,7 @@ def pseudo_color(
             if vmin != 0.0:
                 intensity -= vmin
             scale = vmax - vmin
-            if scale != 0.0 and scale != 1.0:
+            if scale not in {0.0, 1.0}:
                 intensity /= scale
         numpy.clip(intensity, 0.0, 1.0, out=intensity)
         if intensity.shape == shape:

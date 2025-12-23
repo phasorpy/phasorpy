@@ -1751,17 +1751,18 @@ def test_phasor_to_lifetime_search_two_distribution(exact):
         num_threads=2,
     )
 
-    component_real, component_imag = phasor_from_lifetime(
-        frequency, lifetimes.reshape(-1)
-    )
-    component_real = component_real.reshape((2, *shape))
-    component_imag = component_imag.reshape((2, *shape))
-    # _plot(frequency, real, imag, component_real, component_imag)
-
     assert_allclose(lifetimes[0].mean(), lifetime[0], atol=atol)
     assert_allclose(lifetimes[1].mean(), lifetime[1], atol=atol)
     assert_allclose(fractions[0].mean(), 0.3, atol=1e-3)
     assert_allclose(fractions[1].mean(), 0.7, atol=1e-3)
+
+    # visualize results
+    # component_real, component_imag = phasor_from_lifetime(
+    #     frequency, lifetimes.reshape(-1)
+    # )
+    # component_real = component_real.reshape((2, *shape))
+    # component_imag = component_imag.reshape((2, *shape))
+    # _plot(frequency, real, imag, component_real, component_imag)
 
 
 def _plot(frequency, real, imag, component_real=None, component_imag=None):
