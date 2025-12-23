@@ -1115,11 +1115,11 @@ def phasor_to_principal_plane(
 
         x, y = numpy.dot(
             numpy.vstack(
-                real.reshape(real.shape[0], -1),
-                imag.reshape(imag.shape[0], -1),
+                real.reshape((real.shape[0], -1)),
+                imag.reshape((imag.shape[0], -1)),
             ),
             transformation_matrix,
-        ).reshape(2, *real.shape[1:])
+        ).reshape((2, *real.shape[1:]))
 
     An application of PCA to full-harmonic phasor coordinates from MRI signals
     is described in [1]_.
@@ -1154,8 +1154,8 @@ def phasor_to_principal_plane(
     # reshape to variables in rows, observations in columns
     frequencies = re.shape[0]
     shape = re.shape[1:]
-    re = re.reshape(re.shape[0], -1)
-    im = im.reshape(im.shape[0], -1)
+    re = re.reshape((re.shape[0], -1))
+    im = im.reshape((im.shape[0], -1))
 
     # vector of multi-frequency phasor coordinates
     coordinates = numpy.vstack([re, im])

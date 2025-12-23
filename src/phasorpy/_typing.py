@@ -71,6 +71,3 @@ from typing import (
 from numpy.typing import ArrayLike, DTypeLike, NDArray
 from pooch import Pooch
 from xarray import DataArray
-
-# pylint: disable=unused-import
-# autoflake: skip_file

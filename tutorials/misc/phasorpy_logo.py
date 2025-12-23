@@ -18,7 +18,7 @@ cropped to a circle.
 """
 
 # %%
-# Import required modules and define functions:
+# Import required modules, functions, and classes:
 
 from matplotlib import pyplot
 

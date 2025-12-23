@@ -121,7 +121,7 @@ def phasor_cluster_gmm(
         raise ValueError(f'{sigma=} <= 0')
     sigma = float(sigma)
 
-    coords = numpy.stack([real, imag], axis=-1).reshape(-1, 2)
+    coords = numpy.stack([real, imag], axis=-1).reshape((-1, 2))
 
     valid_data = ~numpy.isnan(coords).any(axis=1)
     coords = coords[valid_data]

@@ -117,7 +117,6 @@ plot_histograms(
     title='Histograms of fractions of two components',
 )
 
-
 # %%
 # Multi-component fit
 # -------------------

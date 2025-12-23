@@ -238,23 +238,21 @@ ignore = [
     "PLR0915",  # too-many-statements
     "PLR2004",  # magic-value-comparison
     "S101",  # assert
-    "SIM105",  # suppressible-exception
     "TD",  # todo
     "TID252",  # relative-imports
-    "TRY003",  # tryceratops
     "UP037",  # quoted-annotation
     # TODO: consider enabling these later
-    "ARG002",  # unused-method-argument
     "EM101",  # raw-string-in-exception
     "EM102",  # f-string-in-exception
-    "PLR1714",  # repeated-equality-comparison
     "PLW2901",  # redefined-loop-name
     "PTH",  # pathlib
+    "SIM105",  # suppressible-exception
+    "TRY003",  # tryceratops
 ]
 typing-modules = ["_typing"]
 
 [tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]
+"__init__.py" = ["F401", "F403"]
 "conftest.py" = ["ARG001"]
 "setup.py" = ["T201"]
 "tests/*" = ["ANN", "D", "INP001", "PT011", "SLF001"]

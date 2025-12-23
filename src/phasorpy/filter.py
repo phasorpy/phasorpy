@@ -767,7 +767,7 @@ def signal_filter_svd(
     if vmin is None or vmin < 0.0:
         vmin = 0.0
 
-    signal = numpy.ascontiguousarray(signal).reshape(-1, samples)
+    signal = numpy.ascontiguousarray(signal).reshape((-1, samples))
     size = signal.shape[0]
 
     if dtype is None:
@@ -798,7 +798,7 @@ def signal_filter_svd(
         if spectral_vector.shape[:-1] != shape[:-1]:
             raise ValueError(f'{spectral_vector.shape[:-1]=} != {shape[:-1]=}')
         spectral_vector = spectral_vector.reshape(
-            -1, spectral_vector.shape[-1]
+            (-1, spectral_vector.shape[-1])
         )
 
     if dtype == signal.dtype:
@@ -811,7 +811,7 @@ def signal_filter_svd(
         denoised, integrated, signal, spectral_vector, sigma, vmin, num_threads
     )
 
-    denoised = denoised.reshape(shape)  # type: ignore[assignment]
+    denoised = denoised.reshape(shape)
     if axis != -1:
         denoised = numpy.moveaxis(denoised, -1, axis)
     return denoised
@@ -925,7 +925,7 @@ def signal_filter_ncpca(
         raise ValueError(f'{signal.shape[-1]=} < 3')
 
     # flatten sample dimensions
-    signal = signal.reshape(-1, shape[-1])
+    signal = signal.reshape((-1, shape[-1]))
 
     # poisson-normalize signal
     scale = numpy.sqrt(numpy.nanmean(signal, axis=0, keepdims=True))

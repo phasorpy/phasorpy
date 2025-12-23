@@ -472,6 +472,7 @@ class PhasorPlotFret(PhasorPlot):
 
     def _on_changed(self, value: Any) -> None:
         """Update plot with current slider values."""
+        del value  # unused
         frequency = self._frequency_slider.val
         donor_lifetime = self._donor_lifetime_slider.val
         acceptor_lifetime = self._acceptor_lifetime_slider.val

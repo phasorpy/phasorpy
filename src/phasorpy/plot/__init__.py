@@ -23,5 +23,3 @@ from ._phasorplot_fret import *
 
 init_module(globals())
 del init_module
-
-# flake8: noqa: F403

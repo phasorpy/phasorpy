@@ -484,6 +484,7 @@ class LifetimePlots:
 
     def _on_changed(self, value: Any) -> None:
         """Update plot with current slider values."""
+        del value  # unused
         frequency = self._frequency_slider.val
 
         if frequency != self._frequency:

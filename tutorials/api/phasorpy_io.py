@@ -14,7 +14,7 @@ and SimFCS Referenced files.
 """
 
 # %%
-# Import required modules and functions:
+# Import required modules, functions, and classes:
 
 import math
 import os

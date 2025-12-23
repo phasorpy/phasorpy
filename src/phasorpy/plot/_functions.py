@@ -177,7 +177,7 @@ def plot_phasor_image(
         if mean.ndim < 2:
             raise ValueError(f'{mean.ndim=} < 2')
         shape = mean.shape
-        mean = mean.reshape(-1, *mean.shape[-2:])
+        mean = mean.reshape((-1, *mean.shape[-2:]))
         mean = mean[0] if mean.shape[0] == 1 else numpy.nanmean(mean, axis=0)
 
     real = numpy.asarray(real)
@@ -200,8 +200,8 @@ def plot_phasor_image(
     else:
         raise ValueError(f'{real.shape[1:]=} != {shape}')
 
-    real = real.reshape(nh, -1, *real.shape[-2:])
-    imag = imag.reshape(nh, -1, *imag.shape[-2:])
+    real = real.reshape((nh, -1, *real.shape[-2:]))
+    imag = imag.reshape((nh, -1, *imag.shape[-2:]))
     if real.shape[1] == 1:
         real = real[:, 0]
         imag = imag[:, 0]
@@ -457,7 +457,7 @@ def plot_image(
             pass
         else:
             allrgb = False
-            image = image.reshape(-1, *image.shape[-2:])
+            image = image.reshape((-1, *image.shape[-2:]))
             if image.shape[0] == 1:
                 image = image[0]
             else:
@@ -589,10 +589,10 @@ def plot_polar_frequency(
 
     phase = numpy.asarray(phase)
     if phase.ndim < 2:
-        phase = phase.reshape(-1, 1)
+        phase = phase.reshape((-1, 1))
     modulation = numpy.asarray(modulation)
     if modulation.ndim < 2:
-        modulation = modulation.reshape(-1, 1)
+        modulation = modulation.reshape((-1, 1))
 
     ax.set_ylabel('Phase (°)', color='tab:blue')
     ax.set_yticks([0.0, 30.0, 60.0, 90.0])
