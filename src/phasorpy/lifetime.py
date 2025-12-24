@@ -300,31 +300,32 @@ def phasor_from_lifetime(
         if fraction.ndim > 2:
             raise ValueError('fraction must be one- or two-dimensional array')
 
-    if lifetime.ndim == 1 and fraction.ndim == 1:
-        # one multi-component lifetime
-        if lifetime.shape != fraction.shape:
-            raise ValueError(
-                f'{lifetime.shape=} does not match {fraction.shape=}'
-            )
-        lifetime = lifetime.reshape((1, -1))
-        fraction = fraction.reshape((1, -1))
-        nvar = 1
-    elif lifetime.ndim == 2 and fraction.ndim == 2:
-        # multiple, multi-component lifetimes
-        if lifetime.shape[1] != fraction.shape[1]:
-            raise ValueError(f'{lifetime.shape[1]=} != {fraction.shape[1]=}')
-        nvar = lifetime.shape[0]
-    elif lifetime.ndim == 2 and fraction.ndim == 1:
-        # variable components, same fractions
-        fraction = fraction.reshape((1, -1))
-        nvar = lifetime.shape[0]
-    elif lifetime.ndim == 1 and fraction.ndim == 2:
-        # same components, varying fractions
-        lifetime = lifetime.reshape((1, -1))
-        nvar = fraction.shape[0]
-    else:
-        # unreachable code
-        raise RuntimeError(f'{lifetime.shape=}, {fraction.shape=}')
+    match (lifetime.ndim, fraction.ndim):
+        case (1, 1):
+            # one multi-component lifetime
+            if lifetime.shape != fraction.shape:
+                raise ValueError(f'{lifetime.shape=} != {fraction.shape=}')
+            lifetime = lifetime.reshape((1, -1))
+            fraction = fraction.reshape((1, -1))
+            nvar = 1
+        case (2, 2):
+            # multiple, multi-component lifetimes
+            if lifetime.shape[1] != fraction.shape[1]:
+                raise ValueError(
+                    f'{lifetime.shape[1]=} != {fraction.shape[1]=}'
+                )
+            nvar = lifetime.shape[0]
+        case (2, 1):
+            # variable components, same fractions
+            fraction = fraction.reshape((1, -1))
+            nvar = lifetime.shape[0]
+        case (1, 2):
+            # same components, varying fractions
+            lifetime = lifetime.reshape((1, -1))
+            nvar = fraction.shape[0]
+        case _:
+            # unreachable code
+            raise RuntimeError(f'{lifetime.shape=}, {fraction.shape=}')
 
     phasor = numpy.empty((2, frequency.size, nvar), dtype=numpy.float64)
 
