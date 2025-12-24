@@ -218,12 +218,13 @@ def mask_from_elliptic_cursor(
         angle = numpy.arctan2(center_imag, center_real)
     elif isinstance(angle, str):
         # TODO: vectorize str type
-        if angle == 'phase':
-            angle = numpy.arctan2(center_imag, center_real)
-        elif angle == 'semicircle':
-            angle = numpy.arctan2(center_imag, center_real - 0.5)
-        else:
-            raise ValueError(f"{angle=} not in {{'phase', 'semicircle'}}")
+        match angle:
+            case 'phase':
+                angle = numpy.arctan2(center_imag, center_real)
+            case 'semicircle':
+                angle = numpy.arctan2(center_imag, center_real - 0.5)
+            case _:
+                raise ValueError(f"{angle=} not in {{'phase', 'semicircle'}}")
 
     angle_sin = numpy.sin(angle)
     angle_cos = numpy.cos(angle)

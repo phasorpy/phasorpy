@@ -141,14 +141,19 @@ def phasor_cluster_gmm(
         center_real.append(float(gmm.means_[i, 0]))
         center_imag.append(float(gmm.means_[i, 1]))
 
-        if gmm.covariance_type == 'full':
-            cov = gmm.covariances_[i]
-        elif gmm.covariance_type == 'tied':
-            cov = gmm.covariances_
-        elif gmm.covariance_type == 'diag':
-            cov = numpy.diag(gmm.covariances_[i])
-        else:  # 'spherical'
-            cov = numpy.eye(2) * gmm.covariances_[i]
+        match gmm.covariance_type:
+            case 'full':
+                cov = gmm.covariances_[i]
+            case 'tied':
+                cov = gmm.covariances_
+            case 'diag':
+                cov = numpy.diag(gmm.covariances_[i])
+            case 'spherical':
+                cov = numpy.eye(2) * gmm.covariances_[i]
+            case _:
+                raise ValueError(
+                    f'unknown covariance_type: {gmm.covariance_type!r}'
+                )
 
         eigenvalues, eigenvectors = numpy.linalg.eigh(cov[:2, :2])
 
@@ -170,29 +175,29 @@ def phasor_cluster_gmm(
     if clusters == 1:
         argsort = [0]
     else:
-        if sort is None or sort == 'polar':
+        match sort:
+            case 'polar' | None:
 
-            def sort_key(i: int) -> Any:
-                return (
-                    math.atan2(center_imag[i], center_real[i]),
-                    math.hypot(center_real[i], center_imag[i]),
+                def sort_key(i: int) -> Any:
+                    return (
+                        math.atan2(center_imag[i], center_real[i]),
+                        math.hypot(center_real[i], center_imag[i]),
+                    )
+
+            case 'phasor':
+
+                def sort_key(i: int) -> Any:
+                    return center_imag[i], center_real[i]
+
+            case 'area':
+
+                def sort_key(i: int) -> Any:
+                    return -radius_major[i] * radius_minor[i]
+
+            case _:
+                raise ValueError(
+                    f"{sort=!r} not in {{'phasor', 'polar', or 'area'}}"
                 )
-
-        elif sort == 'phasor':
-
-            def sort_key(i: int) -> Any:
-                return center_imag[i], center_real[i]
-
-        elif sort == 'area':
-
-            def sort_key(i: int) -> Any:
-                return -radius_major[i] * radius_minor[i]
-
-        else:
-            raise ValueError(
-                f"{sort=!r} not in {{'phasor', 'polar', or 'area'}}"
-            )
-
         argsort = sorted(range(len(center_real)), key=sort_key)
 
     return (
