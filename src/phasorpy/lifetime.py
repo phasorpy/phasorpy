@@ -316,7 +316,7 @@ def phasor_from_lifetime(
                 )
             nvar = lifetime.shape[0]
         case (2, 1):
-            # variable components, same fractions
+            # varying components, same fractions
             fraction = fraction.reshape((1, -1))
             nvar = lifetime.shape[0]
         case (1, 2):

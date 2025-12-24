@@ -176,7 +176,7 @@ def phasor_cluster_gmm(
         argsort = [0]
     else:
         match sort:
-            case None | 'polar':
+            case 'polar' | None:
 
                 def sort_key(i: int) -> Any:
                     return (

@@ -442,7 +442,7 @@ def test_polar_from_reference_functions():
             {'preexponential': True},
             (0.457143, 0.4),
         ),
-        # variable lifetime, constant fraction
+        # varying lifetime, constant fraction
         (
             (
                 80.0,
@@ -452,7 +452,7 @@ def test_polar_from_reference_functions():
             {},
             ([0.425, 0.725], [0.475, 0.425]),
         ),
-        # constant lifetime, variable fraction
+        # constant lifetime, varying fraction
         (
             (
                 80.0,
