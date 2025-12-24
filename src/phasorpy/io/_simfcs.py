@@ -171,9 +171,7 @@ def phasor_to_simfcs_referenced(
             rawdata_append(rawdata)
             rawdata_append(rawdata)
 
-        if not multi_file:
-            label = ''
-        with open(filename + label + ext, 'wb') as fh:
+        with open(f'{filename}{label if multi_file else ""}{ext}', 'wb') as fh:
             fh.write(zlib.compress(b''.join(rawdata)))
 
 
@@ -278,8 +276,8 @@ def phasor_from_simfcs_referenced(
     real = numpy.empty((len(harmonic), *mean.shape), dtype=numpy.float32)
     imag = numpy.empty_like(real)
     for i, h in enumerate(harmonic):
-        h = (h - 1) * 2 + 1
-        re, im = phasor_from_polar(numpy.deg2rad(data[h]), data[h + 1])
+        h2 = (h - 1) * 2 + 1
+        re, im = phasor_from_polar(numpy.deg2rad(data[h2]), data[h2 + 1])
         real[i] = re
         imag[i] = im
     if not keep_harmonic_dim:

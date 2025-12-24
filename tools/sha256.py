@@ -32,5 +32,7 @@ for fname in files:
     with open(fname, 'rb') as fh:
         data = fh.read()
     sha = sha256(data).hexdigest()
-    fname = os.path.split(fname)[-1]
-    print(f"    {fname!r}: (\n        'sha256:'\n        '{sha}'\n    ),")
+    print(
+        f'    {os.path.split(fname)[-1]!r}: '
+        f"(\n        'sha256:'\n        '{sha}'\n    ),"
+    )

@@ -448,8 +448,8 @@ def plot_image(
 
     arrays = []
     shape = [1, 1]
-    for image in images:
-        image = numpy.asarray(image)
+    for im in images:
+        image = numpy.asarray(im)
         if image.ndim < 2:
             raise ValueError(f'{image.ndim=} < 2')
         if image.ndim == 3 and image.shape[2] in {3, 4}:
@@ -488,14 +488,14 @@ def plot_image(
         vmax = kwargs.pop('vmax', None)
         if vmin is None:
             vmin = numpy.inf
-            for image in images:
-                vmin = min(vmin, numpy.nanmin(image))
+            for im in images:
+                vmin = min(vmin, numpy.nanmin(im))
             if vmin == numpy.inf:
                 vmin = None
         if vmax is None:
             vmax = -numpy.inf
-            for image in images:
-                vmax = max(vmax, numpy.nanmax(image))
+            for im in images:
+                vmax = max(vmax, numpy.nanmax(im))
             if vmax == -numpy.inf:
                 vmax = None
 

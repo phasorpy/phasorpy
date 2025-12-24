@@ -4,6 +4,7 @@ from __future__ import annotations
 
 __all__ = ['PhasorPlot']
 
+import contextlib
 import math
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
@@ -1479,9 +1480,14 @@ class CircleTicks(AbstractPathEffect):
                 # Text(d[i,0], h - d[i,1], label, ha='center', va='center')
                 if not s:
                     continue
-                x = x + fontsize * len(s.split()[0]) * (dx - 1.0)
-                y = h - y + fontsize
-                renderer.draw_text(gc0, x, y, s, font, 0.0)
+                renderer.draw_text(
+                    gc0,
+                    x + fontsize * len(s.split()[0]) * (dx - 1.0),
+                    h - y + fontsize,
+                    s,
+                    font,
+                    0.0,
+                )
 
         gc0.restore()
 
@@ -1503,8 +1509,6 @@ def _semicircle_ticks(
         unit = ''
     if labels is None:
         labels = [f'{tau:g}' for tau in lifetime]
-        try:
+        with contextlib.suppress(IndexError):
             labels[2] = f'{labels[2]} {unit}'
-        except IndexError:
-            pass
     return tuple(lifetime), tuple(labels)
