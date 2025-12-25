@@ -233,30 +233,36 @@ def phasor_from_signal(
 
     signal = numpy.asarray(signal, order='C')
     if signal.dtype.kind not in 'uif':
-        raise TypeError(f'{signal.dtype=} is not real-valued')
+        msg = f'{signal.dtype=} is not real-valued'
+        raise TypeError(msg)
     samples = numpy.size(signal, axis)  # this also verifies axis and ndim >= 1
     if samples < 3:
-        raise ValueError(f'not enough {samples=} along {axis=}')
+        msg = f'not enough {samples=} along {axis=}'
+        raise ValueError(msg)
 
     if dtype is None:
         dtype = numpy.float32 if signal.dtype.char == 'f' else numpy.float64
     dtype = numpy.dtype(dtype)
     if dtype.kind != 'f':
-        raise TypeError(f'{dtype=} is not a floating-point type')
+        msg = f'{dtype=} is not a floating-point type'
+        raise TypeError(msg)
 
     harmonic, keepdims = parse_harmonic(harmonic, samples // 2)
     num_harmonics = len(harmonic)
 
     if sample_phase is not None:
         if use_fft:
-            raise ValueError('sample_phase cannot be used with FFT')
+            msg = 'sample_phase cannot be used with FFT'
+            raise ValueError(msg)
         if num_harmonics > 1 or harmonic[0] != 1:
-            raise ValueError('sample_phase cannot be used with harmonic != 1')
+            msg = 'sample_phase cannot be used with harmonic != 1'
+            raise ValueError(msg)
         sample_phase = numpy.array(
             sample_phase, dtype=numpy.float64, ndmin=1, order='C', copy=None
         )
         if sample_phase.ndim != 1 or sample_phase.size != samples:
-            raise ValueError(f'{sample_phase.shape=} != ({samples},)')
+            msg = f'{sample_phase.shape=} != ({samples},)'
+            raise ValueError(msg)
 
     if use_fft is None:
         use_fft = sample_phase is None and (
@@ -425,7 +431,8 @@ def phasor_to_signal(
 
     """
     if samples < 3:
-        raise ValueError(f'{samples=} < 3')
+        msg = f'{samples=} < 3'
+        raise ValueError(msg)
 
     mean = numpy.array(mean, ndmin=0, copy=True)
     real = numpy.array(real, ndmin=0, copy=True)
@@ -448,11 +455,11 @@ def phasor_to_signal(
     real = numpy.array(real, ndmin=1, copy=False)
 
     if real.dtype.kind != 'f' or imag.dtype.kind != 'f':
-        raise ValueError(
-            f'{real.dtype=} or {imag.dtype=} are not floating-point types'
-        )
+        msg = f'{real.dtype=} or {imag.dtype=} are not floating-point types'
+        raise ValueError(msg)
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
 
     if (
         harmonic_ is None
@@ -469,7 +476,8 @@ def phasor_to_signal(
         imag = imag[None, ...]
 
     if len(harmonic) != real.shape[0]:
-        raise ValueError(f'{len(harmonic)=} != {real.shape[0]=}')
+        msg = f'{len(harmonic)=} != {real.shape[0]=}'
+        raise ValueError(msg)
 
     real *= mean
     imag *= mean
@@ -537,7 +545,8 @@ def phasor_to_complex(
     else:
         dtype = numpy.dtype(dtype)
         if dtype.kind != 'c':
-            raise ValueError(f'{dtype=} is not a complex type')
+            msg = f'{dtype=} is not a complex type'
+            raise ValueError(msg)
 
     c = numpy.empty(numpy.broadcast(real, imag).shape, dtype=dtype)
     c.real = real
@@ -742,7 +751,8 @@ def phasor_normalize(
 
     """
     if samples < 1:
-        raise ValueError(f'{samples=} < 1')
+        msg = f'{samples=} < 1'
+        raise ValueError(msg)
 
     if (
         dtype is None
@@ -1149,7 +1159,8 @@ def phasor_to_principal_plane(
     """
     re, im = numpy.atleast_2d(real, imag)
     if re.shape != im.shape:
-        raise ValueError(f'real={re.shape} != imag={im.shape}')
+        msg = f'real={re.shape} != imag={im.shape}'
+        raise ValueError(msg)
 
     # reshape to variables in rows, observations in columns
     frequencies = re.shape[0]
@@ -1314,7 +1325,8 @@ def phasor_nearest_neighbor(
     """
     dtype = numpy.dtype(dtype)
     if dtype.char not in {'f', 'd'}:
-        raise ValueError(f'{dtype=} is not a floating-point type')
+        msg = f'{dtype=} is not a floating-point type'
+        raise ValueError(msg)
 
     real = numpy.ascontiguousarray(real, dtype=dtype)
     imag = numpy.ascontiguousarray(imag, dtype=dtype)
@@ -1322,9 +1334,11 @@ def phasor_nearest_neighbor(
     neighbor_imag = numpy.ascontiguousarray(neighbor_imag, dtype=dtype)
 
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
     if neighbor_real.shape != neighbor_imag.shape:
-        raise ValueError(f'{neighbor_real.shape=} != {neighbor_imag.shape=}')
+        msg = f'{neighbor_real.shape=} != {neighbor_imag.shape=}'
+        raise ValueError(msg)
 
     shape = real.shape
     real = real.ravel()
@@ -1341,7 +1355,8 @@ def phasor_nearest_neighbor(
     else:
         distance_max = float(distance_max)
         if distance_max <= 0:
-            raise ValueError(f'{distance_max=} <= 0')
+            msg = f'{distance_max=} <= 0'
+            raise ValueError(msg)
 
     num_threads = number_threads(num_threads)
 
@@ -1360,7 +1375,8 @@ def phasor_nearest_neighbor(
 
     values = numpy.ascontiguousarray(values, dtype=dtype).ravel()
     if values.shape != neighbor_real.shape:
-        raise ValueError(f'{values.shape=} != {neighbor_real.shape=}')
+        msg = f'{values.shape=} != {neighbor_real.shape=}'
+        raise ValueError(msg)
 
     nearest_values = values[indices]
     nearest_values[indices == -1] = numpy.nan
@@ -1444,15 +1460,18 @@ def phasor_center(
         'median': _median,
     }
     if method not in methods:
-        raise ValueError(f'method {method!r} not in {set(methods.keys())!r}')
+        msg = f'method {method!r} not in {set(methods.keys())!r}'
+        raise ValueError(msg)
 
     mean = numpy.asarray(mean)
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
     if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
-        raise ValueError(f'{mean.shape=} != {real.shape=}')
+        msg = f'{mean.shape=} != {real.shape=}'
+        raise ValueError(msg)
 
     prepend_axis = mean.ndim + 1 == real.ndim
     _, axis = parse_skip_axis(skip_axis, mean.ndim, prepend=prepend_axis)

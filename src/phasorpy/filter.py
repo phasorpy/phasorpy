@@ -143,9 +143,11 @@ def phasor_filter_median(
 
     """
     if repeat < 0:
-        raise ValueError(f'{repeat=} < 0')
+        msg = f'{repeat=} < 0'
+        raise ValueError(msg)
     if size < 1:
-        raise ValueError(f'{size=} < 1')
+        msg = f'{size=} < 1'
+        raise ValueError(msg)
     if size == 1:
         # no need to filter
         repeat = 0
@@ -165,9 +167,11 @@ def phasor_filter_median(
         imag = numpy.asarray(imag, dtype=numpy.float64, copy=True)
 
     if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
-        raise ValueError(f'{mean.shape=} != {real.shape=}')
+        msg = f'{mean.shape=} != {real.shape=}'
+        raise ValueError(msg)
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
 
     prepend_axis = mean.ndim + 1 == real.ndim
     _, axes = parse_skip_axis(skip_axis, mean.ndim, prepend=prepend_axis)
@@ -348,7 +352,8 @@ def phasor_filter_pawflim(
     from pawflim import pawflim  # type: ignore[import-untyped]
 
     if levels < 0:
-        raise ValueError(f'{levels=} < 0')
+        msg = f'{levels=} < 0'
+        raise ValueError(msg)
     if levels == 0:
         return numpy.asarray(mean), numpy.asarray(real), numpy.asarray(imag)
 
@@ -357,21 +362,26 @@ def phasor_filter_pawflim(
     imag = numpy.asarray(imag, dtype=numpy.float64, copy=True)
 
     if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
-        raise ValueError(f'{mean.shape=} != {real.shape=}')
+        msg = f'{mean.shape=} != {real.shape=}'
+        raise ValueError(msg)
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
 
     has_harmonic_axis = mean.ndim + 1 == real.ndim
     if not has_harmonic_axis:
-        raise ValueError('no harmonic axis')
+        msg = 'no harmonic axis'
+        raise ValueError(msg)
     if harmonic is None:
         harmonics, _ = parse_harmonic('all', real.shape[0])
     else:
         harmonics, _ = parse_harmonic(harmonic, None)
     if len(harmonics) < 2:
-        raise ValueError(f'{len(harmonics)=} < 2')
+        msg = f'{len(harmonics)=} < 2'
+        raise ValueError(msg)
     if len(harmonics) != real.shape[0]:
-        raise ValueError(f'{len(harmonics)=} != {real.shape[0]=}')
+        msg = f'{len(harmonics)=} != {real.shape[0]=}'
+        raise ValueError(msg)
 
     mean = numpy.asarray(numpy.nan_to_num(mean, copy=False))
     real = numpy.asarray(numpy.nan_to_num(real, copy=False))
@@ -406,10 +416,11 @@ def phasor_filter_pawflim(
             ):
                 continue
             if h * 2 not in harmonics:
-                raise ValueError(
+                msg = (
                     f'harmonic {h} does not have a corresponding half '
                     f'or double harmonic in {harmonics}'
                 )
+                raise ValueError(msg)
             n = harmonics.index(h)
             n2 = harmonics.index(h * 2)
 
@@ -774,7 +785,8 @@ def signal_filter_svd(
         dtype = signal.dtype if signal.dtype.char == 'f' else numpy.float64
     dtype = numpy.dtype(dtype)
     if dtype.char not in {'d', 'f'}:
-        raise ValueError(f'{dtype=} is not a floating-point type')
+        msg = f'{dtype=} is not a floating-point type'
+        raise ValueError(msg)
 
     if spectral_vector is None:
         sincos = numpy.empty((num_harmonics, samples, 2))
@@ -796,7 +808,8 @@ def signal_filter_svd(
     else:
         spectral_vector = numpy.ascontiguousarray(spectral_vector, dtype=dtype)
         if spectral_vector.shape[:-1] != shape[:-1]:
-            raise ValueError(f'{spectral_vector.shape[:-1]=} != {shape[:-1]=}')
+            msg = f'{spectral_vector.shape[:-1]=} != {shape[:-1]=}'
+            raise ValueError(msg)
         spectral_vector = spectral_vector.reshape(
             (-1, spectral_vector.shape[-1])
         )
@@ -909,7 +922,8 @@ def signal_filter_ncpca(
     else:
         dtype = numpy.dtype(dtype)
         if dtype.char not in {'f', 'd'}:
-            raise ValueError(f'{dtype=} is not a floating-point type')
+            msg = f'{dtype=} is not a floating-point type'
+            raise ValueError(msg)
         signal = numpy.asarray(signal, dtype=dtype, copy=True)
 
     if axis == -1 or axis == signal.ndim - 1:
@@ -920,9 +934,11 @@ def signal_filter_ncpca(
     shape = signal.shape
 
     if signal.size == 0:
-        raise ValueError(f'{signal.size=} == 0')
+        msg = f'{signal.size=} == 0'
+        raise ValueError(msg)
     if signal.shape[-1] < 3:
-        raise ValueError(f'{signal.shape[-1]=} < 3')
+        msg = f'{signal.shape[-1]=} < 3'
+        raise ValueError(msg)
 
     # flatten sample dimensions
     signal = signal.reshape((-1, shape[-1]))

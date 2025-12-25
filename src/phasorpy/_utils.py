@@ -192,7 +192,8 @@ def sort_coordinates(
     """
     x, y = numpy.atleast_1d(real, imag)
     if x.ndim != 1 or x.shape != y.shape:
-        raise ValueError(f'invalid {x.shape=} or {y.shape=}')
+        msg = f'invalid {x.shape=} or {y.shape=}'
+        raise ValueError(msg)
     if x.size < 3:
         return x, y, numpy.arange(x.size)
     if origin is None:
@@ -236,7 +237,8 @@ def dilate_coordinates(
     x = numpy.asanyarray(real, dtype=numpy.float64)
     y = numpy.asanyarray(imag, dtype=numpy.float64)
     if x.ndim != 1 or x.shape != y.shape or x.size < 1:
-        raise ValueError(f'invalid {x.shape=} or {y.shape=}')
+        msg = f'invalid {x.shape=} or {y.shape=}'
+        raise ValueError(msg)
     if x.size > 1:
         dx = numpy.diff(numpy.diff(x, prepend=x[-1], append=x[0]))
         dy = numpy.diff(numpy.diff(y, prepend=y[-1], append=y[0]))
@@ -402,12 +404,14 @@ def parse_signal_axis(
             return axis, signal.dims[axis]
         if axis in signal.dims:
             return signal.dims.index(axis), axis
-        raise ValueError(f'{axis=} not found in {signal.dims!r}')
+        msg = f'{axis=} not found in {signal.dims!r}'
+        raise ValueError(msg)
     if axis is None:
         return -1, ''
     if isinstance(axis, int):
         return axis, ''
-    raise ValueError(f'invalid {axis=} for {type(signal)=}')
+    msg = f'invalid {axis=} for {type(signal)=}'
+    raise ValueError(msg)
 
 
 def parse_skip_axis(
@@ -455,7 +459,8 @@ def parse_skip_axis(
 
     """
     if ndim < 0:
-        raise ValueError(f'{ndim=} < 0')
+        msg = f'{ndim=} < 0'
+        raise ValueError(msg)
     if skip_axis is None:
         if prepend:
             return (0,), tuple(range(1, ndim + 1))
@@ -463,7 +468,8 @@ def parse_skip_axis(
     if not isinstance(skip_axis, Sequence):
         skip_axis = (skip_axis,)
     if any(i >= ndim or i < -ndim for i in skip_axis):
-        raise IndexError(f'{skip_axis=} is out of bounds for {ndim=}')
+        msg = f'{skip_axis=} is out of bounds for {ndim=}'
+        raise IndexError(msg)
     skip_axis = sorted(int(i % ndim) for i in skip_axis)
     if prepend:
         skip_axis = [0] + [i + 1 for i in skip_axis]
@@ -515,7 +521,8 @@ def parse_harmonic(
 
     """
     if harmonic_max is not None and harmonic_max < 1:
-        raise ValueError(f'{harmonic_max=} < 1')
+        msg = f'{harmonic_max=} < 1'
+        raise ValueError(msg)
 
     if harmonic is None:
         return [1], False
@@ -524,31 +531,35 @@ def parse_harmonic(
         if harmonic < 1 or (
             harmonic_max is not None and harmonic > harmonic_max
         ):
-            raise IndexError(
-                f'{harmonic=!r} is out of bounds [1, {harmonic_max}]'
-            )
+            msg = f'{harmonic=!r} is out of bounds [1, {harmonic_max}]'
+            raise IndexError(msg)
         return [int(harmonic)], False
 
     if isinstance(harmonic, str):
         if harmonic == 'all':
             if harmonic_max is None:
-                raise TypeError(
-                    f'maximum harmonic must be specified for {harmonic=!r}'
-                )
+                msg = f'maximum harmonic must be specified for {harmonic=!r}'
+                raise TypeError(msg)
             return list(range(1, harmonic_max + 1)), True
-        raise ValueError(f'invalid {harmonic=!r}')
+        msg = f'invalid {harmonic=!r}'
+        raise ValueError(msg)
 
     h = numpy.atleast_1d(harmonic)
     if h.size == 0:
-        raise ValueError(f'{harmonic=!r} is empty')
+        msg = f'{harmonic=!r} is empty'
+        raise ValueError(msg)
     if h.dtype.kind not in 'iu' or h.ndim != 1:
-        raise TypeError(f'{harmonic=!r} element is not an integer')
+        msg = f'{harmonic=!r} element is not an integer'
+        raise TypeError(msg)
     if numpy.any(h < 1):
-        raise IndexError(f'{harmonic=!r} contains element < 1')
+        msg = f'{harmonic=!r} contains element < 1'
+        raise IndexError(msg)
     if harmonic_max is not None and numpy.any(h > harmonic_max):
-        raise IndexError(f'{harmonic=!r} contains element > {harmonic_max}]')
+        msg = f'{harmonic=!r} contains element > {harmonic_max}]'
+        raise IndexError(msg)
     if numpy.unique(h).size != h.size:
-        raise ValueError(f'{harmonic=!r} elements must be unique')
+        msg = f'{harmonic=!r} elements must be unique'
+        raise ValueError(msg)
     return [int(i) for i in harmonic], True
 
 
@@ -614,18 +625,21 @@ def chunk_iter(
         dims = sep * ndim
         sep = ''
     elif ndim != len(dims):
-        raise ValueError(f'{len(shape)=} != {len(dims)=}')
+        msg = f'{len(shape)=} != {len(dims)=}'
+        raise ValueError(msg)
 
     if pattern is not None:
         try:
             pattern.format(*shape)
         except Exception as exc:
-            raise ValueError('failed to format pattern') from exc
+            msg = 'failed to format pattern'
+            raise ValueError(msg) from exc
 
     # number of high dimensions not included in chunk_shape
     hdim = ndim - len(chunk_shape)
     if hdim < 0:
-        raise ValueError(f'{len(shape)=} < {len(chunk_shape)=}')
+        msg = f'{len(shape)=} < {len(chunk_shape)=}'
+        raise ValueError(msg)
     if hdim > 0:
         # prepend length-1 dimensions
         chunk_shape = ((1,) * hdim) + chunk_shape
@@ -636,9 +650,11 @@ def chunk_iter(
         zip(shape, chunk_shape, dims, strict=True)
     ):
         if size <= 0:
-            raise ValueError('shape must contain only positive sizes')
+            msg = 'shape must contain only positive sizes'
+            raise ValueError(msg)
         if chunk_size <= 0:
-            raise ValueError('chunk_shape must contain only positive sizes')
+            msg = 'chunk_shape must contain only positive sizes'
+            raise ValueError(msg)
         div, mod = divmod(size, chunk_size)
         chunked_shape.append(div + 1 if mod else div)
 
@@ -730,7 +746,8 @@ def xarray_metadata(
     """
     dims = tuple(dims)
     if len(shape) != len(dims):
-        raise ValueError(f'{len(shape)=} != {len(dims)=}')
+        msg = f'{len(shape)=} != {len(dims)=}'
+        raise ValueError(msg)
     coords = {dim: coords[dim] for dim in dims if dim in coords}
     if attrs is None:
         attrs = {}
@@ -781,7 +798,8 @@ def squeeze_dims(
 
     """
     if len(shape) != len(dims):
-        raise ValueError(f'{len(shape)=} != {len(dims)=}')
+        msg = f'{len(shape)=} != {len(dims)=}'
+        raise ValueError(msg)
     if not dims:
         return tuple(shape), tuple(dims), ()
     squeezed: list[bool] = []

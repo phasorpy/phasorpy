@@ -118,7 +118,8 @@ def phasor_cluster_gmm(
     from sklearn.mixture import GaussianMixture
 
     if sigma <= 0.0:
-        raise ValueError(f'{sigma=} <= 0')
+        msg = f'{sigma=} <= 0'
+        raise ValueError(msg)
     sigma = float(sigma)
 
     coords = numpy.stack([real, imag], axis=-1).reshape((-1, 2))
@@ -151,9 +152,8 @@ def phasor_cluster_gmm(
             case 'spherical':
                 cov = numpy.eye(2) * gmm.covariances_[i]
             case _:
-                raise ValueError(
-                    f'unknown covariance_type: {gmm.covariance_type!r}'
-                )
+                msg = f'unknown covariance_type: {gmm.covariance_type!r}'
+                raise ValueError(msg)
 
         eigenvalues, eigenvectors = numpy.linalg.eigh(cov[:2, :2])
 
@@ -195,9 +195,10 @@ def phasor_cluster_gmm(
                     return -radius_major[i] * radius_minor[i]
 
             case _:
-                raise ValueError(
+                msg = (  # type: ignore[unreachable]
                     f"{sort=!r} not in {{'phasor', 'polar', or 'area'}}"
                 )
+                raise ValueError(msg)
         argsort = sorted(range(len(center_real)), key=sort_key)
 
     return (

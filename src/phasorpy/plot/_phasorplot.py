@@ -487,7 +487,8 @@ class PhasorPlot:
 
         if labels is not None:
             if len(labels) != real.size:
-                raise ValueError(f'{len(labels)=} != {real.size=}')
+                msg = f'{len(labels)=} != {real.size=}'
+                raise ValueError(msg)
             labels = [labels[i] for i in indices]
             textposition = dilate_coordinates(real, imag, label_offset)
             for label, re, im, x, y in zip(
@@ -828,7 +829,8 @@ class PhasorPlot:
         if phase is not None:
             phase = numpy.atleast_1d(phase)
             if phase.ndim != 1:
-                raise ValueError(f'{phase.ndim=} != 1')
+                msg = f'{phase.ndim=} != 1'
+                raise ValueError(msg)
             shape = phase.shape
         if modulation is not None:
             if shape is not None:
@@ -836,7 +838,8 @@ class PhasorPlot:
             else:
                 modulation = numpy.atleast_1d(modulation)
                 if modulation.ndim != 1:
-                    raise ValueError(f'{modulation.ndim=} != 1')
+                    msg = f'{modulation.ndim=} != 1'
+                    raise ValueError(msg)
                 shape = modulation.shape
         if shape is None:
             return
@@ -932,9 +935,8 @@ class PhasorPlot:
                     elif angle == 'semicircle':
                         angle = math.atan2(y, x - 0.5)
                     else:
-                        raise ValueError(
-                            f"{angle=} not in {{'phase', 'semicircle'}}"
-                        )
+                        msg = f"{angle=} not in {{'phase', 'semicircle'}}"
+                        raise ValueError(msg)
                 angle = math.degrees(angle)
 
                 if not crosshair:
@@ -953,7 +955,8 @@ class PhasorPlot:
                     return
 
                 # TODO: implement crosshair intersecting with ellipse?
-                raise ValueError('crosshair not implemented with ellipse')
+                msg = 'crosshair not implemented with ellipse'
+                raise ValueError(msg)
 
             if not crosshair:
                 # draw circular cursor
@@ -1214,14 +1217,14 @@ class PhasorPlot:
             # ticks and labels
             ticks = numpy.array(ticks, dtype=numpy.float64, ndmin=1, copy=True)
             if ticks.size != len(labels):
-                raise ValueError(f'{ticks.size=} != {len(labels)=}')
+                msg = f'{ticks.size=} != {len(labels)=}'
+                raise ValueError(msg)
 
         if tick_space is not None:
             tick_space = numpy.asarray(tick_space, dtype=numpy.float64)
             if tick_space.ndim != 1 or tick_space.size < 2:
-                raise ValueError(
-                    f'{tick_space.ndim=} != 1 or {tick_space.size=} < 2'
-                )
+                msg = f'{tick_space.ndim=} != 1 or {tick_space.size=} < 2'
+                raise ValueError(msg)
             assert isinstance(ticks, numpy.ndarray)  # for mypy
             ticks -= tick_space[0]
             ticks /= tick_space[-1] + tick_space[1] - 2 * tick_space[0]

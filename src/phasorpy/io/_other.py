@@ -99,9 +99,8 @@ def signal_from_sdt(
             and 'SPC FCS Data File' not in sdt.info.id
         ):
             # skip DLL data
-            raise ValueError(
-                f'{filename!r} is not an SDT file containing TCSPC data'
-            )
+            msg = f'{filename!r} is not an SDT file containing TCSPC data'
+            raise ValueError(msg)
         # filter block types?
         # sdtfile.BlockType(sdt.block_headers[index].block_type).contents
         # == 'PAGE_BLOCK'
@@ -225,7 +224,8 @@ def signal_from_ptu(
 
     with ptufile.PtuFile(filename, trimdims=trimdims) as ptu:
         if not ptu.is_t3:
-            raise ValueError(f'{ptu.filename!r} is not a T3 mode PTU file')
+            msg = f'{ptu.filename!r} is not a T3 mode PTU file'
+            raise ValueError(msg)
         if ptu.is_image:
             data = ptu.decode_image(
                 selection,
@@ -241,7 +241,8 @@ def signal_from_ptu(
         elif ptu.measurement_submode == 1:
             # point mode IRF
             if dtime == -1:
-                raise ValueError(f'{dtime=} not supported for point mode')
+                msg = f'{dtime=} not supported for point mode'
+                raise ValueError(msg)
             data = ptu.decode_histogram(
                 dtype=dtype, dtime=dtime, asxarray=True, **kwargs
             )
@@ -255,9 +256,8 @@ def signal_from_ptu(
             if keepdims:
                 data = data.expand_dims(dim={'T': 1})
         else:
-            raise ValueError(
-                f'{ptu.filename!r} is not a point or image mode PTU file'
-            )
+            msg = f'{ptu.filename!r} is not a point or image mode PTU file'
+            raise ValueError(msg)
 
         data.attrs['ptu_tags'] = ptu.tags
         data.attrs['frequency'] = ptu.frequency * 1e-6  # MHz
@@ -321,16 +321,16 @@ def signal_from_lsm(
 
     with tifffile.TiffFile(filename) as tif:
         if not tif.is_lsm:
-            raise ValueError(f'{tif.filename!r} is not an LSM file')
+            msg = f'{tif.filename!r} is not an LSM file'
+            raise ValueError(msg)
 
         page = tif.pages.first
         lsminfo = tif.lsm_metadata
         channels = page.tags[258].count
 
         if channels < 4 or lsminfo is None or lsminfo['SpectralScan'] != 1:
-            raise ValueError(
-                f'{tif.filename!r} does not contain hyperspectral image'
-            )
+            msg = f'{tif.filename!r} does not contain hyperspectral image'
+            raise ValueError(msg)
 
         # TODO: contribute this to tifffile
         series = tif.series[0]
@@ -341,16 +341,14 @@ def signal_from_lsm(
         axis = dims.index('C')
         wavelengths = lsminfo['ChannelWavelength'].mean(axis=1)
         if wavelengths.size != data.shape[axis]:
-            raise ValueError(
-                f'{tif.filename!r} wavelengths do not match channel axis'
-            )
+            msg = f'{tif.filename!r} wavelengths do not match channel axis'
+            raise ValueError(msg)
         # stack may contain non-wavelength frame
         indices = wavelengths > 0
         wavelengths = wavelengths[indices]
         if wavelengths.size < 3:
-            raise ValueError(
-                f'{tif.filename!r} does not contain hyperspectral image'
-            )
+            msg = f'{tif.filename!r} does not contain hyperspectral image'
+            raise ValueError(msg)
         wavelengths *= 1e9
         data = data.take(indices.nonzero()[0], axis=axis)
         coords['C'] = wavelengths
@@ -358,9 +356,8 @@ def signal_from_lsm(
         if 'T' in dims:
             coords['T'] = lsminfo['TimeStamps'] - lsminfo['TimeStamps'][0]
             if coords['T'].size != data.shape[dims.index('T')]:
-                raise ValueError(
-                    f'{tif.filename!r} timestamps do not match time axis'
-                )
+                msg = f'{tif.filename!r} timestamps do not match time axis'
+                raise ValueError(msg)
         # spatial coordinates
         for ax in 'ZYX':
             if ax in dims:
@@ -441,7 +438,8 @@ def signal_from_imspector_tiff(
             or len(tif.series) != 1
             or not tif.is_ome
         ):
-            raise ValueError(f'{tif.filename!r} is not an ImSpector TIFF file')
+            msg = f'{tif.filename!r} is not an ImSpector TIFF file'
+            raise ValueError(msg)
 
         series = tif.series[0]
         ndim = series.ndim
@@ -449,9 +447,8 @@ def signal_from_imspector_tiff(
         shape = series.shape
 
         if ndim < 3 or not axes.endswith('YX'):
-            raise ValueError(
-                f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
-            )
+            msg = f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
+            raise ValueError(msg)
 
         data = series.asarray()
 
@@ -497,9 +494,8 @@ def signal_from_imspector_tiff(
         or 'FirstAxis' not in axes_labels.attrib
         or 'SecondAxis' not in axes_labels.attrib
     ):
-        raise ValueError(
-            f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
-        )
+        msg = f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
+        raise ValueError(msg)
 
     if axes_labels.attrib['FirstAxis'] == 'lifetime' or axes_labels.attrib[
         'FirstAxis'
@@ -513,9 +509,8 @@ def signal_from_imspector_tiff(
         ax = axes[-4]
         assert axes_labels.attrib['SecondAxis-Unit'] == 'ns'
     else:
-        raise ValueError(
-            f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
-        )
+        msg = f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
+        raise ValueError(msg)
     axes = axes.replace(ax, 'H')
     coords['H'] = coords[ax]
     del coords[ax]
@@ -690,7 +685,8 @@ def phasor_from_ifli(
         try:
             index = [harmonic_stored.index(h) for h in harmonic]
         except ValueError as exc:
-            raise IndexError('harmonic not found') from exc
+            msg = 'harmonic not found'
+            raise IndexError(msg) from exc
 
     real = real[index]
     imag = imag[index]
@@ -769,7 +765,8 @@ def signal_from_flif(
         nphases = int(flif.header.phases)
         data = flif.asarray()
         if data.shape[0] < nphases:
-            raise ValueError(f'measured phases {data.shape[0]} < {nphases=}')
+            msg = f'measured phases {data.shape[0]} < {nphases=}'
+            raise ValueError(msg)
         if data.shape[0] % nphases != 0:
             data = data[: (data.shape[0] // nphases) * nphases]
         data = data.reshape((-1, nphases, data.shape[1], data.shape[2]))
@@ -842,9 +839,8 @@ def signal_from_pqbin(
         filename = os.path.basename(filename)
         header = fh.read(20)
         if len(header) != 20:
-            raise ValueError(
-                f'{filename!r} does not contain valid PicoQuant BIN header'
-            )
+            msg = f'{filename!r} does not contain valid PicoQuant BIN header'
+            raise ValueError(msg)
         (size_x, size_y, pixel_resolution, size_h, tcspc_resolution) = (
             struct.unpack('<IIfIf', header)
         )
@@ -863,14 +859,14 @@ def signal_from_pqbin(
             or tcspc_resolution <= 0.0
             or tcspc_resolution > 1.0
         ):
-            raise ValueError(
-                f'{filename!r} does not contain valid PicoQuant BIN header'
-            )
+            msg = f'{filename!r} does not contain valid PicoQuant BIN header'
+            raise ValueError(msg)
 
         shape = size_y, size_x, size_h
         data = numpy.empty(shape, dtype='<u4')
         if fh.readinto(data) != size:
-            raise ValueError(f'{filename!r} does not contain enough data')
+            msg = f'{filename!r} does not contain enough data'
+            raise ValueError(msg)
 
     metadata = xarray_metadata(
         ('Y', 'X', 'H'),

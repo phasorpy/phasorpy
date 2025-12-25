@@ -672,7 +672,8 @@ def fetch(
                         filenames.append(repo.fetch(arg, **kwargs))
                     break
             else:
-                raise ValueError(f'{arg!r} not found')
+                msg = f'{arg!r} not found'
+                raise ValueError(msg)
         elif isinstance(arg, pooch.Pooch):
             # fetch all files in repository
             filenames.extend(

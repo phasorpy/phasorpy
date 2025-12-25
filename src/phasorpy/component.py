@@ -112,24 +112,30 @@ def phasor_from_component(
     """
     dtype = numpy.dtype(dtype)
     if dtype.char not in {'f', 'd'}:
-        raise ValueError(f'{dtype=} is not a floating-point type')
+        msg = f'{dtype=} is not a floating-point type'
+        raise ValueError(msg)
 
     fraction = numpy.asarray(fraction, dtype=dtype, copy=True)
     if fraction.ndim < 1:
-        raise ValueError(f'{fraction.ndim=} < 1')
+        msg = f'{fraction.ndim=} < 1'
+        raise ValueError(msg)
     if fraction.shape[axis] < 2:
-        raise ValueError(f'{fraction.shape[axis]=} < 2')
+        msg = f'{fraction.shape[axis]=} < 2'
+        raise ValueError(msg)
     with numpy.errstate(divide='ignore', invalid='ignore'):
         fraction /= fraction.sum(axis=axis, keepdims=True)
 
     component_real = numpy.asarray(component_real, dtype=dtype)
     component_imag = numpy.asarray(component_imag, dtype=dtype)
     if component_real.shape != component_imag.shape:
-        raise ValueError(f'{component_real.shape=} != {component_imag.shape=}')
+        msg = f'{component_real.shape=} != {component_imag.shape=}'
+        raise ValueError(msg)
     if component_real.ndim != 1:
-        raise ValueError(f'{component_real.ndim=} != 1')
+        msg = f'{component_real.ndim=} != 1'
+        raise ValueError(msg)
     if component_real.size != fraction.shape[axis]:
-        raise ValueError(f'{component_real.size=} != {fraction.shape[axis]=}')
+        msg = f'{component_real.size=} != {fraction.shape[axis]=}'
+        raise ValueError(msg)
 
     fraction = numpy.moveaxis(fraction, axis, -1)
     real = numpy.dot(fraction, component_real)
@@ -195,14 +201,17 @@ def phasor_component_fraction(
     component_real = numpy.asarray(component_real)
     component_imag = numpy.asarray(component_imag)
     if component_real.shape != (2,):
-        raise ValueError(f'{component_real.shape=} != (2,)')
+        msg = f'{component_real.shape=} != (2,)'
+        raise ValueError(msg)
     if component_imag.shape != (2,):
-        raise ValueError(f'{component_imag.shape=} != (2,)')
+        msg = f'{component_imag.shape=} != (2,)'
+        raise ValueError(msg)
     if (
         component_real[0] == component_real[1]
         and component_imag[0] == component_imag[1]
     ):
-        raise ValueError('components must have different coordinates')
+        msg = 'components must have different coordinates'
+        raise ValueError(msg)
 
     return _fraction_on_segment(  # type: ignore[no-any-return]
         real,
@@ -332,15 +341,15 @@ def phasor_component_graphical(
         real.shape != imag.shape
         or component_real.shape != component_imag.shape
     ):
-        raise ValueError('input array shapes must match')
+        msg = 'input array shapes must match'
+        raise ValueError(msg)
     if component_real.ndim != 1:
-        raise ValueError(
-            'component arrays are not one-dimensional: '
-            f'{component_real.ndim} dimensions found'
-        )
+        msg = f'{component_real.ndim=} != 1'
+        raise ValueError(msg)
     num_components = len(component_real)
     if num_components not in {2, 3}:
-        raise ValueError('number of components must be 2 or 3')
+        msg = 'number of components must be 2 or 3'
+        raise ValueError(msg)
 
     if fractions is None:
         longest_distance = 0
@@ -362,7 +371,8 @@ def phasor_component_graphical(
     else:
         fractions = numpy.asarray(fractions)
         if fractions.ndim != 1:
-            raise ValueError('fractions is not a one-dimensional array')
+            msg = 'fractions is not a one-dimensional array'
+            raise ValueError(msg)
 
     dtype = numpy.min_scalar_type(real.size)
     counts = numpy.empty(
@@ -381,7 +391,8 @@ def phasor_component_graphical(
 
             for k, f in enumerate(fractions):
                 if f < 0.0 or f > 1.0:
-                    raise ValueError(f'fraction {f} is out of range [0, 1]')
+                    msg = f'fraction {f} is out of range [0, 1]'
+                    raise ValueError(msg)
                 if num_components == 2:
                     mask = _is_inside_circle(
                         real,
@@ -504,26 +515,28 @@ def phasor_component_fit(
     component_imag = numpy.atleast_1d(component_imag)
 
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
     if mean.shape != real.shape[-mean.ndim :]:
-        raise ValueError(f'{mean.shape=} does not match {real.shape=}')
+        msg = f'{mean.shape=} does not match {real.shape=}'
+        raise ValueError(msg)
 
     if component_real.shape != component_imag.shape:
-        raise ValueError(f'{component_real.shape=} != {component_imag.shape=}')
+        msg = f'{component_real.shape=} != {component_imag.shape=}'
+        raise ValueError(msg)
     if numpy.isnan(component_real).any() or numpy.isnan(component_imag).any():
-        raise ValueError(
-            'component phasor coordinates must not contain NaN values'
-        )
+        msg = 'component phasor coordinates must not contain NaN values'
+        raise ValueError(msg)
     if numpy.isinf(component_real).any() or numpy.isinf(component_imag).any():
-        raise ValueError(
-            'component phasor coordinates must not contain infinite values'
-        )
+        msg = 'component phasor coordinates must not contain infinite values'
+        raise ValueError(msg)
 
     if component_real.ndim == 1:
         component_real = component_real.reshape((1, -1))
         component_imag = component_imag.reshape((1, -1))
     elif component_real.ndim > 2:
-        raise ValueError(f'{component_real.ndim=} > 2')
+        msg = f'{component_real.ndim=} > 2'
+        raise ValueError(msg)
 
     num_harmonics, num_components = component_real.shape
 
@@ -536,17 +549,19 @@ def phasor_component_fit(
     component_matrix[num_harmonics : 2 * num_harmonics] = component_imag
 
     if component_matrix.shape[0] < component_matrix.shape[1]:
-        raise ValueError(
+        msg = (
             'the system is underdetermined '
             f'({num_components=} > {num_harmonics * 2 + 1=})'
         )
+        raise ValueError(msg)
 
     has_harmonic_axis = mean.ndim + 1 == real.ndim
     if not has_harmonic_axis:
         real = numpy.expand_dims(real, axis=0)
         imag = numpy.expand_dims(imag, axis=0)
     elif real.shape[0] != num_harmonics:
-        raise ValueError(f'{real.shape[0]=} != {component_real.shape[0]=}')
+        msg = f'{real.shape[0]=} != {component_real.shape[0]=}'
+        raise ValueError(msg)
 
     # TODO: replace Inf with NaN values?
     mean, real, imag = phasor_threshold(mean, real, imag)
@@ -671,7 +686,8 @@ def phasor_component_mvc(
 
     dtype = numpy.dtype(dtype)
     if dtype.char not in {'f', 'd'}:
-        raise ValueError(f'{dtype=} is not a floating-point type')
+        msg = f'{dtype=} is not a floating-point type'
+        raise ValueError(msg)
 
     real = numpy.ascontiguousarray(real, dtype=dtype)
     imag = numpy.ascontiguousarray(imag, dtype=dtype)
@@ -679,17 +695,20 @@ def phasor_component_mvc(
     component_imag = numpy.ascontiguousarray(component_imag, dtype=dtype)
 
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
     if component_real.shape != component_imag.shape:
-        raise ValueError(f'{component_real.shape=} != {component_imag.shape=}')
+        msg = f'{component_real.shape=} != {component_imag.shape=}'
+        raise ValueError(msg)
     if component_real.ndim != 1 or component_real.size < 3:
-        raise ValueError('number of components must be three or more')
+        msg = 'number of components must be three or more'
+        raise ValueError(msg)
     if numpy.isnan(component_real).any() or numpy.isnan(component_imag).any():
-        raise ValueError('component coordinates must not contain NaN values')
+        msg = 'component coordinates must not contain NaN values'
+        raise ValueError(msg)
     if numpy.isinf(component_real).any() or numpy.isinf(component_imag).any():
-        raise ValueError(
-            'component coordinates must not contain infinite values'
-        )
+        msg = 'component coordinates must not contain infinite values'
+        raise ValueError(msg)
 
     # TODO: sorting not strictly required for three components?
     component_real, component_imag, indices = sort_coordinates(

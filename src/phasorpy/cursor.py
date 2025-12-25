@@ -107,11 +107,13 @@ def mask_from_circular_cursor(
     radius = numpy.asarray(radius)
 
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
     if center_real.ndim > 1 or center_imag.ndim > 1 or radius.ndim > 1:
-        raise ValueError(
+        msg = (
             f'{center_real.ndim=}, {center_imag.ndim=}, or {radius.ndim=} > 1'
         )
+        raise ValueError(msg)
 
     moveaxis = False
     if real.ndim > 0 and (
@@ -224,13 +226,15 @@ def mask_from_elliptic_cursor(
             case 'semicircle':
                 angle = numpy.arctan2(center_imag, center_real - 0.5)
             case _:
-                raise ValueError(f"{angle=} not in {{'phase', 'semicircle'}}")
+                msg = f"{angle=} not in {{'phase', 'semicircle'}}"
+                raise ValueError(msg)
 
     angle_sin = numpy.sin(angle)
     angle_cos = numpy.cos(angle)
 
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
     if (
         center_real.ndim > 1
         or center_imag.ndim > 1
@@ -238,12 +242,13 @@ def mask_from_elliptic_cursor(
         or radius_b.ndim > 1
         or angle_sin.ndim > 1
     ):
-        raise ValueError(
+        msg = (
             f'{center_real.ndim=}, {center_imag.ndim=}, '
             f'radius.ndim={radius_a.ndim}, '
             f'radius_minor.ndim={radius_b.ndim}, or '
             f'angle.ndim={angle_sin.ndim}, > 1'
         )
+        raise ValueError(msg)
 
     moveaxis = False
     if real.ndim > 0 and (
@@ -350,17 +355,19 @@ def mask_from_polar_cursor(
     modulation_max = numpy.asarray(modulation_max)
 
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
     if (
         phase_min.ndim > 1
         or phase_max.ndim > 1
         or modulation_min.ndim > 1
         or modulation_max.ndim > 1
     ):
-        raise ValueError(
+        msg = (
             f'{phase_min.ndim=}, {phase_max.ndim=}, '
             f'{modulation_min.ndim=}, or {modulation_max.ndim=} > 1'
         )
+        raise ValueError(msg)
     # TODO: check if angles are in range [-pi and pi]
 
     moveaxis = False
@@ -443,20 +450,22 @@ def pseudo_color(
 
     """
     if len(masks) == 0:
-        raise TypeError(
-            "pseudo_color() missing 1 required positional argument: 'masks'"
-        )
+        msg = "pseudo_color() missing 1 required positional argument: 'masks'"
+        raise TypeError(msg)
 
     if colors is None:
         colors = CATEGORICAL
     else:
         colors = numpy.asarray(colors)
         if colors.ndim != 2:
-            raise ValueError(f'{colors.ndim=} != 2')
+            msg = f'{colors.ndim=} != 2'
+            raise ValueError(msg)
         if colors.shape[-1] != 3:
-            raise ValueError(f'{colors.shape[-1]=} != 3')
+            msg = f'{colors.shape[-1]=} != 3'
+            raise ValueError(msg)
         if colors.dtype.kind != 'f':
-            raise ValueError(f'{colors.dtype=} is not a floating-point type')
+            msg = f'{colors.dtype=} is not a floating-point type'
+            raise ValueError(msg)
     # TODO: add support for matplotlib colors
 
     shape = numpy.asarray(masks[0]).shape
@@ -488,7 +497,8 @@ def pseudo_color(
     for i, mask_ in enumerate(masks):
         mask = numpy.asarray(mask_)
         if mask.shape != shape:
-            raise ValueError(f'masks[{i}].shape={mask.shape} != {shape}')
+            msg = f'masks[{i}].shape={mask.shape} != {shape}'
+            raise ValueError(msg)
         blend.fill(numpy.nan)
         blend[mask] = colors[i]
         if intensity is None:

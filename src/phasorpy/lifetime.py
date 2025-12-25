@@ -273,24 +273,26 @@ def phasor_from_lifetime(
 
     """
     if unit_conversion < 1e-16:
-        raise ValueError(f'{unit_conversion=} < 1e-16')
+        msg = f'{unit_conversion=} < 1e-16'
+        raise ValueError(msg)
     frequency = numpy.array(
         frequency, dtype=numpy.float64, ndmin=1, order='C', copy=None
     )
     if frequency.ndim != 1:
-        raise ValueError('frequency is not one-dimensional array')
+        msg = 'frequency is not one-dimensional array'
+        raise ValueError(msg)
     lifetime = numpy.array(
         lifetime, dtype=numpy.float64, ndmin=1, order='C', copy=None
     )
     if lifetime.ndim > 2:
-        raise ValueError('lifetime must be one- or two-dimensional array')
+        msg = 'lifetime must be one- or two-dimensional array'
+        raise ValueError(msg)
 
     if fraction is None:
         # single-component lifetimes
         if lifetime.ndim > 1:
-            raise ValueError(
-                'lifetime must be one-dimensional array if fraction is None'
-            )
+            msg = 'lifetime must be one-dimensional array if fraction is None'
+            raise ValueError(msg)
         lifetime = lifetime.reshape((-1, 1))  # move components to last axis
         fraction = numpy.ones_like(lifetime)  # not really used
     else:
@@ -298,22 +300,23 @@ def phasor_from_lifetime(
             fraction, dtype=numpy.float64, ndmin=1, order='C', copy=None
         )
         if fraction.ndim > 2:
-            raise ValueError('fraction must be one- or two-dimensional array')
+            msg = 'fraction must be one- or two-dimensional array'
+            raise ValueError(msg)
 
     match (lifetime.ndim, fraction.ndim):
         case (1, 1):
             # one multi-component lifetime
             if lifetime.shape != fraction.shape:
-                raise ValueError(f'{lifetime.shape=} != {fraction.shape=}')
+                msg = f'{lifetime.shape=} != {fraction.shape=}'
+                raise ValueError(msg)
             lifetime = lifetime.reshape((1, -1))
             fraction = fraction.reshape((1, -1))
             nvar = 1
         case (2, 2):
             # multiple, multi-component lifetimes
             if lifetime.shape[1] != fraction.shape[1]:
-                raise ValueError(
-                    f'{lifetime.shape[1]=} != {fraction.shape[1]=}'
-                )
+                msg = f'{lifetime.shape[1]=} != {fraction.shape[1]=}'
+                raise ValueError(msg)
             nvar = lifetime.shape[0]
         case (2, 1):
             # varying components, same fractions
@@ -325,7 +328,8 @@ def phasor_from_lifetime(
             nvar = fraction.shape[0]
         case _:
             # unreachable code
-            raise RuntimeError(f'{lifetime.shape=}, {fraction.shape=}')
+            msg = f'{lifetime.shape=}, {fraction.shape=}'
+            raise RuntimeError(msg)
 
     phasor = numpy.empty((2, frequency.size, nvar), dtype=numpy.float64)
 
@@ -451,7 +455,8 @@ def lifetime_to_signal(
     harmonic, _ = parse_harmonic(harmonic, samples // 2)
 
     if samples < 16:
-        raise ValueError(f'{samples=} < 16')
+        msg = f'{samples=} < 16'
+        raise ValueError(msg)
 
     if background is None:
         background = 0.0
@@ -462,7 +467,8 @@ def lifetime_to_signal(
     mean = numpy.asarray(mean)
     mean -= background
     if numpy.any(mean < 0.0):
-        raise ValueError('mean - background must not be less than zero')
+        msg = 'mean - background must not be less than zero'
+        raise ValueError(msg)
 
     scale = samples / (2.0 * math.pi)
     if zero_phase is None:
@@ -473,17 +479,19 @@ def lifetime_to_signal(
     stdev = zero_stdev * scale  # in sample units
 
     if zero_phase < 0 or zero_phase > 2.0 * math.pi:
-        raise ValueError(f'{zero_phase=} is out of range [0, 2 pi]')
+        msg = f'{zero_phase=} is out of range [0, 2 pi]'
+        raise ValueError(msg)
     if stdev < 1.5:
-        raise ValueError(
-            f'{zero_stdev=} < {1.5 / scale} cannot be sampled sufficiently'
-        )
+        msg = f'{zero_stdev=} < {1.5 / scale} cannot be sampled sufficiently'
+        raise ValueError(msg)
     if stdev >= samples / 10:
-        raise ValueError(f'{zero_stdev=} > pi / 5 not supported')
+        msg = f'{zero_stdev=} > pi / 5 not supported'
+        raise ValueError(msg)
 
     frequencies = numpy.atleast_1d(frequency)
     if frequencies.size > 1 or frequencies[0] <= 0.0:
-        raise ValueError('frequency must be scalar and positive')
+        msg = 'frequency must be scalar and positive'
+        raise ValueError(msg)
     frequencies = numpy.linspace(
         frequency, samples // 2 * frequency, samples // 2
     )
@@ -705,9 +713,11 @@ def phasor_calibrate(
     reference_imag = numpy.asarray(reference_imag)
 
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
     if reference_real.shape != reference_imag.shape:
-        raise ValueError(f'{reference_real.shape=} != {reference_imag.shape=}')
+        msg = f'{reference_real.shape=} != {reference_imag.shape=}'
+        raise ValueError(msg)
 
     has_harmonic_axis = reference_mean.ndim + 1 == reference_real.ndim
     harmonic, _ = parse_harmonic(
@@ -726,29 +736,23 @@ def phasor_calibrate(
 
     if has_harmonic_axis:
         if real.ndim == 0:
-            raise ValueError(
-                f'{real.shape=} != {len(frequency)} frequencies or harmonics'
-            )
+            msg = f'{real.shape=} != {len(frequency)}'
+            raise ValueError(msg)
         if real.shape[0] != len(frequency):
-            raise ValueError(
-                f'{real.shape[0]=} != {len(frequency)} '
-                'frequencies or harmonics'
-            )
+            msg = f'{real.shape[0]=} != {len(frequency)}'
+            raise ValueError(msg)
         if reference_real.shape[0] != len(frequency):
-            raise ValueError(
-                f'{reference_real.shape[0]} != {len(frequency)} '
-                'frequencies or harmonics'
-            )
+            msg = f'{reference_real.shape[0]} != {len(frequency)}'
+            raise ValueError(msg)
         if reference_mean.shape != reference_real.shape[1:]:
-            raise ValueError(
-                f'{reference_mean.shape=} != {reference_real.shape[1:]=}'
-            )
+            msg = f'{reference_mean.shape=} != {reference_real.shape[1:]=}'
+            raise ValueError(msg)
     elif reference_mean.shape != reference_real.shape:
-        raise ValueError(f'{reference_mean.shape=} != {reference_real.shape=}')
+        msg = f'{reference_mean.shape=} != {reference_real.shape=}'
+        raise ValueError(msg)
     elif len(harmonic) > 1:
-        raise ValueError(
-            f'{reference_mean.shape=} does not have harmonic axis'
-        )
+        msg = f'{reference_mean.shape=} does not have harmonic axis'
+        raise ValueError(msg)
 
     _, measured_re, measured_im = phasor_center(
         reference_mean,
@@ -1015,21 +1019,25 @@ def phasor_to_lifetime_search(
         or lifetime_range[2] <= 0.0
         or lifetime_range[2] >= lifetime_range[1] - lifetime_range[0]
     ):
-        raise ValueError(f'invalid {lifetime_range=!r}')
+        msg = f'invalid {lifetime_range=!r}'
+        raise ValueError(msg)
 
     num_threads = number_threads(num_threads)
 
     dtype = numpy.dtype(dtype)
     if dtype.char not in {'f', 'd'}:
-        raise ValueError(f'{dtype=} is not a floating-point type')
+        msg = f'{dtype=} is not a floating-point type'
+        raise ValueError(msg)
 
     real = numpy.ascontiguousarray(real, dtype=dtype)
     imag = numpy.ascontiguousarray(imag, dtype=dtype)
 
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
     if real.shape[0] < num_components:
-        raise ValueError(f'{real.shape[0]=} < {num_components=}')
+        msg = f'{real.shape[0]=} < {num_components=}'
+        raise ValueError(msg)
 
     shape = real.shape[1:]
     real = real[:num_components].reshape((num_components, -1))
@@ -1559,7 +1567,8 @@ def phasor_semicircle(
 
     """
     if samples < 1:
-        raise ValueError(f'{samples=} < 1')
+        msg = f'{samples=} < 1'
+        raise ValueError(msg)
     arange = numpy.linspace(math.pi, 0.0, samples)
     real = numpy.cos(arange)
     real += 1.0
@@ -1697,11 +1706,13 @@ def phasor_at_harmonic(
     """
     harmonic = numpy.asarray(harmonic, dtype=numpy.int32)
     if numpy.any(harmonic < 1):
-        raise ValueError('harmonic < 1')
+        msg = 'harmonic < 1'
+        raise ValueError(msg)
 
     other_harmonic = numpy.asarray(other_harmonic, dtype=numpy.int32)
     if numpy.any(other_harmonic < 1):
-        raise ValueError('other_harmonic < 1')
+        msg = 'other_harmonic < 1'
+        raise ValueError(msg)
 
     return _phasor_at_harmonic(  # type: ignore[no-any-return]
         real, harmonic, other_harmonic, **kwargs

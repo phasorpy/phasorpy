@@ -94,9 +94,8 @@ def phasor_from_lif(
             imag = lif.images[image + 'Phasor Imaginary$'].asarray()
             # mask = lif.images[image + 'Phasor Mask$'].asarray()
         except Exception as exc:
-            raise ValueError(
-                f'{lif.filename!r} does not contain Phasor images'
-            ) from exc
+            msg = f'{lif.filename!r} does not contain Phasor images'
+            raise ValueError(msg) from exc
 
         attrs: dict[str, Any] = {'dims': dims, 'coords': coords}
         _flim_metadata(im.parent_image, attrs)
@@ -199,9 +198,8 @@ def lifetime_from_lif(
             lifetime = lif.images[image + 'Fast Flim$'].asarray()
             stddev = lif.images[image + 'Standard Deviation$'].asarray()
         except Exception as exc:
-            raise ValueError(
-                f'{lif.filename!r} does not contain lifetime images'
-            ) from exc
+            msg = f'{lif.filename!r} does not contain lifetime images'
+            raise ValueError(msg) from exc
 
         attrs: dict[str, Any] = {'dims': dims, 'coords': coords}
         _flim_metadata(im.parent_image, attrs)
@@ -309,18 +307,17 @@ def signal_from_lif(
                 if dim in im.dims:
                     break
             else:
-                raise ValueError(
-                    f'{lif.filename!r} does not contain hyperspectral image'
-                )
+                msg = f'{lif.filename!r} does not contain hyperspectral image'
+                raise ValueError(msg)
         else:
             im = lif.images[image]
 
         if dim not in im.dims or im.sizes[dim] < 4:
-            raise ValueError(f'{im!r} does not contain spectral dimension')
+            msg = f'{im!r} does not contain spectral dimension'
+            raise ValueError(msg)
         if 'C' in im.dims:
-            raise ValueError(
-                'hyperspectral image must not contain channel axis'
-            )
+            msg = 'hyperspectral image must not contain channel axis'
+            raise ValueError(msg)
 
         data = im.asarray()
         coords: dict[str, Any] = {
