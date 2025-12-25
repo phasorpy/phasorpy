@@ -4,6 +4,7 @@ from __future__ import annotations
 
 __all__ = ['SKIP_FETCH', 'SKIP_PRIVATE', 'TempFileName', 'private_file']
 
+import contextlib
 import glob
 import os
 import tempfile
@@ -61,14 +62,10 @@ class TempFileName:
             if self.pattern:
                 name, ext = os.path.splitext(self.name)
                 for fname in glob.glob(name + '*' + ext):
-                    try:
+                    with contextlib.suppress(Exception):
                         os.remove(fname)
-                    except Exception:  # noqa: S110, BLE001
-                        pass
-            try:
+            with contextlib.suppress(Exception):
                 os.remove(self.name)
-            except Exception:  # noqa: S110, BLE001
-                pass
 
 
 def private_file(filename: str, /) -> str:

@@ -149,7 +149,8 @@ class LifetimePlots:
 
         num_components = max(lifetimes.size, 1)
         if num_components > 6:
-            raise ValueError(f'too many components {num_components} > 6')
+            msg = f'too many components {num_components} > 6'
+            raise ValueError(msg)
 
         # create plots
         update_kwargs(kwargs, figsize=(10.24, 7.68))
@@ -407,7 +408,8 @@ class LifetimePlots:
             fractions = numpy.asarray(fractions)
             num_fractions = max(fractions.size, 1)
             if num_fractions != num_components:
-                raise ValueError(f'{num_fractions=} != {num_components=}')
+                msg = f'{num_fractions=} != {num_components=}'
+                raise ValueError(msg)
             s = fractions.sum()
             if s > 0.0:
                 fractions = numpy.clip(fractions / s, 0.0, 1.0)

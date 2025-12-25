@@ -94,7 +94,8 @@ def phasor_to_simfcs_referenced(
     """
     filename, ext = os.path.splitext(filename)
     if ext.lower() != '.r64':
-        raise ValueError(f'file extension {ext} != .r64')
+        msg = f'file extension {ext} != .r64'
+        raise ValueError(msg)
 
     # TODO: delay conversions to numpy arrays to inner loop
     mean = numpy.asarray(mean, dtype=numpy.float32)
@@ -104,9 +105,11 @@ def phasor_to_simfcs_referenced(
     phi = numpy.rad2deg(phi)
 
     if phi.shape != mod.shape:
-        raise ValueError(f'{phi.shape=} != {mod.shape=}')
+        msg = f'{phi.shape=} != {mod.shape=}'
+        raise ValueError(msg)
     if mean.shape != phi.shape[-mean.ndim :]:
-        raise ValueError(f'{mean.shape=} != {phi.shape[-mean.ndim:]=}')
+        msg = f'{mean.shape=} != {phi.shape[-mean.ndim:]=}'
+        raise ValueError(msg)
     if phi.ndim == mean.ndim:
         phi = phi.reshape((1, *phi.shape))
         mod = mod.reshape((1, *mod.shape))
@@ -123,7 +126,8 @@ def phasor_to_simfcs_referenced(
     if size is None:
         size = min(256, max(4, sizey, sizex))
     elif not 4 <= size <= 65535:
-        raise ValueError(f'{size=} is out of range [4, 65535]')
+        msg = f'{size=} is out of range [4, 65535]'
+        raise ValueError(msg)
 
     harmonics_per_file = 2  # TODO: make this a parameter?
     chunk_shape = tuple(
@@ -171,9 +175,7 @@ def phasor_to_simfcs_referenced(
             rawdata_append(rawdata)
             rawdata_append(rawdata)
 
-        if not multi_file:
-            label = ''
-        with open(filename + label + ext, 'wb') as fh:
+        with open(f'{filename}{label if multi_file else ""}{ext}', 'wb') as fh:
             fh.write(zlib.compress(b''.join(rawdata)))
 
 
@@ -255,22 +257,21 @@ def phasor_from_simfcs_referenced(
             # number of harmonics
             num_images = int(ext[-1]) * 2 + 1
         else:
-            raise ValueError(
-                f'file extension must be .ref, .r64, or .re<n>, not {ext!r}'
-            )
+            msg = f'file extension must be .ref, .r64, or .re<n>, not {ext!r}'
+            raise ValueError(msg)
         size = os.path.getsize(filename)
         if (
             size > 4294967295
             or size % (num_images * 4)
             or not math.sqrt(size // (num_images * 4)).is_integer()
         ):
-            raise ValueError(f'{filename!r} is not a valid reference file')
+            msg = f'{filename!r} is not a valid reference file'
+            raise ValueError(msg)
         size = int(math.sqrt(size // (num_images * 4)))
         data = numpy.fromfile(filename, dtype='<f4').reshape((-1, size, size))
     else:
-        raise ValueError(
-            f"file extension {ext!r} not in {{'.ref', '.r64', '.re<n>'}}"
-        )
+        msg = f"file extension {ext!r} not in {{'.ref', '.r64', '.re<n>'}}"
+        raise ValueError(msg)
 
     harmonic, keep_harmonic_dim = parse_harmonic(harmonic, data.shape[0] // 2)
 
@@ -278,8 +279,8 @@ def phasor_from_simfcs_referenced(
     real = numpy.empty((len(harmonic), *mean.shape), dtype=numpy.float32)
     imag = numpy.empty_like(real)
     for i, h in enumerate(harmonic):
-        h = (h - 1) * 2 + 1
-        re, im = phasor_from_polar(numpy.deg2rad(data[h]), data[h + 1])
+        h2 = (h - 1) * 2 + 1
+        re, im = phasor_from_polar(numpy.deg2rad(data[h2]), data[h2 + 1])
         real[i] = re
         imag[i] = im
     if not keep_harmonic_dim:
@@ -388,9 +389,8 @@ def signal_from_fbd(
                 axes = 'TYXH'
         else:
             if channel < 0 or channel >= data.shape[1]:
-                raise IndexError(
-                    f'{channel=} is out of bounds [0, {data.shape[1] - 1}]'
-                )
+                msg = f'{channel=} is out of bounds [0, {data.shape[1] - 1}]'
+                raise IndexError(msg)
             if keepdims:
                 data = data[:, channel : channel + 1]
             else:
@@ -403,9 +403,8 @@ def signal_from_fbd(
                 axes = axes[1:]
         else:
             if frame < 0 or frame >= data.shape[0]:
-                raise IndexError(
-                    f'{frame=} is out of bounds [0, {data.shape[0] - 1}]'
-                )
+                msg = f'{frame=} is out of bounds [0, {data.shape[0] - 1}]'
+                raise IndexError(msg)
             if keepdims:
                 data = data[frame : frame + 1]
             else:
@@ -483,9 +482,8 @@ def signal_from_b64(
     with lfdfiles.SimfcsB64(filename) as b64:
         data = b64.asarray()
         if data.ndim != 3:
-            raise ValueError(
-                f'{os.path.basename(filename)!r} does not contain image stack'
-            )
+            msg = f'{filename!r} does not contain image stack'
+            raise ValueError(msg)
         assert b64.axes is not None
         metadata = xarray_metadata(b64.axes, data.shape, filename)
 

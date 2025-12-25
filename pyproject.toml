@@ -227,7 +227,6 @@ select = [
 ignore = [
     "C901",  # complex-structure
     "COM812",  # missing-trailing-comma
-    "ERA001",  # commented-out-code
     "F821", # undefined-name in Literal type hints
     "FIX002",  # todo
     "ICN001",  # import-convention
@@ -237,17 +236,13 @@ ignore = [
     "PLR0913",  # too-many-arguments
     "PLR0915",  # too-many-statements
     "PLR2004",  # magic-value-comparison
-    "S101",  # assert
     "TD",  # todo
     "TID252",  # relative-imports
     "UP037",  # quoted-annotation
     # TODO: consider enabling these later
-    "EM101",  # raw-string-in-exception
-    "EM102",  # f-string-in-exception
-    "PLW2901",  # redefined-loop-name
+    "ERA001",  # commented-out-code
     "PTH",  # pathlib
-    "SIM105",  # suppressible-exception
-    "TRY003",  # tryceratops
+    "S101",  # assert
 ]
 typing-modules = ["_typing"]
 
@@ -255,9 +250,9 @@ typing-modules = ["_typing"]
 "__init__.py" = ["F401", "F403"]
 "conftest.py" = ["ARG001"]
 "setup.py" = ["T201"]
-"tests/*" = ["ANN", "D", "INP001", "PT011", "SLF001"]
+"tests/*" = ["ANN", "D", "INP001", "PT011", "SLF001", "S101"]
 "tools/*" = ["ANN", "INP001", "T201"]
-"tutorials/*" = ["ANN", "D", "E402", "INP001", "T201"]
+"tutorials/*" = ["ANN", "D", "E402", "INP001", "T201", "S101", "ERA001"]
 "docs/conf.py" = ["A001", "ANN204", "D102", "E402", "INP001", "RUF012"]
 
 [tool.ruff.format]

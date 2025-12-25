@@ -94,10 +94,12 @@ def float2int(
     """
     dtype = numpy.dtype(dtype)
     if dtype.kind not in {'u', 'i'}:
-        raise ValueError(f'{dtype=} is not an integer type')
+        msg = f'{dtype=} is not an integer type'
+        raise ValueError(msg)
     arr: NDArray[Any] = numpy.asarray(rgb)
-    if not arr.dtype.kind == 'f':
-        raise ValueError(f'{arr.dtype=} is not a floating-point type')
+    if arr.dtype.kind != 'f':
+        msg = f'{arr.dtype=} is not a floating-point type'
+        raise ValueError(msg)
     iinfo = numpy.iinfo(dtype)
     arr = numpy.round(arr * iinfo.max)
     numpy.clip(arr, iinfo.min, iinfo.max, out=arr)

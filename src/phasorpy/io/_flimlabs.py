@@ -110,9 +110,8 @@ def phasor_from_flimlabs_json(
         try:
             data = json.load(fh)
         except Exception as exc:
-            raise ValueError(
-                f'{filename=!r} is not a valid JSON file'
-            ) from exc
+            msg = f'{filename=!r} is not a valid JSON file'
+            raise ValueError(msg) from exc
 
     if (
         'header' not in data
@@ -121,10 +120,11 @@ def phasor_from_flimlabs_json(
         or 'file_id' not in data['header']
         # or data['header']['file_id'] != [73, 80, 71, 49]  # 'IPG1'
     ):
-        raise ValueError(
+        msg = (
             f'{filename=!r} is not a FLIM LABS JSON file '
             'containing phasor coordinates'
         )
+        raise ValueError(msg)
 
     header = data['header']
     phasor_data = data['phasors_data']
@@ -143,7 +143,8 @@ def phasor_from_flimlabs_json(
 
     if channel is not None:
         if channel + 1 not in channels:
-            raise IndexError(f'{channel=}')
+            msg = f'{channel=}'
+            raise IndexError(msg)
         channel += 1  # 1-based index
 
     if isinstance(harmonic, str) and harmonic == 'all':
@@ -152,7 +153,8 @@ def phasor_from_flimlabs_json(
     else:
         harmonic, keep_harmonic_axis = parse_harmonic(harmonic, harmonics[-1])
     if any(h not in harmonics for h in harmonic):
-        raise IndexError(f'{harmonic=!r} not in {harmonics!r}')
+        msg = f'{harmonic=!r} not in {harmonics!r}'
+        raise IndexError(msg)
     harmonic_index = {h: i for i, h in enumerate(harmonic)}
 
     nharmonics = len(harmonic)
@@ -298,26 +300,27 @@ def signal_from_flimlabs_json(
         try:
             data = json.load(fh)
         except Exception as exc:
-            raise ValueError(
-                f'{filename=!r} is not a valid JSON file'
-            ) from exc
+            msg = f'{filename=!r} is not a valid JSON file'
+            raise ValueError(msg) from exc
     if (
         'header' not in data
         or 'laser_period_ns' not in data['header']
         or 'file_id' not in data['header']
         or ('data' not in data and 'intensities_data' not in data)
     ):
-        raise ValueError(
+        msg = (
             f'{filename=!r} is not a FLIM LABS JSON file '
             'containing TCSPC histogram'
         )
+        raise ValueError(msg)
 
     if dtype is None:
         dtype = numpy.uint16
     else:
         dtype = numpy.dtype(dtype)
         if dtype.kind != 'u':
-            raise ValueError(f'{dtype=} is not an unsigned integer type')
+            msg = f'{dtype=} is not an unsigned integer type'
+            raise ValueError(msg)
 
     header = data['header']
     nchannels = len([c for c in header['channels'] if c])
@@ -327,9 +330,8 @@ def signal_from_flimlabs_json(
 
     if channel is not None:
         if channel >= nchannels or channel < 0:
-            raise IndexError(
-                f'{channel=} is out of bounds [0, {nchannels - 1}]'
-            )
+            msg = f'{channel=} is out of bounds [0, {nchannels - 1}]'
+            raise IndexError(msg)
         nchannels = 1
 
     if 'data' in data:

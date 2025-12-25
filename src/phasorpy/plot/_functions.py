@@ -100,16 +100,23 @@ def plot_phasor(
     plot = PhasorPlot(
         frequency=frequency, allquadrants=allquadrants, **init_kwargs
     )
-    if style is None:
-        style = 'plot' if real.size < 65536 and real.ndim < 3 else 'hist2d'
-    if style == 'plot':
-        plot.plot(real, imag, **kwargs)
-    elif style == 'hist2d':
-        plot.hist2d(real, imag, **kwargs)
-    elif style == 'contour':
-        plot.contour(real, imag, **kwargs)
-    else:
-        raise ValueError(f'{style=} not in {{"plot", "hist2d", "contour"}}')
+    match style:
+        case None:
+            if real.size < 65536 and real.ndim < 3:
+                plot.plot(real, imag, **kwargs)
+            else:
+                plot.hist2d(real, imag, **kwargs)
+        case 'plot':
+            plot.plot(real, imag, **kwargs)
+        case 'hist2d':
+            plot.hist2d(real, imag, **kwargs)
+        case 'contour':
+            plot.contour(real, imag, **kwargs)
+        case _:
+            msg = (  # type: ignore[unreachable]
+                f'{style=} not in {{"plot", "hist2d", "contour"}}'
+            )
+            raise ValueError(msg)
     if show:
         plot.show()
 
@@ -175,7 +182,8 @@ def plot_phasor_image(
     if mean is not None:
         mean = numpy.asarray(mean)
         if mean.ndim < 2:
-            raise ValueError(f'{mean.ndim=} < 2')
+            msg = f'{mean.ndim=} < 2'
+            raise ValueError(msg)
         shape = mean.shape
         mean = mean.reshape((-1, *mean.shape[-2:]))
         mean = mean[0] if mean.shape[0] == 1 else numpy.nanmean(mean, axis=0)
@@ -183,22 +191,26 @@ def plot_phasor_image(
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
     if real.ndim < 2:
-        raise ValueError(f'{real.ndim=} < 2')
+        msg = f'{real.ndim=} < 2'
+        raise ValueError(msg)
 
     if (shape is not None and real.shape[1:] == shape) or (
         shape is None and harmonics
     ):
         # first image dimension contains harmonics
         if real.ndim < 3:
-            raise ValueError(f'not a multi-harmonic image {real.shape=}')
+            msg = f'not a multi-harmonic image {real.shape=}'
+            raise ValueError(msg)
         nh = real.shape[0]  # number harmonics
     elif shape is None or shape == real.shape:
         # single harmonic
         nh = 1
     else:
-        raise ValueError(f'{real.shape[1:]=} != {shape}')
+        msg = f'{real.shape[1:]=} != {shape}'
+        raise ValueError(msg)
 
     real = real.reshape((nh, -1, *real.shape[-2:]))
     imag = imag.reshape((nh, -1, *imag.shape[-2:]))
@@ -349,7 +361,8 @@ def plot_signal_image(
     update_kwargs(kwargs, interpolation='nearest')
     signal = numpy.asarray(signal)
     if signal.ndim < 3:
-        raise ValueError(f'{signal.ndim=} < 3')
+        msg = f'{signal.ndim=} < 3'
+        raise ValueError(msg)
 
     axis %= signal.ndim
 
@@ -448,10 +461,11 @@ def plot_image(
 
     arrays = []
     shape = [1, 1]
-    for image in images:
-        image = numpy.asarray(image)
+    for im in images:
+        image = numpy.asarray(im)
         if image.ndim < 2:
-            raise ValueError(f'{image.ndim=} < 2')
+            msg = f'{image.ndim=} < 2'
+            raise ValueError(msg)
         if image.ndim == 3 and image.shape[2] in {3, 4}:
             # RGB(A)
             pass
@@ -488,14 +502,14 @@ def plot_image(
         vmax = kwargs.pop('vmax', None)
         if vmin is None:
             vmin = numpy.inf
-            for image in images:
-                vmin = min(vmin, numpy.nanmin(image))
+            for im in images:
+                vmin = min(vmin, numpy.nanmin(im))
             if vmin == numpy.inf:
                 vmin = None
         if vmax is None:
             vmax = -numpy.inf
-            for image in images:
-                vmax = max(vmax, numpy.nanmax(image))
+            for im in images:
+                vmax = max(vmax, numpy.nanmax(im))
             if vmax == -numpy.inf:
                 vmax = None
 
@@ -698,7 +712,8 @@ def _imshow(
             or percentile[0] < 0
             or percentile[1] > 100
         ):
-            raise ValueError(f'{percentile=} is out of range [0, 100]')
+            msg = f'{percentile=} is out of range [0, 100]'
+            raise ValueError(msg)
         vmin, vmax = numpy.nanpercentile(image, percentile)
     pos = ax.imshow(image, vmin=vmin, vmax=vmax, **kwargs)
     if colorbar:

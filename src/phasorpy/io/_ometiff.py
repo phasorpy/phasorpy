@@ -133,7 +133,8 @@ def phasor_to_ometiff(
         dtype = numpy.float32
     dtype = numpy.dtype(dtype)
     if dtype.kind != 'f':
-        raise ValueError(f'{dtype=} is not a floating-point type')
+        msg = f'{dtype=} is not a floating-point type'
+        raise ValueError(msg)
 
     mean = numpy.asarray(mean, dtype=dtype)
     real = numpy.asarray(real, dtype=dtype)
@@ -141,9 +142,11 @@ def phasor_to_ometiff(
     datasize = mean.nbytes + real.nbytes + imag.nbytes
 
     if real.shape != imag.shape:
-        raise ValueError(f'{real.shape=} != {imag.shape=}')
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
     if mean.shape != real.shape[-mean.ndim :]:
-        raise ValueError(f'{mean.shape=} != {real.shape[-mean.ndim:]=}')
+        msg = f'{mean.shape=} != {real.shape[-mean.ndim:]=}'
+        raise ValueError(msg)
     has_harmonic_dim = real.ndim == mean.ndim + 1
     nharmonic = 1 if real.ndim in {0, mean.ndim} else real.shape[0]
 
@@ -160,18 +163,21 @@ def phasor_to_ometiff(
     if harmonic is not None:
         harmonic, _ = parse_harmonic(harmonic)
         if len(harmonic) != nharmonic:
-            raise ValueError(f'{len(harmonic)=} != {nharmonic}')
+            msg = f'{len(harmonic)=} != {nharmonic}'
+            raise ValueError(msg)
 
     if frequency is not None:
         frequency_array = numpy.array(
             frequency, dtype=numpy.float64, ndmin=2, copy=None
         )
         if frequency_array.size > 1:
-            raise ValueError('frequency must be scalar')
+            msg = 'frequency must be scalar'
+            raise ValueError(msg)
 
     axes = 'TZCYX'[-mean.ndim :] if dims is None else ''.join(tuple(dims))
     if len(axes) != mean.ndim:
-        raise ValueError(f'{axes=} does not match {mean.ndim=}')
+        msg = f'{axes=} does not match {mean.ndim=}'
+        raise ValueError(msg)
     axes_phasor = axes if mean.ndim == real.ndim else 'Q' + axes
 
     if 'photometric' not in kwargs:
@@ -334,9 +340,8 @@ def phasor_from_ometiff(
             or tif.series[1].name != 'Phasor real'
             or tif.series[2].name != 'Phasor imag'
         ):
-            raise ValueError(
-                f'{name!r} is not an OME-TIFF containing phasor images'
-            )
+            msg = f'{name!r} is not an OME-TIFF containing phasor images'
+            raise ValueError(msg)
 
         attrs: dict[str, Any] = {'dims': tuple(tif.series[0].axes)}
 
@@ -414,7 +419,8 @@ def phasor_from_ometiff(
                 else:
                     index = [[harmonic_stored].index(h) for h in harmonic]
             except ValueError as exc:
-                raise IndexError('harmonic not found') from exc
+                msg = 'harmonic not found'
+                raise IndexError(msg) from exc
 
             if has_harmonic_dim:
                 if keepdims:
