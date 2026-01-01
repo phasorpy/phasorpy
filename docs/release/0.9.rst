@@ -1,0 +1,29 @@
+.. currentmodule:: phasorpy
+
+PhasorPy 0.9 (2026-01-01)
+=========================
+
+This is the ninth alpha release of the PhasorPy library.
+It contains improvements to code quality and documentation.
+No new features were added and no breaking changes were introduced.
+
+This release supports Python 3.12 to 3.14.
+Wheels are built with stable ABI for broader compatibility.
+
+What's Changed
+--------------
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/307
+* Update development dependencies by @cgohlke in https://github.com/phasorpy/phasorpy/pull/308
+* Mention FLOPA napari plugin by @cgohlke in https://github.com/phasorpy/phasorpy/pull/310
+* Update workflows, build stable ABI wheels by @cgohlke in https://github.com/phasorpy/phasorpy/pull/311
+* Use dependency groups instead of requirement files by @cgohlke in https://github.com/phasorpy/phasorpy/pull/312
+* Improve documentation and code quality by @cgohlke in https://github.com/phasorpy/phasorpy/pull/314
+* Split release notes into separate files by @cgohlke in https://github.com/phasorpy/phasorpy/pull/315
+* Fix typing for numpy 2.4 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/316
+* Consistently use tuple arguments in reshape calls by @cgohlke in https://github.com/phasorpy/phasorpy/pull/317
+* Refactor to use match-case by @cgohlke in https://github.com/phasorpy/phasorpy/pull/318
+* Enable and fix more ruff checks by @cgohlke in https://github.com/phasorpy/phasorpy/pull/319
+* Release v0.9 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/320
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.8...v0.9
