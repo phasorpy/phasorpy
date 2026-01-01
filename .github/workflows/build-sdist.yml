@@ -32,7 +32,7 @@ jobs:
       - name: Build sdist
         run: |
           python -m build --sdist .
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: sdist
           path: dist
@@ -42,7 +42,7 @@ jobs:
     needs: [build_artifacts]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v7
         with:
           name: sdist
           path: dist
@@ -70,7 +70,7 @@ jobs:
 #      id-token: write
 #    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/v')
 #    steps:
-#      - uses: actions/download-artifact@v6
+#      - uses: actions/download-artifact@v7
 #        with:
 #          name: releases
 #          path: dist
