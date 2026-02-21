@@ -171,14 +171,14 @@ def phasor_from_signal(
     Raises
     ------
     ValueError
-        The `signal` has less than three samples along `axis`.
-        The `sample_phase` size does not equal the number of samples along
+        If `signal` has less than three samples along `axis`.
+        If `sample_phase` size does not equal the number of samples along
         `axis`.
     IndexError
-        `harmonic` is smaller than 1 or greater than half the samples along
+        If `harmonic` is smaller than 1 or greater than half the samples along
         `axis`.
     TypeError
-        The `signal`, `dtype`, or `harmonic` types are not supported.
+        If `signal`, `dtype`, or `harmonic` types are not supported.
 
     See Also
     --------
@@ -397,7 +397,7 @@ def phasor_to_signal(
     Returns
     -------
     signal : ndarray
-        Reconstructed signal with samples of one period along the last axis.
+        Reconstructed signal with samples of one period along `axis`.
 
     See Also
     --------
@@ -663,7 +663,7 @@ def phasor_divide(
 
         G' &= (G \cdot g + S \cdot s) / d
 
-        S' &= (G \cdot s - S \cdot g) / d
+        S' &= (S \cdot g - G \cdot s) / d
 
     Examples
     --------
@@ -1159,7 +1159,7 @@ def phasor_to_principal_plane(
     """
     re, im = numpy.atleast_2d(real, imag)
     if re.shape != im.shape:
-        msg = f'real={re.shape} != imag={im.shape}'
+        msg = f'{re.shape=} != {im.shape=}'
         raise ValueError(msg)
 
     # reshape to variables in rows, observations in columns
@@ -1294,9 +1294,10 @@ def phasor_nearest_neighbor(
     Raises
     ------
     ValueError
-        If the shapes of `real`, and `imag` do not match.
-        If the shapes of `neighbor_real` and `neighbor_imag` do not match.
-        If the shapes of `values` and `neighbor_real` do not match.
+        If the array shapes of `real`, and `imag` do not match.
+        If the array shapes of `neighbor_real` and `neighbor_imag`
+        do not match.
+        If the array shapes of `values` and `neighbor_real` do not match.
         If `distance_max` is less than or equal to zero.
 
     See Also
@@ -1435,8 +1436,8 @@ def phasor_center(
     Raises
     ------
     ValueError
-        If the specified method is not supported.
-        If the shapes of `mean`, `real`, and `imag` do not match.
+        If the array shapes of `mean`, `real`, and `imag` do not match.
+        If the specified `method` is not supported.
 
     Examples
     --------
@@ -1469,8 +1470,9 @@ def phasor_center(
     if real.shape != imag.shape:
         msg = f'{real.shape=} != {imag.shape=}'
         raise ValueError(msg)
-    if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
-        msg = f'{mean.shape=} != {real.shape=}'
+    expected_shape = real.shape[-mean.ndim if mean.ndim else 1 :]
+    if mean.shape != expected_shape:
+        msg = f'{mean.shape=} != {expected_shape}'
         raise ValueError(msg)
 
     prepend_axis = mean.ndim + 1 == real.ndim

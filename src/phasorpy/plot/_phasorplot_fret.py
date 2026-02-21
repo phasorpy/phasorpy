@@ -38,40 +38,40 @@ class PhasorPlotFret(PhasorPlot):
 
     Parameters
     ----------
-    frequency : array_like
+    frequency : float, optional, default: 60.0
         Laser pulse or modulation frequency in MHz.
-    donor_lifetime : array_like
+    donor_lifetime : float, optional, default: 4.2
         Lifetime of donor without FRET in ns.
-    acceptor_lifetime : array_like
+    acceptor_lifetime : float, optional, default: 3.0
         Lifetime of acceptor in ns.
-    fret_efficiency : array_like, optional, default: 0
+    fret_efficiency : float, optional, default: 0.5
         FRET efficiency in range [0, 1].
-    donor_fretting : array_like, optional, default: 1
+    donor_fretting : float, optional, default: 1.0
         Fraction of donors participating in FRET. Range [0, 1].
-    donor_bleedthrough : array_like, optional, default: 0
+    donor_bleedthrough : float, optional, default: 0.0
         Weight of donor signal in acceptor channel
         relative to signal of fully sensitized acceptor.
         A weight of 1 means the signal from donor and fully sensitized
         acceptor are equal.
         The background in the donor channel does not bleed through.
-    acceptor_bleedthrough : array_like, optional, default: 0
+    acceptor_bleedthrough : float, optional, default: 0.0
         Weight of signal from directly excited acceptor
         relative to signal of fully sensitized acceptor.
         A weight of 1 means the signal from directly excited acceptor
         and fully sensitized acceptor are equal.
-    acceptor_background : array_like, optional, default: 0
+    acceptor_background : float, optional, default: 0.0
         Weight of background signal in acceptor channel
         relative to signal of fully sensitized acceptor.
         A weight of 1 means the signal of background and fully
         sensitized acceptor are equal.
-    donor_background : array_like, optional, default: 0
+    donor_background : float, optional, default: 0.0
         Weight of background signal in donor channel
         relative to signal of donor without FRET.
         A weight of 1 means the signal of background and donor without
         FRET are equal.
-    background_real : array_like, optional, default: 0
+    background_real : float, optional, default: 0.0
         Real component of background signal phasor coordinate at `frequency`.
-    background_imag : array_like, optional, default: 0
+    background_imag : float, optional, default: 0.0
         Imaginary component of background signal phasor coordinate
         at `frequency`.
     ax : matplotlib.axes.Axes, optional
@@ -277,9 +277,10 @@ class PhasorPlotFret(PhasorPlot):
         )
         self._acceptor_only_line = lines[0]
 
+        e = min(int(fret_efficiency * 100.0), 100)
         lines = self.plot(
-            donor_trajectory_real[int(fret_efficiency * 100.0)],
-            donor_trajectory_imag[int(fret_efficiency * 100.0)],
+            donor_trajectory_real[e],
+            donor_trajectory_imag[e],
             'o',
             color='tab:green',
             label='Donor',
@@ -287,8 +288,8 @@ class PhasorPlotFret(PhasorPlot):
         self._donor_line = lines[0]
 
         lines = self.plot(
-            acceptor_trajectory_real[int(fret_efficiency * 100.0)],
-            acceptor_trajectory_imag[int(fret_efficiency * 100.0)],
+            acceptor_trajectory_real[e],
+            acceptor_trajectory_imag[e],
             'o',
             color='tab:red',
             label='Acceptor',
@@ -447,8 +448,8 @@ class PhasorPlotFret(PhasorPlot):
             valstep=0.01,
             valinit=background_imag,
         )
-        ax.legend()
         self._background_imag_slider.on_changed(self._on_changed)
+        ax.legend()
 
     def _on_semicircle_changed(self, value: Any) -> None:
         """Update semicircles."""
@@ -484,7 +485,7 @@ class PhasorPlotFret(PhasorPlot):
         donor_background = self._donor_background_slider.val
         background_real = self._background_real_slider.val
         background_imag = self._background_imag_slider.val
-        e = int(self._fret_efficiency_slider.val * 100)
+        e = min(int(fret_efficiency * 100), 100)
 
         donor_real, donor_imag = phasor_from_lifetime(
             frequency, donor_lifetime

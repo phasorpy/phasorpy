@@ -562,9 +562,9 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'zenodo-14976703': ZENODO_14976703,
     'convallaria-fbd': CONVALLARIA_FBD,
     'flimlabs': FLIMLABS,
-    'figshare_28067108': FIGSHARE_28067108,
-    'figshare_22336594': FIGSHARE_22336594,
-    'figshare_22336594_exported': FIGSHARE_22336594_EXPORTED,
+    'figshare-28067108': FIGSHARE_28067108,
+    'figshare-22336594': FIGSHARE_22336594,
+    'figshare-22336594-exported': FIGSHARE_22336594_EXPORTED,
     'zenodo-16894639': ZENODO_16894639,
     'misc': MISC,
 }
@@ -618,7 +618,7 @@ def fetch(
     Raises
     ------
     ValueError
-        If specified file is not found in any repository.
+        If the specified file is not found in any repository.
 
     Examples
     --------

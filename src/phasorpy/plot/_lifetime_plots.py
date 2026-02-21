@@ -43,7 +43,7 @@ class LifetimePlots:
 
     Parameters
     ----------
-    frequency : float
+    frequency : float or None
         Laser pulse or modulation frequency in MHz.
         If None, an optimal frequency is calculated from the mean of the
         lifetime components.
@@ -268,7 +268,7 @@ class LifetimePlots:
                 self._phase_lines.append(lines[0])
         # phase_plot.text(0.1, 1, 'Phase', ha='left', va='bottom')
 
-        # TODO: zorder doesn't work.
+        # TODO: zorder does not work
         # twinx modulation_plot is always plotted on top of phase_plot
         modulation_plot = phase_plot.twinx()
         modulation_plot.set_ylabel('Modulation (%)', color='tab:red')
@@ -433,8 +433,9 @@ class LifetimePlots:
             zero_stdev=self._zero_stdev,
         )
         signal_max = signal.max()
-        signal /= signal_max
-        irf /= signal_max
+        if signal_max > 0.0:
+            signal /= signal_max
+            irf /= signal_max
 
         component_signal = lifetime_to_signal(
             frequency,
@@ -444,7 +445,8 @@ class LifetimePlots:
             zero_phase=self._zero_phase,
             zero_stdev=self._zero_stdev,
         )[0]
-        component_signal /= signal_max
+        if signal_max > 0.0:
+            component_signal /= signal_max
 
         real, imag = phasor_from_lifetime(frequency, lifetimes, fractions)
         component_real, component_imag = phasor_from_lifetime(
@@ -489,18 +491,12 @@ class LifetimePlots:
         del value  # unused
         frequency = self._frequency_slider.val
 
-        if frequency != self._frequency:
-            if self._semicircle_ticks is not None:
-                lifetime, labels = _semicircle_ticks(frequency)
-                self._semicircle_ticks.labels = labels
-                self._semicircle_line.set_data(
-                    *phasor_transform(
-                        *phasor_from_lifetime(frequency, lifetime)
-                    )
-                )
-            self._frequency_line.set_data([frequency, frequency], [0, 90])
-            # self._time_plot.set_title(f'Time domain ({frequency:.0f} MHz)')
-            # self._phasor_plot.set_title(f'Phasor plot ({frequency:.0f} MHz)')
+        if frequency != self._frequency and self._semicircle_ticks is not None:
+            lifetime, labels = _semicircle_ticks(frequency)
+            self._semicircle_ticks.labels = labels
+            self._semicircle_line.set_data(
+                *phasor_transform(*phasor_from_lifetime(frequency, lifetime))
+            )
 
         lifetimes = numpy.asarray([s.val for s in self._lifetime_sliders])
         fractions = numpy.asarray([s.val for s in self._fraction_sliders])

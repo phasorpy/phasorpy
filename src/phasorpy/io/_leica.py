@@ -56,9 +56,9 @@ def phasor_from_lif(
     Raises
     ------
     liffile.LifFileError
-        File is not a Leica image file.
+        If file is not a Leica image file.
     ValueError
-        File or `image` does not contain phasor coordinates and metadata.
+        If file or `image` does not contain phasor coordinates and metadata.
 
     Notes
     -----
@@ -150,13 +150,16 @@ def lifetime_from_lif(
           Number of bins in TCSPC histogram. May not be present in all files.
         - ``'flim_rawdata'`` (dict):
           Settings from SingleMoleculeDetection/RawData XML element.
+        - ``'flim_phasor_channels'`` (list of dict):
+          Settings from SingleMoleculeDetection/.../PhasorData/Channels XML
+          elements.
 
     Raises
     ------
     liffile.LifFileError
-        File is not a Leica image file.
+        If file is not a Leica image file.
     ValueError
-        File or `image` does not contain lifetime image and metadata.
+        If file or `image` does not contain lifetime image and metadata.
 
     Notes
     -----
@@ -228,8 +231,7 @@ def _flim_metadata(
             clock_period = xml.find('.//Dataset/RawData/ClockPeriod')
             if clock_period is not None and clock_period.text is not None:
                 tmp = float(clock_period.text) * float(frequency.text)
-                samples = round(1.0 / tmp)
-                attrs['samples'] = samples
+                attrs['samples'] = round(1.0 / tmp) if tmp != 0.0 else 0
         channels = []
         for channel in xml.findall('.//Dataset/FlimData/PhasorData/Channels'):
             ch = liffile.xml2dict(channel)['Channels']
@@ -265,7 +267,8 @@ def signal_from_lif(
     Returns
     -------
     xarray.DataArray
-        Hyperspectral image and selected metadata:
+        Hyperspectral image with :ref:`axes codes <axes>` and
+        selected metadata:
 
         - ``coords['C']``: excitation or emission wavelengths in nm.
         - ``coords['T']``: time coordinates in s, if any.
@@ -273,9 +276,9 @@ def signal_from_lif(
     Raises
     ------
     liffile.LifFileError
-        File is not a Leica image file.
+        If file is not a Leica image file.
     ValueError
-        File is not a Leica image file or does not contain hyperspectral image.
+        If file or `image` does not contain hyperspectral image.
 
     Notes
     -----

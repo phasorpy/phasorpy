@@ -88,6 +88,15 @@ def phasor_cluster_gmm(
     angle : tuple of float
         Rotation angles of major axes in radians, within range [0, pi].
 
+    Raises
+    ------
+    ValueError
+        If `sigma` is not positive.
+        If `clusters` is less than 1.
+        If the array shapes of `real` and `imag` do not match.
+        If the number of valid (non-NaN) data points is less than `clusters`.
+        If `sort` is not a valid sorting method.
+
     References
     ----------
     .. [1] Vallmitjana A, Torrado B, and Gratton E.
@@ -122,10 +131,18 @@ def phasor_cluster_gmm(
         raise ValueError(msg)
     sigma = float(sigma)
 
+    if clusters < 1:
+        msg = f'{clusters=} < 1'
+        raise ValueError(msg)
+
     coords = numpy.stack([real, imag], axis=-1).reshape((-1, 2))
 
     valid_data = ~numpy.isnan(coords).any(axis=1)
     coords = coords[valid_data]
+
+    if coords.shape[0] < clusters:
+        msg = f'number of valid data points ({coords.shape[0]}) < {clusters=}'
+        raise ValueError(msg)
 
     kwargs.pop('n_components', None)
 
@@ -152,7 +169,7 @@ def phasor_cluster_gmm(
             case 'spherical':
                 cov = numpy.eye(2) * gmm.covariances_[i]
             case _:
-                msg = f'unknown covariance_type: {gmm.covariance_type!r}'
+                msg = f'unknown {gmm.covariance_type=!r}'
                 raise ValueError(msg)
 
         eigenvalues, eigenvectors = numpy.linalg.eigh(cov[:2, :2])

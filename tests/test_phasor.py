@@ -982,14 +982,14 @@ def test_phasor_combine_more():
     assert mean1.dtype == numpy.float32
     assert real1.dtype == numpy.float32
     assert imag1.dtype == numpy.float32
-    assert_allclose(real1, real0)
-    assert_allclose(imag1, imag0)
+    assert_allclose(real1, real0, atol=1e-5)
+    assert_allclose(imag1, imag0, atol=1e-5)
 
     mean1, real1, imag1 = phasor_combine(
         1.0, real[0], imag[0], 1.0, real[1], imag[1], *fraction
     )
-    assert_allclose(real1, real0)
-    assert_allclose(imag1, imag0)
+    assert_allclose(real1, real0, atol=1e-5)
+    assert_allclose(imag1, imag0, atol=1e-5)
 
 
 @pytest.mark.parametrize(

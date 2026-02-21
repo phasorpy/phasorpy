@@ -107,8 +107,8 @@ def phasor_to_simfcs_referenced(
     if phi.shape != mod.shape:
         msg = f'{phi.shape=} != {mod.shape=}'
         raise ValueError(msg)
-    if mean.shape != phi.shape[-mean.ndim :]:
-        msg = f'{mean.shape=} != {phi.shape[-mean.ndim:]=}'
+    if mean.shape != phi.shape[-mean.ndim if mean.ndim else 1 :]:
+        msg = f'{mean.shape=} != {phi.shape[-mean.ndim if mean.ndim else 1:]}'
         raise ValueError(msg)
     if phi.ndim == mean.ndim:
         phi = phi.reshape((1, *phi.shape))
@@ -222,7 +222,7 @@ def phasor_from_simfcs_referenced(
     Raises
     ------
     lfdfiles.LfdFileError
-        File is not a SimFCS REF, R64, or RE<n> file.
+        If file is not a SimFCS REF, R64, or RE<n> file.
 
     See Also
     --------
@@ -270,7 +270,7 @@ def phasor_from_simfcs_referenced(
         size = int(math.sqrt(size // (num_images * 4)))
         data = numpy.fromfile(filename, dtype='<f4').reshape((-1, size, size))
     else:
-        msg = f"file extension {ext!r} not in {{'.ref', '.r64', '.re<n>'}}"
+        msg = f'file extension must be .ref, .r64, or .re<n>, not {ext!r}'
         raise ValueError(msg)
 
     harmonic, keep_harmonic_dim = parse_harmonic(harmonic, data.shape[0] // 2)
@@ -347,7 +347,9 @@ def signal_from_fbd(
     Raises
     ------
     ValueError
-        File is not a FLIMbox FBD file.
+        If file is not a FLIMbox FBD file.
+    IndexError
+        If frame or channel index is out of bounds.
 
     Notes
     -----
@@ -450,14 +452,14 @@ def signal_from_b64(
     Returns
     -------
     xarray.DataArray
-        Intensity image of type `int16`.
+        Intensity image with :ref:`axes codes <axes>` and type `int16`.
 
     Raises
     ------
     lfdfiles.LfdFileError
-        File is not a SimFCS B64 file.
+        If file is not a SimFCS B64 file.
     ValueError
-        File does not contain image stack.
+        If file does not contain image stack.
 
     Notes
     -----
@@ -509,12 +511,12 @@ def signal_from_z64(
     Returns
     -------
     xarray.DataArray
-        Image stack of type `float32`.
+        Image stack with :ref:`axes codes <axes>` and type `float32`.
 
     Raises
     ------
     lfdfiles.LfdFileError
-        File is not a SimFCS Z64 file.
+        If file is not a SimFCS Z64 file.
 
     Notes
     -----
@@ -569,7 +571,7 @@ def signal_from_bh(
     Raises
     ------
     lfdfiles.LfdFileError
-        File is not a SimFCS B&H file.
+        If file is not a SimFCS B&H file.
 
     Notes
     -----
@@ -626,7 +628,7 @@ def signal_from_bhz(
     Raises
     ------
     lfdfiles.LfdFileError
-        File is not a SimFCS BHZ file.
+        If file is not a SimFCS BHZ file.
 
     Notes
     -----

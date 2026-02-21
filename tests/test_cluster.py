@@ -37,11 +37,24 @@ def test_phasor_cluster_gmm_basic(clusters, sort):
 
 
 def test_phasor_cluster_gmm_invalid_shapes():
+    # shape mismatch
     with pytest.raises(ValueError):
         phasor_cluster_gmm([1, 2, 3], [1, 2])
 
+    # invalid sort method
     with pytest.raises(ValueError):
         phasor_cluster_gmm([1, 2], [1, 2], clusters=2, sort='invalid')
+
+    # clusters < 1
+    with pytest.raises(ValueError):
+        phasor_cluster_gmm([1, 2, 3], [1, 2, 3], clusters=0)
+
+    with pytest.raises(ValueError):
+        phasor_cluster_gmm([1, 2, 3], [1, 2, 3], clusters=-1)
+
+    # insufficient data points for clusters
+    with pytest.raises(ValueError):
+        phasor_cluster_gmm([1, 2], [1, 2], clusters=3)
 
 
 def test_phasor_cluster_gmm_invalid_sigma():

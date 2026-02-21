@@ -61,9 +61,9 @@ class TempFileName:
         if self.remove:
             if self.pattern:
                 name, ext = os.path.splitext(self.name)
-                for fname in glob.glob(name + '*' + ext):
+                for filename in glob.glob(name + '*' + ext):
                     with contextlib.suppress(Exception):
-                        os.remove(fname)
+                        os.remove(filename)
             with contextlib.suppress(Exception):
                 os.remove(self.name)
 

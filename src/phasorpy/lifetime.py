@@ -158,7 +158,7 @@ def phasor_from_lifetime(
     Raises
     ------
     ValueError
-        Input arrays exceed their allowed dimensionality or do not match.
+        If input arrays exceed their allowed dimensionality or do not match.
 
     See Also
     --------
@@ -200,12 +200,12 @@ def phasor_from_lifetime(
     - `lifetime` is two-dimensional, `fraction` is one-dimensional.
       The last dimensions match in size, holding lifetime components and
       their fractions.
-      Return arrays of shape ``(frequency.size, lifetime.shape[1])``.
+      Return arrays of shape ``(frequency.size, lifetime.shape[0])``.
 
     - `lifetime` is one-dimensional, `fraction` is two-dimensional.
       The last dimensions must match in size, holding lifetime components and
       their fractions.
-      Return arrays of shape ``(frequency.size, fraction.shape[1])``.
+      Return arrays of shape ``(frequency.size, fraction.shape[0])``.
 
     - `lifetime` and `fraction` are up to two-dimensional of same shape.
       The last dimensions hold lifetime components and their fractions.
@@ -391,9 +391,10 @@ def lifetime_to_signal(
         Must be in the range [0, 2 pi]. The default is the 8th sample.
     zero_stdev : float, optional
         Standard deviation of instrument response function in radians.
-        Must be at least 1.5 samples and at most one tenth of the number of
-        samples to allow sufficient sampling of the function.
-        The default is 1.5 samples. Increase `samples` to narrow the IRF.
+        When converted to sample units, must be at least 1.5 and less than
+        one tenth of the number of samples to allow sufficient sampling.
+        The default is equivalent to 1.5 samples. Increase `samples` to
+        narrow the IRF.
     preexponential : bool, optional, default: False
         Fractions are pre-exponential amplitudes instead of
         fractional intensities.
@@ -464,7 +465,7 @@ def lifetime_to_signal(
 
     if mean is None:
         mean = 1.0
-    mean = numpy.asarray(mean)
+    mean = numpy.asarray(mean, dtype=numpy.float64, copy=True)
     mean -= background
     if numpy.any(mean < 0.0):
         msg = 'mean - background must not be less than zero'
@@ -485,7 +486,7 @@ def lifetime_to_signal(
         msg = f'{zero_stdev=} < {1.5 / scale} cannot be sampled sufficiently'
         raise ValueError(msg)
     if stdev >= samples / 10:
-        msg = f'{zero_stdev=} > pi / 5 not supported'
+        msg = f'{zero_stdev=} >= pi / 5 not supported'
         raise ValueError(msg)
 
     frequencies = numpy.atleast_1d(frequency)
@@ -571,7 +572,7 @@ def phasor_calibrate(
     reference_real : array_like
         Real component of phasor coordinates from reference of known lifetime.
         Must be measured with the same instrument settings as the phasor
-        coordinates to be calibrated. Dimensions must be the same as `real`.
+        coordinates to be calibrated.
     reference_imag : array_like
         Imaginary component of phasor coordinates from reference of known
         lifetime.
@@ -627,10 +628,10 @@ def phasor_calibrate(
     Raises
     ------
     ValueError
-        The array shapes of `real` and `imag`, or `reference_real` and
+        If the array shapes of `real` and `imag`, or `reference_real` and
         `reference_imag` do not match.
-        Number of harmonics or frequencies does not match the first axis
-        of `real` and `imag`.
+        If the number of harmonics or frequencies does not match the first
+        axis of `real` and `imag`.
 
     See Also
     --------
@@ -982,9 +983,9 @@ def phasor_to_lifetime_search(
     Raises
     ------
     ValueError
-        The shapes of `real` and `imag` coordinates do not match.
-        The number of harmonics is less than the number of components.
-        The lifetime range is invalid.
+        If the array shapes of `real` and `imag` coordinates do not match.
+        If the number of harmonics is less than the number of components.
+        If the lifetime range is invalid.
 
     References
     ----------
@@ -1164,9 +1165,9 @@ def phasor_from_apparent_lifetime(
 
     Parameters
     ----------
-    phase_lifetime : ndarray
+    phase_lifetime : array_like
         Apparent single lifetime from phase.
-    modulation_lifetime : ndarray, optional
+    modulation_lifetime : array_like or None
         Apparent single lifetime from modulation.
         If None, same as `phase_lifetime`.
     frequency : array_like
@@ -1542,7 +1543,7 @@ def phasor_semicircle(
     Raises
     ------
     ValueError
-        The number of `samples` is smaller than 1.
+        If the number of `samples` is smaller than 1.
 
     Notes
     -----
@@ -1804,9 +1805,9 @@ def polar_from_apparent_lifetime(
 
     Parameters
     ----------
-    phase_lifetime : ndarray
+    phase_lifetime : array_like
         Apparent single lifetime from phase.
-    modulation_lifetime : ndarray, optional
+    modulation_lifetime : array_like or None
         Apparent single lifetime from modulation.
         If None, same as `phase_lifetime`.
     frequency : array_like

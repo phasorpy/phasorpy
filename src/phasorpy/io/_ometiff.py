@@ -99,6 +99,12 @@ def phasor_to_ometiff(
         :py:meth:`tifffile.TiffWriter.write`.
         For example, ``compression=None`` writes image data uncompressed.
 
+    Raises
+    ------
+    ValueError
+        If data types or shapes of input arrays are incompatible.
+        If `frequency` is not a scalar.
+
     See Also
     --------
     phasorpy.io.phasor_from_ometiff
@@ -144,8 +150,8 @@ def phasor_to_ometiff(
     if real.shape != imag.shape:
         msg = f'{real.shape=} != {imag.shape=}'
         raise ValueError(msg)
-    if mean.shape != real.shape[-mean.ndim :]:
-        msg = f'{mean.shape=} != {real.shape[-mean.ndim:]=}'
+    if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
+        msg = f'{mean.shape=} != {real.shape[-mean.ndim if mean.ndim else 1:]}'
         raise ValueError(msg)
     has_harmonic_dim = real.ndim == mean.ndim + 1
     nharmonic = 1 if real.ndim in {0, mean.ndim} else real.shape[0]
@@ -277,7 +283,7 @@ def phasor_from_ometiff(
         - ``'harmonic'`` (int or list of int):
           Harmonic(s) present in `real` and `imag`.
           If a scalar, `real` and `imag` are single harmonic and contain no
-          harmonic axes.
+          harmonic axis.
           If a list, `real` and `imag` contain one or more harmonics in the
           first axis.
         - ``'frequency'`` (float, optional):
@@ -288,11 +294,11 @@ def phasor_from_ometiff(
     Raises
     ------
     tifffile.TiffFileError
-        File is not a TIFF file.
+        If file is not a TIFF file.
     ValueError
-        File is not an OME-TIFF containing phasor coordinates.
+        If file is not an OME-TIFF containing phasor coordinates.
     IndexError
-        Harmonic is not found in file.
+        If `harmonic` is not found in file.
 
     See Also
     --------

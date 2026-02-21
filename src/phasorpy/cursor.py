@@ -76,8 +76,8 @@ def mask_from_circular_cursor(
     Raises
     ------
     ValueError
-        The array shapes of `real` and `imag` do not match.
-        The array shapes of `center_real`, `center_imag`, or `radius` have
+        If the array shapes of `real` and `imag` do not match.
+        If the array shapes of `center_real`, `center_imag`, or `radius` have
         more than one dimension.
 
     See Also
@@ -175,8 +175,8 @@ def mask_from_elliptic_cursor(
     Raises
     ------
     ValueError
-        The array shapes of `real` and `imag` do not match.
-        The array shapes of `center_real`, `center_imag`, `radius`,
+        If the array shapes of `real` and `imag` do not match.
+        If the array shapes of `center_real`, `center_imag`, `radius`,
         `radius_minor`, or `angle` have more than one dimension.
 
     See Also
@@ -317,9 +317,9 @@ def mask_from_polar_cursor(
     Raises
     ------
     ValueError
-        The array shapes of `phase` and `modulation`, or `phase_range` and
+        If the array shapes of `phase` and `modulation`, or `phase_range` and
         `modulation_range` do not match.
-        The array shapes of `phase_*` or `modulation_*` have more than
+        If the array shapes of `phase_*` or `modulation_*` have more than
         one dimension.
 
     See Also
@@ -423,9 +423,12 @@ def pseudo_color(
 
     Raises
     ------
+    TypeError
+        If no `masks` are provided.
     ValueError
-        `colors` is not a ``(n, 3)`` shaped floating point array.
-        The shapes of `masks` or `mean` cannot broadcast.
+        If `colors` is not a ``(n, 3)`` shaped floating point array.
+        If the array shapes of `masks` or `mean` cannot broadcast.
+        If the number of `masks` exceeds number of available `colors`.
 
     See Also
     --------
@@ -466,6 +469,10 @@ def pseudo_color(
         if colors.dtype.kind != 'f':
             msg = f'{colors.dtype=} is not a floating-point type'
             raise ValueError(msg)
+
+    if len(masks) > len(colors):
+        msg = f'{len(masks)=} > {len(colors)=}'
+        raise ValueError(msg)
     # TODO: add support for matplotlib colors
 
     shape = numpy.asarray(masks[0]).shape

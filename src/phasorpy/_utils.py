@@ -373,8 +373,8 @@ def parse_signal_axis(
     Raises
     ------
     ValueError
-        If axis string is not found in `signal.dims`.
-        If axis string is provided but `signal` has no `dims` attribute.
+        If `axis` string is not found in `signal.dims`.
+        If `axis` string is provided but `signal` has no `dims` attribute.
 
     Examples
     --------
@@ -445,7 +445,7 @@ def parse_skip_axis(
     Raises
     ------
     ValueError
-        If ndim is negative.
+        If `ndim` is negative.
     IndexError
         If any `skip_axis` value is out of bounds for `ndim`.
 
@@ -509,15 +509,15 @@ def parse_harmonic(
     Raises
     ------
     IndexError
-        Any element is out of range `[1, harmonic_max]`.
+        If any element is out of range `[1, harmonic_max]`.
     ValueError
-        Elements are not unique.
-        Harmonic is empty.
-        String input is not 'all'.
-        `harmonic_max` is smaller than 1.
+        If elements are not unique.
+        If `harmonic` is empty.
+        If string input is not 'all'.
+        If `harmonic_max` is smaller than 1.
     TypeError
-        Any element is not an integer.
-        `harmonic` is `'all'` and `harmonic_max` is None.
+        If any element is not an integer.
+        If `harmonic` is `'all'` and `harmonic_max` is None.
 
     """
     if harmonic_max is not None and harmonic_max < 1:

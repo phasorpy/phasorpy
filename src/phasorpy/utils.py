@@ -119,9 +119,9 @@ def versions(
     Examples
     --------
     >>> print(versions())  # doctest: +SKIP
-    Python-3.14.1
-    phasorpy-0.8
-    numpy-2.3.5
+    Python-3.14.3
+    phasorpy-0.9
+    numpy-2.4.2
     ...
 
     """
@@ -169,7 +169,7 @@ def versions(
         if verbose:
             try:
                 path = lib.__file__
-            except NameError:
+            except AttributeError:
                 pass
             else:
                 if path is not None:

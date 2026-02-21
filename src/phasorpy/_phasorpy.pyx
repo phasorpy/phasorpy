@@ -34,7 +34,6 @@ from libc.math cimport (
     isnan,
     sin,
     sqrt,
-    tan,
 )
 from libc.stdint cimport (
     int8_t,
@@ -433,19 +432,23 @@ def _gaussian_signal(
         ssize_t i
         double t, c
 
-    if stdev <= 0.0 or samples < 1:
+    if samples < 1:
         return
 
     with nogil:
-        c = 1.0 / sqrt(2.0 * M_PI) * stdev
+        if isnan(mean) or isnan(stdev) or stdev <= 0.0:
+            for i in range(samples):
+                signal[i] = <float_t> NAN
+        else:
+            c = 1.0 / (sqrt(2.0 * M_PI) * stdev)
 
-        for i in range(-folds * samples, (folds + 1) * samples):
-            t = (<double> i - mean) / stdev
-            t *= t
-            t = c * exp(-t / 2.0)
-            # i %= samples
-            i -= samples * <ssize_t> floor(<double> i / samples)
-            signal[i] += <float_t> t
+            for i in range(-folds * samples, (folds + 1) * samples):
+                t = (<double> i - mean) / stdev
+                t *= t
+                t = c * exp(-t / 2.0)
+                # i %= samples
+                i -= samples * <ssize_t> floor(<double> i / samples)
+                signal[i] += <float_t> t
 
 
 ###############################################################################
@@ -471,6 +474,9 @@ cdef (double, double) _phasor_from_fret_donor(
         double real, imag
         double quenched_real, quenched_imag  # quenched donor
         double f_pure, f_quenched, sum
+
+    if omega < 0.0 or donor_lifetime < 0.0:
+        return NAN, NAN
 
     if fret_efficiency < 0.0:
         fret_efficiency = 0.0
@@ -541,6 +547,9 @@ cdef (double, double) _phasor_from_fret_acceptor(
         double quenched_real, quenched_imag  # quenched donor
         double sensitized_real, sensitized_imag  # sensitized acceptor
         double sum, f_donor, f_acceptor
+
+    if omega < 0.0 or donor_lifetime < 0.0 or acceptor_lifetime < 0.0:
+        return NAN, NAN
 
     if fret_efficiency < 0.0:
         fret_efficiency = 0.0
@@ -657,9 +666,14 @@ cdef inline (double, double) phasor_from_single_lifetime(
 ) noexcept nogil:
     """Return phasor coordinates from single lifetime component."""
     cdef:
-        double t = omega * lifetime
-        double mod = 1.0 / sqrt(1.0 + t * t)
-        double phi = atan(t)
+        double t, mod, phi
+
+    if isnan(lifetime) or isnan(omega) or lifetime < 0.0 or omega < 0.0:
+        return NAN, NAN
+
+    t = omega * lifetime
+    mod = 1.0 / sqrt(1.0 + t * t)
+    phi = atan(t)
 
     return mod * cos(phi), mod * sin(phi)
 
@@ -749,8 +763,13 @@ cdef (float_t, float_t) _phasor_to_apparent_lifetime(
 
     t = real * real + imag * imag
     if omega > 0.0 and t > 0.0:
-        if fabs(real * omega) > 0.0:
+        if fabs(real) > 0.0:
             tauphi = imag / (real * omega)
+        else:
+            # real is 0, phase is pi/2, tauphi approaches infinity
+            # but imag/0 is undefined, use limit:
+            # tauphi = INFINITY if imag > 0
+            tauphi = copysign(INFINITY, imag) if imag != 0.0 else 0.0
         if t <= 1.0:
             taumod = sqrt(1.0 / t - 1.0) / omega
         else:
@@ -769,7 +788,7 @@ cdef (float_t, float_t) _phasor_from_apparent_lifetime(
     cdef:
         double phi, mod, t
 
-    if isnan(tauphi) or isnan(taumod):
+    if isnan(tauphi) or isnan(taumod) or taumod < 0.0 or omega < 0.0:
         return <float_t> NAN, <float_t> NAN
 
     t = omega * taumod
@@ -814,7 +833,7 @@ cdef (float_t, float_t) _phasor_from_single_lifetime(
     cdef:
         double phi, mod, t
 
-    if isnan(lifetime):
+    if isnan(lifetime) or lifetime < 0.0 or omega < 0.0:
         return <float_t> NAN, <float_t> NAN
 
     t = omega * lifetime
@@ -832,7 +851,7 @@ cdef (float_t, float_t) _polar_from_single_lifetime(
     cdef:
         double t
 
-    if isnan(lifetime):
+    if isnan(lifetime) or lifetime < 0.0 or omega < 0.0:
         return <float_t> NAN, <float_t> NAN
 
     t = omega * lifetime
@@ -849,14 +868,20 @@ cdef (float_t, float_t) _polar_to_apparent_lifetime(
     cdef:
         double tauphi = INFINITY
         double taumod = INFINITY
-        double t
+        double t, cos_phase
 
     if isnan(phase) or isnan(modulation):
         return <float_t> NAN, <float_t> NAN
 
     t = modulation * modulation
     if omega > 0.0 and t > 0.0:
-        tauphi = tan(phase) / omega
+        # use sin/cos ratio instead of tan to handle phase near pi/2
+        cos_phase = cos(phase)
+        if fabs(cos_phase) > 1e-15:
+            tauphi = sin(phase) / (cos_phase * omega)
+        else:
+            # phase is near pi/2 or -pi/2, tauphi approaches +/- infinity
+            tauphi = copysign(INFINITY, sin(phase))
         if t <= 1.0:
             taumod = sqrt(1.0 / t - 1.0) / omega
         else:
@@ -874,7 +899,8 @@ cdef (float_t, float_t) _polar_from_apparent_lifetime(
     cdef:
         double t
 
-    if isnan(tauphi) or isnan(taumod):
+    if isnan(tauphi) or isnan(taumod) or taumod < 0.0 or omega < 0.0:
+        # taumod < 0 is ambiguous while tauphi < 0 is not
         return <float_t> NAN, <float_t> NAN
 
     t = omega * taumod
@@ -953,7 +979,10 @@ cdef (float_t, float_t) _phasor_at_harmonic(
     int other_harmonic,
 ) noexcept nogil:
     """Return phasor coordinates on universal semicircle at other harmonic."""
-    if isnan(real):
+    cdef:
+        double h2, oh2
+
+    if isnan(real) or harmonic <= 0 or other_harmonic <= 0:
         return <float_t> NAN, <float_t> NAN
 
     if real <= 0.0:
@@ -961,11 +990,10 @@ cdef (float_t, float_t) _phasor_at_harmonic(
     if real >= 1.0:
         return 1.0, 0.0
 
-    harmonic *= harmonic
-    other_harmonic *= other_harmonic
-    real = (
-        harmonic * real / (other_harmonic + (harmonic - other_harmonic) * real)
-    )
+    # use double to avoid integer overflow when squaring
+    h2 = <double> harmonic * <double> harmonic
+    oh2 = <double> other_harmonic * <double> other_harmonic
+    real = <float_t> (h2 * real / (oh2 + (h2 - oh2) * real))
 
     return real, <float_t> sqrt(real - real * real)
 
@@ -978,6 +1006,9 @@ cdef (float_t, float_t) _phasor_multiply(
     float_t imag2,
 ) noexcept nogil:
     """Return complex multiplication of two phasors."""
+    if isnan(real) or isnan(imag) or isnan(real2) or isnan(imag2):
+        return <float_t> NAN, <float_t> NAN
+
     return (
         real * real2 - imag * imag2,
         real * imag2 + imag * real2
@@ -993,20 +1024,21 @@ cdef (float_t, float_t) _phasor_divide(
 ) noexcept nogil:
     """Return complex division of two phasors."""
     cdef:
-        float_t divisor = real2 * real2 + imag2 * imag2
+        float_t divisor, num_real, num_imag
+
+    if isnan(real) or isnan(imag) or isnan(real2) or isnan(imag2):
+        return <float_t> NAN, <float_t> NAN
+
+    divisor = real2 * real2 + imag2 * imag2
+    num_real = real * real2 + imag * imag2
+    num_imag = imag * real2 - real * imag2
 
     if divisor != 0.0:
-        # this includes the isnan(divisor) case
-        return (
-            (real * real2 + imag * imag2) / divisor,
-            (imag * real2 - real * imag2) / divisor
-        )
+        return num_real / divisor, num_imag / divisor
 
-    real = real * real2 + imag * imag2
-    imag = imag * real2 - real * imag2
     return (
-        NAN if real == 0.0 else real * INFINITY,
-        NAN if imag == 0.0 else imag * INFINITY
+        NAN if num_real == 0.0 else num_real * INFINITY,
+        NAN if num_imag == 0.0 else num_imag * INFINITY
     )
 
 
@@ -1023,15 +1055,17 @@ cdef (float_t, float_t, float_t) _phasor_combine(
 ) noexcept nogil:
     """Return linear combination of two phasor coordinates."""
     cdef:
-        float_t intensity
+        float_t intensity, sum_frac
 
-    fraction1 += fraction0
-    if fraction1 == 0.0:
+    if isnan(int0) or isnan(int1) or isnan(fraction0) or isnan(fraction1):
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN
+
+    sum_frac = fraction0 + fraction1
+    if sum_frac == 0.0:
         return <float_t> 0.0, <float_t> NAN, <float_t> NAN
-    fraction0 /= fraction1
 
-    int0 *= fraction0
-    int1 *= <float_t> 1.0 - fraction0
+    int0 *= fraction0 / sum_frac
+    int1 *= fraction1 / sum_frac
     intensity = int0 + int1
 
     if intensity == 0.0:
@@ -1194,8 +1228,9 @@ cdef unsigned char _is_inside_ellipse(
         return x * x + y * y <= a * a
     sina = <float_t> sin(phi)
     cosa = <float_t> cos(phi)
+    # rotate point by -phi to align ellipse with axes
     x0 = (cosa * x + sina * y) / a
-    y0 = (sina * x - cosa * y) / b
+    y0 = (cosa * y - sina * x) / b
     return x0 * x0 + y0 * y0 <= 1.0
 
 
@@ -1223,8 +1258,9 @@ cdef unsigned char _is_inside_ellipse_(
     if a == b:
         # circle
         return x * x + y * y <= a * a
+    # rotate point by -phi to align ellipse with axes
     x0 = (cosa * x + sina * y) / a
-    y0 = (sina * x - cosa * y) / b
+    y0 = (cosa * y - sina * x) / b
     return x0 * x0 + y0 * y0 <= 1.0
 
 
@@ -1360,31 +1396,34 @@ cdef (float_t, float_t) _point_on_segment(
     """Return point projected onto line segment."""
     cdef:
         float_t t
+        float_t dx, dy
 
-    if isnan(x) or isnan(y):
+    if (
+        isnan(x)
+        or isnan(y)
+        or isnan(x0)
+        or isnan(y0)
+        or isnan(x1)
+        or isnan(y1)
+    ):
         return <float_t> NAN, <float_t> NAN
 
-    # normalize coordinates
-    # x1 = 0
-    # y1 = 0
-    x0 -= x1
-    y0 -= y1
-    x -= x1
-    y -= y1
+    # direction vector from x1,y1 to x0,y0
+    dx = x0 - x1
+    dy = y0 - y1
     # square of line length
-    t = x0 * x0 + y0 * y0
+    t = dx * dx + dy * dy
     if t <= 0.0:
-        return x0, y0
+        # degenerate segment (point), return the endpoint
+        return x1, y1
     # projection of point on line
-    t = (x * x0 + y * y0) / t
+    t = ((x - x1) * dx + (y - y1) * dy) / t
     # clamp to line segment
     if t < 0.0:
         t = 0.0
     elif t > 1.0:
         t = 1.0
-    x1 += t * x0
-    y1 += t * y0
-    return x1, y1
+    return x1 + t * dx, y1 + t * dy
 
 
 @cython.ufunc
@@ -1399,26 +1438,29 @@ cdef (float_t, float_t) _point_on_line(
     """Return point projected onto line."""
     cdef:
         float_t t
+        float_t dx, dy
 
-    if isnan(x) or isnan(y):
+    if (
+        isnan(x)
+        or isnan(y)
+        or isnan(x0)
+        or isnan(y0)
+        or isnan(x1)
+        or isnan(y1)
+    ):
         return <float_t> NAN, <float_t> NAN
 
-    # normalize coordinates
-    # x1 = 0
-    # y1 = 0
-    x0 -= x1
-    y0 -= y1
-    x -= x1
-    y -= y1
+    # direction vector
+    dx = x0 - x1
+    dy = y0 - y1
     # square of line length
-    t = x0 * x0 + y0 * y0
+    t = dx * dx + dy * dy
     if t <= 0.0:
-        return x0, y0
+        # degenerate line (point), return the endpoint
+        return x1, y1
     # projection of point on line
-    t = (x * x0 + y * y0) / t
-    x1 += t * x0
-    y1 += t * y0
-    return x1, y1
+    t = ((x - x1) * dx + (y - y1) * dy) / t
+    return x1 + t * dx, y1 + t * dy
 
 
 @cython.ufunc
@@ -1434,7 +1476,14 @@ cdef float_t _fraction_on_segment(
     cdef:
         float_t t
 
-    if isnan(x) or isnan(y):
+    if (
+        isnan(x)
+        or isnan(y)
+        or isnan(x0)
+        or isnan(y0)
+        or isnan(x1)
+        or isnan(y1)
+    ):
         return <float_t> NAN
 
     # normalize coordinates
@@ -1447,7 +1496,7 @@ cdef float_t _fraction_on_segment(
     # square of line length
     t = x0 * x0 + y0 * y0
     if t <= 0.0:
-        # not a line segment
+        # not a line segment, return start
         return 0.0
     # projection of point on line
     t = (x * x0 + y * y0) / t
@@ -1472,7 +1521,14 @@ cdef float_t _fraction_on_line(
     cdef:
         float_t t
 
-    if isnan(x) or isnan(y):
+    if (
+        isnan(x)
+        or isnan(y)
+        or isnan(x0)
+        or isnan(y0)
+        or isnan(x1)
+        or isnan(y1)
+    ):
         return <float_t> NAN
 
     # normalize coordinates
@@ -1485,7 +1541,7 @@ cdef float_t _fraction_on_line(
     # square of line length
     t = x0 * x0 + y0 * y0
     if t <= 0.0:
-        # not a line segment
+        # not a line, return end
         return 1.0
     # projection of point on line
     t = (x * x0 + y * y0) / t
@@ -1500,7 +1556,7 @@ cdef float_t _distance_from_point(
     float_t y0,
 ) noexcept nogil:
     """Return distance from point."""
-    if isnan(x) or isnan(y):  # or isnan(x0) or isnan(y0)
+    if isnan(x) or isnan(y) or isnan(x0) or isnan(y0):
         return <float_t> NAN
 
     return <float_t> hypot(x - x0, y - y0)
@@ -1519,7 +1575,14 @@ cdef float_t _distance_from_segment(
     cdef:
         float_t t
 
-    if isnan(x) or isnan(y):
+    if (
+        isnan(x)
+        or isnan(y)
+        or isnan(x0)
+        or isnan(y0)
+        or isnan(x1)
+        or isnan(y1)
+    ):
         return <float_t> NAN
 
     # normalize coordinates
@@ -1557,7 +1620,14 @@ cdef float_t _distance_from_line(
     cdef:
         float_t t
 
-    if isnan(x) or isnan(y):
+    if (
+        isnan(x)
+        or isnan(y)
+        or isnan(x0)
+        or isnan(y0)
+        or isnan(x1)
+        or isnan(y1)
+    ):
         return <float_t> NAN
 
     # normalize coordinates
@@ -1585,7 +1655,7 @@ cdef float_t _distance_from_semicircle(
 ) noexcept nogil:
     """Return distance from universal semicircle."""
     if isnan(x) or isnan(y):
-        return NAN
+        return <float_t> NAN
     if y < 0.0:
         # distance to endpoints
         if x > 0.5:
@@ -1606,13 +1676,14 @@ cdef (float_t, float_t, float_t) _segment_direction_and_length(
         float_t length
 
     if isnan(x0) or isnan(y0) or isnan(x1) or isnan(y1):
-        return NAN, NAN, 0.0
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN
 
     x1 -= x0
     y1 -= y0
     length = <float_t> hypot(x1, y1)
     if length <= 0.0:
-        return NAN, NAN, 0.0
+        # direction is undefined for zero-length segment
+        return <float_t> NAN, <float_t> NAN, 0.0
     x1 /= length
     y1 /= length
     return x1, y1, length
@@ -1638,22 +1709,22 @@ cdef (float_t, float_t, float_t, float_t) _intersect_circle_circle(
         or isnan(x1)
         or isnan(y1)
         or isnan(r1)
-        or r0 == 0.0
-        or r1 == 0.0
+        or r0 <= 0.0
+        or r1 <= 0.0
     ):
-        return NAN, NAN, NAN, NAN
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN, <float_t> NAN
 
     dx = x1 - x0
     dy = y1 - y0
     dr = hypot(dx, dy)
     if dr <= 0.0:
         # circle positions identical
-        return NAN, NAN, NAN, NAN
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN, <float_t> NAN
     ll = (r0 * r0 - r1 * r1 + dr * dr) / (dr + dr)
     dd = r0 * r0 - ll * ll
     if dd < 0.0 or dr <= 0.0:
         # circles not intersecting
-        return NAN, NAN, NAN, NAN
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN, <float_t> NAN
     hd = sqrt(dd) / dr
     ld = ll / dr
     return (
@@ -1686,9 +1757,9 @@ cdef (float_t, float_t, float_t, float_t) _intersect_circle_line(
         or isnan(y0)
         or isnan(x1)
         or isnan(y1)
-        or r == 0.0
+        or r <= 0.0
     ):
-        return NAN, NAN, NAN, NAN
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN, <float_t> NAN
 
     dx = x1 - x0
     dy = y1 - y0
@@ -1697,7 +1768,7 @@ cdef (float_t, float_t, float_t, float_t) _intersect_circle_line(
     rdd = r * r * dr - dd * dd  # discriminant
     if rdd < 0.0 or dr <= 0.0:
         # no intersection
-        return NAN, NAN, NAN, NAN
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN, <float_t> NAN
     rdd = sqrt(rdd)
     return (
         x + <float_t> ((dd * dy + copysign(1.0, dy) * dx * rdd) / dr),
@@ -1719,7 +1790,7 @@ cdef (float_t, float_t, float_t, float_t) _intersect_semicircle_line(
         double dx, dy, dr, dd, rdd
 
     if isnan(x0) or isnan(x1) or isnan(y0) or isnan(y1):
-        return NAN, NAN, NAN, NAN
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN, <float_t> NAN
 
     dx = x1 - x0
     dy = y1 - y0
@@ -1728,7 +1799,7 @@ cdef (float_t, float_t, float_t, float_t) _intersect_semicircle_line(
     rdd = 0.25 * dr - dd * dd  # discriminant
     if rdd < 0.0 or dr <= 0.0:
         # no intersection
-        return NAN, NAN, NAN, NAN
+        return <float_t> NAN, <float_t> NAN, <float_t> NAN, <float_t> NAN
     rdd = sqrt(rdd)
     x0 = <float_t> ((dd * dy - copysign(1.0, dy) * dx * rdd) / dr + 0.5)
     y0 = <float_t> ((-dd * dx - fabs(dy) * rdd) / dr)
@@ -1817,6 +1888,8 @@ def _lifetime_search_2(
             for i in range(candidate.shape[0]):
                 # scan first component
                 g0h1 = candidate[i]
+                if g0h1 < 0.0 or g0h1 > 1.0:
+                    continue
                 s0h1 = sqrt(g0h1 - g0h1 * g0h1)
 
                 # second component is intersection of semicircle with line
@@ -1853,8 +1926,12 @@ def _lifetime_search_2(
 
                 # second harmonic component coordinates on semicircle
                 g0h2 = g0h1 / (4.0 - 3.0 * g0h1)
+                if g0h2 < 0.0 or g0h2 > 1.0:
+                    continue
                 s0h2 = sqrt(g0h2 - g0h2 * g0h2)
                 g1h2 = g1h1 / (4.0 - 3.0 * g1h1)
+                if g1h2 < 0.0 or g1h2 > 1.0:
+                    continue
                 s1h2 = sqrt(g1h2 - g1h2 * g1h2)
 
                 # distance of phasor coordinates to line between
@@ -1922,7 +1999,12 @@ def _nearest_neighbor_2d(
     cdef:
         ssize_t i, j, index
         float_t x, y, dmin
-        float_t distance_max_squared = distance_max * distance_max
+        float_t distance_max_squared
+
+    if distance_max < 0.0:
+        raise ValueError(f'{distance_max=} < 0')
+
+    distance_max_squared = distance_max * distance_max
 
     if (
         indices.shape[0] != x0.shape[0]
@@ -1941,6 +2023,9 @@ def _nearest_neighbor_2d(
             index = -1
             dmin = INFINITY
             for j in range(x1.shape[0]):
+                # skip NaN values in reference array
+                if isnan(x1[j]) or isnan(y1[j]):
+                    continue
                 x = x0[i] - x1[j]
                 y = y0[i] - y1[j]
                 x = x * x + y * y
@@ -2075,7 +2160,7 @@ cdef float_t _blend_and(
 ) noexcept nogil:
     """Return blended layers using `and` mode."""
     if isnan(a):
-        return NAN
+        return <float_t> NAN
     return b
 
 
@@ -2335,7 +2420,7 @@ cdef (float_t, float_t, float_t) _phasor_threshold_nan(
 @cython.ufunc
 cdef float_t _anscombe(float_t x) noexcept nogil:
     """Return anscombe variance stabilizing transformation."""
-    if isnan(x):
+    if isnan(x) or x < 0.0:
         return <float_t> NAN
 
     return <float_t> (2.0 * sqrt(<double> x + 0.375))
@@ -2357,7 +2442,7 @@ cdef float_t _anscombe_inverse_approx(float_t x) noexcept nogil:
     Using approximation of exact unbiased inverse.
 
     """
-    if isnan(x):
+    if isnan(x) or x <= 0.0:
         return <float_t> NAN
 
     return <float_t> (
@@ -2470,8 +2555,13 @@ def _signal_denoise_vector(
         ssize_t i, j, m
         float_t n
         double weight, sum, t
-        double sigma2 = -1.0 / (2.0 * sigma * sigma)
-        double threshold = 9.0 * sigma * sigma
+        double sigma2, threshold
+
+    if sigma <= 0.0:
+        raise ValueError(f'{sigma=} <= 0')
+
+    sigma2 = -1.0 / (2.0 * sigma * sigma)
+    threshold = 9.0 * sigma * sigma
 
     if denoised.shape[0] != size or denoised.shape[1] != samples:
         raise ValueError('signal and denoised shape mismatch')
@@ -2534,13 +2624,15 @@ def _signal_denoise_vector(
                     denoised[i, m] += <float_t> (weight * signal[j, m])
 
             # renormalize to original intensity
-            # sum cannot be zero because integrated == 0 was filtered
             sum = 0.0
             for m in range(samples):
                 sum = sum + denoised[i, m]
-            n = <float_t> (<double> integrated[i] / sum)
-            for m in range(samples):
-                denoised[i, m] *= n
+            # sum could be zero if all weighted signals canceled out
+            if sum > 0.0:
+                n = <float_t> (<double> integrated[i] / sum)
+                for m in range(samples):
+                    denoised[i, m] *= n
+            # else: leave denoised as-is (already normalized by n earlier)
 
 
 ###############################################################################
@@ -2557,7 +2649,12 @@ cdef float_t _median(
         ssize_t left = 0
         ssize_t right = size - 1
         ssize_t middle = size // 2
-        float_t pivot_value, temp
+        float_t pivot_value, temp, next_min
+
+    if size <= 0:
+        return <float_t> NAN
+    if size == 1:
+        return values[0]
 
     if size % 2 == 0:
         middle -= 1  # Quickselect sorts on right
@@ -2581,7 +2678,15 @@ cdef float_t _median(
 
         if pivot_index_new == middle:
             if size % 2 == 0:
-                return (values[middle] + values[middle + 1]) / <float_t> 2.0
+                # for even size, need to find min of elements after middle
+                # Quickselect guarantees elements
+                # [middle+1:] are >= values[middle]
+                # but does not guarantee their order, so find minimum
+                next_min = values[middle + 1]
+                for i in range(middle + 2, size):
+                    if values[i] < next_min:
+                        next_min = values[i]
+                return (values[middle] + next_min) / <float_t> 2.0
             return values[middle]
         if pivot_index_new < middle:
             left = pivot_index_new + 1
@@ -2609,6 +2714,8 @@ def _median_filter_2d(
 
     if kernel_size <= 0:
         raise ValueError(f'{kernel_size=} <= 0')
+    if repeat < 0:
+        raise ValueError(f'{repeat=} < 0')
 
     with nogil, parallel(num_threads=num_threads):
 
@@ -2642,7 +2749,10 @@ def _median_filter_2d(
                             if not isnan(element):
                                 kernel[valid_count] = element
                                 valid_count = valid_count + 1
-                    filtered_image[i, j] = _median(kernel, valid_count)
+                    if valid_count > 0:
+                        filtered_image[i, j] = _median(kernel, valid_count)
+                    else:
+                        filtered_image[i, j] = <float_t> NAN
 
             for i in prange(rows):
                 for j in range(cols):

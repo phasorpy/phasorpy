@@ -130,7 +130,7 @@ class PhasorPlot:
         if grid is None:
             grid_kwargs = {}
             grid = True
-        if isinstance(grid, dict):
+        elif isinstance(grid, dict):
             grid_kwargs = grid
             grid = True
         else:
@@ -207,6 +207,8 @@ class PhasorPlot:
         assert fig is not None
         length = fig.bbox_inches.height * self._ax.get_position().height * 72.0
         vrange: float = numpy.diff(self._ax.get_ylim()).item()
+        if vrange == 0.0:
+            return 0.0
         return length / vrange
 
     def show(self) -> None:
@@ -385,7 +387,7 @@ class PhasorPlot:
         /,
         **kwargs: Any,
     ) -> None:
-        """Plot contours of imag versus real coordinates (not implemented yet).
+        """Plot contours of imag versus real coordinates.
 
         Parameters
         ----------
@@ -711,7 +713,7 @@ class PhasorPlot:
             If `'phase'`, align the minor axis of the ellipse with the closest
             tangent on the unit circle.
             If `'semicircle'`, align the ellipse with the universal semicircle.
-            The default is `'phase'`
+            The default is `'phase'`.
         color : array_like, optional
             Color of cursor.
         label : array_like, optional
@@ -811,7 +813,7 @@ class PhasorPlot:
             Draw polar or Cartesian lines or arcs limited by radius
             instead of circle or ellipse.
             Only applies if `radius` is provided.
-        polar : bool, optional, default: False
+        polar : bool, optional, default: True
             Draw phase line and modulation arc instead of Cartesian lines.
         **kwargs
             Additional parameters passed to
@@ -1124,7 +1126,7 @@ class PhasorPlot:
         Raises
         ------
         ValueError
-            If number of ticks doesn't match number of labels.
+            If the number of ticks does not match number of labels.
             If `tick_space` has less than two values.
 
         Notes
@@ -1225,9 +1227,13 @@ class PhasorPlot:
             if tick_space.ndim != 1 or tick_space.size < 2:
                 msg = f'{tick_space.ndim=} != 1 or {tick_space.size=} < 2'
                 raise ValueError(msg)
+            divisor = tick_space[-1] + tick_space[1] - 2 * tick_space[0]
+            if divisor == 0.0:
+                msg = 'tick_space values result in zero divisor'
+                raise ValueError(msg)
             assert isinstance(ticks, numpy.ndarray)  # for mypy
             ticks -= tick_space[0]
-            ticks /= tick_space[-1] + tick_space[1] - 2 * tick_space[0]
+            ticks /= divisor
             ticks *= 2 * math.pi
 
         real = numpy.cos(ticks)

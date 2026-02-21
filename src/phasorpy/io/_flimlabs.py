@@ -82,9 +82,9 @@ def phasor_from_flimlabs_json(
     Raises
     ------
     ValueError
-        File is not a FLIM LABS JSON file containing phasor coordinates.
+        If file is not a FLIM LABS JSON file containing phasor coordinates.
     IndexError
-        Harmonic or channel not found in file.
+        If `harmonic` or `channel` is not found in file.
 
     See Also
     --------
@@ -129,6 +129,10 @@ def phasor_from_flimlabs_json(
     header = data['header']
     phasor_data = data['phasors_data']
 
+    if not phasor_data:
+        msg = f'{filename!r} contains no phasor data'
+        raise ValueError(msg)
+
     harmonics = []
     channels = []  # 1-based
     for d in phasor_data:
@@ -143,7 +147,7 @@ def phasor_from_flimlabs_json(
 
     if channel is not None:
         if channel + 1 not in channels:
-            msg = f'{channel=}'
+            msg = f'{channel=} not found in file'
             raise IndexError(msg)
         channel += 1  # 1-based index
 
@@ -153,7 +157,7 @@ def phasor_from_flimlabs_json(
     else:
         harmonic, keep_harmonic_axis = parse_harmonic(harmonic, harmonics[-1])
     if any(h not in harmonics for h in harmonic):
-        msg = f'{harmonic=!r} not in {harmonics!r}'
+        msg = f'{harmonic=!r} not found in {harmonics!r}'
         raise IndexError(msg)
     harmonic_index = {h: i for i, h in enumerate(harmonic)}
 
@@ -210,11 +214,14 @@ def phasor_from_flimlabs_json(
         real = real[0]
         imag = imag[0]
 
+    laser_period_ns = header['laser_period_ns']
+    frequency = 1000.0 / laser_period_ns if laser_period_ns > 0 else 0.0
+
     attrs = {
         'dims': tuple(axes),
         'samples': 256,
         'harmonic': harmonic if keep_harmonic_axis else harmonic[0],
-        'frequency': 1000.0 / header['laser_period_ns'],
+        'frequency': frequency,
         'flimlabs_header': header,
     }
 
@@ -324,9 +331,13 @@ def signal_from_flimlabs_json(
 
     header = data['header']
     nchannels = len([c for c in header['channels'] if c])
+    if nchannels == 0:
+        msg = f'{filename!r} contains no channels'
+        raise ValueError(msg)
     height = header['image_height']
     width = header['image_width']
-    frequency = 1000.0 / header['laser_period_ns']
+    laser_period_ns = header['laser_period_ns']
+    frequency = 1000.0 / laser_period_ns if laser_period_ns > 0 else 0.0
 
     if channel is not None:
         if channel >= nchannels or channel < 0:

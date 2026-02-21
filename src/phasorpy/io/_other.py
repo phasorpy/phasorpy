@@ -66,7 +66,7 @@ def signal_from_sdt(
     Raises
     ------
     ValueError
-        File is not an SDT file containing TCSPC histogram.
+        If file is not an SDT file containing TCSPC histogram.
 
     Notes
     -----
@@ -111,6 +111,7 @@ def signal_from_sdt(
     metadata = xarray_metadata(
         'QCYXH'[-data.ndim :], data.shape, filename, H=times
     )
+    assert times[0] == 0.0
     metadata['attrs']['frequency'] = 1e3 / float(times[-1] + times[1])
 
     from xarray import DataArray
@@ -191,9 +192,9 @@ def signal_from_ptu(
     Raises
     ------
     ptufile.PqFileError
-        File is not a PicoQuant PTU file or is corrupted.
+        If file is not a PicoQuant PTU file or is corrupted.
     ValueError
-        File is not a PicoQuant PTU T3 mode file containing TCSPC data.
+        If file is not a PicoQuant PTU T3 mode file containing TCSPC data.
 
     Notes
     -----
@@ -283,9 +284,8 @@ def signal_from_lsm(
     Returns
     -------
     xarray.DataArray
-        Hyperspectral image data.
-        Usually, a 3-to-5-dimensional array of type `uint8` or `uint16`,
-        and selected metadata:
+        Hyperspectral image with :ref:`axes codes <axes>` and
+        type `uint8` or `uint16`, and selected metadata:
 
         - ``coords['C']``: wavelengths in nm.
         - ``coords['T']``: time coordinates in s, if any.
@@ -293,9 +293,9 @@ def signal_from_lsm(
     Raises
     ------
     tifffile.TiffFileError
-        File is not a TIFF file.
+        If file is not a TIFF file.
     ValueError
-        File is not an LSM file or does not contain hyperspectral image.
+        If file is not an LSM file or does not contain hyperspectral image.
 
     Notes
     -----
@@ -399,9 +399,9 @@ def signal_from_imspector_tiff(
     Raises
     ------
     tifffile.TiffFileError
-        File is not a TIFF file.
+        If file is not a TIFF file.
     ValueError
-        File is not an ImSpector FLIM TIFF file.
+        If file is not an ImSpector FLIM TIFF file.
 
     Notes
     -----
@@ -595,9 +595,9 @@ def phasor_from_ifli(
     Raises
     ------
     lfdfiles.LfdFileError
-        File is not an ISS IFLI file.
+        If file is not an ISS IFLI file.
     IndexError
-        Harmonic is not found in file.
+        If channel or harmonic is not found in file.
 
     Notes
     -----
@@ -735,7 +735,7 @@ def signal_from_flif(
     Raises
     ------
     lfdfiles.LfdFileError
-        File is not a FlimFast FLIF file.
+        If file is not a FlimFast FLIF file.
 
     Notes
     -----
@@ -816,7 +816,7 @@ def signal_from_pqbin(
     Raises
     ------
     ValueError
-        File is not a PicoQuant BIN file.
+        If file is not a PicoQuant BIN file.
 
     Examples
     --------
@@ -841,7 +841,7 @@ def signal_from_pqbin(
         if len(header) != 20:
             msg = f'{filename!r} does not contain valid PicoQuant BIN header'
             raise ValueError(msg)
-        (size_x, size_y, pixel_resolution, size_h, tcspc_resolution) = (
+        size_x, size_y, pixel_resolution, size_h, tcspc_resolution = (
             struct.unpack('<IIfIf', header)
         )
         size = size_y * size_x * size_h * 4
