@@ -226,6 +226,38 @@ def test_phasor_from_component():
         phasor_from_component(
             known_real[:2], known_imag[:2], fraction, axis=-1
         )
+    # NaN in component_real
+    with pytest.raises(ValueError):
+        phasor_from_component(
+            [nan, known_real[1], known_real[2]],
+            known_imag[:3],
+            fraction,
+            axis=-1,
+        )
+    # NaN in component_imag
+    with pytest.raises(ValueError):
+        phasor_from_component(
+            known_real[:3],
+            [nan, known_imag[1], known_imag[2]],
+            fraction,
+            axis=-1,
+        )
+    # Inf in component_real
+    with pytest.raises(ValueError):
+        phasor_from_component(
+            [numpy.inf, known_real[1], known_real[2]],
+            known_imag[:3],
+            fraction,
+            axis=-1,
+        )
+    # Inf in component_imag
+    with pytest.raises(ValueError):
+        phasor_from_component(
+            known_real[:3],
+            [numpy.inf, known_imag[1], known_imag[2]],
+            fraction,
+            axis=-1,
+        )
 
 
 def test_phasor_component_fraction():
@@ -271,6 +303,18 @@ def test_phasor_component_fraction():
         phasor_component_fraction([0], [0], [0.1], [0.3])
     with pytest.raises(ValueError):
         phasor_component_fraction([0], [0], [0.1, 0.1, 0, 1], [0.1, 0, 2])
+    # NaN in component_real
+    with pytest.raises(ValueError):
+        phasor_component_fraction([0.5], [0.3], [nan, 0.9], [0.4, 0.3])
+    # NaN in component_imag
+    with pytest.raises(ValueError):
+        phasor_component_fraction([0.5], [0.3], [0.2, 0.9], [nan, 0.3])
+    # Inf in component_real
+    with pytest.raises(ValueError):
+        phasor_component_fraction([0.5], [0.3], [numpy.inf, 0.9], [0.4, 0.3])
+    # Inf in component_imag
+    with pytest.raises(ValueError):
+        phasor_component_fraction([0.5], [0.3], [0.2, 0.9], [numpy.inf, 0.3])
 
 
 @pytest.mark.xfail
@@ -465,6 +509,8 @@ def test_phasor_component_graphical(
         ([0, 0], [0, 0], [0, 1], [0, 1], [0.5, -0.5]),
         # fraction not 1D
         ([0, 0], [0, 0], [0, 1], [0, 1], [[0.5], [-0.5]]),
+        # fraction > 1
+        ([0, 0], [0, 0], [0, 1], [0, 1], [0.5, 1.5]),
     ],
 )
 def test_errors_phasor_component_graphical(
@@ -474,6 +520,40 @@ def test_errors_phasor_component_graphical(
     with pytest.raises(ValueError):
         phasor_component_graphical(
             real, imag, component_real, component_imag, fractions=fractions
+        )
+
+
+def test_errors_phasor_component_graphical_radius_and_components():
+    """Test radius and component errors in phasor_component_graphical."""
+    # radius = 0
+    with pytest.raises(ValueError):
+        phasor_component_graphical(
+            [0.5], [0.3], [0.2, 0.9], [0.4, 0.3], radius=0.0, fractions=6
+        )
+    # negative radius
+    with pytest.raises(ValueError):
+        phasor_component_graphical(
+            [0.5], [0.3], [0.2, 0.9], [0.4, 0.3], radius=-0.05, fractions=6
+        )
+    # NaN in component_real
+    with pytest.raises(ValueError):
+        phasor_component_graphical(
+            [0.5], [0.3], [nan, 0.9], [0.4, 0.3], fractions=6
+        )
+    # NaN in component_imag
+    with pytest.raises(ValueError):
+        phasor_component_graphical(
+            [0.5], [0.3], [0.2, 0.9], [nan, 0.3], fractions=6
+        )
+    # Inf in component_real
+    with pytest.raises(ValueError):
+        phasor_component_graphical(
+            [0.5], [0.3], [numpy.inf, 0.9], [0.4, 0.3], fractions=6
+        )
+    # Inf in component_imag
+    with pytest.raises(ValueError):
+        phasor_component_graphical(
+            [0.5], [0.3], [0.2, 0.9], [numpy.inf, 0.3], fractions=6
         )
 
 

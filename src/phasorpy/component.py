@@ -95,6 +95,15 @@ def phasor_from_component(
     imag : ndarray
         Imaginary component of phasor coordinates.
 
+    Raises
+    ------
+    ValueError
+        If `dtype` is not a floating-point type.
+        If the array shapes of `component_real` and `component_imag` do not
+        match.
+        If the `fraction` array has less than two components along `axis`.
+        If the component coordinates contain NaN or infinite values.
+
     See Also
     --------
     phasorpy.phasor.phasor_combine
@@ -135,6 +144,12 @@ def phasor_from_component(
         raise ValueError(msg)
     if component_real.size != fraction.shape[axis]:
         msg = f'{component_real.size=} != {fraction.shape[axis]=}'
+        raise ValueError(msg)
+    if numpy.isnan(component_real).any() or numpy.isnan(component_imag).any():
+        msg = 'component coordinates must not contain NaN values'
+        raise ValueError(msg)
+    if numpy.isinf(component_real).any() or numpy.isinf(component_imag).any():
+        msg = 'component coordinates must not contain infinite values'
         raise ValueError(msg)
 
     fraction = numpy.moveaxis(fraction, axis, -1)
@@ -177,6 +192,8 @@ def phasor_component_fraction(
     ValueError
         If the real or imaginary coordinates of the known components are
         not of size 2.
+        If the two components have identical coordinates.
+        If the component coordinates contain NaN or infinite values.
 
     See Also
     --------
@@ -211,6 +228,12 @@ def phasor_component_fraction(
         and component_imag[0] == component_imag[1]
     ):
         msg = 'components must have different coordinates'
+        raise ValueError(msg)
+    if numpy.isnan(component_real).any() or numpy.isnan(component_imag).any():
+        msg = 'component coordinates must not contain NaN values'
+        raise ValueError(msg)
+    if numpy.isinf(component_real).any() or numpy.isinf(component_imag).any():
+        msg = 'component coordinates must not contain infinite values'
         raise ValueError(msg)
 
     return _fraction_on_segment(  # type: ignore[no-any-return]
@@ -271,10 +294,12 @@ def phasor_component_graphical(
     Raises
     ------
     ValueError
-        The array shapes of `real` and `imag`, or `component_real` and
+        If the array shapes of `real` and `imag`, or `component_real` and
         `component_imag` do not match.
-        The number of components is not 2 or 3.
-        Fraction values are out of range [0, 1].
+        If the number of components is not 2 or 3.
+        If the `radius` is not positive.
+        If the component coordinates contain NaN or infinite values.
+        If `fractions` values are out of range [0, 1].
 
     See Also
     --------
@@ -333,6 +358,10 @@ def phasor_component_graphical(
            [0, 1, 2, 0, 0, 0]], dtype=uint8)
 
     """
+    if radius <= 0:
+        msg = f'{radius=} <= 0'
+        raise ValueError(msg)
+
     real = numpy.asarray(real)
     imag = numpy.asarray(imag)
     component_real = numpy.asarray(component_real)
@@ -349,6 +378,12 @@ def phasor_component_graphical(
     num_components = len(component_real)
     if num_components not in {2, 3}:
         msg = 'number of components must be 2 or 3'
+        raise ValueError(msg)
+    if numpy.isnan(component_real).any() or numpy.isnan(component_imag).any():
+        msg = 'component coordinates must not contain NaN values'
+        raise ValueError(msg)
+    if numpy.isinf(component_real).any() or numpy.isinf(component_imag).any():
+        msg = 'component coordinates must not contain infinite values'
         raise ValueError(msg)
 
     if fractions is None:
@@ -367,11 +402,19 @@ def phasor_component_graphical(
             0.0, 1.0, round(longest_distance / (radius / 2) + 1)
         )
     elif isinstance(fractions, (int, numbers.Integral)):
+        if fractions < 0:
+            msg = f'{fractions=} < 0'
+            raise ValueError(msg)
         fractions = numpy.linspace(0.0, 1.0, fractions)
     else:
         fractions = numpy.asarray(fractions)
         if fractions.ndim != 1:
             msg = 'fractions is not a one-dimensional array'
+            raise ValueError(msg)
+        if fractions.size > 0 and (
+            fractions.min() < 0.0 or fractions.max() > 1.0
+        ):
+            msg = 'fraction values must be in range [0, 1]'
             raise ValueError(msg)
 
     dtype = numpy.min_scalar_type(real.size)
@@ -390,9 +433,6 @@ def phasor_component_graphical(
             ab_imag = a_imag - b_imag
 
             for k, f in enumerate(fractions):
-                if f < 0.0 or f > 1.0:
-                    msg = f'fraction {f} is out of range [0, 1]'
-                    raise ValueError(msg)
                 if num_components == 2:
                     mask = _is_inside_circle(
                         real,
@@ -465,11 +505,12 @@ def phasor_component_fit(
     Raises
     ------
     ValueError
-        The array shapes of `real` and `imag` do not match.
-        The array shapes of `component_real` and `component_imag` do not match.
-        The number of harmonics in the components does not
-        match the ones in the phasor coordinates.
-        The system is underdetermined; the component matrix having more
+        If the array shapes of `real` and `imag` do not match.
+        If the array shapes of `component_real` and `component_imag` do not
+        match.
+        If the number of harmonics in the components does not match the
+        ones in the phasor coordinates.
+        If the system is underdetermined; the component matrix having more
         columns than rows.
 
     See Also
@@ -644,8 +685,9 @@ def phasor_component_mvc(
     Raises
     ------
     ValueError
-        The array shapes of `real` and `imag` do not match.
-        The array shapes of `component_real` and `component_imag` do not match.
+        If the array shapes of `real` and `imag` do not match.
+        If the array shapes of `component_real` and `component_imag` do not
+        match.
 
     Notes
     -----

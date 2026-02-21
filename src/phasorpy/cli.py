@@ -57,7 +57,10 @@ def fetch(*, files: Iterable[str], show_progress: bool) -> None:
     files = datasets.fetch(
         *files, return_scalar=False, progressbar=show_progress
     )
-    click.echo(f'Cached at {os.path.commonpath(files)}')
+    if files:
+        click.echo(f'Cached at {os.path.commonpath(files)}')
+    else:
+        click.echo('No files fetched')
 
 
 @main.command(help='Start interactive FRET phasor plot.')
@@ -140,7 +143,7 @@ def lifetime(
         else:
             real, imag = phasor_semicircle(number_lifetimes + 2)
             lifetime = phasor_to_normal_lifetime(
-                real[1:-1], imag[1:-1], frequency if frequency else 80.0
+                real[1:-1], imag[1:-1], frequency or 80.0
             )  # type: ignore[assignment]
 
     plot = LifetimePlots(

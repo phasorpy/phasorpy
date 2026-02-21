@@ -314,9 +314,9 @@ Details:
 -
   .. _phasor_plugins:
 
-  `Spectral Phasor PlugIn <http://spechron.com/Spectral%20Phasor-Download.aspx>`__
+  `Spectral Phasor PlugIn <https://web.archive.org/web/20250621131318/http://spechron.com/Spectral%20Phasor-Introduction.aspx>`__
   and
-  `Time Gated Phasor PlugIn <http://spechron.com/Time%20gated%20Phasor-Download.aspx>`__
+  `Time Gated Phasor PlugIn <https://web.archive.org/web/20240910041344/http://spechron.com/Time%20gated%20Phasor%20Introduction.aspx>`__
   are open-source ImageJ plugins by Farzad Fereidouni, which provide
   visualization, segmentation, and unmixing of time-resolved and spectral
   images using the phasor approach. The software is distributed under an

@@ -113,9 +113,9 @@ def phasor_filter_median(
     Raises
     ------
     ValueError
+        If the array shapes of `mean`, `real`, and `imag` do not match.
         If `repeat` is less than 0.
         If `size` is less than 1.
-        The array shapes of `mean`, `real`, and `imag` do not match.
 
     Examples
     --------
@@ -306,12 +306,13 @@ def phasor_filter_pawflim(
     Raises
     ------
     ValueError
-        If `levels` is less than 0.
-        The array shapes of `mean`, `real`, and `imag` do not match.
+        If `sigma` is negative.
+        If `levels` is negative.
+        If the array shapes of `mean`, `real`, and `imag` do not match.
         If `real` and `imag` have no harmonic axis.
-        Number of harmonics in `harmonic` is less than 2 or does not match
-        the first axis of `real` and `imag`.
-        Not all harmonics in `harmonic` have a corresponding half
+        If the number of harmonics in `harmonic` is less than 2 or does not
+        match the first axis of `real` and `imag`.
+        If not all harmonics in `harmonic` have a corresponding half
         or double harmonic.
 
     References
@@ -351,6 +352,9 @@ def phasor_filter_pawflim(
     """
     from pawflim import pawflim  # type: ignore[import-untyped]
 
+    if sigma < 0:
+        msg = f'{sigma=} < 0'
+        raise ValueError(msg)
     if levels < 0:
         msg = f'{levels=} < 0'
         raise ValueError(msg)
@@ -736,6 +740,14 @@ def signal_filter_svd(
         Denoised signal of `dtype`.
         Spectra with integrated intensity below `vmin` are unchanged.
 
+    Raises
+    ------
+    ValueError
+        If `sigma` is not positive.
+        If `signal` has fewer than three samples along specified axis.
+        If `dtype` is not a floating-point type.
+        If `spectral_vector` shape does not match `signal` shape.
+
     References
     ----------
     .. [2] Harman RC, Lang RT, Kercher EM, Leven P, and Spring BQ.
@@ -762,6 +774,10 @@ def signal_filter_svd(
     """
     num_threads = number_threads(num_threads)
 
+    if sigma <= 0:
+        msg = f'{sigma=} <= 0'
+        raise ValueError(msg)
+
     signal = numpy.asarray(signal)
     if axis == -1 or axis == signal.ndim - 1:
         axis = -1
@@ -769,6 +785,10 @@ def signal_filter_svd(
         signal = numpy.moveaxis(signal, axis, -1)
     shape = signal.shape
     samples = shape[-1]
+
+    if samples < 3:
+        msg = f'{samples=} < 3'
+        raise ValueError(msg)
 
     if harmonic is None:
         harmonic = 1

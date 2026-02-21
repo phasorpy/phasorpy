@@ -295,7 +295,7 @@ disable = [
 
 [tool.black]
 line-length = 79
-target-version = ["py312", "py313"]
+target-version = ["py312", "py313", "py314"]
 skip-string-normalization = true
 
 [tool.isort]
@@ -355,6 +355,7 @@ directory = "_htmlcov"
 
 [tool.pytest.ini_options]
 minversion = "7"
+log_level = "INFO"
 log_cli_level = "INFO"
 # filterwarnings = ["error"]  # breaks debugging tests in VSCode (Sept. 2024)
 xfail_strict = true

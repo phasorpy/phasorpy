@@ -143,7 +143,7 @@ def plot_phasor_image(
 
     Parameters
     ----------
-    mean : array_like
+    mean : array_like or None
         Image average. Must be two or more dimensional, or None.
     real : array_like
         Image of real component of phasor coordinates.
@@ -171,8 +171,8 @@ def plot_phasor_image(
     Raises
     ------
     ValueError
-        The shapes of `mean`, `real`, and `imag` do not match.
-        Percentile is out of range.
+        If the array shapes of `mean`, `real`, and `imag` do not match.
+        If `percentile` is out of range.
 
     """
     update_kwargs(kwargs, interpolation='nearest')
@@ -341,8 +341,8 @@ def plot_signal_image(
     Raises
     ------
     ValueError
-        Signal is not an image stack.
-        Percentile is out of range.
+        If `signal` is not an image stack.
+        If `percentile` is out of range.
 
     """
     # TODO: add option to separate channels?
@@ -447,7 +447,7 @@ def plot_image(
     Raises
     ------
     ValueError
-        Percentile is out of range.
+        If `percentile` is out of range.
 
     """
     update_kwargs(

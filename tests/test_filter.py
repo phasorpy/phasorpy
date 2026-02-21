@@ -638,33 +638,6 @@ def test_phasor_filter_median_errors():
                 ],
             ),
         ),
-        # sigma < 0 (no filtering)
-        (
-            [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
-            [
-                [[0.2, 0.5, 0.8], [0.2, 0.5, 0.8], [0.2, 0.5, 0.8]],
-                [[0.1, 0.25, 0.4], [0.1, 0.25, 0.4], [0.1, 0.25, 0.4]],
-            ],
-            [
-                [[0.2, 0.2, 0.2], [0.3, 0.3, 0.3], [0.4, 0.4, 0.4]],
-                [[0.1, 0.1, 0.1], [0.15, 0.15, 0.15], [0.2, 0.2, 0.2]],
-            ],
-            -2,
-            1,
-            None,
-            None,
-            (
-                [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
-                [
-                    [[0.2, 0.5, 0.8], [0.2, 0.5, 0.8], [0.2, 0.5, 0.8]],
-                    [[0.1, 0.25, 0.4], [0.1, 0.25, 0.4], [0.1, 0.25, 0.4]],
-                ],
-                [
-                    [[0.2, 0.2, 0.2], [0.3, 0.3, 0.3], [0.4, 0.4, 0.4]],
-                    [[0.1, 0.1, 0.1], [0.15, 0.15, 0.15], [0.2, 0.2, 0.2]],
-                ],
-            ),
-        ),
         # skip_axis
         (
             [
@@ -843,6 +816,9 @@ def test_phasor_filter_pawflim_errors():
             [[[1, 1], [1, 1]], [[1, 1], [1, 1]]],
             [[[1, 1], [1, 1]], [[1, 1], [1, 1]]],
         )
+    # sigma < 0
+    with pytest.raises(ValueError):
+        phasor_filter_pawflim([1], [[1], [1]], [[1], [1]], sigma=-1)
     # levels < 1
     with pytest.raises(ValueError):
         phasor_filter_pawflim([1], [[1], [1]], [[1], [1]], levels=-1)
@@ -1256,6 +1232,18 @@ def test_signal_filter_svd_exceptions():
 
     with pytest.raises(ValueError):
         signal_filter_svd(signal, spectral_vector[:15], axis=1)
+
+    # sigma <= 0
+    with pytest.raises(ValueError):
+        signal_filter_svd(signal, axis=1, sigma=0)
+
+    with pytest.raises(ValueError):
+        signal_filter_svd(signal, axis=1, sigma=-0.1)
+
+    # samples < 3
+    signal_small = rng.integers(0, 255, (16, 2, 16)).astype(numpy.float32)
+    with pytest.raises(ValueError):
+        signal_filter_svd(signal_small, axis=1)
 
 
 @pytest.mark.parametrize('dtype', [None, 'float32'])

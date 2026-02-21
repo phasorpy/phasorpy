@@ -1,4 +1,4 @@
-# <img src="docs/_static/phasorpy_logo.svg" alt="PhasorPy" width="48" height="48" align="left"> PhasorPy
+# <img src="https://www.phasorpy.org/_static/phasorpy_logo.svg" alt="&#x25CB;" width="48" height="48" align="left"/> PhasorPy
 
 PhasorPy is an open-source Python library for the analysis of luminescence
 lifetime and hyperspectral images using the phasor approach.

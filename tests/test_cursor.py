@@ -498,6 +498,11 @@ def test_pseudo_color_errors():
     # colors last dimension not 3
     with pytest.raises(ValueError):
         pseudo_color(0, colors=[[0.0, 0]])
+    # more masks than colors
+    with pytest.raises(ValueError):
+        pseudo_color(
+            [True], [True], [True], colors=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
+        )
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls
