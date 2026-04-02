@@ -25,7 +25,7 @@ jobs:
         python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v6
-      - uses: pypa/cibuildwheel@v3.3.1
+      - uses: pypa/cibuildwheel@v3.4.0
         env:
           CIBW_ARCHS_LINUX: auto
           CIBW_ARCHS_MACOS: x86_64 arm64
@@ -45,7 +45,7 @@ jobs:
         run: |
           cd ..
           python -c "import phasorpy;from phasorpy import _phasorpy;print(phasorpy.__version__)"
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           path: ./wheelhouse/*.whl
           name: wheels-${{ matrix.os }}
