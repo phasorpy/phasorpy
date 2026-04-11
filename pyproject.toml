@@ -58,6 +58,7 @@ phasorpy = "phasorpy.cli:main"
 [project.optional-dependencies]
 all = [
     # sync with [dependency-groups.optional]
+    "czifile>=2026.4.11",
     "fbdfile>=2025.9.18",
     "lfdfiles>=2024.5.24",
     "liffile>=2025.2.10",
@@ -83,6 +84,7 @@ run = [
 ]
 optional = [
     # optional runtime dependencies; sync with [project.optional-dependencies]
+    "czifile>=2026.4.11",
     "fbdfile>=2025.9.18",
     "lfdfiles>=2024.5.24",
     "liffile>=2025.2.10",
@@ -100,6 +102,7 @@ minimal = [
     "tifffile==2024.8.30; python_version == \"3.12\"",
     "xarray==2024.6.0; python_version == \"3.12\"",
     # optional
+    "czifile==2026.4.11; python_version == \"3.12\"",
     "fbdfile==2025.9.18; python_version == \"3.12\"",
     "lfdfiles==2024.5.24; python_version == \"3.12\"",
     "liffile==2025.2.10; python_version == \"3.12\"",
@@ -407,6 +410,7 @@ test-command = "pytest {project}/tests"
 test-skip = ["cp314t*"]
 test-requires = [
     # sync with [dependency-groups.optional]
+    "czifile>=2026.4.11",
     "fbdfile",
     "lfdfiles",
     "liffile",

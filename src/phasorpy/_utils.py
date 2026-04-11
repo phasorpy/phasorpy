@@ -51,7 +51,6 @@ def parse_kwargs(
     kwargs: dict[str, Any],
     /,
     *keys: str,
-    _del: bool = True,
     **keyvalues: Any,
 ) -> dict[str, Any]:
     """Return dict with keys from keys|keyvals and values from kwargs|keyvals.
@@ -62,8 +61,6 @@ def parse_kwargs(
         Source dictionary to extract keys from.
     *keys : str
         Keys to extract from kwargs if present.
-    _del : bool, optional, default: True
-        Remove extracted keys from kwargs.
     **keyvalues
         Key-value pairs. If key exists in kwargs, use kwargs value,
         otherwise use provided default value.
@@ -73,25 +70,24 @@ def parse_kwargs(
     dict
         Dictionary containing extracted keys and values.
 
+    Examples
+    --------
     >>> kwargs = {'one': 1, 'two': 2, 'four': 4}
-    >>> kwargs2 = parse_kwargs(kwargs, 'two', 'three', four=None, five=5)
-    >>> kwargs == {'one': 1}
-    True
-    >>> kwargs2 == {'two': 2, 'four': 4, 'five': 5}
-    True
+    >>> parse_kwargs(kwargs, 'two', 'three', four=None, five=5)
+    {'two': 2, 'four': 4, 'five': 5}
+    >>> kwargs
+    {'one': 1}
+    >>> parse_kwargs({}, 'a', b=2)
+    {'b': 2}
 
     """
     result = {}
     for key in keys:
         if key in kwargs:
-            result[key] = kwargs[key]
-            if _del:
-                del kwargs[key]
+            result[key] = kwargs.pop(key)
     for key, value in keyvalues.items():
         if key in kwargs:
-            result[key] = kwargs[key]
-            if _del:
-                del kwargs[key]
+            result[key] = kwargs.pop(key)
         else:
             result[key] = value
     return result
@@ -106,13 +102,12 @@ def update_kwargs(
 
     >>> kwargs = {'one': 1}
     >>> update_kwargs(kwargs, one=None, two=2)
-    >>> kwargs == {'one': 1, 'two': 2}
-    True
+    >>> kwargs
+    {'one': 1, 'two': 2}
 
     """
     for key, value in keyvalues.items():
-        if key not in kwargs:
-            kwargs[key] = value
+        kwargs.setdefault(key, value)
 
 
 def kwargs_notnone(**kwargs: Any) -> dict[str, Any]:
@@ -122,7 +117,7 @@ def kwargs_notnone(**kwargs: Any) -> dict[str, Any]:
     {'one': 1}
 
     """
-    return dict(item for item in kwargs.items() if item[1] is not None)
+    return {k: v for k, v in kwargs.items() if v is not None}
 
 
 def scale_matrix(

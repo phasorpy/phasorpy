@@ -69,13 +69,6 @@ def test_parse_kwargs():
     assert kwargs == {'one': 1}
     assert kwargs2 == {'two': 2, 'four': 4, 'five': 5}
 
-    kwargs = {'one': 1, 'two': 2, 'four': 4}
-    kwargs2 = parse_kwargs(
-        kwargs, 'two', 'three', four=None, five=5, _del=False
-    )
-    assert kwargs == {'one': 1, 'two': 2, 'four': 4}
-    assert kwargs2 == {'two': 2, 'four': 4, 'five': 5}
-
 
 def test_update_kwargs():
     """Test update_kwargs function."""

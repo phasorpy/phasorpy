@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 __all__ = [
-    # 'signal_from_czi',
     'phasor_from_ifli',
+    'signal_from_czi',
     'signal_from_flif',
     'signal_from_imspector_tiff',
     'signal_from_lsm',
@@ -33,6 +33,95 @@ if TYPE_CHECKING:
     )
 
 import numpy
+
+
+def signal_from_czi(
+    filename: str | PathLike[Any],
+    /,
+    **kwargs: Any,
+) -> DataArray:
+    """Return hyperspectral or RGB image and metadata from Zeiss CZI file.
+
+    Zeiss CZI files contain multidimensional images and metadata from laser
+    scanning microscopy measurements.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of Zeiss CZI file to read.
+    **kwargs
+        Optional arguments passed to :py:meth:`czifile.CziFile.asxarray`,
+        for example ``scene`` or ``roi``.
+
+    Returns
+    -------
+    xarray.DataArray
+        Hyperspectral or RGB image with :ref:`axes codes <axes>` and
+        type `uint8` or `uint16`, and selected metadata:
+
+        - ``coords['C']``: wavelengths in nm (hyperspectral only).
+
+    Raises
+    ------
+    czifile.CziFileError
+        If file is not a CZI file.
+    ValueError
+        If file is neither an RGB image nor a hyperspectral image with
+        numerically increasing channel coordinates.
+
+    Notes
+    -----
+    The CZI Airyscan phase dimension ``'H'`` is renamed to ``'Q'`` to avoid
+    conflict with PhasorPy's lifetime histogram axis.
+
+    The implementation is based on the
+    `czifile <https://github.com/cgohlke/czifile/>`__ library.
+
+    Examples
+    --------
+    >>> signal = signal_from_czi(fetch('paramecium.czi'))  # doctest: +SKIP
+    >>> signal.values  # doctest: +SKIP
+    array(...)
+    >>> signal.dtype  # doctest: +SKIP
+    dtype('uint8')
+    >>> signal.shape  # doctest: +SKIP
+    (30, 512, 512)
+    >>> signal.dims  # doctest: +SKIP
+    ('C', 'Y', 'X')
+    >>> signal.coords['C'].data  # doctest: +SKIP
+    array([423., ..., 713.])
+
+    """
+    import czifile
+
+    with czifile.CziFile(filename) as czi:
+        data = czi.asxarray(**kwargs)
+
+    filename = os.path.basename(filename)
+
+    is_rgb = 'S' in data.dims and data.sizes['S'] == 3
+    is_hyperspectral = False
+
+    if 'C' in data.dims:
+        c_coords = data.coords['C'].values
+        if (
+            c_coords.size >= 3
+            and numpy.issubdtype(c_coords.dtype, numpy.number)
+            and numpy.all(numpy.diff(c_coords) > 0)
+        ):
+            is_hyperspectral = True
+
+    if not is_rgb and not is_hyperspectral:
+        msg = (
+            f'{filename!r} is neither an RGB image nor a hyperspectral image '
+            'with numerically increasing channel coordinates'
+        )
+        raise ValueError(msg)
+
+    if 'H' in data.dims:
+        data = data.rename({'H': 'Q'})
+
+    return data
 
 
 def signal_from_sdt(
