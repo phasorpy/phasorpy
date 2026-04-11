@@ -271,11 +271,11 @@ plot_histograms(
 # They contain images and metadata from a variety of microscopy acquisition
 # and analysis modes, including hyperspectral imaging.
 #
-# PhasorPy does not support reading CZI files yet.
-# However, hyperspectral images can be read from CZI files using, for example,
-# the `pylibCZIrw <https://github.com/ZEISS/pylibczirw/>`_ or
-# `BioIO <https://github.com/bioio-devs/bioio>`_ library. Another option is
-# to export CZI files as LSM using the ZEN software.
+# PhasorPy supports reading hyperspectral and RGB images from CZI files
+# via the `czifile <https://github.com/cgohlke/czifile/>`_ library.
+#
+# The :py:func:`phasorpy.io.signal_from_czi` function is used to read
+# such data, but no public sample files are currently available.
 
 # %%
 # Zeiss LSM

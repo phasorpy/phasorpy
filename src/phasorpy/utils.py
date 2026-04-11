@@ -137,23 +137,24 @@ def versions(
     for module in (
         'phasorpy',
         'numpy',
-        'tifffile',
+        # other dependencies sorted alphabetically
+        'click',
+        'czifile',
+        'fbdfile',
         'imagecodecs',
         'lfdfiles',
-        'fbdfile',
-        'sdtfile',
-        'ptufile',
         'liffile',
         'matplotlib',
+        'mkl_fft',
+        'pandas',
+        'pawflim',
+        'pooch',
         'scipy',
+        'sdtfile',
         'skimage',
         'sklearn',
-        'pandas',
+        'tifffile',
         'xarray',
-        'pawflim',
-        'mkl_fft',
-        'click',
-        'pooch',
     ):
         try:
             __import__(module)

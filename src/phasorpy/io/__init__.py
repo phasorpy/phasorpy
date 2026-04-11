@@ -6,6 +6,7 @@ The ``phasorpy.io`` module provides functions to:
   many file formats used in bioimaging:
 
   - :py:func:`signal_from_lif` - Leica LIF and XLEF
+  - :py:func:`signal_from_czi` - Zeiss CZI
   - :py:func:`signal_from_lsm` - Zeiss LSM
   - :py:func:`signal_from_ptu` - PicoQuant PTU
   - :py:func:`signal_from_pqbin` - PicoQuant BIN
@@ -37,7 +38,6 @@ The ``phasorpy.io`` module provides functions to:
 Support for additional file formats is being considered:
 
 - OME-TIFF (other than PhasorPy OME-TIFF)
-- Zeiss CZI
 - Nikon ND2
 - Olympus OIB/OIF
 - Olympus OIR
@@ -45,6 +45,7 @@ Support for additional file formats is being considered:
 The functions are implemented as minimal wrappers around specialized
 third-party file reader libraries:
 `tifffile <https://github.com/cgohlke/tifffile>`_,
+`czifile <https://github.com/cgohlke/czifile>`_,
 `ptufile <https://github.com/cgohlke/ptufile>`_,
 `liffile <https://github.com/cgohlke/liffile>`_,
 `sdtfile <https://github.com/cgohlke/sdtfile>`_,
@@ -99,19 +100,21 @@ and the tifffile library are used as ``dims`` items and ``coords`` keys:
 - ``'Y'`` : height (OME)
 - ``'Z'`` : depth (OME)
 - ``'S'`` : sample (color components or phasor coordinates)
-- ``'I'`` : sequence (of images, frames, or planes)
+- ``'I'`` : sequence (images, frames, planes) or illumination direction (CZI)
 - ``'T'`` : time (OME)
 - ``'C'`` : channel (OME; acquisition path or emission wavelength)
-- ``'A'`` : angle (OME)
-- ``'P'`` : phase (OME; in LSM, `'P'` maps to position)
-- ``'R'`` : tile (OME; region, position, or mosaic)
-- ``'H'`` : lifetime histogram (OME)
+- ``'A'`` : angle (OME and LIF)
+- ``'P'`` : phase (OME) or position (LSM)
+- ``'R'`` : tile (OME; region, position, or mosaic) or rotation (CZI)
+- ``'H'`` : lifetime histogram (OME) or phase (CZI)
 - ``'E'`` : lambda (OME; excitation wavelength)
 - ``'F'`` : frequency (ISS)
-- ``'Q'`` : other (OME; harmonics in PhasorPy TIFF)
+- ``'Q'`` : other (OME and CZI), T slice (LIF), or harmonics (PhasorPy TIFF)
+- ``'B'`` : block (CZI; acquisition block index in segmented experiments)
 - ``'L'`` : exposure (FluoView)
-- ``'V'`` : event (FluoView)
-- ``'M'`` : mosaic (LSM 6)
+- ``'M'`` : mosaic tile (LSM, CZI, and LIF)
+- ``'V'`` : event (FluoView) or view (CZI)
+- ``'L'`` : loop (LIF)
 - ``'J'`` : column (NDTiff)
 - ``'K'`` : row (NDTiff)
 
