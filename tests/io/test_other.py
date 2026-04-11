@@ -24,6 +24,8 @@ from phasorpy.io import (
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
 def test_signal_from_czi_paramecium():
     """Test read paramecium.czi hyperspectral image."""
+    import czifile
+
     filename = private_file('paramecium.czi')
     signal = signal_from_czi(filename)
     assert signal.values.sum(dtype=numpy.uint64) == 14050194
@@ -35,19 +37,9 @@ def test_signal_from_czi_paramecium():
         signal.coords['X'][[0, -1]], [0.0, 0.00042427], decimal=7
     )
 
-
-@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_signal_from_czi_non_hyperspectral():
-    """Test that non-hyperspectral CZI files are rejected."""
-    import czifile
-
-    filename = private_file('paramecium.czi')
-    # valid file does not raise
-    signal_from_czi(filename)
-
-    # Reject a non-CZI file
+    # reject non-CZI file
     with pytest.raises(czifile.CziFileError):
-        signal_from_czi(private_file('non_hyperspectral.lsm'))
+        signal_from_czi(fetch('paramecium.lsm'))
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')

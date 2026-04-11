@@ -94,7 +94,8 @@ attributes:
 .. _axes:
 
 Axes character codes from the Open Microscopy Environment (OME) model
-and the tifffile library are used as ``dims`` items and ``coords`` keys:
+and the tifffile, liffile, and czifile libraries are used as ``dims`` items
+and ``coords`` keys:
 
 - ``'X'`` : width (OME)
 - ``'Y'`` : height (OME)
@@ -103,18 +104,17 @@ and the tifffile library are used as ``dims`` items and ``coords`` keys:
 - ``'I'`` : sequence (images, frames, planes) or illumination direction (CZI)
 - ``'T'`` : time (OME)
 - ``'C'`` : channel (OME; acquisition path or emission wavelength)
-- ``'A'`` : angle (OME and LIF)
+- ``'A'`` : angle (OME)
 - ``'P'`` : phase (OME) or position (LSM)
 - ``'R'`` : tile (OME; region, position, or mosaic) or rotation (CZI)
-- ``'H'`` : lifetime histogram (OME) or phase (CZI)
+- ``'H'`` : lifetime histogram (OME)
 - ``'E'`` : lambda (OME; excitation wavelength)
 - ``'F'`` : frequency (ISS)
 - ``'Q'`` : other (OME and CZI), T slice (LIF), or harmonics (PhasorPy TIFF)
 - ``'B'`` : block (CZI; acquisition block index in segmented experiments)
-- ``'L'`` : exposure (FluoView)
-- ``'M'`` : mosaic tile (LSM, CZI, and LIF)
+- ``'L'`` : exposure (FluoView) or loop (LIF)
+- ``'M'`` : mosaic tile (CZI, LSM, and LIF)
 - ``'V'`` : event (FluoView) or view (CZI)
-- ``'L'`` : loop (LIF)
 - ``'J'`` : column (NDTiff)
 - ``'K'`` : row (NDTiff)
 

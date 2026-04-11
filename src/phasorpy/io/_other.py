@@ -113,7 +113,7 @@ def signal_from_czi(
 
     if not is_rgb and not is_hyperspectral:
         msg = (
-            f'{filename!r} is neither an RGB image nor a hyperspectral image'
+            f'{filename!r} is neither an RGB image nor a hyperspectral image '
             'with numerically increasing channel coordinates'
         )
         raise ValueError(msg)
