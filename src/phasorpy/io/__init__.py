@@ -15,6 +15,7 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`signal_from_flimlabs_json` - FLIM LABS JSON
   - :py:func:`signal_from_imspector_tiff` - ImSpector FLIM TIFF
   - :py:func:`signal_from_flif` - FlimFast FLIF
+  - :py:func:`signal_from_h5` - HDF5 histogram
   - :py:func:`signal_from_b64` - SimFCS B64
   - :py:func:`signal_from_z64` - SimFCS Z64
   - :py:func:`signal_from_bhz` - SimFCS BHZ
@@ -24,6 +25,7 @@ The ``phasorpy.io`` module provides functions to:
   specialized file formats:
 
   - :py:func:`phasor_from_ometiff` - PhasorPy OME-TIFF
+  - :py:func:`phasor_from_h5` - HDF5 histogram
   - :py:func:`phasor_from_ifli` - ISS IFLI
   - :py:func:`phasor_from_lif` - Leica LIF and XLEF
   - :py:func:`phasor_from_flimlabs_json` - FLIM LABS JSON
@@ -45,6 +47,7 @@ Support for additional file formats is being considered:
 The functions are implemented as minimal wrappers around specialized
 third-party file reader libraries:
 `tifffile <https://github.com/cgohlke/tifffile>`_,
+`h5py <https://github.com/h5py/h5py>`_,
 `czifile <https://github.com/cgohlke/czifile>`_,
 `ptufile <https://github.com/cgohlke/ptufile>`_,
 `liffile <https://github.com/cgohlke/liffile>`_,
@@ -126,6 +129,7 @@ __all__: list[str] = []
 
 from .._utils import init_module
 from ._flimlabs import *
+from ._h5 import *
 from ._leica import *
 from ._ometiff import *
 from ._other import *

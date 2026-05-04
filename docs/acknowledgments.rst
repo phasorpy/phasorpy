@@ -8,7 +8,7 @@ at the University of the Republic and Institut Pasteur de Montevideo, and the
 at the University of California, Irvine.
 
 PhasorPy was inspired by the
-`Globals for Images · SimFCS <https://www.lfd.uci.edu/globals/>`_ software by
+`Globals for Images - SimFCS <https://www.lfd.uci.edu/globals/>`_ software by
 Enrico Gratton.
 
 This software project was supported in part by the
