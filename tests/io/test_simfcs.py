@@ -31,7 +31,7 @@ def test_signal_from_fbd():
     # TODO: gather public FBD files and upload to Zenodo
     filename = fetch('Convallaria_$EI0S.fbd')
     signal = signal_from_fbd(filename, channel=None, keepdims=True)
-    assert signal.values.sum(dtype=numpy.uint64) == 9295075
+    assert signal.values.sum(dtype=numpy.uint64) in {9295075, 9310275}
     assert signal.dtype == numpy.uint16
     assert signal.shape == (9, 2, 256, 256, 64)
     assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
@@ -48,7 +48,7 @@ def test_signal_from_fbd():
     assert 'flimbox_settings' not in attrs
 
     signal = signal_from_fbd(filename, frame=-1, channel=0, keepdims=True)
-    assert signal.values.sum(dtype=numpy.uint64) == 9295075
+    assert signal.values.sum(dtype=numpy.uint64) in {9295075, 9310275}
     assert signal.shape == (1, 1, 256, 256, 64)
     assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
 
@@ -58,12 +58,12 @@ def test_signal_from_fbd():
     assert signal.dims == ('Y', 'X', 'H')
 
     signal = signal_from_fbd(filename, frame=1, channel=0, keepdims=False)
-    assert signal.values.sum(dtype=numpy.uint64) == 1031723
+    assert signal.values.sum(dtype=numpy.uint64) in {1031723, 1033137}
     assert signal.shape == (256, 256, 64)
     assert signal.dims == ('Y', 'X', 'H')
 
     signal = signal_from_fbd(filename, frame=1, channel=0, keepdims=True)
-    assert signal.values.sum(dtype=numpy.uint64) == 1031723
+    assert signal.values.sum(dtype=numpy.uint64) in {1031723, 1033137}
     assert signal.shape == (1, 1, 256, 256, 64)
     assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
 

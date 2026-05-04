@@ -1,8 +1,8 @@
 [build-system]
 requires = [
     "setuptools>=68",
-    "numpy>=2.0.0",
-    "cython>=3.2.2",
+    "numpy>=2.1.0",
+    "cython>=3.2.4",
 ]
 build-backend = "setuptools.build_meta"
 
@@ -14,12 +14,12 @@ dynamic = ["version"]
 dependencies = [
     # sync with [dependency-groups.run]
     # https://scientific-python.org/specs/spec-0000/
-    "numpy>=2.0.0",
+    "numpy>=2.1.0",
     "matplotlib>=3.9.0",
-    "pandas>=2.2.0",
-    # "scikit-image>=0.23.0",
+    "pandas>=2.3.0",
+    # "scikit-image>=0.24.0",
     "scikit-learn>=1.5.0",
-    "scipy>=1.13.0",
+    "scipy>=1.14.0",
     "tifffile>=2024.8.30",
     "xarray>=2024.6.0",
     "click",
@@ -71,11 +71,11 @@ all = [
 [dependency-groups]
 run = [
     # runtime dependencies; sync with [project.dependencies]
-    "numpy>=2.0.0",
+    "numpy>=2.1.0",
     "matplotlib>=3.9.0",
-    "pandas>=2.2.0",
+    "pandas>=2.3.0",
     "scikit-learn>=1.5.0",
-    "scipy>=1.13.0",
+    "scipy>=1.14.0",
     "tifffile>=2024.8.30",
     "xarray>=2024.6.0",
     "click",
@@ -94,11 +94,11 @@ optional = [
 ]
 minimal = [
     # minimal runtime versions for testing against oldest supported versions
-    "numpy==2.0.2; python_version == \"3.12\"",
+    "numpy==2.1.0; python_version == \"3.12\"",
     "matplotlib==3.9.4; python_version == \"3.12\"",
-    "pandas==2.2.3; python_version == \"3.12\"",
+    "pandas==2.3.2; python_version == \"3.12\"",
     "scikit-learn==1.5.0; python_version == \"3.12\"",
-    "scipy==1.13.1; python_version == \"3.12\"",
+    "scipy==1.14.1; python_version == \"3.12\"",
     "tifffile==2024.8.30; python_version == \"3.12\"",
     "xarray==2024.6.0; python_version == \"3.12\"",
     # optional
@@ -112,8 +112,8 @@ minimal = [
 ]
 build = [
     # build requirements
-    "cython>=3.2.2",
-    "numpy>=2.0.0",
+    "cython>=3.2.4",
+    "numpy>=2.1.0",
     "abi3audit",
     "build",
     "cibuildwheel",
@@ -176,6 +176,10 @@ version = { attr = "phasorpy.__version__" }
 
 [tool.setuptools.package-data]
 phasorpy = ["py.typed"]
+
+[tool.check-unicode]
+allow-codepoints = ["U+00B0", "U+00F6", "U+039B", "U+03BB"]
+check-confusables = true
 
 [tool.ruff]
 line-length = 79

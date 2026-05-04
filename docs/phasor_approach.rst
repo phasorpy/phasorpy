@@ -1,14 +1,14 @@
 Phasor approach
 ===============
 
-“The phasor approach to fluorescence lifetime imaging, and more recently
+"The phasor approach to fluorescence lifetime imaging, and more recently
 hyperspectral fluorescence imaging, has increased the use of these
 techniques, and improved the ease and intuitiveness of the data analysis.
 The fit-free nature of the phasor plots increases the speed of the analysis
 and reduces the dimensionality, optimization of data handling and storage.
-The reciprocity principle between the real and imaginary space—where the
+The reciprocity principle between the real and imaginary space--where the
 phasor and the pixel that the phasor originated from are linked and can be
-converted from one another—has helped the expansion of this method.
+converted from one another--has helped the expansion of this method.
 The phasor coordinates calculated from a pixel, where multiple fluorescent
 species are present, depends on the phasor positions of those components.
 The relative positions are governed by the linear combination properties of
@@ -21,7 +21,7 @@ the total fluorescence from that image pixel.
 The higher the fractional intensity contribution of a vertex, the closer is
 the resultant phasor. The linear additivity in the phasor space can be
 exploited to obtain the fractional intensity contribution from multiple
-species and quantify their contribution.”
+species and quantify their contribution."
 (quoted from :ref:`Malacrida et al., 2021 <malacrida-2021>`)
 
 The following resources provide an overview of the history, theory,
@@ -168,7 +168,8 @@ approach to analyze fluorescence time-resolved or spectral images:
      - :ref:`Napari-phasors <napari_phasors>`,
        :ref:`Napari-flim-phasor-plotter <napari_flim_phasor_plotter>`,
        :ref:`Napari-live-flim <napari_live_flim>`,
-       :ref:`FLOPA <flopa>`
+       :ref:`FLOPA <flopa>`,
+       :ref:`FLIMari <flimari>`
    * - **ImageJ**
      - :ref:`Spectral/Time Gated Phasor PlugIns <phasor_plugins>`
    * - **Matlab**
@@ -189,7 +190,7 @@ Details:
 -
   .. _simfcs:
 
-  `Globals for Images · SimFCS <https://www.lfd.uci.edu/globals/>`__
+  `Globals for Images - SimFCS <https://www.lfd.uci.edu/globals/>`__
   is a free, closed-source, Windows desktop application for fluorescence image
   analysis, visualization, simulation, and acquisition.
   The software was developed by Enrico Gratton during 1998-2022 at the
@@ -228,6 +229,14 @@ Details:
   is a napari plugin for FLIM data opening, processing and analysis.
   The plugin is distributed under the GPLv3 license.
 
+-
+
+  .. _flimari:
+
+  `FLIMari <https://github.com/GuangchenW/FLIMari>`__
+  is a napari plugin for FLIM analysis. It provides an interactive,
+  phasor-based lifetime visualization and analysis pipeline.
+  The plugin is distributed under the MIT license.
 -
   .. _hysp:
 

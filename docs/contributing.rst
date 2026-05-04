@@ -205,7 +205,7 @@ static type checker::
 
 
 The PhasorPy project follows the Scientific Python
-`SPEC 0 — Minimum Supported Dependencies
+`SPEC 0 - Minimum Supported Dependencies
 <https://scientific-python.org/specs/spec-0000/>`_ recommendation
 for Python, NumPy, and other dependencies.
 
