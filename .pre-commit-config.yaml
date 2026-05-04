@@ -47,10 +47,17 @@ repos:
       - id: codespell
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.45.0
+    rev: v1.45.2
     hooks:
       - id: typos
         args: []
+
+  - repo: https://github.com/mit-d/check-unicode
+    rev: v0.6.0
+    hooks:
+      - id: check-unicode
+      # or for auto-fix:
+      # - id: fix-unicode
 
   - repo: https://github.com/MarcoGorelli/cython-lint
     rev: v0.19.0
@@ -59,7 +66,7 @@ repos:
         args: [--max-line-length=79]
 
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.8.1
+    rev: v3.8.3
     hooks:
       - id: prettier
         args: [--end-of-line=auto]
@@ -96,7 +103,7 @@ repos:
   # when running with --fix place ruff lint hook
   # before ruff-format, black, isort, etc
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.10
+    rev: v0.15.12
     hooks:
       - id: ruff-check
   #     args: [--fix --show-fixes]
@@ -109,11 +116,27 @@ repos:
   #     additional_dependencies: [flake8-typing-imports, flake8-docstrings]
 
   # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.20.0
+  #   rev: v1.20.2
   #   hooks:
   #   - id: mypy
   #     files: src
   #     args: []
+
+  # - repo: local
+  #   hooks:
+  #     - id: lychee
+  #       name: Lychee Link Checker
+  #       entry: lychee
+  #       language: system
+  #       pass_filenames: false
+  #       always_run: true
+  #       args:
+  #         - src/phasorpy/**/*.py
+  #         - src/phasorpy/**/*.pyx
+  #         - tests/**/*.py
+  #         - tutorials/**/*.py
+  #         - docs/**/*.rst
+  #         - /*.md
 
 ci:
   autofix_commit_msg: "[pre-commit.ci] auto fixes from pre-commit.com hooks"

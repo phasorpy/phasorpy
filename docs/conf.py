@@ -165,6 +165,7 @@ class TutorialOrder:
         # applications
         'component_fit',
         'fret_efficiency',
+        # 'nadh_concentration',
         'multidimensional',
         # misc
         'logo',

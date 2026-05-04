@@ -1814,6 +1814,46 @@ cdef (float_t, float_t, float_t, float_t) _intersect_semicircle_line(
     return x0, y0, x1, y1
 
 
+@cython.ufunc
+cdef (float_t, float_t) _intersect_line_line(
+    float_t x0,  # first line start
+    float_t y0,
+    float_t x1,  # first line end
+    float_t y1,
+    float_t x2,  # second line start
+    float_t y2,
+    float_t x3,  # second line end
+    float_t y3,
+) noexcept nogil:
+    """Return coordinates of intersection of two lines."""
+    cdef:
+        double det, a, b
+
+    if (
+        isnan(x0)
+        or isnan(y0)
+        or isnan(x1)
+        or isnan(y1)
+        or isnan(x2)
+        or isnan(y2)
+        or isnan(x3)
+        or isnan(y3)
+    ):
+        return <float_t> NAN, <float_t> NAN
+
+    det = (x0 - x1) * (y2 - y3) - (y0 - y1) * (x2 - x3)
+    if det == 0.0:
+        # lines are parallel or coincident
+        return <float_t> NAN, <float_t> NAN
+
+    a = x0 * y1 - y0 * x1
+    b = x2 * y3 - y2 * x3
+    return (
+        <float_t> ((a * (x2 - x3) - (x0 - x1) * b) / det),
+        <float_t> ((a * (y2 - y3) - (y0 - y1) * b) / det),
+    )
+
+
 ###############################################################################
 # Search functions
 

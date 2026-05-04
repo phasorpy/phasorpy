@@ -9,7 +9,7 @@ This tutorial is a close adaptation of the
 <https://www.lfd.uci.edu/workshop/2021/files/LFDWorkshop2021-ComputerTraining.pdf>`_
 (by E. Gratton, M. Digman, and J. Unruh)
 using the PhasorPy library instead of the
-`Globals for Images · SimFCS <https://www.lfd.uci.edu/globals/>`_
+`Globals for Images - SimFCS <https://www.lfd.uci.edu/globals/>`_
 and Excel software.
 
 .. note::

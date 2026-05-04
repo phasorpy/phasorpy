@@ -23,6 +23,7 @@ from phasorpy._phasorpy import (
     _fraction_on_segment,
     _intersect_circle_circle,
     _intersect_circle_line,
+    _intersect_line_line,
     _is_inside_circle,
     _is_inside_ellipse,
     _is_inside_ellipse_,
@@ -301,6 +302,32 @@ def test_intersect_circle_line():
     assert_array_equal(
         _intersect_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.1),
         [nan, nan, nan, nan],
+    )
+
+
+def test_intersect_line_line():
+    """Test _intersect_line_line function."""
+    # two diagonal lines crossing at (0.5, 0.5)
+    assert_allclose(
+        _intersect_line_line(0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0),
+        [0.5, 0.5],
+        atol=1e-6,
+    )
+    # horizontal and vertical lines crossing at (0.6, 0.4)
+    assert_allclose(
+        _intersect_line_line(0.0, 0.4, 1.0, 0.4, 0.6, 0.0, 0.6, 1.0),
+        [0.6, 0.4],
+        atol=1e-6,
+    )
+    # parallel lines
+    assert_array_equal(
+        _intersect_line_line(0.0, 0.0, 1.0, 0.0, 0.0, 0.5, 1.0, 0.5),
+        [nan, nan],
+    )
+    # NaN input
+    assert_array_equal(
+        _intersect_line_line(nan, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0),
+        [nan, nan],
     )
 
 
