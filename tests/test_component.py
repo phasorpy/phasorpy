@@ -7,6 +7,7 @@ import pytest
 from numpy.testing import assert_allclose
 
 from phasorpy.component import (
+    phasor_component_concentration,
     phasor_component_fit,
     phasor_component_fraction,
     phasor_component_graphical,
@@ -672,6 +673,99 @@ def test_phasor_component_fit():
     component_imag[0] = numpy.inf
     with pytest.raises(ValueError):
         phasor_component_fit(mean, real, imag, component_imag, component_imag)
+
+
+def test_phasor_component_concentration():
+    """Test phasor_component_concentration."""
+    free_real = 0.6
+    free_imag = 0.1
+    bound_real = 0.2
+    bound_imag = 0.4
+    ref_real = 0.8
+    ref_imag = 0.1
+    ref_mean = 500.0
+    ref_conc = 100.0
+
+    args = (
+        [free_real, bound_real],
+        [free_imag, bound_imag],
+        ref_mean,
+        ref_real,
+        ref_imag,
+        ref_conc,
+    )
+
+    # recover reference concentration from calibration at m=0.5
+    # pixel = (2*ref_mean, ref_real*0.5, ref_imag*0.5) = (1000, 0.4, 0.05)
+    result = phasor_component_concentration(1000.0, 0.4, 0.05, *args)
+    assert_allclose(result, 100.0)
+
+    # scalar input returns scalar-like array
+    result = phasor_component_concentration(500.0, 0.4, 0.05, *args)
+    assert_allclose(result, 90.0)
+
+    # array input
+    means = numpy.array([1000.0, 500.0, 2000.0])
+    reals = numpy.array([0.4, 0.4, 0.4])
+    imags = numpy.array([0.05, 0.05, 0.05])
+    result = phasor_component_concentration(means, reals, imags, *args)
+    assert isinstance(result, numpy.ndarray)
+    assert result.shape == (3,)
+    assert_allclose(result[0], 100.0)
+
+    # with brightness_ratio: returns (c_free, c_bound) for a pixel on the
+    # free-bound line
+    # pixel at 60% free / 40% bound: (0.6*0.6 + 0.4*0.2, 0.6*0.1 + 0.4*0.4)
+    fb_real = free_real * 0.6 + bound_real * 0.4  # 0.44
+    fb_imag = free_imag * 0.6 + bound_imag * 0.4  # 0.22
+    conc_free, conc_bound = phasor_component_concentration(
+        1000.0, fb_real, fb_imag, *args, brightness_ratio=1.0
+    )
+    assert conc_free >= 0.0
+    assert conc_bound >= 0.0
+    # with brightness_ratio=1: conc_bound/conc_free = f_bound/f_free = 0.4/0.6
+    assert_allclose(conc_bound / conc_free, 0.4 / 0.6, rtol=1e-5)
+
+    # NaN input propagates to NaN output
+    result = phasor_component_concentration(
+        ref_mean, numpy.nan, ref_imag, *args
+    )
+    assert numpy.isnan(result)
+
+
+def test_phasor_component_concentration_errors():
+    """Test phasor_component_concentration raises ValueError for bad inputs."""
+    args = ([0.6, 0.2], [0.1, 0.4], 500.0, 0.8, 0.1, 100.0)
+
+    # component_real.shape != (2,)
+    with pytest.raises(ValueError, match='component_real'):
+        phasor_component_concentration(1.0, 0.4, 0.05, [0.6], *args[1:])
+
+    # component_imag.shape != (2,)
+    with pytest.raises(ValueError, match='component_imag'):
+        phasor_component_concentration(
+            1.0, 0.4, 0.05, args[0], [0.1], *args[2:]
+        )
+
+    # component_real[0] == component_real[1]
+    with pytest.raises(ValueError, match='component_real'):
+        phasor_component_concentration(1.0, 0.4, 0.05, [0.2, 0.2], *args[1:])
+
+    # reference_mean == 0
+    with pytest.raises(ValueError, match='reference_mean'):
+        phasor_component_concentration(
+            1.0, 0.4, 0.05, *args[:2], 0.0, *args[3:]
+        )
+
+    # reference_concentration <= 0
+    with pytest.raises(ValueError, match='reference_concentration'):
+        phasor_component_concentration(1.0, 0.4, 0.05, *args[:5], 0.0)
+
+    # brightness_ratio <= 0
+    with pytest.raises(ValueError, match='brightness_ratio'):
+        phasor_component_concentration(
+            1.0, 0.4, 0.05, *args, brightness_ratio=-1.0
+        )
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

@@ -545,6 +545,14 @@ MISC = pooch.create(
     base_url='https://github.com/phasorpy/phasorpy-data/raw/main/misc',
     env=ENV,
     registry={
+        'NADH_1mM.r64': (
+            'sha256:'
+            'fea442ae2d90bf41ed6187f1874db99f689e72c90ab74f726a99e7615b7c5128'
+        ),
+        'NADH_cell.r64': (
+            'sha256:'
+            '5e819282076007117cea3c1d4a59688523fcf90b0b038e6d9b98c2a8570cba4a'
+        ),
         'NADHandSHG.ifli': (
             'sha256:'
             'dfa65952850b8a222258776a8a14eb1ab7e70ff5f62b58aa2214797c5921b4a3'
