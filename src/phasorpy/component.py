@@ -861,6 +861,12 @@ def phasor_component_concentration(
     if component_imag.shape != (2,):
         msg = f'{component_imag.shape=} != (2,)'
         raise ValueError(msg)
+    if numpy.isnan(component_real).any() or numpy.isnan(component_imag).any():
+        msg = 'component coordinates must not contain NaN values'
+        raise ValueError(msg)
+    if numpy.isinf(component_real).any() or numpy.isinf(component_imag).any():
+        msg = 'component coordinates must not contain infinite values'
+        raise ValueError(msg)
     c0_real = float(component_real[0])
     c0_imag = float(component_imag[0])
     c1_real = float(component_real[1])
@@ -873,8 +879,8 @@ def phasor_component_concentration(
     if c0_real == c1_real:
         msg = 'component_real values must differ'
         raise ValueError(msg)
-    if reference_mean == 0.0:
-        msg = 'reference_mean must not be zero'
+    if not numpy.isfinite(reference_mean) or reference_mean <= 0.0:
+        msg = f'{reference_mean=} is not finite and positive'
         raise ValueError(msg)
     if reference_concentration <= 0.0:
         msg = f'{reference_concentration=} is not positive'
@@ -895,6 +901,9 @@ def phasor_component_concentration(
         reference_real * 0.5,
         reference_imag * 0.5,
     )
+    if not numpy.isfinite(g_cal) or g_cal == 0.0:
+        msg = f'invalid {g_cal=}'
+        raise ValueError(msg)
     # calibration factor
     k = reference_concentration * (c0_real - g_cal) / g_cal
 

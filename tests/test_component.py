@@ -747,6 +747,18 @@ def test_phasor_component_concentration_errors():
             1.0, 0.4, 0.05, args[0], [0.1], *args[2:]
         )
 
+    # component_real contains NaN
+    with pytest.raises(ValueError, match='NaN'):
+        phasor_component_concentration(
+            1.0, 0.4, 0.05, [float('nan'), 0.2], *args[1:]
+        )
+
+    # component_imag contains inf
+    with pytest.raises(ValueError, match='infinite'):
+        phasor_component_concentration(
+            1.0, 0.4, 0.05, args[0], [0.1, float('inf')], *args[2:]
+        )
+
     # component_real[0] == component_real[1]
     with pytest.raises(ValueError, match='component_real'):
         phasor_component_concentration(1.0, 0.4, 0.05, [0.2, 0.2], *args[1:])
