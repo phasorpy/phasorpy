@@ -121,7 +121,8 @@ class PhasorPlot:
         **kwargs: Any,
     ) -> None:
         # initialize empty phasor plot
-        self._ax = pyplot.subplots()[1] if ax is None else ax
+        figsize = kwargs.pop('figsize', None)
+        self._ax = pyplot.subplots(figsize=figsize)[1] if ax is None else ax
         self._ax.format_coord = (  # type: ignore[method-assign]
             self._on_format_coord
         )

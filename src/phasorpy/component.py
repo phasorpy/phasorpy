@@ -23,12 +23,16 @@ The ``phasorpy.component`` module provides functions to:
 - calculate phasor coordinates from fractional intensities of
   components (:py:func:`phasor_from_component`)
 
+- calculate absolute concentrations of two components from phasor
+  coordinates and calibration (:py:func:`phasor_component_concentration`)
+
 """
 
 from __future__ import annotations
 
 __all__ = [
     # phasor_component_blind,
+    'phasor_component_concentration',
     'phasor_component_fit',
     'phasor_component_fraction',
     'phasor_component_graphical',
@@ -37,7 +41,7 @@ __all__ = [
 ]
 
 import numbers
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 if TYPE_CHECKING:
     from ._typing import Any, ArrayLike, DTypeLike, NDArray
@@ -47,6 +51,7 @@ import numpy
 from ._phasorpy import (
     _blend_and,
     _fraction_on_segment,
+    _intersect_line_line,
     _is_inside_circle,
     _is_inside_stadium,
     _mean_value_coordinates,
@@ -638,6 +643,326 @@ def phasor_component_fit(
     _blend_and(mean, fractions, out=fractions)
 
     return numpy.asarray(fractions)
+
+
+@overload
+def phasor_component_concentration(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    component_real: ArrayLike,
+    component_imag: ArrayLike,
+    /,
+    reference_mean: float,
+    reference_real: float,
+    reference_imag: float,
+    reference_concentration: float,
+    *,
+    brightness_ratio: None = ...,
+) -> NDArray[Any]: ...
+
+
+@overload
+def phasor_component_concentration(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    component_real: ArrayLike,
+    component_imag: ArrayLike,
+    /,
+    reference_mean: float,
+    reference_real: float,
+    reference_imag: float,
+    reference_concentration: float,
+    *,
+    brightness_ratio: float,
+) -> tuple[NDArray[Any], NDArray[Any]]: ...
+
+
+def phasor_component_concentration(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    component_real: ArrayLike,
+    component_imag: ArrayLike,
+    /,
+    reference_mean: float,
+    reference_real: float,
+    reference_imag: float,
+    reference_concentration: float,
+    *,
+    brightness_ratio: float | None = None,
+) -> NDArray[Any] | tuple[NDArray[Any], NDArray[Any]]:
+    r"""Return concentrations of two components from phasor coordinates.
+
+    Calculate the absolute concentration of the first component and,
+    optionally, the second component of a two-component system from
+    phasor coordinates, using an intensity calibration based on a solution
+    of known concentration according to [4]_.
+
+    The algorithm uses geometric line-line intersections in phasor space
+    to determine fractional contributions and scale them to absolute
+    concentrations.
+
+    Parameters
+    ----------
+    mean : array_like
+        Mean intensity of phasor coordinates.
+    real : array_like
+        Real component of phasor coordinates.
+    imag : array_like
+        Imaginary component of phasor coordinates.
+    component_real : array_like, shape (2,)
+        Real coordinates of the two components.
+        The first component is the calibrated component, whose pure solution
+        is used as the reference;
+    component_imag : array_like, shape (2,)
+        Imaginary coordinates of the two components.
+    reference_mean : float
+        Mean fluorescence intensity of calibration solution.
+        The calibration solution must contain only the first component at a
+        known concentration.
+    reference_real : float
+        Real coordinate of calibration solution phasor.
+    reference_imag : float
+        Imaginary coordinate of calibration solution phasor.
+    reference_concentration : float
+        Known concentration of calibration solution.
+        Same units as the returned concentrations.
+    brightness_ratio : float, optional
+        Ratio of molecular brightness of second to first component.
+        If provided, the second-component concentration is also returned.
+
+    Returns
+    -------
+    conc_first : ndarray
+        Absolute concentration of first component.
+    conc_second : ndarray
+        Absolute concentration of second component.
+        Only returned when `brightness_ratio` is provided.
+
+    Raises
+    ------
+    ValueError
+        If `component_real` values are equal (degenerate component line).
+        If `component_real` or `component_imag` do not have shape ``(2,)``.
+        If `reference_mean` is zero (cannot normalize).
+        If `reference_concentration` is not positive.
+        If `brightness_ratio` is not positive.
+
+    See Also
+    --------
+    phasorpy.component.phasor_component_fraction
+    :ref:`sphx_glr_tutorials_applications_phasorpy_nadh_concentration.py`
+
+    Notes
+    -----
+    The algorithm is based on the ``concandfrac`` procedure from SimFCS and
+    the method described in [4]_.
+    The implementation has been validated against the published cellular NADH
+    concentration, but no independent theoretical or cross-instrument
+    validation has been performed.
+    Users applying the method to other analytes or instrument platforms
+    are encouraged to verify results against known standards.
+
+    The calibration solution must contain only component 0 (no component 1)
+    at a precisely known concentration (`reference_concentration`).
+    It must be acquired under identical instrument settings as the sample
+    (same laser power, detector gain, acquisition time, and objective),
+    because the algorithm relates pixel mean intensities directly to the
+    calibration mean intensity. The mean intensity of the calibration solution
+    should be comparable to the typical pixel mean intensities of the sample.
+
+    The calibration factor :math:`k` relates the component-0 phasor
+    position to an absolute concentration:
+
+    .. math::
+
+        k = c_\text{ref} \cdot \frac{g_0 - g_\text{cal}}
+            {g_\text{cal}}
+
+    where :math:`g_0` is the real coordinate of the component-0 phasor,
+    :math:`g_\text{cal}` is the intersection of the line from :math:`g_0`
+    through the origin with the line connecting the component-1 phasor
+    scaled by :math:`m=0.5` and the calibration phasor scaled by
+    :math:`m=0.5`, and :math:`c_\text{ref}` is the reference concentration.
+
+    For each pixel, a normalized intensity is computed:
+
+    .. math::
+
+        m = \frac{I}{I_\text{ref} + I}
+
+    where :math:`I` is the pixel mean intensity and
+    :math:`I_\text{ref} = 2 \cdot \text{reference_mean}` is twice the
+    fluorescence-only mean intensity of the calibration solution.
+
+    The component-0 concentration is then:
+
+    .. math::
+
+        c_0 = \left|
+            \frac{g_\text{pix} \cdot k}{g_0 - g_\text{pix}} \right|
+
+    where :math:`g_\text{pix}` is the real coordinate of the intersection of
+    the line from :math:`g_0` through the origin with the line from the
+    intensity-scaled component-1 phasor :math:`g_1 \cdot m` through
+    the measured phasor.
+    Note: The absolute value in the :math:`c_0` formula is required for phasor
+    geometries where :math:`g_\text{pix}` falls outside the interval
+    :math:`[0, g_0]` (as is typical for NADH), but has not been validated
+    for other analytes or geometries.
+
+    When `brightness_ratio` :math:`\varepsilon = \varepsilon_1 / \varepsilon_0`
+    is provided, the component-0 fraction :math:`f_0` at each pixel is
+    determined by the intersection :math:`g_\text{frac}` of the line from
+    the origin through the measured phasor with the component line:
+
+    .. math::
+
+        f_0 = \frac{g_1 - g_\text{frac}}
+            {g_1 - g_0}
+
+    The component-1 concentration and total concentration are then:
+
+    .. math::
+
+        c_1 &= c_0 \cdot
+            \frac{1 - f_0}{f_0 \cdot \varepsilon}
+
+        c_\text{total} &= c_0 + c_1
+
+    References
+    ----------
+    .. [4] Ma N, Digman M A, Malacrida L, and Gratton E.
+       `Measurements of absolute concentrations of NADH in cells using
+       the phasor FLIM method
+       <https://doi.org/10.1364/BOE.7.002441>`_.
+       *Biomed Opt Express*, 7(7): 2441-2452 (2016)
+
+    Examples
+    --------
+    Verify the calibration self-consistency:
+    when ``mean = 2 * reference_mean`` (intensity modulation ``m = 0.5``)
+    and the pixel phasor equals the reference phasor scaled by 0.5, the
+    result equals ``reference_concentration``:
+
+    >>> phasor_component_concentration(
+    ...     1000.0, 0.4, 0.05, [0.6, 0.2], [0.1, 0.4], 500.0, 0.8, 0.1, 100.0
+    ... )
+    array(100)
+
+    """
+    component_real = numpy.asarray(component_real, dtype=float)
+    component_imag = numpy.asarray(component_imag, dtype=float)
+    if component_real.shape != (2,):
+        msg = f'{component_real.shape=} != (2,)'
+        raise ValueError(msg)
+    if component_imag.shape != (2,):
+        msg = f'{component_imag.shape=} != (2,)'
+        raise ValueError(msg)
+    if numpy.isnan(component_real).any() or numpy.isnan(component_imag).any():
+        msg = 'component coordinates must not contain NaN values'
+        raise ValueError(msg)
+    if numpy.isinf(component_real).any() or numpy.isinf(component_imag).any():
+        msg = 'component coordinates must not contain infinite values'
+        raise ValueError(msg)
+    c0_real = float(component_real[0])
+    c0_imag = float(component_imag[0])
+    c1_real = float(component_real[1])
+    c1_imag = float(component_imag[1])
+    reference_real = float(reference_real)
+    reference_imag = float(reference_imag)
+    reference_mean = float(reference_mean)
+    reference_concentration = float(reference_concentration)
+
+    if c0_real == c1_real:
+        msg = 'component_real values must differ'
+        raise ValueError(msg)
+    if not numpy.isfinite(reference_mean) or reference_mean <= 0.0:
+        msg = f'{reference_mean=} is not finite and positive'
+        raise ValueError(msg)
+    if reference_concentration <= 0.0:
+        msg = f'{reference_concentration=} is not positive'
+        raise ValueError(msg)
+    if brightness_ratio is not None and brightness_ratio <= 0.0:
+        msg = f'{brightness_ratio=} is not positive'
+        raise ValueError(msg)
+
+    # line(c0 -> origin) X line(c1/2 -> cal/2)
+    # the raw reference phasor is scaled by 0.5 (m=0.5 condition)
+    g_cal, _ = _intersect_line_line(
+        c0_real,
+        c0_imag,
+        0.0,
+        0.0,
+        c1_real * 0.5,
+        c1_imag * 0.5,
+        reference_real * 0.5,
+        reference_imag * 0.5,
+    )
+    if not numpy.isfinite(g_cal) or g_cal == 0.0:
+        msg = f'invalid {g_cal=}'
+        raise ValueError(msg)
+    # calibration factor
+    k = reference_concentration * (c0_real - g_cal) / g_cal
+
+    # TODO: preserve float32
+    mean = numpy.asarray(mean, dtype=numpy.float64)
+    real = numpy.asarray(real, dtype=numpy.float64)
+    imag = numpy.asarray(imag, dtype=numpy.float64)
+
+    # normalized intensity
+    m = mean / ((2.0 * reference_mean) + mean)
+
+    # scale second-component phasor by normalized intensity
+    c1_real_scaled = c1_real * m
+    c1_imag_scaled = c1_imag * m
+
+    # line(c0 -> origin) X line(scaled_c1 -> data)
+    g_pix, _ = _intersect_line_line(
+        c0_real,
+        c0_imag,
+        0.0,
+        0.0,
+        c1_real_scaled,
+        c1_imag_scaled,
+        real,
+        imag,
+    )
+
+    # absolute concentration of first component
+    # abs() matches the SimFCS implementation and is required when g_pix
+    # falls outside [0, c0_real]
+    with numpy.errstate(divide='ignore', invalid='ignore'):
+        conc_first = numpy.asarray(numpy.abs(g_pix * k / (c0_real - g_pix)))
+
+    if brightness_ratio is None:
+        return conc_first
+
+    # first-component fraction from line(origin -> data) X line(c0 -> c1)
+    # this matches the SimFCS implementation; alternatively, the closest point
+    # on the component line to the pixel phasor could be used
+    g_frac, _ = _intersect_line_line(
+        c0_real,
+        c0_imag,
+        c1_real,
+        c1_imag,
+        0.0,
+        0.0,
+        real,
+        imag,
+    )
+    with numpy.errstate(divide='ignore', invalid='ignore'):
+        frac_first = numpy.asarray(
+            1.0 - (g_frac - c0_real) / (c1_real - c0_real)
+        )
+        frac_second = 1.0 - frac_first
+        conc_second = numpy.asarray(
+            conc_first * frac_second / (frac_first * brightness_ratio)
+        )
+
+    return conc_first, conc_second
 
 
 def phasor_component_mvc(
