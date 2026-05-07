@@ -275,7 +275,32 @@ plot_histograms(
 # via the `czifile <https://github.com/cgohlke/czifile/>`_ library.
 #
 # The :py:func:`phasorpy.io.signal_from_czi` function is used to read
-# such data, but no public sample files are currently available.
+# a hyperspectral image with 28 emission wavelengths from a CZI file:
+
+from phasorpy.io import signal_from_czi
+
+filename = 'test_file.czi'
+
+signal = signal_from_czi(fetch(filename))
+
+plot_signal_image(signal, xlabel='wavelength (nm)', title=filename)
+
+# %%
+# Emission wavelengths (in nm) are available in the coordinates of the
+# channel axis ('C'):
+
+print(signal.coords['C'].values.astype(int))
+
+# %%
+# Plot the first harmonic phasor coordinates after applying a median filter:
+
+plot_phasor(
+    *phasor_threshold(
+        *phasor_filter_median(*phasor_from_signal(signal)), mean_min=1
+    )[1:],
+    allquadrants=True,
+    title=filename,
+)
 
 # %%
 # Zeiss LSM
@@ -289,21 +314,15 @@ plot_histograms(
 # via the `tifffile <https://github.com/cgohlke/tifffile/>`_ library.
 #
 # The :py:func:`phasorpy.io.signal_from_lsm` function is used to read
-# a hyperspectral dataset with 30 emission wavelengths:
+# a hyperspectral image with 30 emission wavelengths from an LSM file:
 
 from phasorpy.io import signal_from_lsm
 
 filename = 'paramecium.lsm'
 
-signal = signal_from_lsm(fetch('paramecium.lsm'))
+signal = signal_from_lsm(fetch(filename))
 
 plot_signal_image(signal, xlabel='wavelength (nm)', title=filename)
-
-# %%
-# Emission wavelengths (in nm) are available in the coordinates of the
-# channel axis ('C'):
-
-print(signal.coords['C'].values.astype(int))
 
 # %%
 # Plot the first harmonic phasor coordinates after applying a median filter:
@@ -328,7 +347,7 @@ plot_phasor(
 # `sdtfile <https://github.com/cgohlke/sdtfile/>`_ library.
 #
 # The :py:func:`phasorpy.io.signal_from_sdt` function is used to read a
-# TCSPC histogram from a SDT file:
+# TCSPC histogram from an SDT file:
 
 from phasorpy.io import signal_from_sdt
 
@@ -749,7 +768,7 @@ mean, real, imag = phasor_from_signal(image_stack, axis=0)
 plot_phasor(real, imag, frequency=80.0, allquadrants=True, title=filename)
 
 # sphinx_gallery_start_ignore
-# sphinx_gallery_thumbnail_number = 11
+# sphinx_gallery_thumbnail_number = 13
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"
 # sphinx_gallery_end_ignore
