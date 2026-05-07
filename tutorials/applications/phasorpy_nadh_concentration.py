@@ -40,12 +40,12 @@ from phasorpy.phasor import phasor_center
 from phasorpy.plot import PhasorPlot, plot_image
 
 # %%
-# CHO-K1 cell measurements
-# ------------------------
+# CHO-K1 cell
+# -----------
 #
-# Determine the absolute NADH concentration in each pixel of a FLIM dataset
-# of CHO-K1 cells measured at 80 MHz, using a 1 mM NADH solution (acquired
-# with the same instrument settings) as the calibration standard.
+# Determine the absolute NADH concentration in each pixel of a
+# CHO-K1 cell FLIM dataset measured at 80 MHz, using a 1 mM NADH solution
+# (acquired with the same instrument settings) as the calibration standard.
 #
 # Read the CHO-K1 cell phasor coordinate images from a SimFCS referenced file.
 # Apply a median filter to reduce noise and threshold to retain only
@@ -154,7 +154,7 @@ plot_image(
     conc_total[:128],  # only show the cell region
     vmin=0.0,
     vmax=1.0,
-    title='Total NADH concentration (mM) in CHO-K1 cell',
+    title='CHO-K1 cell total NADH concentration (mM)',
 )
 
 # %%

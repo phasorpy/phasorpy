@@ -557,6 +557,10 @@ MISC = pooch.create(
             'sha256:'
             'dfa65952850b8a222258776a8a14eb1ab7e70ff5f62b58aa2214797c5921b4a3'
         ),
+        'test_file.czi': (
+            'sha256:'
+            'a5bf495d01fb8134442f17fc09d02cca5a1d1d9e7cd725fc605c2bb17262c897'
+        ),
     },
 )
 

@@ -79,17 +79,17 @@ def signal_from_czi(
 
     Examples
     --------
-    >>> signal = signal_from_czi(fetch('paramecium.czi'))  # doctest: +SKIP
-    >>> signal.values  # doctest: +SKIP
+    >>> signal = signal_from_czi(fetch('test_file.czi'))
+    >>> signal.values
     array(...)
-    >>> signal.dtype  # doctest: +SKIP
+    >>> signal.dtype
     dtype('uint8')
-    >>> signal.shape  # doctest: +SKIP
-    (30, 512, 512)
-    >>> signal.dims  # doctest: +SKIP
+    >>> signal.shape
+    (28, 512, 512)
+    >>> signal.dims
     ('C', 'Y', 'X')
-    >>> signal.coords['C'].data  # doctest: +SKIP
-    array([423., ..., 713.])
+    >>> signal.coords['C'].data
+    array([423, 433, 443, ..., 673, 683, 693])
 
     """
     import czifile
