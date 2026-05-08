@@ -154,9 +154,8 @@ class LifetimePlots:
 
         # create plots
         update_kwargs(kwargs, figsize=(10.24, 7.68))
-        fig, ((time_plot, phasor_plot), (phase_plot, ax4)) = pyplot.subplots(
-            2, 2, **kwargs
-        )
+        fig = pyplot.figure(**kwargs)
+        (time_plot, phasor_plot), (phase_plot, ax4) = fig.subplots(2, 2)
 
         if interactive:
             fcm = fig.canvas.manager
