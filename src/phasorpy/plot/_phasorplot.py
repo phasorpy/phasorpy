@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .._typing import IO, Any, ArrayLike, Literal, NDArray
 
 import numpy
-from matplotlib import pyplot
+from matplotlib import pyplot, rcParams
 from matplotlib.font_manager import FontProperties
 from matplotlib.lines import Line2D
 from matplotlib.patches import (
@@ -83,6 +83,7 @@ class PhasorPlot:
         or :py:meth:`PhasorPlot.semicircle`.
     **kwargs
         Additional properties to set on `ax`.
+        ``figsize`` is passed to :py:func:`matplotlib.pyplot.figure`.
 
     See Also
     --------
@@ -122,7 +123,10 @@ class PhasorPlot:
     ) -> None:
         # initialize empty phasor plot
         figsize = kwargs.pop('figsize', None)
-        self._ax = pyplot.subplots(figsize=figsize)[1] if ax is None else ax
+        if ax is None:
+            self._ax = pyplot.figure(figsize=figsize).subplots()
+        else:
+            self._ax = ax
         self._ax.format_coord = (  # type: ignore[method-assign]
             self._on_format_coord
         )
@@ -195,11 +199,7 @@ class PhasorPlot:
     @property
     def fig(self) -> Figure | None:
         """Matplotlib :py:class:`matplotlib.figure.Figure`."""
-        try:
-            # matplotlib >= 3.10.0
-            return self._ax.get_figure(root=True)
-        except TypeError:
-            return self._ax.get_figure()  # type: ignore[return-value]
+        return self._ax.get_figure(root=True)
 
     @property
     def dataunit_to_point(self) -> float:
@@ -244,10 +244,13 @@ class PhasorPlot:
         file : str, path-like, or binary file-like
             Path or Python file-like object to write the current figure to.
         **kwargs
-            Optional arguments passed to :py:func:`matplotlib.pyplot.savefig`.
+            Optional arguments passed to
+            :py:meth:`matplotlib.figure.Figure.savefig`.
 
         """
-        pyplot.savefig(file, **kwargs)
+        fig = self.fig
+        assert fig is not None
+        fig.savefig(file, **kwargs)  # type: ignore[arg-type]
 
     def plot(
         self,
@@ -1408,7 +1411,7 @@ class CircleTicks(AbstractPathEffect):
             self._origin = float(origin[0]), float(origin[1])
 
         if size is None:
-            self._size = pyplot.rcParams['xtick.major.size']
+            self._size = rcParams['xtick.major.size']
         else:
             self._size = size
         if labels is None or len(labels) == 0:

@@ -166,7 +166,7 @@ def plot_phasor_image(
     show : bool, optional, default: True
         Show figure.
     **kwargs
-        Optional arguments passed to :func:`matplotlib.pyplot.imshow`.
+        Optional arguments passed to :py:meth:`matplotlib.axes.Axes.imshow`.
 
     Raises
     ------
@@ -336,7 +336,7 @@ def plot_signal_image(
     show : bool, optional, default: True
         Show figure.
     **kwargs
-        Optional arguments passed to :func:`matplotlib.pyplot.imshow`.
+        Optional arguments passed to :py:meth:`matplotlib.axes.Axes.imshow`.
 
     Raises
     ------
@@ -442,7 +442,7 @@ def plot_image(
     show : bool, optional, default: True
         Show figure.
     **kwargs
-        Optional arguments passed to :func:`matplotlib.pyplot.imshow`.
+        Optional arguments passed to :py:meth:`matplotlib.axes.Axes.imshow`.
 
     Raises
     ------
@@ -588,12 +588,12 @@ def plot_polar_frequency(
     show : bool, optional, default: True
         Show figure.
     **kwargs
-        Optional arguments passed to :py:func:`matplotlib.pyplot.plot`.
+        Optional arguments passed to :py:meth:`matplotlib.axes.Axes.plot`.
 
     """
     # TODO: make this customizable: labels, colors, ...
     if ax is None:
-        ax = pyplot.subplots()[1]
+        ax = pyplot.figure().subplots()
     if title is None:
         title = 'Multi-frequency plot'
     if title:
@@ -648,10 +648,11 @@ def plot_histograms(
     show : bool, optional, default: True
         Show figure.
     **kwargs
-        Optional arguments passed to :func:`matplotlib.pyplot.hist`.
+        Optional arguments passed to :py:meth:`matplotlib.axes.Axes.hist`.
 
     """
-    ax = pyplot.subplots()[1]
+    fig = pyplot.figure()
+    ax = fig.subplots()
     if kwargs.get('alpha') is None:
         ax.hist(
             [numpy.asarray(d).flatten() for d in data], label=labels, **kwargs
@@ -669,7 +670,7 @@ def plot_histograms(
         ax.set_ylabel(ylabel)
     if labels is not None:
         ax.legend()
-    pyplot.tight_layout()
+    fig.tight_layout()
     if show:
         pyplot.show()
 
@@ -690,7 +691,7 @@ def _imshow(
 ) -> AxesImage:
     """Plot image array.
 
-    Convenience wrapper around :py:func:`matplotlib.pyplot.imshow`.
+    Convenience wrapper around :py:meth:`matplotlib.axes.Axes.imshow`.
 
     """
     update_kwargs(kwargs, interpolation='none')

@@ -271,13 +271,13 @@ for i in range(fractions.size):
         color='red',
         alpha=0.5,
     )
-    hist_artists = pyplot.plot(
+    hist_artists = hist.plot(
         fractions[: i + 1], counts[0][: i + 1], linestyle='-', color='tab:blue'
     )
     plots.append(plot_lines + hist_artists)
 
 _ = matplotlib.animation.ArtistAnimation(fig, plots, interval=100, blit=True)
-pyplot.tight_layout()
+fig.tight_layout()
 pyplot.show()
 
 # sphinx_gallery_start_ignore

@@ -20,8 +20,6 @@ cropped to a circle.
 # %%
 # Import required modules, functions, and classes:
 
-from matplotlib import pyplot
-
 from phasorpy.lifetime import lifetime_to_signal, phasor_from_lifetime
 from phasorpy.phasor import phasor_from_signal, phasor_to_signal
 from phasorpy.plot import PhasorPlot
@@ -60,10 +58,11 @@ arrow_color = None  # set to a color to draw arrow
 background_color = None  # set to a color to fill circle
 linewidth = 25
 
-fig, ax = pyplot.subplots(figsize=(6.4, 6.4))
-ax.set_axis_off()
+plot = PhasorPlot(
+    figsize=(6.4, 6.4), xlim=(-0.04, 1.04), ylim=(-0.55, 0.55), title=None
+)
 
-plot = PhasorPlot(ax=ax, xlim=(-0.04, 1.04), ylim=(-0.55, 0.55), title=None)
+plot.ax.set_axis_off()
 
 plot.semicircle(
     frequency=frequency,
@@ -77,7 +76,7 @@ plot.semicircle(
 plot.cursor(*phasor, radius=0.08, linewidth=linewidth, color=cursor_color)
 
 # draw time-domain signal in inset
-cax = ax.inset_axes((0.015, 0.325, 0.97, 0.45))
+cax = plot.ax.inset_axes((0.015, 0.325, 0.97, 0.45))
 cax.set_ylim(0.02, 1.1)
 cax.set_axis_off()
 cax.plot(
@@ -90,7 +89,7 @@ cax.plot(
 )
 
 # draw harmonic in second inset
-cax = ax.inset_axes((0.125, 0.113, 0.75, 0.25))
+cax = plot.ax.inset_axes((0.125, 0.113, 0.75, 0.25))
 cax.set_ylim(-0.11, 1.14)
 cax.set_axis_off()
 cax.plot(
@@ -132,12 +131,12 @@ if background_color is not None:
         zorder=0,
     )
 
-pyplot.tight_layout(pad=0.0, w_pad=0.0, h_pad=0.0)
+plot.fig.tight_layout(pad=0.0, w_pad=0.0, h_pad=0.0)
 
 # save the figure to an SVG file:
 plot.save('phasorpy_logo.svg', dpi=160, transparent=True, bbox_inches='tight')
 plot.show()
 
 # sphinx_gallery_start_ignore
-# mypy: disable-error-code="unreachable"
+# mypy: disable-error-code="unreachable, union-attr"
 # sphinx_gallery_end_ignore
