@@ -382,7 +382,7 @@ def test_signal_filter_median_scipy_equivalence():
 
     signal = numpy.arange(2 * 3 * 4).reshape((2, 3, 4)).astype(numpy.float64)
 
-    expected = median_filter(signal, size=3, axes=(0, 2))
+    expected = median_filter(signal, size=3, axes=(0, 2), mode='nearest')
     filtered = signal_filter_median(signal, skip_axis=1, size=3)
     assert_allclose(filtered, expected)
 
@@ -418,6 +418,36 @@ def test_signal_filter_median_skip_axis_none():
     filtered = signal_filter_median(signal, skip_axis=None, size=3)
     assert filtered.shape == signal.shape
     assert numpy.isnan(filtered[1, 1])
+
+
+def test_signal_filter_median_scipy():
+    """Test signal_filter_median with use_scipy=True."""
+    from scipy.ndimage import median_filter
+
+    signal = numpy.arange(2 * 3 * 4).reshape((2, 3, 4)).astype(numpy.float64)
+
+    expected = median_filter(signal, size=3, axes=(0, 2))
+    filtered = signal_filter_median(
+        signal, skip_axis=1, size=3, use_scipy=True
+    )
+    assert_allclose(filtered, expected)
+
+
+def test_signal_filter_median_ndim():
+    """Test signal_filter_median numpy nD filter when len(axes) != 2."""
+    from scipy.ndimage import median_filter
+
+    signal = numpy.arange(3 * 4 * 5).reshape((3, 4, 5)).astype(numpy.float64)
+
+    # 3 filtered axes (len(axes) == 3, numpy nD path)
+    expected = median_filter(signal, size=3)
+    filtered = signal_filter_median(signal, skip_axis=None, size=3)
+    assert_allclose(filtered, expected)
+
+    # 1 filtered axis (len(axes) == 1, numpy nD path)
+    expected = median_filter(signal, size=3, axes=(2,))
+    filtered = signal_filter_median(signal, skip_axis=[0, 1], size=3)
+    assert_allclose(filtered, expected)
 
 
 def test_signal_filter_median_errors():

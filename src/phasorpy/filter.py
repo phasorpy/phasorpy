@@ -153,18 +153,22 @@ def phasor_filter_median(
         repeat = 0
 
     mean = numpy.asarray(mean)
-    if use_scipy or repeat == 0:  # or using nD numpy filter
+    if use_scipy or repeat == 0:
         real = numpy.asarray(real)
-    elif isinstance(real, numpy.ndarray) and real.dtype == numpy.float32:
-        real = real.copy()
-    else:
-        real = numpy.asarray(real, dtype=numpy.float64, copy=True)
-    if use_scipy or repeat == 0:  # or using nD numpy filter
         imag = numpy.asarray(imag)
-    elif isinstance(imag, numpy.ndarray) and imag.dtype == numpy.float32:
-        imag = imag.copy()
     else:
-        imag = numpy.asarray(imag, dtype=numpy.float64, copy=True)
+        real_dtype = (
+            numpy.float32
+            if isinstance(real, numpy.ndarray) and real.dtype == numpy.float32
+            else numpy.float64
+        )
+        imag_dtype = (
+            numpy.float32
+            if isinstance(imag, numpy.ndarray) and imag.dtype == numpy.float32
+            else numpy.float64
+        )
+        real = numpy.asarray(real, dtype=real_dtype, copy=True)
+        imag = numpy.asarray(imag, dtype=imag_dtype, copy=True)
 
     if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
         msg = f'{mean.shape=} != {real.shape=}'
@@ -207,7 +211,7 @@ def phasor_filter_median(
             size if i in axes else 1 for i in range(real.ndim)
         )
         pad_width = [
-            (s // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
+            ((s - 1) // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
         ]
         axis = tuple(range(-real.ndim, 0))
 
@@ -768,21 +772,23 @@ def signal_filter_median(
         # no need to filter
         repeat = 0
 
-    if use_scipy or repeat == 0:  # or using nD numpy filter
-        signal = numpy.asarray(signal)
-    elif isinstance(signal, numpy.ndarray) and signal.dtype == numpy.float32:
-        signal = signal.copy()
-    else:
-        signal = numpy.asarray(signal, dtype=numpy.float64, copy=True)
-
+    # cheap conversion to obtain ndim for axis parsing; no copy/cast yet
+    signal = numpy.asarray(signal)
     _, axes = parse_skip_axis(skip_axis, signal.ndim)
 
-    if len(axes) == 0:
-        # no axes to filter
+    if len(axes) == 0 or repeat == 0:
+        # no axes to filter or no need to call filter
         return signal
-    if repeat == 0:
-        # no need to call filter
-        return signal
+
+    if use_scipy:
+        pass  # scipy creates its own output; no in-place write needed
+    elif len(axes) == 2:
+        # 2D Cython path writes in-place; ensure writable float copy
+        dtype = (
+            numpy.float32 if signal.dtype == numpy.float32 else numpy.float64
+        )
+        signal = numpy.asarray(signal, dtype=dtype, copy=True)
+    # else: numpy nD path builds new arrays at each step
 
     if use_scipy:
         # use scipy NaN-unaware fallback
@@ -803,7 +809,7 @@ def signal_filter_median(
             size if i in axes else 1 for i in range(signal.ndim)
         )
         pad_width = [
-            (s // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
+            ((s - 1) // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
         ]
         median_axis = tuple(range(-signal.ndim, 0))
 
