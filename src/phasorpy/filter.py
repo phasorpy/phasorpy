@@ -14,7 +14,7 @@ The ``phasorpy.filter`` module provides functions to filter:
   - :py:func:`signal_filter_ncpca`
     (noise-corrected principal component analysis)
   - :py:func:`signal_filter_svd` (spectral vector denoise)
-  - :py:func:`signal_filter_median` (not implemented yet)
+  - :py:func:`signal_filter_median`
 
 """
 
@@ -25,7 +25,7 @@ __all__ = [
     'phasor_filter_median',
     'phasor_filter_pawflim',
     'phasor_threshold',
-    # 'signal_filter_median',
+    'signal_filter_median',
     'signal_filter_ncpca',
     'signal_filter_svd',
 ]
@@ -673,6 +673,169 @@ def phasor_threshold(
         mean = numpy.asarray(numpy.asarray(mean)[0])
 
     return mean, real, imag
+
+
+def signal_filter_median(
+    signal: ArrayLike,
+    /,
+    *,
+    repeat: int = 1,
+    size: int = 3,
+    skip_axis: int | Sequence[int] | None = -1,
+    use_scipy: bool = False,
+    num_threads: int | None = None,
+    **kwargs: Any,
+) -> NDArray[Any]:
+    """Return median-filtered signal.
+
+    By default, apply a NaN-aware median filter over all axes except the last
+    once, with a kernel size of 3.
+
+    Parameters
+    ----------
+    signal : array_like
+        Signal to be filtered.
+    repeat : int, optional, default: 1
+        Number of times to apply median filter.
+    size : int, optional, default: 3
+        Size of median filter kernel.
+    skip_axis : int or sequence of int or None, optional, default: -1
+        Axes in `signal` to exclude from filtering.
+        By default, the last axis is excluded.
+        If None, all axes are filtered.
+    use_scipy : bool, optional, default: False
+        Use :py:func:`scipy.ndimage.median_filter`.
+        This function has undefined behavior if the input array contains
+        NaN values, but is faster when filtering more than two dimensions.
+        See `issue #87 <https://github.com/phasorpy/phasorpy/issues/87>`_.
+    num_threads : int, optional
+        Number of OpenMP threads to use for parallelization.
+        Applies to filtering in two dimensions when not using scipy.
+        By default, multithreading is disabled.
+        If zero, up to half of logical CPUs are used.
+        OpenMP may not be available on all platforms.
+    **kwargs
+        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
+
+    Returns
+    -------
+    ndarray
+        Filtered signal.
+
+    Raises
+    ------
+    ValueError
+        If `repeat` is less than 0.
+        If `size` is less than 1.
+    IndexError
+        If any `skip_axis` value is out of bounds.
+
+    Notes
+    -----
+    Signal-space filtering does not commute with the phasor transform.
+    For heterogeneous data, the spatial median of neighboring signals
+    does not produce a physically meaningful signal, causing the phasor
+    coordinates to be displaced from the true distribution.
+    Use :py:func:`phasorpy.filter.phasor_filter_median` instead.
+
+    Examples
+    --------
+    Apply three times a median filter with a kernel size of three,
+    skipping the first axis:
+
+    >>> signal_filter_median(
+    ...     [
+    ...         [[0.0, 1.0, 0.0], [0.0, math.nan, 0.0]],
+    ...         [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
+    ...     ],
+    ...     size=3,
+    ...     repeat=3,
+    ...     skip_axis=0,
+    ... )
+    array([[[0, 0, 0],
+            [0, nan, 0]],
+           [[1, 1, 1],
+            [1, 1, 1]]])
+
+    """
+    if repeat < 0:
+        msg = f'{repeat=} < 0'
+        raise ValueError(msg)
+    if size < 1:
+        msg = f'{size=} < 1'
+        raise ValueError(msg)
+    if size == 1:
+        # no need to filter
+        repeat = 0
+
+    if use_scipy or repeat == 0:  # or using nD numpy filter
+        signal = numpy.asarray(signal)
+    elif isinstance(signal, numpy.ndarray) and signal.dtype == numpy.float32:
+        signal = signal.copy()
+    else:
+        signal = numpy.asarray(signal, dtype=numpy.float64, copy=True)
+
+    _, axes = parse_skip_axis(skip_axis, signal.ndim)
+
+    if len(axes) == 0:
+        # no axes to filter
+        return signal
+    if repeat == 0:
+        # no need to call filter
+        return signal
+
+    if use_scipy:
+        # use scipy NaN-unaware fallback
+        from scipy.ndimage import median_filter
+
+        kwargs.pop('axes', None)
+
+        for _ in range(repeat):
+            signal = median_filter(signal, size=size, axes=axes, **kwargs)
+
+        return numpy.asarray(signal)
+
+    if len(axes) != 2:
+        # n-dimensional median filter using numpy
+        from numpy.lib.stride_tricks import sliding_window_view
+
+        kernel_shape = tuple(
+            size if i in axes else 1 for i in range(signal.ndim)
+        )
+        pad_width = [
+            (s // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
+        ]
+        median_axis = tuple(range(-signal.ndim, 0))
+
+        nan_mask = numpy.isnan(signal)
+        for _ in range(repeat):
+            signal = numpy.pad(signal, pad_width, mode='edge')
+            signal = sliding_window_view(signal, kernel_shape)
+            signal = numpy.nanmedian(signal, axis=median_axis)
+            signal = numpy.where(nan_mask, numpy.nan, signal)
+
+        return signal
+
+    # two-dimensional median filter using optimized Cython implementation
+    num_threads = number_threads(num_threads)
+
+    buffer = numpy.empty(
+        tuple(signal.shape[ax] for ax in axes), dtype=signal.dtype
+    )
+
+    for index in numpy.ndindex(
+        *[signal.shape[ax] for ax in range(signal.ndim) if ax not in axes]
+    ):
+        index_list: list[int | slice] = list(index)
+        for ax in axes:
+            index_list = [*index_list[:ax], slice(None), *index_list[ax:]]
+        full_index = tuple(index_list)
+
+        _median_filter_2d(
+            signal[full_index], buffer, size, repeat, num_threads
+        )
+
+    return signal
 
 
 def signal_filter_svd(

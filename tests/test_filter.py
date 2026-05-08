@@ -12,6 +12,7 @@ from phasorpy.filter import (
     phasor_filter_median,
     phasor_filter_pawflim,
     phasor_threshold,
+    signal_filter_median,
     signal_filter_ncpca,
     signal_filter_svd,
 )
@@ -342,6 +343,93 @@ def test_phasor_filter_median_errors():
     # size < 1
     with pytest.raises(ValueError):
         phasor_filter_median([[0]], [[0]], [[0]], size=0)
+
+
+@pytest.mark.parametrize('dtype', [numpy.float32, numpy.float64])
+def test_signal_filter_median(dtype):
+    """Test signal_filter_median function."""
+    signal = numpy.array(
+        [
+            [[0.0, 10.0, 0.0], [1.0, 2.0, 3.0], [10.0, 5.0, 1.0]],
+            [[5.0, 6.0, 2.0], [10.0, 4.0, 8.0], [0.0, 7.0, 8.0]],
+        ],
+        dtype=dtype,
+    )
+
+    filtered = signal_filter_median(
+        signal, skip_axis=0, size=3, repeat=1, num_threads=1
+    )
+    expected = numpy.array(
+        [
+            [[1.0, 1.0, 2.0], [2.0, 2.0, 2.0], [5.0, 3.0, 2.0]],
+            [[5.0, 5.0, 4.0], [5.0, 6.0, 7.0], [4.0, 7.0, 8.0]],
+        ],
+        dtype=dtype,
+    )
+    assert_allclose(filtered, expected)
+    assert filtered.dtype == dtype
+
+    # sequence of skip_axis should produce same result as scalar
+    filtered_seq = signal_filter_median(
+        signal, skip_axis=[0], size=3, repeat=1, num_threads=1
+    )
+    assert_allclose(filtered_seq, expected)
+
+
+def test_signal_filter_median_scipy_equivalence():
+    """Test signal_filter_median against scipy with finite input."""
+    from scipy.ndimage import median_filter
+
+    signal = numpy.arange(2 * 3 * 4).reshape((2, 3, 4)).astype(numpy.float64)
+
+    expected = median_filter(signal, size=3, axes=(0, 2))
+    filtered = signal_filter_median(signal, skip_axis=1, size=3)
+    assert_allclose(filtered, expected)
+
+
+def test_signal_filter_median_nan():
+    """Test signal_filter_median function NaN handling."""
+    signal = numpy.array(
+        [
+            [[1.0, nan, 5.0], [2.0, 3.0, 4.0], [9.0, 8.0, 7.0]],
+            [[5.0, 6.0, 7.0], [8.0, 9.0, 1.0], [2.0, 3.0, 4.0]],
+        ]
+    )
+
+    filtered = signal_filter_median(signal, skip_axis=0, size=3)
+    assert numpy.isnan(filtered[0, 0, 1])
+    assert not numpy.isnan(filtered[0, 1, 1])
+
+
+def test_signal_filter_median_noop():
+    """Test signal_filter_median no-op modes."""
+    signal = numpy.arange(8).reshape((2, 4))
+
+    assert_array_equal(signal_filter_median(signal, repeat=0), signal)
+    assert_array_equal(signal_filter_median(signal, size=1), signal)
+
+
+def test_signal_filter_median_skip_axis_none():
+    """Test signal_filter_median with skip_axis=None filters all axes."""
+    signal = numpy.array(
+        [[1.0, 0.0, 1.0], [0.0, numpy.nan, 0.0], [1.0, 0.0, 1.0]]
+    )
+
+    filtered = signal_filter_median(signal, skip_axis=None, size=3)
+    assert filtered.shape == signal.shape
+    assert numpy.isnan(filtered[1, 1])
+
+
+def test_signal_filter_median_errors():
+    """Test signal_filter_median function errors."""
+    with pytest.raises(ValueError):
+        signal_filter_median([[0]], repeat=-1)
+
+    with pytest.raises(ValueError):
+        signal_filter_median([[0]], size=0)
+
+    with pytest.raises(IndexError):
+        signal_filter_median([[0]], skip_axis=2)
 
 
 @pytest.mark.parametrize(
