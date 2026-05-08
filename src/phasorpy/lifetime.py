@@ -351,7 +351,8 @@ def lifetime_to_signal(
     background: ArrayLike | None = None,
     samples: int = 64,
     harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
-    zero_phase: float | None = None,
+    zero_phase: float | None = 0.0,
+    zero_modulation: float = 1.0,
     zero_stdev: float | None = None,
     preexponential: bool = False,
     unit_conversion: float = 1e-3,
@@ -360,8 +361,9 @@ def lifetime_to_signal(
 
     Return a synthetic signal, instrument response function (IRF), and
     time axis, sampled over one period of the fundamental frequency.
-    The signal is convolved with the IRF, which is approximated by a
-    normal distribution.
+    The signal is convolved with the IRF. In time-domain mode, the IRF is
+    approximated by a normal distribution. In frequency-domain mode, the IRF
+    is characterized by its phase delay and modulation depth.
 
     Parameters
     ----------
@@ -374,7 +376,10 @@ def lifetime_to_signal(
         components. Fractions are normalized to sum to 1.
         Must be specified if `lifetime` is not a scalar.
     mean : array_like, optional, default: 1
-        Average signal intensity (DC). Must be scalar for now.
+        Average intensity (DC) of signal and instrument response function.
+        May be a scalar or array-like broadcastable to the synthesized
+        signal shape, for example to specify per-signal mean values when
+        synthesizing multiple signals.
     background : array_like, optional, default: 0
         Background signal intensity. Must be smaller than `mean`.
     samples : int, optional, default: 64
@@ -386,15 +391,24 @@ def lifetime_to_signal(
         `samples`.
         Use `'all'` to synthesize an exponential time-domain decay signal,
         or `1` to synthesize a homodyne signal.
-    zero_phase : float, optional
+    zero_phase : float, optional, default: 0
         Position of instrument response function in radians along one period.
-        Must be in the range [0, 2 pi]. The default is the 8th sample.
+        Must be in the range [0, 2 pi].
+        If `None`, the 8th sample is used to place the IRF peak visually away
+        from the period boundary.
+    zero_modulation : float, optional, default: 1.0
+        Modulation depth of the excitation source. Must be in range (0, 1].
+        Scales the AC component of the synthesized signal.
+        Only applicable when `harmonic` is a single integer.
+        Setting this to 0.5 guarantees a non-negative homodyne signal for
+        any lifetime.
     zero_stdev : float, optional
         Standard deviation of instrument response function in radians.
         When converted to sample units, must be at least 1.5 and less than
         one tenth of the number of samples to allow sufficient sampling.
         The default is equivalent to 1.5 samples. Increase `samples` to
         narrow the IRF.
+        Only applicable when `harmonic` is not a single integer.
     preexponential : bool, optional, default: False
         Fractions are pre-exponential amplitudes instead of
         fractional intensities.
@@ -409,7 +423,8 @@ def lifetime_to_signal(
         Signal generated from lifetimes at frequency, convolved with
         instrument response function.
     zero : ndarray
-        Instrument response function.
+        Instrument response function. Always 1D with shape ``(samples,)``.
+        When `mean` is array-valued, `zero` is scaled to the mean of `mean`.
     time : ndarray
         Time for each sample in signal in units of `lifetime`.
 
@@ -420,14 +435,45 @@ def lifetime_to_signal(
     :ref:`sphx_glr_tutorials_api_phasorpy_lifetime_to_signal.py`
     :ref:`sphx_glr_tutorials_misc_phasorpy_apps.py`
 
+    Raises
+    ------
+    ValueError
+        If `zero_modulation` is not in range (0, 1].
+        If `zero_modulation` is not 1.0 and `harmonic` is not a single integer.
+        If `zero_stdev` is provided and `harmonic` is a single integer.
+
     Notes
     -----
     This implementation is based on an inverse discrete Fourier transform
-    (DFT). Because DFT cannot be used on signals with discontinuities
-    (for example, an exponential decay starting at zero) without producing
-    strong artifacts (ripples), the signal is convolved with a continuous
-    instrument response function (IRF). The minimum width of the IRF is
-    limited due to sampling requirements.
+    (DFT).
+
+    When `harmonic` is a single integer, the synthesized signal is a
+    **frequency-domain** homodyne waveform. The instrument response function
+    is characterized directly by its phase delay (`zero_phase`, :math:`\phi_0`)
+    and modulation depth (`zero_modulation`, :math:`M_0`), matching how
+    frequency-domain FLIM instruments are calibrated. The waveform is
+
+    .. math::
+
+        I_k = \bar{I} \cdot \left(1 + 2 \cdot M_0 \cdot M \cdot \cos\!\left(
+        \frac{2 \pi h k}{K} - \phi_0 - \phi\right)\right)
+
+    where :math:`\bar{I}` is the mean intensity (`mean`), :math:`\phi` and
+    :math:`M` are the phasor phase and modulation of the lifetime,
+    :math:`h` is the harmonic, :math:`k` is the sample index
+    (0 to :math:`K-1`), and :math:`K` is the number of samples.
+    For short lifetimes, :math:`M` approaches 1, which can cause the signal
+    to become negative. Setting :math:`M_0 <= 0.5` guarantees a non-negative
+    signal for any lifetime.
+
+    When `harmonic` is `'all'` or a sequence, a **time-domain** signal is
+    synthesized from multiple harmonics using an inverse DFT and convolved
+    with a Gaussian IRF of width `zero_stdev`. Because DFT cannot be applied
+    to discontinuous signals (such as an exponential decay starting at zero)
+    without producing strong artifacts (ripples), the IRF width must be
+    sufficient to suppress those artifacts, but narrow enough to be sampled
+    accurately. The concept of excitation modulation depth (`zero_modulation`)
+    has no physical meaning in this mode.
 
     Examples
     --------
@@ -435,25 +481,26 @@ def lifetime_to_signal(
     lifetime components of 4.2 and 0.9 ns at 40 MHz:
 
     >>> signal, zero, times = lifetime_to_signal(
-    ...     40, [4.2, 0.9], fraction=[0.8, 0.2], samples=16
+    ...     40, [4.2, 0.9], fraction=[0.8, 0.2], samples=16, zero_phase=None
     ... )
     >>> signal  # doctest: +NUMBER
     array([0.2846, 0.1961, 0.1354, ..., 0.8874, 0.6029, 0.4135])
 
-    Synthesize a homodyne frequency-domain waveform signal for
+    Synthesize a non-negative homodyne frequency-domain waveform signal for
     a single lifetime:
 
     >>> signal, zero, times = lifetime_to_signal(
-    ...     40.0, 4.2, samples=16, harmonic=1
+    ...     40.0, 4.2, samples=16, harmonic=1, zero_modulation=0.5
     ... )
     >>> signal  # doctest: +NUMBER
-    array([0.2047, -0.05602, -0.156, ..., 1.471, 1.031, 0.5865])
+    array([1.473, 1.628, 1.687, ..., 0.7197, 0.9814, 1.246])
 
     """
     if harmonic is None:
         harmonic = 'all'
     all_harmonics = harmonic == 'all'
     harmonic, _ = parse_harmonic(harmonic, samples // 2)
+    single_harmonic = not all_harmonics and len(harmonic) == 1
 
     if samples < 16:
         msg = f'{samples=} < 16'
@@ -474,20 +521,35 @@ def lifetime_to_signal(
     scale = samples / (2.0 * math.pi)
     if zero_phase is None:
         zero_phase = 8.0 / scale
-    phase = zero_phase * scale  # in sample units
-    if zero_stdev is None:
-        zero_stdev = 1.5 / scale
-    stdev = zero_stdev * scale  # in sample units
 
     if zero_phase < 0 or zero_phase > 2.0 * math.pi:
         msg = f'{zero_phase=} is out of range [0, 2 pi]'
         raise ValueError(msg)
-    if stdev < 1.5:
-        msg = f'{zero_stdev=} < {1.5 / scale} cannot be sampled sufficiently'
-        raise ValueError(msg)
-    if stdev >= samples / 10:
-        msg = f'{zero_stdev=} >= pi / 5 not supported'
-        raise ValueError(msg)
+
+    if single_harmonic:
+        if zero_stdev is not None:
+            msg = 'zero_stdev is not applicable for single-harmonic signals'
+            raise ValueError(msg)
+        if zero_modulation <= 0.0 or zero_modulation > 1.0:
+            msg = f'{zero_modulation=} is not in range (0, 1]'
+            raise ValueError(msg)
+    else:
+        if zero_modulation != 1.0:
+            msg = (
+                f'{zero_modulation=} not supported for multi-harmonic signals'
+            )
+            raise ValueError(msg)
+        if zero_stdev is None:
+            zero_stdev = 1.5 / scale
+        stdev = zero_stdev * scale  # in sample units
+        if stdev < 1.5:
+            msg = (
+                f'{zero_stdev=} < {1.5 / scale} cannot be sampled sufficiently'
+            )
+            raise ValueError(msg)
+        if stdev >= samples / 10:
+            msg = f'{zero_stdev=} >= pi / 5 not supported'
+            raise ValueError(msg)
 
     frequencies = numpy.atleast_1d(frequency)
     if frequencies.size > 1 or frequencies[0] <= 0.0:
@@ -507,21 +569,43 @@ def lifetime_to_signal(
     )
     real, imag = numpy.atleast_1d(real, imag)
 
-    zero = numpy.zeros(samples, dtype=numpy.float64)
-    _gaussian_signal(zero, phase, stdev)
-    zero_mean, zero_real, zero_imag = phasor_from_signal(
-        zero, harmonic=harmonic
-    )
-    if real.ndim > 1:
-        # make broadcastable with real and imag
-        zero_real = zero_real[:, None]
-        zero_imag = zero_imag[:, None]
-    if not all_harmonics:
+    if single_harmonic:
+        # IRF characterized directly by phase delay and modulation depth
+        zero_real = numpy.atleast_1d(zero_modulation * math.cos(zero_phase))
+        zero_imag = numpy.atleast_1d(zero_modulation * math.sin(zero_phase))
+        phasor_multiply(real, imag, zero_real, zero_imag, out=(real, imag))
         zero = phasor_to_signal(
-            zero_mean, zero_real, zero_imag, samples=samples, harmonic=harmonic
+            float(numpy.asarray(mean).mean()),
+            zero_modulation * math.cos(zero_phase),
+            zero_modulation * math.sin(zero_phase),
+            samples=samples,
+            harmonic=harmonic[0],
         )
-
-    phasor_multiply(real, imag, zero_real, zero_imag, out=(real, imag))
+    else:
+        # IRF as Gaussian (time-domain / multi-harmonic)
+        phase = zero_phase * scale  # in sample units
+        zero = numpy.zeros(samples, dtype=numpy.float64)
+        _gaussian_signal(zero, phase, stdev)
+        zero_dc = float(zero.mean())  # DC mean as scalar, for scaling later
+        zero_mean, zero_real, zero_imag = phasor_from_signal(
+            zero, harmonic=harmonic
+        )
+        if real.ndim > 1:
+            # make broadcastable with real and imag
+            zero_real = zero_real[:, None]
+            zero_imag = zero_imag[:, None]
+        if not all_harmonics:
+            zero = phasor_to_signal(
+                zero_mean,
+                zero_real,
+                zero_imag,
+                samples=samples,
+                harmonic=harmonic,
+            )
+        # scale zero to have the same mean as the signal
+        # use a scalar so zero stays 1D even when mean is array-valued
+        zero *= float(numpy.asarray(mean).mean()) / zero_dc
+        phasor_multiply(real, imag, zero_real, zero_imag, out=(real, imag))
 
     if len(harmonic) == 1:
         harmonic = harmonic[0]
