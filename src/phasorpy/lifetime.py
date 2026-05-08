@@ -573,10 +573,6 @@ def lifetime_to_signal(
         # IRF characterized directly by phase delay and modulation depth
         zero_real = numpy.atleast_1d(zero_modulation * math.cos(zero_phase))
         zero_imag = numpy.atleast_1d(zero_modulation * math.sin(zero_phase))
-        if real.ndim > 1:
-            # make broadcastable with real and imag
-            zero_real = zero_real[:, None]
-            zero_imag = zero_imag[:, None]
         phasor_multiply(real, imag, zero_real, zero_imag, out=(real, imag))
         zero = phasor_to_signal(
             float(numpy.asarray(mean).mean()),
