@@ -18,6 +18,7 @@ from phasorpy.filter import (
     phasor_filter_median,
     phasor_filter_pawflim,
     phasor_threshold,
+    signal_filter_median,
 )
 from phasorpy.io import signal_from_imspector_tiff
 from phasorpy.lifetime import phasor_calibrate
@@ -42,18 +43,10 @@ assert reference_signal.attrs['frequency'] == frequency
 
 mean, real, imag = phasor_from_signal(signal, axis=0)
 
-reference_mean, reference_real, reference_imag = phasor_from_signal(
-    reference_signal, axis=0
-)
+reference = phasor_from_signal(reference_signal, axis=0)
 
 real, imag = phasor_calibrate(
-    real,
-    imag,
-    reference_mean,
-    reference_real,
-    reference_imag,
-    frequency=frequency,
-    lifetime=4.2,
+    real, imag, *reference, frequency=frequency, lifetime=4.2
 )
 
 # %%
@@ -130,6 +123,36 @@ plot_image(
 )
 
 # %%
+# For comparison, the function :py:func:`phasorpy.filter.signal_filter_median`
+# applies a median filter to the signal before phasor transformation:
+
+signal_filtered = signal_filter_median(signal, skip_axis=0, repeat=1, size=3)
+
+mean, real, imag = phasor_from_signal(signal_filtered, axis=0)
+
+real, imag = phasor_calibrate(
+    real, imag, *reference, frequency=frequency, lifetime=4.2
+)
+
+mean_filtered, real_filtered, imag_filtered = phasor_threshold(
+    mean, real, imag, mean_min=1
+)
+
+plot_phasor(
+    real_filtered,
+    imag_filtered,
+    frequency=frequency,
+    title='Phasor coordinates of median-filtered signal',
+)
+
+# %%
+# Note that the resulting phasor coordinates are displaced from the true
+# distribution. Signal-space filtering does not commute with the phasor
+# transform: for heterogeneous samples, the spatial median of neighboring
+# signals does not produce a physically meaningful signal.
+# Use :py:func:`phasorpy.filter.phasor_filter_median` instead.
+
+# %%
 # pawFLIM wavelet filter
 # ----------------------
 #
@@ -145,16 +168,12 @@ harmonic = [1, 2]
 
 mean, real, imag = phasor_from_signal(signal, axis=0, harmonic=harmonic)
 
-reference_mean, reference_real, reference_imag = phasor_from_signal(
-    reference_signal, axis=0, harmonic=harmonic
-)
+reference = phasor_from_signal(reference_signal, axis=0, harmonic=harmonic)
 
 real, imag = phasor_calibrate(
     real,
     imag,
-    reference_mean,
-    reference_real,
-    reference_imag,
+    *reference,
     frequency=frequency,
     lifetime=4.2,
     harmonic=harmonic,

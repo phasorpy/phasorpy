@@ -93,7 +93,7 @@ def test_lifetime_to_signal(harmonic, expected, zero_expected):
     assert time.shape == (16,)
     assert_allclose(signal[1, index], expected, atol=1e-3)
 
-    # two distinct lifetimes: checks each row matches the single-lifetime result
+    # two distinct lifetimes: check each row matches the single-lifetime result
     signal, zero, time = lifetime_to_signal(
         40.0, [4.2, 0.9], zero_phase=None, samples=16, harmonic=harmonic
     )
