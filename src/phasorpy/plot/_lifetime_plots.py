@@ -433,8 +433,11 @@ class LifetimePlots:
         )
         signal_max = signal.max()
         if signal_max > 0.0:
+            # scale IRF peak to match signal peak
             signal /= signal_max
-            irf /= signal_max
+            irf_max = irf.max()
+            if irf_max > 0.0:
+                irf /= irf_max
 
         component_signal = lifetime_to_signal(
             frequency,

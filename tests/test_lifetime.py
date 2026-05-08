@@ -60,13 +60,13 @@ rng = numpy.random.default_rng(42)
             # time domain
             'all',
             [0.355548, 0.245101, 0.748013, 0.515772],
-            [0.0, 0.212965, 0.109340, 0.0],
+            [0.0, 3.407445, 1.749441, 0.0],
         ),
         (
             # frequency domain
             1,
-            [0.204701, -0.056023, 1.031253, 0.586501],
-            [-0.042591, 0.159591, 0.13681, -0.034591],
+            [0.054033, -0.256084, 1.037174, 0.508165],
+            [-1.0, 2.847759, 2.414214, -0.847759],
         ),
     ],
 )
@@ -75,7 +75,7 @@ def test_lifetime_to_signal(harmonic, expected, zero_expected):
     index = [0, 1, -2, -1]
     # single lifetime
     signal, zero, time = lifetime_to_signal(
-        40.0, 4.2, samples=16, harmonic=harmonic
+        40.0, 4.2, zero_phase=None, samples=16, harmonic=harmonic
     )
     assert signal.shape == (16,)
     assert zero.shape == (16,)
@@ -86,7 +86,7 @@ def test_lifetime_to_signal(harmonic, expected, zero_expected):
 
     # two lifetimes
     signal, zero, time = lifetime_to_signal(
-        40.0, [4.2, 4.2], samples=16, harmonic=harmonic
+        40.0, [4.2, 4.2], zero_phase=None, samples=16, harmonic=harmonic
     )
     assert signal.shape == (2, 16)
     assert zero.shape == (16,)
@@ -95,7 +95,12 @@ def test_lifetime_to_signal(harmonic, expected, zero_expected):
 
     # one multi-components
     signal, zero, time = lifetime_to_signal(
-        40.0, [4.2, 4.2], [0.5, 0.5], samples=16, harmonic=harmonic
+        40.0,
+        [4.2, 4.2],
+        [0.5, 0.5],
+        zero_phase=None,
+        samples=16,
+        harmonic=harmonic,
     )
     assert signal.shape == (16,)
     assert zero.shape == (16,)
@@ -107,6 +112,7 @@ def test_lifetime_to_signal(harmonic, expected, zero_expected):
         40.0,
         [[4.2, 4.2], [4.2, 4.2]],
         [[0.5, 0.5], [0.5, 0.5]],
+        zero_phase=None,
         samples=16,
         harmonic=harmonic,
     )
@@ -115,10 +121,37 @@ def test_lifetime_to_signal(harmonic, expected, zero_expected):
     assert time.shape == (16,)
     assert_allclose(signal[1, index], expected, atol=1e-3)
 
+    # array-valued mean (e.g. fractions): zero must remain 1D (regression test)
+    signal, zero, time = lifetime_to_signal(
+        40.0,
+        [4.2, 0.5],
+        mean=[0.8, 0.2],
+        zero_phase=None,
+        samples=16,
+        harmonic=harmonic,
+    )
+    assert signal.shape == (2, 16)
+    assert zero.shape == (16,)
+
 
 def test_lifetime_to_signal_parameters():
     """Test lifetime_to_signal function parameters."""
     # TODO: test mean, background, zero_phase, zero_stdev parameters
+    # zero_modulation=0.5 guarantees non-negative homodyne signal
+    signal, _, _ = lifetime_to_signal(
+        40.0, 4.2, samples=16, harmonic=1, zero_modulation=0.5
+    )
+    assert signal.min() >= 0.0
+    # zero_modulation scales the AC component proportionally
+    signal1, _, _ = lifetime_to_signal(40.0, 4.2, samples=16, harmonic=1)
+    signal_half, _, _ = lifetime_to_signal(
+        40.0, 4.2, samples=16, harmonic=1, zero_modulation=0.5
+    )
+    assert_allclose(
+        signal_half - signal_half.mean(),
+        (signal1 - signal1.mean()) * 0.5,
+        atol=1e-10,
+    )
 
 
 def test_lifetime_to_signal_error():
@@ -144,6 +177,16 @@ def test_lifetime_to_signal_error():
         lifetime_to_signal(40.0, 4.2, samples=100, zero_stdev=math.pi / 5)
     with pytest.raises(IndexError):
         lifetime_to_signal(40.0, 4.2, harmonic=0)
+    with pytest.raises(ValueError):
+        lifetime_to_signal(40.0, 4.2, harmonic=1, zero_modulation=0.0)
+    with pytest.raises(ValueError):
+        lifetime_to_signal(40.0, 4.2, harmonic=1, zero_modulation=1.1)
+    with pytest.raises(ValueError):
+        lifetime_to_signal(40.0, 4.2, zero_modulation=0.5)  # harmonic='all'
+    with pytest.raises(ValueError):
+        lifetime_to_signal(40.0, 4.2, harmonic=[1, 2], zero_modulation=0.5)
+    with pytest.raises(ValueError):
+        lifetime_to_signal(40.0, 4.2, harmonic=1, zero_stdev=0.1)
 
 
 def test_phasor_semicircle():

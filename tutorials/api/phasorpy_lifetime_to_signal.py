@@ -38,8 +38,8 @@ settings = {
     'samples': 256,  # number of samples to synthesize
     'mean': 1.0,  # average intensity
     'background': 0.0,  # no signal from background
-    'zero_phase': None,  # location of IRF peak in the phase
-    'zero_stdev': None,  # standard deviation of IRF in radians
+    'zero_phase': None,  # automatic location of IRF peak in the phase
+    'zero_stdev': None,  # standard deviation of time-domain IRF in radians
 }
 
 # %%
@@ -65,7 +65,7 @@ reference_signal, _, _ = lifetime_to_signal(
 )
 
 
-def verify_signal(fractions):
+def verify_signal(reference_signal, fractions=None):
     """Verify calibrated phasor coordinates match expected results."""
     assert numpy.allclose(
         phasor_calibrate(
@@ -80,7 +80,7 @@ def verify_signal(fractions):
     )
 
 
-verify_signal(fractions)
+verify_signal(reference_signal, fractions)
 
 # %%
 # Plot the synthesized signals (multi-exponential, reference, and
@@ -92,9 +92,16 @@ ax.set(
     xlabel='Times [ns]',
     ylabel='Intensity [au]',
 )
+ax.plot(
+    times,
+    # scale IRF peak to match signal peak
+    instrument_response * (signal.max() / instrument_response.max()),
+    linewidth=0.8,
+    color='tab:grey',
+    label='Instrument response',
+)
 ax.plot(times, signal, label='Multi-exponential')
 ax.plot(times, reference_signal, label='Reference')
-ax.plot(times, instrument_response, label='Instrument response')
 ax.legend()
 pyplot.show()
 
@@ -107,7 +114,7 @@ pyplot.show()
 
 signal, _, times = lifetime_to_signal(frequency, lifetimes, **settings)
 
-verify_signal(None)
+verify_signal(reference_signal)
 
 # %%
 # Plot the synthesized signals:
@@ -140,7 +147,7 @@ reference_signal, _, _ = lifetime_to_signal(
     frequency, reference_lifetime, harmonic=1, **settings
 )
 
-verify_signal(fractions)
+verify_signal(reference_signal, fractions)
 
 # %%
 # Plot the synthesized signals:
@@ -154,22 +161,39 @@ ax.set(
     ylabel='Intensity [au]',
     xticks=[0, 90, 180, 270, 360],
 )
+ax.plot(
+    phase,
+    instrument_response,
+    linewidth=0.8,
+    color='tab:grey',
+    label='Instrument response',
+)
 ax.plot(phase, signal, label='Multi-exponential')
 ax.plot(phase, reference_signal, label='Reference')
-ax.plot(phase, instrument_response, label='Instrument response')
 ax.legend()
 pyplot.show()
+
+# %%
+# The homodyne signal can contain negative values since the modulation depth
+# of the excitation source is 1.
 
 # %%
 # Frequency domain, single exponential
 # ------------------------------------
 #
-# To synthesize separate signals for each lifetime component at once,
-# omit the lifetime fractions:
+# To synthesize separate signals for each lifetime component at once, omit the
+# lifetime fractions. Halving the modulation depth of the excitation source
+# (``zero_modulation=0.5``) guarantees a non-negative signal for any lifetime:
 
-signal, _, _ = lifetime_to_signal(frequency, lifetimes, harmonic=1, **settings)
+signal, _, _ = lifetime_to_signal(
+    frequency, lifetimes, harmonic=1, zero_modulation=0.5, **settings
+)
 
-verify_signal(None)
+reference_signal, _, _ = lifetime_to_signal(
+    frequency, reference_lifetime, harmonic=1, zero_modulation=0.5, **settings
+)
+
+verify_signal(reference_signal)
 
 # %%
 # Plot the synthesized signals:
