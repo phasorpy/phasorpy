@@ -377,7 +377,9 @@ def lifetime_to_signal(
         Must be specified if `lifetime` is not a scalar.
     mean : array_like, optional, default: 1
         Average intensity (DC) of signal and instrument response function.
-        Must be scalar for now.
+        May be a scalar or array-like broadcastable to the synthesized
+        signal shape, for example to specify per-signal mean values when
+        synthesizing multiple signals.
     background : array_like, optional, default: 0
         Background signal intensity. Must be smaller than `mean`.
     samples : int, optional, default: 64
@@ -421,7 +423,8 @@ def lifetime_to_signal(
         Signal generated from lifetimes at frequency, convolved with
         instrument response function.
     zero : ndarray
-        Instrument response function.
+        Instrument response function. Always 1D with shape ``(samples,)``.
+        When `mean` is array-valued, `zero` is scaled to the mean of `mean`.
     time : ndarray
         Time for each sample in signal in units of `lifetime`.
 
@@ -576,7 +579,7 @@ def lifetime_to_signal(
             zero_imag = zero_imag[:, None]
         phasor_multiply(real, imag, zero_real, zero_imag, out=(real, imag))
         zero = phasor_to_signal(
-            1.0,
+            float(numpy.asarray(mean).mean()),
             zero_modulation * math.cos(zero_phase),
             zero_modulation * math.sin(zero_phase),
             samples=samples,
@@ -603,8 +606,7 @@ def lifetime_to_signal(
                 samples=samples,
                 harmonic=harmonic,
             )
-        # scale zero to have the same mean as the signal (consistent with
-        # the single-harmonic case where zero is returned with mean=1.0)
+        # scale zero to have the same mean as the signal
         # use a scalar so zero stays 1D even when mean is array-valued
         zero *= float(numpy.asarray(mean).mean()) / zero_dc
         phasor_multiply(real, imag, zero_real, zero_imag, out=(real, imag))

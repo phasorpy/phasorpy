@@ -93,6 +93,22 @@ def test_lifetime_to_signal(harmonic, expected, zero_expected):
     assert time.shape == (16,)
     assert_allclose(signal[1, index], expected, atol=1e-3)
 
+    # two distinct lifetimes: validates zero_real/zero_imag broadcasting
+    # (real.ndim > 1 branch) by checking the rows differ and match individually
+    signal, zero, time = lifetime_to_signal(
+        40.0, [4.2, 0.9], zero_phase=None, samples=16, harmonic=harmonic
+    )
+    assert signal.shape == (2, 16)
+    assert zero.shape == (16,)
+    signal_42, _, _ = lifetime_to_signal(
+        40.0, 4.2, zero_phase=None, samples=16, harmonic=harmonic
+    )
+    signal_09, _, _ = lifetime_to_signal(
+        40.0, 0.9, zero_phase=None, samples=16, harmonic=harmonic
+    )
+    assert_allclose(signal[0], signal_42, atol=1e-10)
+    assert_allclose(signal[1], signal_09, atol=1e-10)
+
     # one multi-components
     signal, zero, time = lifetime_to_signal(
         40.0,
@@ -134,6 +150,34 @@ def test_lifetime_to_signal(harmonic, expected, zero_expected):
     assert zero.shape == (16,)
 
 
+def test_lifetime_to_signal_multiharmonic():
+    """Test lifetime_to_signal with a sequence of harmonics."""
+    index = [0, 1, -2, -1]
+    expected = [0.38780, 0.34679, 0.64469, 0.44264]
+    zero_expected = [0.31774, 3.25999, 2.18897, 0.15308]
+
+    # single lifetime with harmonic sequence (not all_harmonics, not single)
+    signal, zero, time = lifetime_to_signal(
+        40.0, 4.2, zero_phase=None, samples=16, harmonic=[1, 2]
+    )
+    assert signal.shape == (16,)
+    assert zero.shape == (16,)
+    assert time.shape == (16,)
+    assert_allclose(signal[index], expected, atol=1e-3)
+    assert_allclose(zero[[0, 9, 10, -1]], zero_expected, atol=1e-3)
+
+    # two lifetimes with harmonic sequence: real.ndim > 1 in else branch
+    signal, zero, time = lifetime_to_signal(
+        40.0, [4.2, 4.2], zero_phase=None, samples=16, harmonic=[1, 2]
+    )
+    assert signal.shape == (2, 16)
+    assert zero.shape == (16,)
+    assert time.shape == (16,)
+    assert_allclose(signal[0, index], expected, atol=1e-3)
+    assert_allclose(signal[1, index], expected, atol=1e-3)
+    assert_allclose(zero[[0, 9, 10, -1]], zero_expected, atol=1e-3)
+
+
 def test_lifetime_to_signal_parameters():
     """Test lifetime_to_signal function parameters."""
     # TODO: test mean, background, zero_phase, zero_stdev parameters
@@ -152,6 +196,14 @@ def test_lifetime_to_signal_parameters():
         (signal1 - signal1.mean()) * 0.5,
         atol=1e-10,
     )
+    # single-harmonic zero mean equals background-subtracted mean,
+    # consistent with the multi-harmonic branch
+    for harmonic in (1, [1, 2], 'all'):
+        mean_val = 3.5
+        _, zero, _ = lifetime_to_signal(
+            40.0, 4.2, mean=mean_val, samples=16, harmonic=harmonic
+        )
+        assert_allclose(zero.mean(), mean_val, atol=1e-6)
 
 
 def test_lifetime_to_signal_error():
