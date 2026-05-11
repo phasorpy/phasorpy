@@ -423,7 +423,6 @@ test-requires = [
     "ptufile",
     "sdtfile",
     "pawflim",
-    "imagecodecs==2026.3.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     # sync with [dependency-groups.test]
     "coverage",
     "cython",  # for Cython.Coverage plugin
@@ -432,6 +431,10 @@ test-requires = [
     "pytest-doctestplus",
     "pytest-runner",
 ]
+
+[[tool.cibuildwheel.overrides]]
+select = "*-macosx_x86_64"
+test-requires = ["imagecodecs==2026.3.6"]
 
 [tool.cibuildwheel.test-environment]
 PHASORPY_DATA_ON_GITHUB = "1"
