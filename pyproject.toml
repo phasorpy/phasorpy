@@ -434,6 +434,7 @@ test-requires = [
 
 [[tool.cibuildwheel.overrides]]
 select = "*-macosx_x86_64"
+inherit.test-requires = "append"
 test-requires = ["imagecodecs==2026.3.6"]
 
 [tool.cibuildwheel.test-environment]
