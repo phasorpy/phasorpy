@@ -88,9 +88,10 @@ def phasor_filter_median(
         Number of times to apply median filter.
     size : int, optional, default: 3
         Size of median filter kernel.
-    skip_axis : int or sequence of int, optional
+    skip_axis : int or sequence of int or None, optional, default: None
         Axes in `mean` to exclude from filtering.
         By default, all axes except harmonics are included.
+        If None, all axes are filtered.
     use_scipy : bool, optional, default: False
         Use :py:func:`scipy.ndimage.median_filter`.
         This function has undefined behavior if the input arrays contain
@@ -103,7 +104,8 @@ def phasor_filter_median(
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
     **kwargs
-        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
+        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`
+        when `use_scipy` is True.
 
     Returns
     -------
@@ -120,6 +122,8 @@ def phasor_filter_median(
         If the array shapes of `mean`, `real`, and `imag` do not match.
         If `repeat` is less than 0.
         If `size` is less than 1.
+    IndexError
+        If any `skip_axis` value is out of bounds.
 
     See Also
     --------
@@ -298,7 +302,15 @@ def phasor_filter_gaussian(
         Standard deviation of Gaussian kernel.
         By default, sigma is computed from `size` using the OpenCV formula
         :math:`0.3 \cdot ((size - 1) \cdot 0.5 - 1) + 0.8`.
-        By default, all axes except harmonics are included.
+    mode : str, optional, default: 'nearest'
+        Border mode passed to :func:`scipy.ndimage.convolve1d`.
+        Determines how the input is extended beyond its boundaries.
+        Options include `'nearest'`, `'reflect'`, `'mirror'`, `'wrap'`,
+        and `'constant'`.
+    skip_axis : int or sequence of int or None, optional, default: None
+        Axes in `mean` to exclude from filtering.
+        By default, all axes of `mean` are filtered.
+        The harmonics axis, if present, is always excluded.
 
     Returns
     -------
@@ -316,6 +328,8 @@ def phasor_filter_gaussian(
         If `repeat` is less than 0.
         If `sigma` is not positive.
         If `size` is less than 1 or even.
+    IndexError
+        If any `skip_axis` value is out of bounds.
 
     See Also
     --------
@@ -438,9 +452,10 @@ def phasor_filter_pawflim(
         By default, the first axis of `real` and `imag` contains lower
         harmonics starting at one and increasing by one.
         All harmonics must have a corresponding half or double harmonic.
-    skip_axis : int or sequence of int, optional
+    skip_axis : int or sequence of int or None, optional, default: None
         Axes in `mean` to exclude from filtering.
         By default, all axes except harmonics are included.
+        If None, all axes are filtered.
 
     Returns
     -------
@@ -462,6 +477,8 @@ def phasor_filter_pawflim(
         match the first axis of `real` and `imag`.
         If not all harmonics in `harmonic` have a corresponding half
         or double harmonic.
+    IndexError
+        If any `skip_axis` value is out of bounds.
 
     See Also
     --------
@@ -873,7 +890,8 @@ def signal_filter_median(
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
     **kwargs
-        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
+        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`
+        when `use_scipy` is True.
 
     Returns
     -------
@@ -1032,6 +1050,11 @@ def signal_filter_gaussian(
         Standard deviation of Gaussian kernel.
         By default, sigma is computed from `size` using the OpenCV formula
         :math:`0.3 \cdot ((size - 1) \cdot 0.5 - 1) + 0.8`.
+    mode : str, optional, default: 'nearest'
+        Border mode passed to :func:`scipy.ndimage.convolve1d`.
+        Determines how the input is extended beyond its boundaries.
+        Options include `'nearest'`, `'reflect'`, `'mirror'`, `'wrap'`,
+        and `'constant'`.
     skip_axis : int or sequence of int or None, optional, default: -1
         Axes in `signal` to exclude from filtering.
         By default, the last axis is excluded.
