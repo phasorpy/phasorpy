@@ -1466,4 +1466,4 @@ def _gaussian_filter(
         with numpy.errstate(divide='ignore', invalid='ignore'):
             data = numpy.divide(filled, weights)
         data = numpy.where(nan_mask, numpy.nan, data)
-    return data.astype(dtype)
+    return data.astype(dtype, copy=False)
