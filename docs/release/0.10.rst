@@ -1,0 +1,45 @@
+.. currentmodule:: phasorpy
+
+PhasorPy 0.10 (2026-05-12)
+==========================
+
+This is the first beta release of the PhasorPy library.
+It contains several new functions, improvements, and bug fixes.
+
+The new ``io.signal_from_czi`` function reads hyperspectral and RGB images
+from Zeiss CZI files using the ``czifile`` library.
+
+The new ``component.phasor_component_concentration`` function calculates
+absolute concentrations of two components from phasor coordinates, using a
+reference with known concentration.
+
+The new ``filter.phasor_filter_gaussian`` function applies a Gaussian filter
+to phasor coordinates.
+
+The new ``filter.signal_filter_median`` and ``filter.signal_filter_gaussian``
+functions apply NaN-aware median and Gaussian filters to signals.
+
+Several bugs have been fixed in ``lifetime.lifetime_to_signal``.
+
+This release supports Python 3.12 through 3.14.
+
+What's Changed
+--------------
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/321
+* Bump the github-actions group with 2 updates by @dependabot[bot] in https://github.com/phasorpy/phasorpy/pull/322
+* Many bug fixes and improvements by @cgohlke in https://github.com/phasorpy/phasorpy/pull/325
+* Add workflow to close inactive issues by @cgohlke in https://github.com/phasorpy/phasorpy/pull/326
+* Bump the github-actions group with 4 updates by @dependabot[bot] in https://github.com/phasorpy/phasorpy/pull/328
+* Add signal_from_czi function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/329
+* Add line-line intersection ufunc; update dependencies and docs by @cgohlke in https://github.com/phasorpy/phasorpy/pull/331
+* Add phasor_component_concentration function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/332
+* Use public CZI file for tests, tutorial, and docstring example by @cgohlke in https://github.com/phasorpy/phasorpy/pull/333
+* Replace pyplot stateful API with OOP equivalents by @cgohlke in https://github.com/phasorpy/phasorpy/pull/334
+* Fix lifetime_to_signal function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/335
+* Add signal_filter_median function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/336
+* Add phasor_filter_gaussian and signal_filter_gaussian functions by @cgohlke in https://github.com/phasorpy/phasorpy/pull/337
+* Release v0.10 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/338
+
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.9...v0.10
