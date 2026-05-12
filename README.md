@@ -22,3 +22,5 @@ This software project was supported in part by the
 [Essential Open Source Software for Science (EOSS)](https://chanzuckerberg.com/eoss/)
 program at
 [Chan Zuckerberg Initiative](https://chanzuckerberg.com/).
+
+[![CZI's Essential Open Source Software for Science](https://chanzuckerberg.github.io/open-science/badges/CZI-EOSS.svg)](https://czi.co/EOSS)
