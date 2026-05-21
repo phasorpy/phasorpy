@@ -60,6 +60,7 @@ all = [
     # sync with [dependency-groups.optional]
     "czifile>=2026.4.11",
     "fbdfile>=2025.9.18",
+    "h5py>=3.11.0",
     "lfdfiles>=2024.5.24",
     "liffile>=2025.2.10",
     "ptufile>=2024.9.14",
@@ -87,6 +88,7 @@ optional = [
     # optional runtime dependencies; sync with [project.optional-dependencies]
     "czifile>=2026.4.11",
     "fbdfile>=2025.9.18",
+    "h5py>=3.11.0",
     "lfdfiles>=2024.5.24",
     "liffile>=2025.2.10",
     "ptufile>=2024.9.14",
@@ -106,6 +108,7 @@ minimal = [
     # optional
     "czifile==2026.4.11; python_version == \"3.12\"",
     "fbdfile==2025.9.18; python_version == \"3.12\"",
+    "h5py==3.11.0; python_version == \"3.12\"",
     "lfdfiles==2024.5.24; python_version == \"3.12\"",
     "liffile==2025.2.10; python_version == \"3.12\"",
     "ptufile==2024.9.14; python_version == \"3.12\"",
