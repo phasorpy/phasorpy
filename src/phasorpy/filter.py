@@ -4,28 +4,30 @@ The ``phasorpy.filter`` module provides functions to filter:
 
 - phasor coordinates:
 
-  - :py:func:`phasor_filter_gaussian` (not implemented yet)
+  - :py:func:`phasor_threshold`
+  - :py:func:`phasor_filter_gaussian`
   - :py:func:`phasor_filter_median`
   - :py:func:`phasor_filter_pawflim`
-  - :py:func:`phasor_threshold`
 
 - signals:
 
+  - :py:func:`signal_filter_gaussian`
+  - :py:func:`signal_filter_median`
   - :py:func:`signal_filter_ncpca`
     (noise-corrected principal component analysis)
   - :py:func:`signal_filter_svd` (spectral vector denoise)
-  - :py:func:`signal_filter_median` (not implemented yet)
 
 """
 
 from __future__ import annotations
 
 __all__ = [
-    # 'signal_filter_gaussian',
+    'phasor_filter_gaussian',
     'phasor_filter_median',
     'phasor_filter_pawflim',
     'phasor_threshold',
-    # 'signal_filter_median',
+    'signal_filter_gaussian',
+    'signal_filter_median',
     'signal_filter_ncpca',
     'signal_filter_svd',
 ]
@@ -68,8 +70,10 @@ def phasor_filter_median(
     """Return median-filtered phasor coordinates.
 
     By default, apply a NaN-aware median filter independently to the real
-    and imaginary components of phasor coordinates once, with a kernel size
-    of 3 multiplied by the number of dimensions of the input arrays.
+    and imaginary components of phasor coordinates once, with a kernel of
+    size 3 in each filtered dimension.
+    NaN values in the input are preserved in the output and are excluded from
+    the median of their neighbors.
     Return the intensity unchanged.
 
     Parameters
@@ -84,9 +88,10 @@ def phasor_filter_median(
         Number of times to apply median filter.
     size : int, optional, default: 3
         Size of median filter kernel.
-    skip_axis : int or sequence of int, optional
+    skip_axis : int or sequence of int or None, optional, default: None
         Axes in `mean` to exclude from filtering.
         By default, all axes except harmonics are included.
+        If None, all axes are filtered.
     use_scipy : bool, optional, default: False
         Use :py:func:`scipy.ndimage.median_filter`.
         This function has undefined behavior if the input arrays contain
@@ -99,16 +104,17 @@ def phasor_filter_median(
         If zero, up to half of logical CPUs are used.
         OpenMP may not be available on all platforms.
     **kwargs
-        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`.
+        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`
+        when `use_scipy` is True.
 
     Returns
     -------
     mean : ndarray
         Unchanged intensity of phasor coordinates.
     real : ndarray
-        Filtered real component of phasor coordinates.
+        Median-filtered real component of phasor coordinates.
     imag : ndarray
-        Filtered imaginary component of phasor coordinates.
+        Median-filtered imaginary component of phasor coordinates.
 
     Raises
     ------
@@ -116,6 +122,13 @@ def phasor_filter_median(
         If the array shapes of `mean`, `real`, and `imag` do not match.
         If `repeat` is less than 0.
         If `size` is less than 1.
+    IndexError
+        If any `skip_axis` value is out of bounds.
+
+    See Also
+    --------
+    phasorpy.filter.signal_filter_median
+    :ref:`sphx_glr_tutorials_api_phasorpy_filter.py`
 
     Examples
     --------
@@ -153,18 +166,22 @@ def phasor_filter_median(
         repeat = 0
 
     mean = numpy.asarray(mean)
-    if use_scipy or repeat == 0:  # or using nD numpy filter
+    if use_scipy or repeat == 0:
         real = numpy.asarray(real)
-    elif isinstance(real, numpy.ndarray) and real.dtype == numpy.float32:
-        real = real.copy()
-    else:
-        real = numpy.asarray(real, dtype=numpy.float64, copy=True)
-    if use_scipy or repeat == 0:  # or using nD numpy filter
         imag = numpy.asarray(imag)
-    elif isinstance(imag, numpy.ndarray) and imag.dtype == numpy.float32:
-        imag = imag.copy()
     else:
-        imag = numpy.asarray(imag, dtype=numpy.float64, copy=True)
+        real_dtype = (
+            numpy.float32
+            if isinstance(real, numpy.ndarray) and real.dtype == numpy.float32
+            else numpy.float64
+        )
+        imag_dtype = (
+            numpy.float32
+            if isinstance(imag, numpy.ndarray) and imag.dtype == numpy.float32
+            else numpy.float64
+        )
+        real = numpy.asarray(real, dtype=real_dtype, copy=True)
+        imag = numpy.asarray(imag, dtype=imag_dtype, copy=True)
 
     if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
         msg = f'{mean.shape=} != {real.shape=}'
@@ -207,7 +224,7 @@ def phasor_filter_median(
             size if i in axes else 1 for i in range(real.ndim)
         )
         pad_width = [
-            (s // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
+            ((s - 1) // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
         ]
         axis = tuple(range(-real.ndim, 0))
 
@@ -248,6 +265,150 @@ def phasor_filter_median(
     return mean, real, imag
 
 
+def phasor_filter_gaussian(
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    /,
+    *,
+    repeat: int = 1,
+    size: int = 3,
+    sigma: float | None = None,
+    mode: str = 'nearest',
+    skip_axis: int | Sequence[int] | None = None,
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
+    r"""Return Gaussian-filtered phasor coordinates.
+
+    By default, apply a NaN-aware Gaussian filter independently to the real
+    and imaginary components of phasor coordinates once, with a kernel of
+    size 3 in each filtered dimension.
+    NaN values in the input are preserved in the output and are excluded from
+    the weighted average of their neighbors.
+    Return the intensity unchanged.
+
+    Parameters
+    ----------
+    mean : array_like
+        Intensity of phasor coordinates.
+    real : array_like
+        Real component of phasor coordinates to be filtered.
+    imag : array_like
+        Imaginary component of phasor coordinates to be filtered.
+    repeat : int, optional, default: 1
+        Number of times to apply Gaussian filter.
+    size : int, optional, default: 3
+        Size of the Gaussian kernel. Must be a positive odd integer.
+    sigma : float or None, optional
+        Standard deviation of Gaussian kernel.
+        By default, sigma is computed from `size` using the OpenCV formula
+        :math:`0.3 \cdot ((size - 1) \cdot 0.5 - 1) + 0.8`.
+    mode : str, optional, default: 'nearest'
+        Border mode passed to :func:`scipy.ndimage.convolve1d`.
+        Determines how the input is extended beyond its boundaries.
+        Options include `'nearest'`, `'reflect'`, `'mirror'`, `'wrap'`,
+        and `'constant'`.
+    skip_axis : int or sequence of int or None, optional, default: None
+        Axes in `mean` to exclude from filtering.
+        By default, all axes of `mean` are filtered.
+        The harmonics axis, if present, is always excluded.
+
+    Returns
+    -------
+    mean : ndarray
+        Unchanged intensity of phasor coordinates.
+    real : ndarray
+        Gaussian-filtered real component of phasor coordinates.
+    imag : ndarray
+        Gaussian-filtered imaginary component of phasor coordinates.
+
+    Raises
+    ------
+    ValueError
+        If the array shapes of `mean`, `real`, and `imag` do not match.
+        If `repeat` is less than 0.
+        If `sigma` is not positive.
+        If `size` is less than 1 or even.
+    IndexError
+        If any `skip_axis` value is out of bounds.
+
+    See Also
+    --------
+    phasorpy.filter.signal_filter_gaussian
+    :ref:`sphx_glr_tutorials_api_phasorpy_filter.py`
+
+    Examples
+    --------
+    Apply a Gaussian filter with sigma=1:
+
+    >>> mean, real, imag = phasor_filter_gaussian(
+    ...     [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+    ...     [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5], [0.2, 0.2, 0.2]],
+    ...     [[0.3, 0.3, 0.3], [0.6, math.nan, 0.6], [0.4, 0.4, 0.4]],
+    ...     sigma=1,
+    ... )
+    >>> mean
+    array([[1, 2, 3],
+           [4, 5, 6],
+           [7, 8, 9]])
+    >>> real
+    array([[0..., 0..., 0...],
+           [0..., 0..., 0...],
+           [0..., 0..., 0...]])
+    >>> imag
+    array([[0..., 0..., 0...],
+           [0..., nan, 0...],
+           [0..., 0..., 0...]])
+
+    """
+    from scipy.signal.windows import gaussian
+
+    if repeat < 0:
+        msg = f'{repeat=} < 0'
+        raise ValueError(msg)
+    if size < 1:
+        msg = f'{size=} < 1'
+        raise ValueError(msg)
+    if size % 2 == 0:
+        msg = f'{size=} is not odd'
+        raise ValueError(msg)
+    if sigma is None:
+        sigma = 0.3 * ((size - 1) * 0.5 - 1) + 0.8
+    elif sigma <= 0:
+        msg = f'{sigma=} <= 0'
+        raise ValueError(msg)
+    radius = size // 2
+
+    mean = numpy.asarray(mean)
+    dtype = (
+        numpy.float32
+        if isinstance(real, numpy.ndarray) and real.dtype == numpy.float32
+        else numpy.float64
+    )
+    real = numpy.asarray(real, dtype=dtype)
+    imag = numpy.asarray(imag, dtype=dtype)
+
+    if mean.shape != real.shape[-mean.ndim if mean.ndim else 1 :]:
+        msg = f'{mean.shape=} != {real.shape=}'
+        raise ValueError(msg)
+    if real.shape != imag.shape:
+        msg = f'{real.shape=} != {imag.shape=}'
+        raise ValueError(msg)
+
+    prepend_axis = mean.ndim + 1 == real.ndim
+    _, axes = parse_skip_axis(skip_axis, mean.ndim, prepend=prepend_axis)
+
+    if repeat == 0 or radius == 0:
+        return mean, real, imag
+
+    kernel = gaussian(size, std=sigma)
+
+    return (
+        mean,
+        _gaussian_filter(real, kernel, axes, repeat, mode, dtype),
+        _gaussian_filter(imag, kernel, axes, repeat, mode, dtype),
+    )
+
+
 def phasor_filter_pawflim(
     mean: ArrayLike,
     real: ArrayLike,
@@ -264,6 +425,7 @@ def phasor_filter_pawflim(
     This function must only be used with calibrated, unprocessed phasor
     coordinates obtained from FLIM data. The coordinates must not be filtered,
     thresholded, or otherwise pre-processed.
+    Return the intensity unchanged.
 
     The pawFLIM wavelet filter is described in [1]_.
 
@@ -290,9 +452,10 @@ def phasor_filter_pawflim(
         By default, the first axis of `real` and `imag` contains lower
         harmonics starting at one and increasing by one.
         All harmonics must have a corresponding half or double harmonic.
-    skip_axis : int or sequence of int, optional
+    skip_axis : int or sequence of int or None, optional, default: None
         Axes in `mean` to exclude from filtering.
         By default, all axes except harmonics are included.
+        If None, all axes are filtered.
 
     Returns
     -------
@@ -314,6 +477,12 @@ def phasor_filter_pawflim(
         match the first axis of `real` and `imag`.
         If not all harmonics in `harmonic` have a corresponding half
         or double harmonic.
+    IndexError
+        If any `skip_axis` value is out of bounds.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_filter.py`
 
     References
     ----------
@@ -537,6 +706,10 @@ def phasor_threshold(
     imag : ndarray
         Thresholded imaginary component of phasor coordinates.
 
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_filter.py`
+
     Examples
     --------
     Set phasor coordinates to NaN if mean intensity is smaller than 1.1:
@@ -675,6 +848,285 @@ def phasor_threshold(
     return mean, real, imag
 
 
+def signal_filter_median(
+    signal: ArrayLike,
+    /,
+    *,
+    repeat: int = 1,
+    size: int = 3,
+    skip_axis: int | Sequence[int] | None = -1,
+    use_scipy: bool = False,
+    num_threads: int | None = None,
+    **kwargs: Any,
+) -> NDArray[Any]:
+    """Return median-filtered signal.
+
+    By default, apply a NaN-aware median filter over all axes except the last
+    once, with a kernel of size 3 in each filtered dimension.
+    NaN values in the input are preserved in the output and are excluded from
+    the median of their neighbors.
+
+    Parameters
+    ----------
+    signal : array_like
+        Signal to be filtered.
+    repeat : int, optional, default: 1
+        Number of times to apply median filter.
+    size : int, optional, default: 3
+        Size of median filter kernel.
+    skip_axis : int or sequence of int or None, optional, default: -1
+        Axes in `signal` to exclude from filtering.
+        By default, the last axis is excluded.
+        If None, all axes are filtered.
+    use_scipy : bool, optional, default: False
+        Use :py:func:`scipy.ndimage.median_filter`.
+        This function has undefined behavior if the input array contains
+        NaN values, but is faster when filtering more than two dimensions.
+        See `issue #87 <https://github.com/phasorpy/phasorpy/issues/87>`_.
+    num_threads : int, optional
+        Number of OpenMP threads to use for parallelization.
+        Applies to filtering in two dimensions when not using scipy.
+        By default, multithreading is disabled.
+        If zero, up to half of logical CPUs are used.
+        OpenMP may not be available on all platforms.
+    **kwargs
+        Optional arguments passed to :py:func:`scipy.ndimage.median_filter`
+        when `use_scipy` is True.
+
+    Returns
+    -------
+    ndarray
+        Median-filtered signal.
+
+    Raises
+    ------
+    ValueError
+        If `repeat` is less than 0.
+        If `size` is less than 1.
+    IndexError
+        If any `skip_axis` value is out of bounds.
+
+    See Also
+    --------
+    phasorpy.filter.phasor_filter_median
+    :ref:`sphx_glr_tutorials_api_phasorpy_filter.py`
+
+    Notes
+    -----
+    Signal-space filtering does not commute with the phasor transform.
+    For heterogeneous data, the spatial median of neighboring signals
+    does not produce a physically meaningful signal, causing the phasor
+    coordinates to be displaced from the true distribution.
+    Use :py:func:`phasorpy.filter.phasor_filter_median` instead.
+
+    Examples
+    --------
+    Apply three times a median filter with a kernel size of three,
+    skipping the first axis:
+
+    >>> signal_filter_median(
+    ...     [
+    ...         [[0.0, 1.0, 0.0], [0.0, math.nan, 0.0]],
+    ...         [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
+    ...     ],
+    ...     size=3,
+    ...     repeat=3,
+    ...     skip_axis=0,
+    ... )
+    array([[[0, 0, 0],
+            [0, nan, 0]],
+           [[1, 1, 1],
+            [1, 1, 1]]])
+
+    """
+    if repeat < 0:
+        msg = f'{repeat=} < 0'
+        raise ValueError(msg)
+    if size < 1:
+        msg = f'{size=} < 1'
+        raise ValueError(msg)
+    if size == 1:
+        # no need to filter
+        repeat = 0
+
+    # cheap conversion to obtain ndim for axis parsing; no copy/cast yet
+    signal = numpy.asarray(signal)
+    _, axes = parse_skip_axis(skip_axis, signal.ndim)
+
+    if len(axes) == 0 or repeat == 0:
+        # no axes to filter or no need to call filter
+        return signal
+
+    if use_scipy:
+        pass  # scipy creates its own output; no in-place write needed
+    elif len(axes) == 2:
+        # 2D Cython path writes in-place; ensure writable float copy
+        dtype = (
+            numpy.float32 if signal.dtype == numpy.float32 else numpy.float64
+        )
+        signal = numpy.asarray(signal, dtype=dtype, copy=True)
+    # else: numpy nD path builds new arrays at each step
+
+    if use_scipy:
+        # use scipy NaN-unaware fallback
+        from scipy.ndimage import median_filter
+
+        kwargs.pop('axes', None)
+
+        for _ in range(repeat):
+            signal = median_filter(signal, size=size, axes=axes, **kwargs)
+
+        return numpy.asarray(signal)
+
+    if len(axes) != 2:
+        # n-dimensional median filter using numpy
+        from numpy.lib.stride_tricks import sliding_window_view
+
+        kernel_shape = tuple(
+            size if i in axes else 1 for i in range(signal.ndim)
+        )
+        pad_width = [
+            ((s - 1) // 2, s // 2) if s > 1 else (0, 0) for s in kernel_shape
+        ]
+        median_axis = tuple(range(-signal.ndim, 0))
+
+        nan_mask = numpy.isnan(signal)
+        for _ in range(repeat):
+            signal = numpy.pad(signal, pad_width, mode='edge')
+            signal = sliding_window_view(signal, kernel_shape)
+            signal = numpy.nanmedian(signal, axis=median_axis)
+            signal = numpy.where(nan_mask, numpy.nan, signal)
+
+        return signal
+
+    # two-dimensional median filter using optimized Cython implementation
+    num_threads = number_threads(num_threads)
+
+    buffer = numpy.empty(
+        tuple(signal.shape[ax] for ax in axes), dtype=signal.dtype
+    )
+
+    for index in numpy.ndindex(
+        *[signal.shape[ax] for ax in range(signal.ndim) if ax not in axes]
+    ):
+        index_list: list[int | slice] = list(index)
+        for ax in axes:
+            index_list = [*index_list[:ax], slice(None), *index_list[ax:]]
+        full_index = tuple(index_list)
+
+        _median_filter_2d(
+            signal[full_index], buffer, size, repeat, num_threads
+        )
+
+    return signal
+
+
+def signal_filter_gaussian(
+    signal: ArrayLike,
+    /,
+    *,
+    repeat: int = 1,
+    size: int = 3,
+    sigma: float | None = None,
+    mode: str = 'nearest',
+    skip_axis: int | Sequence[int] | None = -1,
+) -> NDArray[Any]:
+    r"""Return Gaussian-filtered signal.
+
+    By default, apply a NaN-aware Gaussian filter over all axes except the
+    last once, with a kernel of size 3 in each filtered dimension.
+    NaN values in the input are preserved in the output and are excluded from
+    the weighted average of their neighbors.
+
+    Parameters
+    ----------
+    signal : array_like
+        Signal to be filtered.
+    repeat : int, optional, default: 1
+        Number of times to apply Gaussian filter.
+    size : int, optional, default: 3
+        Size of the Gaussian kernel. Must be a positive odd integer.
+    sigma : float or None, optional
+        Standard deviation of Gaussian kernel.
+        By default, sigma is computed from `size` using the OpenCV formula
+        :math:`0.3 \cdot ((size - 1) \cdot 0.5 - 1) + 0.8`.
+    mode : str, optional, default: 'nearest'
+        Border mode passed to :func:`scipy.ndimage.convolve1d`.
+        Determines how the input is extended beyond its boundaries.
+        Options include `'nearest'`, `'reflect'`, `'mirror'`, `'wrap'`,
+        and `'constant'`.
+    skip_axis : int or sequence of int or None, optional, default: -1
+        Axes in `signal` to exclude from filtering.
+        By default, the last axis is excluded.
+        If None, all axes are filtered.
+
+    Returns
+    -------
+    ndarray
+        Gaussian-filtered signal.
+
+    Raises
+    ------
+    ValueError
+        If `repeat` is less than 0.
+        If `sigma` is not positive.
+        If `size` is less than 1 or even.
+    IndexError
+        If any `skip_axis` value is out of bounds.
+
+    See Also
+    --------
+    phasorpy.filter.phasor_filter_gaussian
+    :ref:`sphx_glr_tutorials_api_phasorpy_filter.py`
+
+    Examples
+    --------
+    Apply a Gaussian filter, skipping the first axis:
+
+    >>> signal_filter_gaussian(
+    ...     [
+    ...         [[0.0, 1.0, 0.0], [0.0, math.nan, 0.0]],
+    ...         [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0]],
+    ...     ],
+    ...     size=3,
+    ...     skip_axis=0,
+    ... )
+    array([[[0..., 0..., 0...],
+            [0..., nan, 0...]],
+           [[1..., 1..., 1...],
+            [1..., 1..., 1...]]])
+
+    """
+    from scipy.signal.windows import gaussian
+
+    if repeat < 0:
+        msg = f'{repeat=} < 0'
+        raise ValueError(msg)
+    if size < 1:
+        msg = f'{size=} < 1'
+        raise ValueError(msg)
+    if size % 2 == 0:
+        msg = f'{size=} is not odd'
+        raise ValueError(msg)
+    if sigma is None:
+        sigma = 0.3 * ((size - 1) * 0.5 - 1) + 0.8
+    elif sigma <= 0:
+        msg = f'{sigma=} <= 0'
+        raise ValueError(msg)
+    radius = size // 2
+
+    signal = numpy.asarray(signal)
+    dtype = numpy.float32 if signal.dtype == numpy.float32 else numpy.float64
+    _, axes = parse_skip_axis(skip_axis, signal.ndim)
+
+    if len(axes) == 0 or repeat == 0 or radius == 0:
+        return signal
+
+    signal = numpy.asarray(signal, dtype=dtype)
+    kernel = gaussian(size, std=sigma)
+    return _gaussian_filter(signal, kernel, axes, repeat, mode, dtype)
+
+
 def signal_filter_svd(
     signal: ArrayLike,
     /,
@@ -725,6 +1177,7 @@ def signal_filter_svd(
     vmin : float, optional
         Signal intensity along `axis` below which spectra are excluded from
         denoising.
+        If None or negative, ``0.0`` is used.
     dtype : dtype_like, optional
         Data type of output arrays. Either `float32` or `float64`.
         The default is `float64` unless the `signal` is `float32`.
@@ -990,3 +1443,27 @@ def signal_filter_ncpca(
         signal = numpy.moveaxis(signal, -1, axis)
 
     return signal
+
+
+def _gaussian_filter(
+    data: NDArray[Any],
+    kernel: NDArray[Any],
+    axes: tuple[int, ...],
+    repeat: int,
+    mode: str,
+    dtype: Any,
+) -> NDArray[Any]:
+    """Return NaN-aware Gaussian-filtered array along specified axes."""
+    from scipy.ndimage import convolve1d
+
+    nan_mask = numpy.isnan(data)
+    for _ in range(repeat):
+        filled = numpy.where(nan_mask, 0.0, data)
+        weights = numpy.where(nan_mask, 0.0, 1.0)
+        for ax in axes:
+            filled = convolve1d(filled, kernel, axis=ax, mode=mode)
+            weights = convolve1d(weights, kernel, axis=ax, mode=mode)
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            data = numpy.divide(filled, weights)
+        data = numpy.where(nan_mask, numpy.nan, data)
+    return data.astype(dtype, copy=False)

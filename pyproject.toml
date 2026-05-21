@@ -28,7 +28,7 @@ dependencies = [
 ]
 requires-python = ">=3.12"
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Programming Language :: Python",
@@ -66,6 +66,7 @@ all = [
     "ptufile>=2024.9.14",
     "sdtfile>=2024.5.24",
     "pawflim>=1.0.4",
+    "imagecodecs==2026.3.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     # "mkl-fft>=2.1.1",
 ]
 
@@ -73,7 +74,7 @@ all = [
 run = [
     # runtime dependencies; sync with [project.dependencies]
     "numpy>=2.1.0",
-    "matplotlib>=3.9.0",
+    "matplotlib>=3.10.0",
     "pandas>=2.3.0",
     "scikit-learn>=1.5.0",
     "scipy>=1.14.0",
@@ -93,11 +94,12 @@ optional = [
     "ptufile>=2024.9.14",
     "sdtfile>=2024.5.24",
     "pawflim>=1.0.4",
+    "imagecodecs==2026.3.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
 minimal = [
     # minimal runtime versions for testing against oldest supported versions
     "numpy==2.1.0; python_version == \"3.12\"",
-    "matplotlib==3.9.4; python_version == \"3.12\"",
+    "matplotlib==3.10.3; python_version == \"3.12\"",
     "pandas==2.3.2; python_version == \"3.12\"",
     "scikit-learn==1.5.0; python_version == \"3.12\"",
     "scipy==1.14.1; python_version == \"3.12\"",
@@ -432,6 +434,11 @@ test-requires = [
     "pytest-doctestplus",
     "pytest-runner",
 ]
+
+[[tool.cibuildwheel.overrides]]
+select = "*-macosx_x86_64"
+inherit.test-requires = "append"
+test-requires = ["imagecodecs==2026.3.6"]
 
 [tool.cibuildwheel.test-environment]
 PHASORPY_DATA_ON_GITHUB = "1"
