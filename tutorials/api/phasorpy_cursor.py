@@ -2,7 +2,7 @@
 Cursors
 =======
 
-An introduction to selecting phasor coordinates using cursors.
+Select phasor coordinates using cursors.
 
 """
 

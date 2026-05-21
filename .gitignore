@@ -4,6 +4,7 @@ testdata/*
 test_data/*
 tests/data/*
 tutorials/data/*
+*.pdf
 *.png
 *.svg
 *.tif

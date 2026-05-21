@@ -2,7 +2,7 @@
 Multi-harmonic phasor coordinates
 =================================
 
-An introduction to handling multi-harmonic phasor coordinates.
+Analyze and visualize multi-harmonic phasor coordinates.
 
 This tutorial is an adaptation of
 :ref:`sphx_glr_tutorials_phasorpy_introduction.py`, focusing on the

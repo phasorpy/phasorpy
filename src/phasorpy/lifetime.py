@@ -1071,6 +1071,14 @@ def phasor_to_lifetime_search(
         If the number of harmonics is less than the number of components.
         If the lifetime range is invalid.
 
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_applications_phasorpy_nadh_fraction.py`
+
+    Notes
+    -----
+    This function currently supports only two lifetime components.
+
     References
     ----------
     .. [1] Vallmitjana A, Torrado B, Dvornikov A, Ranjit S, and Gratton E.
@@ -1078,10 +1086,6 @@ def phasor_to_lifetime_search(
        fluorescence lifetime images using the phasor approach
        <https://doi.org/10.1021/acs.jpcb.0c06946>`_.
        *J Phys Chem B*, 124(45): 10126-10137 (2020)
-
-    Notes
-    -----
-    This function currently supports only two lifetime components.
 
     Examples
     --------
@@ -1701,6 +1705,10 @@ def phasor_semicircle_intersect(
         Real component of second intersection of phasors with semicircle.
     imag1 : ndarray
         Imaginary component of second intersection of phasors with semicircle.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_applications_phasorpy_nadh_fraction.py`
 
     Examples
     --------

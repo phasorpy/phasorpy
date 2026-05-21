@@ -2,7 +2,7 @@
 LFD Workshop FLIM tutorial
 ==========================
 
-The LFD Workshop FLIM tutorial adapted to PhasorPy.
+Adapt the LFD Workshop FLIM tutorial to PhasorPy.
 
 This tutorial is a close adaptation of the
 `LFD Workshop computer training tutorial - FLIM section
@@ -95,7 +95,12 @@ plot_polar_frequency(frequencies, phase, modulation)
 # - the time-domain fluorescence decay:
 
 signal, instrument_response, times = lifetime_to_signal(
-    frequency, lifetimes, amplitudes, preexponential=True, samples=256
+    frequency,
+    lifetimes,
+    amplitudes,
+    zero_phase=None,  # automatically position decay away from zero
+    preexponential=True,
+    samples=256,
 )
 
 fig, ax = pyplot.subplots()

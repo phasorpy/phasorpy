@@ -15,10 +15,12 @@ linear system is not underdetermined.
 This method is demonstrated using a hyperspectral imaging dataset
 of cells containing five fluorescent markers as presented in:
 
+.. _vallmitjana-2022:
+
   Vallmitjana A, Lepanto P, Irigoin F, and Malacrida L.
   `Phasor-based multi-harmonic unmixing for in-vivo hyperspectral imaging
   <https://doi.org/10.1088/2050-6120/ac9ae9>`_.
-  *Methods Appl Fluoresc*, 11(1): 014001 (2022).
+  *Methods Appl Fluoresc*, 11(1): 014001 (2022)
 
 The dataset is available at https://zenodo.org/records/13625087.
 

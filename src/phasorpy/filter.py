@@ -1363,8 +1363,8 @@ def signal_filter_ncpca(
     ----------
     .. [3] Soltani S, Paulson J, Fong E, Mumenthaler S, and Armani A.
        `Denoising of fluorescence lifetime imaging data via principal
-       component analysis <https://doi.org/10.21203/rs.3.rs-7143126/v1>`_.
-       *Preprint*, (2025)
+       component analysis <https://doi.org/10.1038/s41598-025-24022-7>`_.
+       *Sci Rep*, 15(1): 40258 (2025)
 
     Notes
     -----

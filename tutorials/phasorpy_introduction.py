@@ -2,7 +2,7 @@
 Introduction to PhasorPy
 ========================
 
-An introduction to using the PhasorPy library.
+Demonstrate key features of the PhasorPy library.
 
 PhasorPy is an open-source Python library for the analysis of luminescence
 lifetime and hyperspectral images using the :doc:`/phasor_approach`.

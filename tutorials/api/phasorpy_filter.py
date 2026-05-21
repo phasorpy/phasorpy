@@ -2,7 +2,7 @@
 Filter phasor coordinates
 =========================
 
-Functions for filtering phasor coordinates.
+Apply threshold, median, Gaussian, and wavelet filters to phasor coordinates.
 
 Filtering phasor coordinates improves signal quality by reducing noise while
 preserving relevant features. Common methods include thresholding, median,
