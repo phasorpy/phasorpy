@@ -2,7 +2,7 @@
 Phasor plot
 ===========
 
-An introduction to plotting phasor coordinates.
+Plot phasor coordinates using the `PhasorPlot` class.
 
 The :py:class:`phasorpy.plot.PhasorPlot` class is used to plot phasor
 coordinates as scattered points, lines, two-dimensional histograms,

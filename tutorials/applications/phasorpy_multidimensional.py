@@ -20,10 +20,12 @@ This analysis method is demonstrated using a dataset combining fluorescence
 lifetime imaging microscopy (FLIM) and hyperspectral imaging (HSI) of LAURDAN
 fluorescence as presented in:
 
+.. _malacrida-2017:
+
   Malacrida L, Jameson D, and Gratton E.
   `A multidimensional phasor approach reveals LAURDAN photophysics in NIH-3T3
   cell membranes <https://doi.org/10.1038/s41598-017-08564-z>`_.
-  *Sci Rep*, 7: 9215 (2017).
+  *Sci Rep*, 7: 9215 (2017)
 
 The dataset is available at https://zenodo.org/records/16894639.
 

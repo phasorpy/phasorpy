@@ -7,8 +7,8 @@ Welcome to the documentation of PhasorPy version |version|.
 PhasorPy is an open-source Python library for the analysis of luminescence
 lifetime and hyperspectral images using the :doc:`phasor_approach`.
 
-Quickstart
-==========
+Project guide
+=============
 
 The :doc:`tutorials/index` demonstrate how to use the library, from simple
 examples to advanced applications.
@@ -16,8 +16,8 @@ examples to advanced applications.
 The :doc:`api/index` contains detailed information about all functions and
 classes of the library.
 
-The :doc:`release/index` list recent bug fixes, feature enhancements, documentation,
-and maintenance changes.
+The :doc:`release/index` list recent bug fixes, feature enhancements,
+documentation, and maintenance changes.
 
 The :doc:`contributing` explains how to get support, report bugs,
 submit fixes, and improve the documentation.
@@ -44,7 +44,7 @@ Sample data files used in tutorials and testing are available from the
 Report issues with the code or documentation on the
 `issue tracker on GitHub <https://github.com/phasorpy/phasorpy/issues>`_.
 
-Questions about the usage of the PhasorPy library are answered on the
+Questions about using the PhasorPy library can be asked on the
 `issue tracker on GitHub <https://github.com/phasorpy/phasorpy/issues>`_.
 
 Please cite

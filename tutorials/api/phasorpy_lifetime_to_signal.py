@@ -1,8 +1,8 @@
 """
-Synthesize signals from lifetimes
-=================================
+Signal synthesis from lifetimes
+===============================
 
-An introduction to the `lifetime_to_signal` function.
+Synthesize signals from lifetime components using `lifetime_to_signal`.
 
 The :py:func:`phasorpy.lifetime.lifetime_to_signal` function is used
 to synthesize time- and frequency-domain signals as a function of

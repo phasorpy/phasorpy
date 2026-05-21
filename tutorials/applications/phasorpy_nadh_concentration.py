@@ -1,5 +1,5 @@
 """
-NADH absolute concentration
+Absolute NADH concentration
 ============================
 
 Determine absolute NADH concentration using intensity-calibrated phasor FLIM.
@@ -22,7 +22,7 @@ This tutorial demonstrates the method based on:
   Ma N, Digman MA, Malacrida L, and Gratton E.
   `Measurements of absolute concentrations of NADH in cells using the
   phasor FLIM method <https://doi.org/10.1364/BOE.7.002441>`_.
-  *Biomed Opt Express*, 7(7): 2441-2452 (2016).
+  *Biomed Opt Express*, 7(7): 2441-2452 (2016)
 
 """
 

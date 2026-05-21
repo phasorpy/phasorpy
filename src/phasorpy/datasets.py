@@ -512,6 +512,28 @@ FIGSHARE_22336594_EXPORTED = pooch.create(
     },
 )
 
+FIGSHARE_232223 = pooch.create(
+    path=pooch.os_cache('phasorpy'),
+    base_url=(
+        'https://github.com/phasorpy/phasorpy-data/raw/main/figshare_232223'
+    ),
+    env=ENV,
+    registry={
+        'CellsMaskedFilt3_new3.tiff': (
+            'sha256:'
+            '4b6ada1c8dd7c56573403941b4cac1e765e971ab640c14d8bd3bb861404d6ed5'
+        ),
+        'CellsMaskedFilt3_new3.tiff.zip': (
+            'sha256:'
+            'eb0fc8e14623f77482f9fd3a80bce7f19fe5a1bee04b00ac49bd461cc2751cf9'
+        ),
+        'Fluor.tiff': (
+            'sha256:'
+            '0c0aadc8db2fc82dcf107b378791c6e437b2d9e2b4d26c0e43881cdd4193c9f2'
+        ),
+    },
+)
+
 ZENODO_16894639 = pooch.create(
     path=pooch.os_cache('phasorpy'),
     base_url=(
@@ -574,6 +596,7 @@ REPOSITORIES: dict[str, pooch.Pooch] = {
     'zenodo-14976703': ZENODO_14976703,
     'convallaria-fbd': CONVALLARIA_FBD,
     'flimlabs': FLIMLABS,
+    'figshare-232223': FIGSHARE_232223,
     'figshare-28067108': FIGSHARE_28067108,
     'figshare-22336594': FIGSHARE_22336594,
     'figshare-22336594-exported': FIGSHARE_22336594_EXPORTED,

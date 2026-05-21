@@ -1,8 +1,8 @@
 r"""
-Geometrical interpretation of lifetimes
-=======================================
+Geometric interpretation of lifetimes
+=====================================
 
-Demonstrate the geometrical interpretation of lifetimes in the phasor plot.
+Illustrate the geometric interpretation of lifetimes in the phasor plot.
 
 The PhasorPy library is used to illustrate the geometrical interpretation
 of lifetimes and other quantities in the phasor plot:

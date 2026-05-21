@@ -1,8 +1,8 @@
 """
-Component analysis
-==================
+Multi-component analysis
+========================
 
-An introduction to component analysis in phasor space.
+Analyze multi-component mixtures in phasor space.
 
 """
 

@@ -2,7 +2,7 @@
 File input/output
 =================
 
-Read and write phasor-related data from and to various file formats.
+Read and write phasor-related data in various file formats.
 
 The :py:mod:`phasorpy.io` module provides functions to read phasor
 coordinates, TCSPC time-delay histograms, cross-correlation phase histograms,

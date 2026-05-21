@@ -26,6 +26,9 @@ The ``phasorpy.component`` module provides functions to:
 - calculate absolute concentrations of two components from phasor
   coordinates and calibration (:py:func:`phasor_component_concentration`)
 
+See also :py:func:`phasorpy.lifetime.phasor_to_lifetime_search` for estimating
+two component lifetimes and fractions from multi-harmonic phasor coordinates.
+
 """
 
 from __future__ import annotations
@@ -203,6 +206,7 @@ def phasor_component_fraction(
     See Also
     --------
     :ref:`sphx_glr_tutorials_api_phasorpy_component.py`
+    :ref:`sphx_glr_tutorials_applications_phasorpy_nadh_fraction.py`
 
     Notes
     -----

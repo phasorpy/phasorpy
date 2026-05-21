@@ -3,6 +3,19 @@
 PhasorPy is an open-source Python library for the analysis of luminescence
 lifetime and hyperspectral images using the phasor approach.
 
+The phasor approach represents time-resolved and spectral signals as
+phasor coordinates (normalized Fourier coefficients at harmonic frequencies)
+for intuitive visualization and analysis.
+
+PhasorPy enables reproducible phasor-based fluorescence lifetime imaging
+(FLIM) and hyperspectral imaging (HSI) workflows in scientific Python.
+It provides tools to read microscopy data in many file formats and to
+calculate, calibrate, filter, visualize, and interconvert phasor coordinates,
+lifetimes, and signals. Phasor coordinates can be exported to standard
+formats and analyzed through cursor-based region-of-interest selection,
+cluster detection, multi-component unmixing, FRET efficiency and concentration
+estimation.
+
 - [Homepage](https://www.phasorpy.org)
 - [Documentation](https://www.phasorpy.org/docs/stable/)
 - [Source code](https://github.com/phasorpy/phasorpy)
