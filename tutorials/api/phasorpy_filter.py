@@ -59,7 +59,7 @@ plot_phasor(
 # Threshold
 # ---------
 #
-# Thresholding with :py:func:`phasorpy.filter.phasor_threshold` sets phasor
+# Thresholding with :py:func:`~phasorpy.filter.phasor_threshold` sets phasor
 # coordinates to NaN (not a number) wherever the mean intensity, real or
 # imaginary coordinates, phase or modulation fall outside specified bounds.
 # Such coordinates are excluded from plots and calculations. Thresholding is
@@ -78,7 +78,7 @@ plot_phasor(
 #
 # Median filtering replaces each pixel value with the median of its
 # neighboring values, reducing noise while preserving edges.
-# The function :py:func:`phasorpy.filter.phasor_filter_median` applies a
+# The function :py:func:`~phasorpy.filter.phasor_filter_median` applies a
 # median filter to phasor coordinates. Typically, applying a 3x3 kernel
 # once to three times is sufficient to remove noise while maintaining
 # important features:
@@ -133,7 +133,7 @@ plot_image(
 )
 
 # %%
-# For comparison, the function :py:func:`phasorpy.filter.signal_filter_median`
+# For comparison, the function :py:func:`~phasorpy.filter.signal_filter_median`
 # applies a median filter to the signal before phasor transformation:
 
 signal_filtered = signal_filter_median(signal, skip_axis=0, repeat=1, size=3)
@@ -160,7 +160,7 @@ plot_phasor(
 # distribution. Signal-space filtering does not commute with the phasor
 # transform: for heterogeneous samples, the spatial median of neighboring
 # signals does not produce a physically meaningful signal.
-# Use :py:func:`phasorpy.filter.phasor_filter_median` instead.
+# Use :py:func:`~phasorpy.filter.phasor_filter_median` instead.
 
 # %%
 # Gaussian filter
@@ -169,7 +169,7 @@ plot_phasor(
 # Gaussian filtering replaces each pixel value with a weighted average of its
 # neighbors, where weights follow a Gaussian distribution.
 # Unlike median filtering, it is linear and smooths more gradually.
-# The function :py:func:`phasorpy.filter.phasor_filter_gaussian` applies a
+# The function :py:func:`~phasorpy.filter.phasor_filter_gaussian` applies a
 # Gaussian filter to phasor coordinates. By default, a 3x3 kernel with sigma
 # of about 0.8 is used:
 
@@ -224,7 +224,7 @@ plot_image(
 
 # %%
 # For comparison, the function
-# :py:func:`phasorpy.filter.signal_filter_gaussian` applies a Gaussian filter
+# :py:func:`~phasorpy.filter.signal_filter_gaussian` applies a Gaussian filter
 # to the signal before phasor transformation:
 
 signal_filtered = signal_filter_gaussian(signal, skip_axis=0, repeat=3, size=3)
@@ -256,7 +256,7 @@ plot_phasor(
 # ----------------------
 #
 # Filtering based on wavelet decomposition is another method to reduce noise.
-# The function :py:func:`phasorpy.filter.phasor_filter_pawflim` is based
+# The function :py:func:`~phasorpy.filter.phasor_filter_pawflim` is based
 # on the `pawFLIM <https://github.com/maurosilber/pawflim>`_ library.
 # While the median filter is applicable to any type of phasor coordinates,
 # the pawFLIM filter requires calibrated phasor coordinates from FLIM

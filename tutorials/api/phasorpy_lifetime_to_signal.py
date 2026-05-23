@@ -4,7 +4,7 @@ Signal synthesis from lifetimes
 
 Synthesize signals from lifetime components using `lifetime_to_signal`.
 
-The :py:func:`phasorpy.lifetime.lifetime_to_signal` function is used
+The :py:func:`~phasorpy.lifetime.lifetime_to_signal` function is used
 to synthesize time- and frequency-domain signals as a function of
 fundamental frequency, single or multiple lifetime components,
 lifetime fractions, mean and background intensity, and instrument

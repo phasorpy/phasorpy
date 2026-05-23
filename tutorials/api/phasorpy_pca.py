@@ -4,7 +4,7 @@ Principal component analysis
 
 Project multi-harmonic phasor coordinates onto the principal plane.
 
-The :py:func:`phasorpy.phasor.phasor_to_principal_plane` function is
+The :py:func:`~phasorpy.phasor.phasor_to_principal_plane` function is
 used to project multi-harmonic phasor coordinates onto a plane whose
 two coordinate axes (the first two principal components) capture the
 largest variance.

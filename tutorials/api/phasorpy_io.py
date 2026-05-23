@@ -38,7 +38,7 @@ from phasorpy.plot import (
 #
 # PhasorPy provides access to curated sample files in various formats
 # that are shared publicly on Zenodo, Figshare, and GitHub repositories.
-# The files can be accessed using the :py:func:`phasorpy.datasets.fetch`
+# The files can be accessed using the :py:func:`~phasorpy.datasets.fetch`
 # function, which transparently downloads files and caches them locally.
 # The function returns the path to the downloaded file:
 
@@ -68,8 +68,8 @@ print(filename)
 #
 # Leica image files, acquired on a FALCON microscope and analyzed with LAS X
 # software, contain calculated phasor coordinates, lifetime images, and
-# relevant metadata. The :py:func:`phasorpy.io.phasor_from_lif` and
-# :py:func:`phasorpy.io.lifetime_from_lif` functions are used to read that
+# relevant metadata. The :py:func:`~phasorpy.io.phasor_from_lif` and
+# :py:func:`~phasorpy.io.lifetime_from_lif` functions are used to read that
 # data from the `FLIM testdata dataset
 # <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_ :
 
@@ -159,7 +159,7 @@ plot_histograms(
 # LIF hyperspectral
 # .................
 #
-# The :py:func:`phasorpy.io.signal_from_lif` function is used to read an
+# The :py:func:`~phasorpy.io.signal_from_lif` function is used to read an
 # image stack from the `Convallaria hyperspectral dataset
 # <https://zenodo.org/records/14976703>`_ acquired at 29 emission wavelengths:
 
@@ -200,7 +200,7 @@ plot_phasor(
 # imaging mode via the `ptufile <https://github.com/cgohlke/ptufile/>`_
 # library.
 #
-# The :py:func:`phasorpy.io.signal_from_ptu` function is used to read
+# The :py:func:`~phasorpy.io.signal_from_ptu` function is used to read
 # the TCSPC histogram from a PTU file exported from the `FLIM testdata
 # dataset <https://dx.doi.org/10.6084/m9.figshare.22336594.v1>`_.
 # For phasor analysis, periods containing multiple photons must have all
@@ -274,12 +274,12 @@ plot_histograms(
 # PhasorPy supports reading hyperspectral and RGB images from CZI files
 # via the `czifile <https://github.com/cgohlke/czifile/>`_ library.
 #
-# The :py:func:`phasorpy.io.signal_from_czi` function is used to read
+# The :py:func:`~phasorpy.io.signal_from_czi` function is used to read
 # a hyperspectral image with 28 emission wavelengths from a CZI file:
 
 from phasorpy.io import signal_from_czi
 
-filename = 'test_file.czi'
+filename = 'test_file.zstd.czi'
 
 signal = signal_from_czi(fetch(filename))
 
@@ -313,7 +313,7 @@ plot_phasor(
 # PhasorPy supports reading hyperspectral image data from Zeiss LSM files
 # via the `tifffile <https://github.com/cgohlke/tifffile/>`_ library.
 #
-# The :py:func:`phasorpy.io.signal_from_lsm` function is used to read
+# The :py:func:`~phasorpy.io.signal_from_lsm` function is used to read
 # a hyperspectral image with 30 emission wavelengths from an LSM file:
 
 from phasorpy.io import signal_from_lsm
@@ -346,7 +346,7 @@ plot_phasor(
 # PhasorPy supports reading TCSPC histograms from SDT files via the
 # `sdtfile <https://github.com/cgohlke/sdtfile/>`_ library.
 #
-# The :py:func:`phasorpy.io.signal_from_sdt` function is used to read a
+# The :py:func:`~phasorpy.io.signal_from_sdt` function is used to read a
 # TCSPC histogram from an SDT file:
 
 from phasorpy.io import signal_from_sdt
@@ -390,7 +390,7 @@ plot_phasor(
 # PhasorPy supports reading some FLIMbox FBD files via the
 # `fbdfile <https://github.com/cgohlke/fbdfile/>`_ library.
 #
-# The :py:func:`phasorpy.io.signal_from_fbd` function is used to read
+# The :py:func:`~phasorpy.io.signal_from_fbd` function is used to read
 # phase histograms from the
 # `Convallaria FBD dataset <https://zenodo.org/records/14026720>`_, which was
 # acquired at the second harmonic frequency. The dataset is a time series of
@@ -457,7 +457,7 @@ plot_phasor(
 # multi-harmonic phasor coordinates, and metadata from digital frequency-domain
 # measurements.
 #
-# The :py:func:`phasorpy.io.signal_from_flimlabs_json` function is used to
+# The :py:func:`~phasorpy.io.signal_from_flimlabs_json` function is used to
 # read a TCSPC histogram from the `Convallaria FLIM LABS dataset
 # <https://zenodo.org/records/15007900>`_, which contains a single channel:
 
@@ -515,7 +515,7 @@ plot_phasor(
 # %%
 # Newer versions of the FLIM LABS JSON files may also contain calibrated
 # phasor coordinates, possibly at multiple harmonics, which can be read
-# using the :py:func:`phasorpy.io.phasor_from_flimlabs_json` function.
+# using the :py:func:`~phasorpy.io.phasor_from_flimlabs_json` function.
 # These calibrated phasors match those previously computed from the TCSPC
 # histograms and metadata:
 
@@ -561,7 +561,7 @@ frequency = attrs['frequency_mhz']
 # PhasorPy supports reading ISS IFLI files via the
 # `lfdfiles <https://github.com/cgohlke/lfdfiles/>`_ library.
 #
-# The :py:func:`phasorpy.io.phasor_from_ifli` function is used to read
+# The :py:func:`~phasorpy.io.phasor_from_ifli` function is used to read
 # calibrated phasor coordinates from a measurement of liver from mice fed
 # a Western diet. Select the second channel and first three harmonics:
 
@@ -625,7 +625,7 @@ plot_phasor(
 # PhasorPy supports reading and writing SimFCS Referenced files via the
 # `lfdfiles <https://github.com/cgohlke/lfdfiles/>`_ library.
 #
-# The :py:func:`phasorpy.io.phasor_from_simfcs_referenced` function is used
+# The :py:func:`~phasorpy.io.phasor_from_simfcs_referenced` function is used
 # to read calibrated phasor coordinates from a REF file
 # from the `LFD workshop dataset <https://zenodo.org/records/8411056>`_:
 
@@ -659,7 +659,7 @@ plot_phasor(
 )
 
 # %%
-# The :py:func:`phasorpy.io.phasor_to_simfcs_referenced` function is used
+# The :py:func:`~phasorpy.io.phasor_to_simfcs_referenced` function is used
 # to write calibrated phasor coordinates to R64 files in a temporary directory.
 # Images with more than two dimensions or larger than square size are
 # chunked to square images and saved to separate files.
@@ -704,8 +704,8 @@ with TemporaryDirectory() as tmpdir:
 # coordinates with other software, not as a long-term storage solution.
 # Always preserve original data files in their native formats.
 #
-# The :py:func:`phasorpy.io.phasor_to_ometiff` and
-# :py:func:`phasorpy.io.phasor_from_ometiff` functions are used to write and
+# The :py:func:`~phasorpy.io.phasor_to_ometiff` and
+# :py:func:`~phasorpy.io.phasor_from_ometiff` functions are used to write and
 # read back calibrated phasor coordinates to/from PhasorPy OME-TIFF files:
 
 from phasorpy.io import phasor_from_ometiff, phasor_to_ometiff
@@ -729,6 +729,21 @@ with TemporaryDirectory() as tmpdir:
     assert attrs['frequency'] == frequency
     assert attrs['harmonic'] == [1, 2]
     assert attrs['description'] == 'Written by PhasorPy'
+
+# %%
+# Other supported formats
+# -----------------------
+#
+# PhasorPy supports reading time-resolved signals from additional file formats:
+# :py:func:`~phasorpy.io.signal_from_pqbin` (PicoQuant BIN),
+# :py:func:`~phasorpy.io.signal_from_imspector_tiff` (ImSpector FLIM TIFF),
+# and :py:func:`~phasorpy.io.signal_from_flif` (FlimFast FLIF).
+#
+# SimFCS signals can be read from B64, Z64, BHZ, and B&H files using
+# :py:func:`~phasorpy.io.signal_from_b64`,
+# :py:func:`~phasorpy.io.signal_from_z64`,
+# :py:func:`~phasorpy.io.signal_from_bhz`, and
+# :py:func:`~phasorpy.io.signal_from_bh`.
 
 # %%
 # Alternative import methods

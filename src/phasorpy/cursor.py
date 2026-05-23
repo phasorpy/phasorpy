@@ -408,7 +408,7 @@ def pseudo_color(
     colors : array_like, shape (n, 3), optional
         RGB colors assigned to each cursor.
         The last dimension contains the normalized RGB floating point values.
-        The default is :py:data:`phasorpy.color.CATEGORICAL`.
+        The default is :py:data:`~phasorpy.color.CATEGORICAL`.
     vmin : float, optional, default: 0
         Minimum value to normalize `intensity`.
         By default, the minimum value of `intensity` is used.

@@ -152,7 +152,7 @@ phasor_plot.show()
 
 # %%
 # Compute the fraction of enzyme-bound NADH per pixel.
-# :py:func:`phasorpy.component.phasor_component_fraction` returns the fraction
+# :py:func:`~phasorpy.component.phasor_component_fraction` returns the fraction
 # of the first component; passing bound NADH first yields the bound fraction
 # directly:
 
@@ -181,7 +181,7 @@ plot_image(
 # Two-harmonic lifetime search
 # ----------------------------
 #
-# The :py:func:`phasorpy.lifetime.phasor_to_lifetime_search` function
+# The :py:func:`~phasorpy.lifetime.phasor_to_lifetime_search` function
 # resolves two lifetime components per pixel from multi-harmonic phasor
 # coordinates without any prior assumption on component lifetimes.
 # Recompute and calibrate phasor coordinates at the first two harmonics:

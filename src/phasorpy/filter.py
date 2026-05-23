@@ -917,7 +917,7 @@ def signal_filter_median(
     For heterogeneous data, the spatial median of neighboring signals
     does not produce a physically meaningful signal, causing the phasor
     coordinates to be displaced from the true distribution.
-    Use :py:func:`phasorpy.filter.phasor_filter_median` instead.
+    Use :py:func:`phasor_filter_median` instead.
 
     Examples
     --------

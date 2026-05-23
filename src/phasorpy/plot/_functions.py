@@ -135,7 +135,7 @@ def plot_phasor_image(
     """Plot phasor coordinates as images.
 
     Preview phasor coordinates from time-resolved or hyperspectral
-    image stacks as returned by :py:func:`phasorpy.phasor.phasor_from_signal`.
+    image stacks as returned by :py:func:`~phasorpy.phasor.phasor_from_signal`.
 
     The last two axes are assumed to be the image axes.
     Harmonics, if any, are in the first axis of `real` and `imag`.
@@ -312,7 +312,7 @@ def plot_signal_image(
     """Plot average image and signal along axis.
 
     Preview time-resolved or hyperspectral image stacks to be analyzed with
-    :py:func:`phasorpy.phasor.phasor_from_signal`.
+    :py:func:`~phasorpy.phasor.phasor_from_signal`.
 
     The last two axes, excluding `axis`, are assumed to be the image axes.
     Other axes are averaged for image display.

@@ -77,9 +77,13 @@ def signal_from_czi(
     The implementation is based on the
     `czifile <https://github.com/cgohlke/czifile/>`__ library.
 
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
+
     Examples
     --------
-    >>> signal = signal_from_czi(fetch('test_file.czi'))
+    >>> signal = signal_from_czi(fetch('test_file.zstd.czi'))
     >>> signal.values
     array(...)
     >>> signal.dtype
@@ -95,6 +99,7 @@ def signal_from_czi(
     import czifile
 
     with czifile.CziFile(filename) as czi:
+        # TODO: determine is_rgb and is_hyperspectral from czi.scenes
         data = czi.asxarray(**kwargs)
 
     filename = os.path.basename(filename)
@@ -161,6 +166,10 @@ def signal_from_sdt(
     -----
     The implementation is based on the
     `sdtfile <https://github.com/cgohlke/sdtfile/>`__ library.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Examples
     --------
@@ -290,6 +299,10 @@ def signal_from_ptu(
     The implementation is based on the
     `ptufile <https://github.com/cgohlke/ptufile/>`__ library.
 
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
+
     Examples
     --------
     >>> signal = signal_from_ptu(fetch('hazelnut_FLIM_single_image.ptu'))
@@ -390,6 +403,10 @@ def signal_from_lsm(
     -----
     The implementation is based on the
     `tifffile <https://github.com/cgohlke/tifffile/>`__ library.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Examples
     --------
@@ -692,6 +709,10 @@ def phasor_from_ifli(
     -----
     The implementation is based on the
     `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Examples
     --------

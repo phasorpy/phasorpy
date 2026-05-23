@@ -2,12 +2,16 @@
 
 The ``phasorpy.io`` module provides functions to:
 
-- read time-resolved and hyperspectral signals, as well as metadata from
-  many file formats used in bioimaging:
+- read hyperspectral signals and metadata from many file formats used in
+  bioimaging:
 
   - :py:func:`signal_from_lif` - Leica LIF and XLEF
   - :py:func:`signal_from_czi` - Zeiss CZI
   - :py:func:`signal_from_lsm` - Zeiss LSM
+  - :py:func:`signal_from_ometiff` - OME-TIFF
+
+- read time-resolved signals and metadata from many file formats used in FLIM:
+
   - :py:func:`signal_from_ptu` - PicoQuant PTU
   - :py:func:`signal_from_pqbin` - PicoQuant BIN
   - :py:func:`signal_from_sdt` - Becker & Hickl SDT
@@ -15,13 +19,16 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`signal_from_flimlabs_json` - FLIM LABS JSON
   - :py:func:`signal_from_imspector_tiff` - ImSpector FLIM TIFF
   - :py:func:`signal_from_flif` - FlimFast FLIF
+
+- read signals from SimFCS file formats:
+
   - :py:func:`signal_from_b64` - SimFCS B64
   - :py:func:`signal_from_z64` - SimFCS Z64
   - :py:func:`signal_from_bhz` - SimFCS BHZ
   - :py:func:`signal_from_bh` - SimFCS B&H
 
 - read phasor coordinates, lifetime images, and metadata from
-  specialized file formats:
+  domain-specific file formats:
 
   - :py:func:`phasor_from_ometiff` - PhasorPy OME-TIFF
   - :py:func:`phasor_from_ifli` - ISS IFLI
@@ -37,7 +44,6 @@ The ``phasorpy.io`` module provides functions to:
 
 Support for additional file formats is being considered:
 
-- OME-TIFF (other than PhasorPy OME-TIFF)
 - Nikon ND2
 - Olympus OIB/OIF
 - Olympus OIR

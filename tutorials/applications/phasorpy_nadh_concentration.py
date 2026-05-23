@@ -9,7 +9,7 @@ present in cells in two forms, distinguishable by fluorescence lifetime:
 a short-lived free form (cytoplasmic NADH, lifetime ~0.4 ns) and a long-lived
 enzyme-bound form (lifetime ~3.4 ns).
 
-The :py:func:`phasorpy.component.phasor_component_concentration` function
+The :py:func:`~phasorpy.component.phasor_component_concentration` function
 determines absolute free (and optionally bound) NADH concentrations per pixel
 from two pieces of information: the phasor coordinate, which encodes the
 free-to-bound ratio, and the mean fluorescence intensity, which is scaled to
@@ -163,7 +163,7 @@ plot_image(
 #
 # The geometric algorithm for computing the concentrations of two components
 # from phasor coordinates is documented in detail in
-# :py:func:`phasorpy.component.phasor_component_concentration` and works by
+# :py:func:`~phasorpy.component.phasor_component_concentration` and works by
 # intersecting lines in phasor space.
 #
 # The phasor diagram below shows all coordinates and lines involved in the
