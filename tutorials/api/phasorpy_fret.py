@@ -4,9 +4,9 @@ Förster resonance energy transfer
 
 Calculate and plot phasor coordinates of FRET donor and acceptor channels.
 
-The :py:func:`phasorpy.lifetime.phasor_from_fret_donor`,
-:py:func:`phasorpy.lifetime.phasor_from_fret_acceptor`, and
-:py:class:`phasorpy.plot.PhasorPlotFret` functions and classes
+The :py:func:`~phasorpy.lifetime.phasor_from_fret_donor`,
+:py:func:`~phasorpy.lifetime.phasor_from_fret_acceptor`, and
+:py:class:`~phasorpy.plot.PhasorPlotFret` functions and classes
 are used to calculate and plot phasor coordinates of
 Förster resonance energy transfer (FRET) donor and acceptor channels
 as a function of:

@@ -85,6 +85,7 @@ def phasor_to_simfcs_referenced(
     See Also
     --------
     phasorpy.io.phasor_from_simfcs_referenced
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Examples
     --------
@@ -227,6 +228,7 @@ def phasor_from_simfcs_referenced(
     See Also
     --------
     phasorpy.io.phasor_to_simfcs_referenced
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Notes
     -----
@@ -350,6 +352,10 @@ def signal_from_fbd(
         If file is not a FLIMbox FBD file.
     IndexError
         If frame or channel index is out of bounds.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Notes
     -----

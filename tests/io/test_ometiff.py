@@ -7,7 +7,11 @@ from _conftest import SKIP_FETCH, TempFileName
 from numpy.testing import assert_almost_equal
 
 from phasorpy.datasets import fetch
-from phasorpy.io import phasor_from_ometiff, phasor_to_ometiff
+from phasorpy.io import (
+    phasor_from_ometiff,
+    phasor_to_ometiff,
+    signal_from_ometiff,
+)
 
 rng = numpy.random.default_rng(42)
 
@@ -301,6 +305,27 @@ def test_phasor_from_ometiff_exceptions(caplog):
         filename = fetch('paramecium.lsm')
         with pytest.raises(ValueError):
             phasor_from_ometiff(filename)
+
+
+@pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
+def test_signal_from_ometiff():
+    """Test signal_from_ometiff."""
+    filename = fetch('test_file.ome.tiff')
+    signal = signal_from_ometiff(filename)
+    assert signal.dtype == numpy.dtype('uint8')
+    assert signal.sizes == {'C': 28, 'Y': 512, 'X': 512}
+    c_coords = signal.coords['C'].data
+    assert c_coords[0] == pytest.approx(423)
+    assert c_coords[-1] == pytest.approx(693)
+    assert len(c_coords) == 28
+
+    filename = fetch('rgb.ome.tiff')
+    signal = signal_from_ometiff(filename)
+    assert signal.sizes == {'S': 3, 'Y': 32, 'X': 31}
+
+    # reject non-OME-TIFF file
+    with pytest.raises(ValueError):
+        signal_from_ometiff(fetch('paramecium.lsm'))
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls

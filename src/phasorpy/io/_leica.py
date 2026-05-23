@@ -65,6 +65,10 @@ def phasor_from_lif(
     The implementation is based on the
     `liffile <https://github.com/cgohlke/liffile/>`__ library.
 
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
+
     Examples
     --------
     >>> mean, real, imag, attrs = phasor_from_lif(fetch('FLIM_testdata.lif'))
@@ -165,6 +169,10 @@ def lifetime_from_lif(
     -----
     The implementation is based on the
     `liffile <https://github.com/cgohlke/liffile/>`__ library.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Examples
     --------
@@ -287,6 +295,10 @@ def signal_from_lif(
 
     Reading of TCSPC histograms from FLIM measurements is not supported
     because the compression scheme is patent-pending.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Examples
     --------

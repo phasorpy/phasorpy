@@ -579,9 +579,25 @@ MISC = pooch.create(
             'sha256:'
             'dfa65952850b8a222258776a8a14eb1ab7e70ff5f62b58aa2214797c5921b4a3'
         ),
+        'rgb.czi': (
+            'sha256:'
+            '6b51e18fa8ff87e381177385a7f957dddf68ea2b0ab37b754d4411e6cb1cbbd9'
+        ),
+        'rgb.ome.tiff': (
+            'sha256:'
+            '48acd3535b05e423b3bf0ad4ad2791def1afa9668abf1165d2000eb6870134a5'
+        ),
         'test_file.czi': (
             'sha256:'
             'a5bf495d01fb8134442f17fc09d02cca5a1d1d9e7cd725fc605c2bb17262c897'
+        ),
+        'test_file.ome.tiff': (
+            'sha256:'
+            '095585ee61f8217ca14d478b202c3df0e8bd9b1753f169f12dd2abd84fbfead9'
+        ),
+        'test_file.zstd.czi': (
+            'sha256:'
+            '4d8d954adc366bb58e5c4f3073f279cd4787b8bd6821ce0425b16e9036d73156'
         ),
     },
 )

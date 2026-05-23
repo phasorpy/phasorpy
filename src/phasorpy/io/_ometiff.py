@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 __all__ = [
-    # 'signal_from_ometiff',
     'phasor_from_ometiff',
     'phasor_to_ometiff',
+    'signal_from_ometiff',
 ]
 
 import os
@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from .._typing import (
         Any,
         ArrayLike,
+        DataArray,
         DTypeLike,
         Literal,
         NDArray,
@@ -108,6 +109,7 @@ def phasor_to_ometiff(
     See Also
     --------
     phasorpy.io.phasor_from_ometiff
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Notes
     -----
@@ -303,6 +305,7 @@ def phasor_from_ometiff(
     See Also
     --------
     phasorpy.io.phasor_to_ometiff
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Notes
     -----
@@ -453,3 +456,94 @@ def phasor_from_ometiff(
         logger().warning(f'{real.shape[-mean.ndim:]=} != {mean.shape=}')
 
     return mean, real, imag, attrs
+
+
+def signal_from_ometiff(
+    filename: str | PathLike[Any],
+    /,
+    **kwargs: Any,
+) -> DataArray:
+    """Return hyperspectral or RGB image and metadata from OME-TIFF file.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of OME-TIFF file to read.
+    **kwargs
+        Optional arguments passed to :py:meth:`tifffile.TiffFile.asxarray`,
+        for example ``series``.
+
+    Returns
+    -------
+    xarray.DataArray
+        Hyperspectral or RGB image with :ref:`axes codes <axes>` and
+        selected metadata:
+
+        - ``coords['C']``: wavelengths in nm (hyperspectral only).
+
+    Raises
+    ------
+    tifffile.TiffFileError
+        If file is not a TIFF file.
+    ValueError
+        If file is neither an RGB image nor a hyperspectral image with
+        numerically increasing channel coordinates.
+
+    Notes
+    -----
+    The implementation is based on the
+    `tifffile <https://github.com/cgohlke/tifffile/>`__ library.
+
+    Reading TCSPC histograms from OME-TIFF is not currently supported due to
+    missing data files for validation.
+
+    Examples
+    --------
+    >>> signal = signal_from_ometiff(fetch('test_file.ome.tiff'))
+    >>> signal.values
+    array(...)
+    >>> signal.dtype
+    dtype('uint8')
+    >>> signal.shape
+    (28, 512, 512)
+    >>> signal.dims
+    ('C', 'Y', 'X')
+    >>> signal.coords['C'].data
+    array([423, 433, 443, ..., 673, 683, 693])
+
+    """
+    import tifffile
+
+    with tifffile.TiffFile(filename) as tif:
+        if not tif.is_ome:
+            msg = f'{filename!r} is not an OME-TIFF file'
+            raise ValueError(msg)
+
+        # TODO: determine is_rgb and is_hyperspectral from tif.series
+        data = tif.asxarray(**kwargs)
+
+    filename = os.path.basename(filename)
+
+    is_rgb = 'S' in data.dims and data.sizes['S'] == 3
+    is_hyperspectral = False
+
+    if 'C' in data.dims:
+        c_coords = data.coords['C'].values
+        if (
+            c_coords.size >= 3
+            and numpy.issubdtype(c_coords.dtype, numpy.number)
+            and numpy.all(numpy.diff(c_coords) > 0)
+        ):
+            is_hyperspectral = True
+
+    if not is_rgb and not is_hyperspectral:
+        msg = (
+            f'{filename!r} is neither an RGB image nor a hyperspectral image '
+            'with numerically increasing channel coordinates'
+        )
+        raise ValueError(msg)
+
+    if 'H' in data.dims:
+        data = data.rename({'H': 'Q'})
+
+    return data

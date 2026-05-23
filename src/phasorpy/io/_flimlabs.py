@@ -89,6 +89,7 @@ def phasor_from_flimlabs_json(
     See Also
     --------
     phasorpy.io.signal_from_flimlabs_json
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Examples
     --------
@@ -284,6 +285,7 @@ def signal_from_flimlabs_json(
     See Also
     --------
     phasorpy.io.phasor_from_flimlabs_json
+    :ref:`sphx_glr_tutorials_api_phasorpy_io.py`
 
     Examples
     --------

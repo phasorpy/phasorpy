@@ -9,9 +9,9 @@ between two luminescing molecules where energy is transferred from a donor
 to an acceptor molecule. FRET efficiency is sensitive to donor-acceptor
 distances, making it useful for studying molecular interactions.
 
-The :py:func:`phasorpy.lifetime.phasor_from_fret_donor` function is used to
+The :py:func:`~phasorpy.lifetime.phasor_from_fret_donor` function is used to
 calculate a theoretical FRET efficiency trajectory and the
-:py:func:`phasorpy.phasor.phasor_nearest_neighbor` function is then used
+:py:func:`~phasorpy.phasor.phasor_nearest_neighbor` function is then used
 to estimate the FRET efficiencies of measured phasor coordinates in an image
 from the trajectory.
 

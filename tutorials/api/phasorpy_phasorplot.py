@@ -4,7 +4,7 @@ Phasor plot
 
 Plot phasor coordinates using the `PhasorPlot` class.
 
-The :py:class:`phasorpy.plot.PhasorPlot` class is used to plot phasor
+The :py:class:`~phasorpy.plot.PhasorPlot` class is used to plot phasor
 coordinates as scattered points, lines, two-dimensional histograms,
 and contours.
 The plots are supplemented with universal semicircles, polar grids,
@@ -310,7 +310,7 @@ pyplot.show()
 # plot_phasor function
 # --------------------
 #
-# The :py:func:`phasorpy.plot.plot_phasor` function provides a simpler
+# The :py:func:`~phasorpy.plot.plot_phasor` function provides a simpler
 # alternative to plot phasor coordinates in a single statement:
 
 from phasorpy.plot import plot_phasor

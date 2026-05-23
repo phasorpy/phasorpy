@@ -4,7 +4,7 @@ Phasor coordinates from lifetimes
 
 Calculate phasor coordinates from lifetimes using `phasor_from_lifetime`.
 
-The :py:func:`phasorpy.lifetime.phasor_from_lifetime` function is used
+The :py:func:`~phasorpy.lifetime.phasor_from_lifetime` function is used
 to calculate phasor coordinates as a function of frequency,
 single or multiple lifetime components, and the pre-exponential amplitudes
 or fractional intensities of the components.

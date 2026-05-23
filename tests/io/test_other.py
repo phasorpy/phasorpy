@@ -26,7 +26,7 @@ def test_signal_from_czi():
     """Test read CZI hyperspectral image."""
     import czifile
 
-    filename = fetch('test_file.czi')
+    filename = fetch('test_file.zstd.czi')
     signal = signal_from_czi(filename)
     assert signal.values.sum(dtype=numpy.uint64) == 2103903
     assert signal.dtype == numpy.uint8
@@ -38,6 +38,11 @@ def test_signal_from_czi():
     assert_almost_equal(
         signal.coords['X'][[0, -1]], [0.0, 4.4896e-05], decimal=6
     )
+
+    # test read RGB CZI image
+    filename = fetch('rgb.czi')
+    signal = signal_from_czi(filename)
+    assert signal.sizes == {'S': 3, 'Y': 32, 'X': 31}
 
     # reject non-CZI file
     with pytest.raises(czifile.CziFileError):
