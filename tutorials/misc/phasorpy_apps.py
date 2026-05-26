@@ -14,8 +14,8 @@ windows is required.
 """
 
 # %%
-# Lifetime app
-# ------------
+# Lifetime application
+# --------------------
 #
 # Interactively plot time-domain signals, phasor coordinates, and
 # multi-frequency phase and modulation curves for a set of lifetime
@@ -41,8 +41,8 @@ LifetimePlots(
 # phasor coordinates, phase and modulation, and decay curves respond.
 
 # %%
-# FRET app
-# --------
+# FRET application
+# ----------------
 #
 # Interactively plot phasor coordinates for Förster resonance energy transfer
 # (FRET) donor and acceptor channels as a function of frequency, donor and

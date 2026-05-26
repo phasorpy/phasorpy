@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 # remove the examples header from HTML tutorials
 import sphinx_gallery.gen_rst
+from sphinx_gallery.sorting import ExplicitOrder
 
 sphinx_gallery.gen_rst.EXAMPLE_HEADER = (
     sphinx_gallery.gen_rst.EXAMPLE_HEADER.replace(
@@ -130,6 +131,13 @@ sphinx_gallery_conf = {
     'filename_pattern': 'phasorpy_',
     'examples_dirs': '../tutorials',
     'gallery_dirs': 'tutorials',
+    'subsection_order': ExplicitOrder(
+        [
+            '../tutorials/applications',
+            '../tutorials/api',
+            '../tutorials/misc',
+        ]
+    ),
     'reference_url': {'phasorpy': None},
     'matplotlib_animations': True,
     'within_subsection_order': 'conf.TutorialOrder',
@@ -151,23 +159,23 @@ class TutorialOrder:
         'introduction',
         'lifetime_geometry',
         'lfd_workshop',
-        # api
-        'io',
-        'phasor_from_lifetime',
-        'multi_harmonic',
-        'filter',
-        'phasorplot',
-        'cursor',
-        'component',
-        'fret',
-        'lifetime_to_signal',
-        'pca',
         # applications
         'component_fit',
         'fret_efficiency',
         'nadh_fraction',
         'nadh_concentration',
         'multidimensional',
+        # api
+        'io',
+        'lifetime_to_signal',
+        'phasor_from_lifetime',
+        'fret',
+        'filter',
+        'multi_harmonic',
+        'phasorplot',
+        'cursor',
+        'component',
+        'pca',
         # misc
         'logo',
         'apps',

@@ -140,8 +140,8 @@ Articles
 Software
 --------
 
-Besides the PhasorPy library, several other software implemented the phasor
-approach to analyze fluorescence time-resolved or spectral images:
+Several software packages implement the phasor approach for analyzing
+luminescence time-resolved or spectral images:
 
 .. list-table::
    :header-rows: 0
@@ -172,20 +172,31 @@ approach to analyze fluorescence time-resolved or spectral images:
        :ref:`FLIMari <flimari>`
    * - **ImageJ**
      - :ref:`Spectral/Time Gated Phasor PlugIns <phasor_plugins>`
-   * - **Matlab**
+   * - **MATLAB**
      - :ref:`FLIMfit <flimfit>`,
        :ref:`PAM <pam>`,
        :ref:`Instant-FLIM-Analysis <instant_flim_analysis>`
    * - **Library**
-     - :ref:`FLIMLib <flimlib>`,
+     - :ref:`PhasorPy <phasorpy>`,
+       :ref:`FLIMLib <flimlib>`,
        :ref:`tttrlib <tttrlib>`,
        :ref:`FLIM_tools <flim_tools>`,
        :ref:`Cell-analysis-tools <cell_analysis_tools>`
    * - **Notebook**
-     - :ref:`PhasorIdentifier <phasor_identifier>`,
+     - :ref:`PhasorAnalysis <phasor_analysis>`,
+       :ref:`PhasorIdentifier <phasor_identifier>`,
        :ref:`PhasorPlots for dummies <phasorplots_for_dummies>`
 
 Details:
+
+-
+  .. _phasorpy:
+
+  `PhasorPy <https://github.com/phasorpy/phasorpy/>`__
+  is an open-source Python library for the analysis of luminescence lifetime
+  and hyperspectral images using the phasor approach.
+  It is a thoroughly tested, well-documented, and actively maintained
+  library for phasor analysis, distributed under the permissive MIT license.
 
 -
   .. _simfcs:
@@ -284,7 +295,7 @@ Details:
   is a collection of open-source software for the acquisition, analysis,
   and simulation of image-scanning microscopy data, including FLIM-phasor
   analysis of time-resolved images. The software is written in Python/VHDL
-  by the lab of Giuseppe Vicidomini and distributed under the GPL3 license.
+  by the lab of Giuseppe Vicidomini and distributed under the GPL v3 license.
 
 -
   .. _flim_playground:
@@ -301,7 +312,7 @@ Details:
   `FLIM_tools <https://github.com/jayunruh/FLIM_tools>`__
   is an open-source Python library for linear unmixing and phasor tools for
   FLIM analysis developed by Jay Unruh. The library is distributed under
-  the GPL2 license.
+  the GPL v2 license.
 
 -
   .. _tttrlib:
@@ -311,6 +322,14 @@ Details:
   time-tagged time-resolved (TTTR) data. It includes functions for computing
   and correcting phasor coordinates. The library is distributed under the
   BSD license.
+
+-
+  .. _phasor_analysis:
+
+  `PhasorAnalysis <https://zenodo.org/records/15616954>`__
+  is a Jupyter notebook for the PhasorScope project, an open, integrated
+  platform for multiplexed bioluminescence microscopy. The notebook is
+  designed to run on Google Colab and is distributed under the MIT license.
 
 -
   .. _phasor_identifier:
@@ -448,3 +467,26 @@ Details:
   full-field, fluorescence lifetime imaging at video rate, developed by
   Christoph Gohlke during 2000-2002 at UIUC. It enabled phasor vs intensity
   plots of FLIM images during real-time acquisition.
+
+The following software are related to FLIM analysis but are primarily
+fitting-based and therefore not included in the phasor-focused list above:
+
+-
+  .. _flimj:
+
+  `FLIMJ <https://flimj.github.io/>`__
+  is an open-source ImageJ toolkit for fluorescence lifetime image data
+  analysis based on FLIMLib, licensed under the GPL v3.
+
+-
+  .. _flimx:
+
+  `FLIMX <https://github.com/M-Klemm/FLIMX/>`__
+  is an open-source MATLAB package to determine and analyze the fluorescence
+  lifetime in time-resolved fluorescence data.
+
+-
+  .. _flimview:
+
+  `FLIMVIEW <https://github.com/mgckind/flimview>`__ is an open-source,
+  lightweight Python package for FLIM image processing.
