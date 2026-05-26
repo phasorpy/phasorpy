@@ -313,7 +313,7 @@ profile = "black"
 line_length = 79
 
 [tool.codespell]
-skip = "*.html,*.css,*.js,*.r64,*.map,./.git,./data,./venv,./phasorpy-dev,./phasorpy_dev,./docs/_build,./docs/tutorials,PKG-INFO,_htmlcov,pyproject.toml"
+skip = "*.c,*.html,*.css,*.js,*.r64,*.map,./.git,./data,./venv,./phasorpy-dev,./phasorpy_dev,./docs/_build,./docs/tutorials,PKG-INFO,_htmlcov,pyproject.toml"
 ignore-words-list = "ba,compiletime,hist,nd,unparseable,HSI,coo,aHd"
 
 [tool.typos]
