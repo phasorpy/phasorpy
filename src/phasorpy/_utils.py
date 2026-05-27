@@ -53,7 +53,7 @@ def parse_kwargs(
     *keys: str,
     **keyvalues: Any,
 ) -> dict[str, Any]:
-    """Return dict with keys from keys|keyvals and values from kwargs|keyvals.
+    """Return dict with selected keys from kwargs and optional defaults.
 
     Parameters
     ----------
@@ -344,7 +344,7 @@ def parse_signal_axis(
 ) -> tuple[int, str]:
     """Return axis over which phasor coordinates are computed.
 
-    The axis parameter is not validated against the signal shape.
+    The axis parameter is not validated against array shapes.
 
     Parameters
     ----------
@@ -424,7 +424,7 @@ def parse_skip_axis(
     Parameters
     ----------
     skip_axis : int or sequence of int or None
-        Axes to skip. If None, no axes are skipped.
+        Axes to skip. If None, no axes are skipped unless `prepend=True`.
     ndim : int
         Dimensionality of array in which to skip axes.
     prepend : bool, optional, default: False
@@ -580,7 +580,7 @@ def chunk_iter(
         Labels for each axis in shape if `pattern` is None.
     pattern : str, optional
         String to format chunk indices.
-        By default, use ``_[{dims[index]}{chunk_index[index]}]`` for each axis.
+        By default, use ``_{dims[index]}{chunk_index[index]}`` for each axis.
     squeeze : bool, optional, default: False
         Do not include length-1 chunked dimensions in label
         unless dimensions are part of `chunk_shape`.

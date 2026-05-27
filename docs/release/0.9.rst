@@ -7,7 +7,7 @@ This is the ninth alpha release of the PhasorPy library.
 It contains improvements to code quality and documentation.
 No new features were added and no breaking changes were introduced.
 
-This release supports Python 3.12 to 3.14.
+This release supports Python 3.12 through 3.14.
 Wheels are built with stable ABI for broader compatibility.
 
 What's Changed

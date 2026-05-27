@@ -96,11 +96,11 @@ def _phasor_from_signal(
         1. lower dimensions flat
         2. upper dimensions flat
 
-    signal : 3D memoryview of `float32` or `float64`
+    signal : 3D memoryview of integer or floating-point type
         Buffer of three dimensions containing signal:
 
         0. lower dimensions flat
-        1. dimension over which to compute FFT, number samples
+        1. dimension over which to compute FFT, number of samples
         2. upper dimensions flat
 
     sincos : 3D memoryview of float64
@@ -257,7 +257,7 @@ def _phasor_from_lifetime(
         1. frequencies
         2. lifetimes or fractions
 
-    frequency : 2D memoryview of float64
+    frequency : 1D memoryview of float64
         One-dimensional sequence of frequencies.
     lifetime : 2D memoryview of float64
         Buffer of two dimensions:
@@ -2515,11 +2515,11 @@ def _phasor_from_signal_vector(
         0. other dimensions flat
         1. real and imaginary components
 
-    signal : 2D memoryview of `float32` or `float64`
+    signal : 2D memoryview of integer or floating-point type
         Buffer of two dimensions containing signal:
 
         0. other dimensions flat
-        1. dimension over which to compute FFT, number samples
+        1. dimension over which to compute FFT, number of samples
 
     sincos : 3D memoryview of float64
         Buffer of three dimensions containing sine and cosine terms to be

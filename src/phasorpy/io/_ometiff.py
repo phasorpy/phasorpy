@@ -1,4 +1,4 @@
-"""Read and write OME-TIFF file format."""
+"""Read and write OME-TIFF file formats."""
 
 from __future__ import annotations
 
@@ -485,6 +485,8 @@ def signal_from_ometiff(
     ------
     tifffile.TiffFileError
         If file is not a TIFF file.
+    ValueError
+        If file is not an OME-TIFF file.
     ValueError
         If file is neither an RGB image nor a hyperspectral image with
         numerically increasing channel coordinates.

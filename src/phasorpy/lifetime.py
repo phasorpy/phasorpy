@@ -19,18 +19,22 @@ The ``phasorpy.lifetime`` module provides functions to:
   - :py:func:`polar_from_apparent_lifetime`
   - :py:func:`polar_to_apparent_lifetime`
 
-- calibrate phasor coordinates with a reference of known lifetime:
+- calibrate phasor coordinates using a reference with known lifetime:
 
   - :py:func:`phasor_calibrate`
   - :py:func:`polar_from_reference`
   - :py:func:`polar_from_reference_phasor`
 
-- calculate phasor coordinates of FRET donor and acceptor channels:
+- estimate calibration reference from measured signals:
+
+  - :py:func:`reference_from_signal` (not implemented yet)
+
+- calculate phasor coordinates for FRET donor and acceptor channels:
 
   - :py:func:`phasor_from_fret_donor`
   - :py:func:`phasor_from_fret_acceptor`
 
-- convert between single-component lifetimes and optimal frequency:
+- convert between single-component lifetimes and the optimal frequency:
 
   - :py:func:`lifetime_to_frequency`
   - :py:func:`lifetime_from_frequency`
@@ -71,6 +75,7 @@ __all__ = [
     'polar_from_reference',
     'polar_from_reference_phasor',
     'polar_to_apparent_lifetime',
+    # 'reference_from_signal',
 ]
 
 import math
@@ -207,7 +212,7 @@ def phasor_from_lifetime(
       their fractions.
       Return arrays of shape ``(frequency.size, fraction.shape[0])``.
 
-    - `lifetime` and `fraction` are up to two-dimensional of same shape.
+    - `lifetime` and `fraction` are up to two-dimensional and of same shape.
       The last dimensions hold lifetime components and their fractions.
       Return arrays of shape ``(frequency.size, lifetime.shape[0])``.
 
@@ -438,6 +443,10 @@ def lifetime_to_signal(
     Raises
     ------
     ValueError
+        If `samples` is less than 16.
+        If `frequency` is not scalar and positive.
+        If `mean - background` is less than zero.
+        If `zero_phase` is not in range [0, 2 pi].
         If `zero_modulation` is not in range (0, 1].
         If `zero_modulation` is not 1.0 and `harmonic` is not a single integer.
         If `zero_stdev` is provided and `harmonic` is a single integer.
@@ -650,7 +659,7 @@ def phasor_calibrate(
         Real component of phasor coordinates to be calibrated.
     imag : array_like
         Imaginary component of phasor coordinates to be calibrated.
-    reference_mean : array_like or None
+    reference_mean : array_like
         Intensity of phasor coordinates from reference of known lifetime.
         Used to renormalize averaged phasor coordinates.
     reference_real : array_like
@@ -752,11 +761,11 @@ def phasor_calibrate(
             ),
         )
 
-    Calibration can be reversed such that
+    Calibration can be reversed as follows:
 
     .. code-block:: python
 
-        real, imag == phasor_calibrate(
+        real, imag = phasor_calibrate(
             *phasor_calibrate(real, imag, *args, **kwargs),
             *args,
             reverse=True,
@@ -1221,7 +1230,7 @@ def phasor_to_apparent_lifetime(
     (array([1.989, 1.79]), array([1.989, 2.188]))
 
     Apparent single lifetimes of phasor coordinates outside the universal
-    semicircle are undefined:
+    semicircle are non-physical:
 
     >>> phasor_to_apparent_lifetime(-0.1, 1.1, 80)  # doctest: +NUMBER
     (-21.8, 0.0)
@@ -1486,7 +1495,8 @@ def lifetime_from_frequency(
 
     Notes
     -----
-    The lifetime :math:`\tau` that is best resolved at frequency :math:`f` is
+    The lifetime :math:`\tau` that is best resolved at a frequency
+    :math:`f` is
     (:ref:`Redford & Clegg 2005 <redford-clegg-2005>`. Eq. B.6):
 
     .. math::
@@ -1680,6 +1690,10 @@ def phasor_semicircle_intersect(
     Return the phasor coordinates of the two intersections of the universal
     semicircle with the line between two phasor coordinates.
     Return NaN if the line does not intersect the semicircle.
+
+    This function can be used to calculate a second lifetime component
+    when one is known, or to determine two single-lifetime components
+    from two phasor coordinates on their connecting line.
 
     Parameters
     ----------
@@ -2113,8 +2127,8 @@ def phasor_from_fret_acceptor(
     acceptor_background : array_like, optional, default: 0
         Weight of background signal in acceptor channel
         relative to signal of fully sensitized acceptor.
-        A weight of 1 means the signal of background and fully
-        sensitized acceptor are equal.
+        A weight of 1 means the background and fully sensitized acceptor
+        signals are equal.
     background_real : array_like, optional, default: 0
         Real component of background signal phasor coordinate
         at `frequency`.

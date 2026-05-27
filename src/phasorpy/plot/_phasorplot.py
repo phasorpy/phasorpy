@@ -465,7 +465,7 @@ class PhasorPlot:
             combinations of components.
             Else, draw lines from the component coordinates to the weighted
             average.
-        labels : Sequence of str, optional
+        labels : sequence of str, optional
             Text label for each component.
         label_offset : float, optional
             Distance of text label to component coordinate.
@@ -579,9 +579,9 @@ class PhasorPlot:
 
         Parameters
         ----------
-        real : array_like, shape (n, )
+        real : array_like, shape (n,)
             Real components of line start and end coordinates.
-        imag : array_like, shape (n, )
+        imag : array_like, shape (n,)
             Imaginary components of line start and end coordinates.
         **kwargs
             Optional arguments passed to :py:class:`matplotlib.lines.Line2D`.
@@ -607,7 +607,7 @@ class PhasorPlot:
         radius: float,
         **kwargs: Any,
     ) -> None:
-        """Draw grid circle of radius around center.
+        """Draw grid circle of specified radius around center.
 
         Parameters
         ----------
@@ -1287,7 +1287,8 @@ class PhasorPlot:
         Returns
         -------
         list of matplotlib.lines.Line2D
-            Lines representing plotted semicircle and ticks.
+            Lines representing plotted ticks and, if `use_lines` is True,
+            the semicircle.
 
         """
         if frequency is not None:

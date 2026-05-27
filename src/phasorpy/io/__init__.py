@@ -42,14 +42,21 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`phasor_to_ometiff`
   - :py:func:`phasor_to_simfcs_referenced`
 
-Support for additional file formats is being considered:
+Support for additional file formats is being considered
+(no files for development and testing are currently available):
 
-- Nikon ND2
-- Olympus OIB/OIF
-- Olympus OIR
+- OME-Zarr (hyperspectral)
+- Nikon ND2 (hyperspectral)
+- Olympus OIB, OIF, and OIR (hyperspectral)
+- ImSpector OBF and MSR (time-resolved)
 
-The functions are implemented as minimal wrappers around specialized
-third-party file reader libraries:
+PhasorPy focuses on formats that provide directly analyzable image-domain or
+histogram data. Raw event-stream files (for example Photon-HDF5 and SPC)
+that require scan reconstruction are out of scope and should be preprocessed
+with specialized tools.
+
+Most reader and writer functions are implemented as minimal wrappers around
+specialized third-party file reader libraries:
 `tifffile <https://github.com/cgohlke/tifffile>`_,
 `czifile <https://github.com/cgohlke/czifile>`_,
 `ptufile <https://github.com/cgohlke/ptufile>`_,
@@ -68,8 +75,8 @@ The signal-reading functions typically have the following signature::
     ) -> xarray.DataArray:
 
 where ``ext`` indicates the file format and ``kwargs`` are optional arguments
-passed to the underlying file reader library or used to select which data is
-returned. The returned `xarray.DataArray
+passed to the underlying file reader libraries or used to select which data
+is returned. The returned `xarray.DataArray
 <https://docs.xarray.dev/en/stable/user-guide/data-structures.html>`_
 contains an N-dimensional array with labeled coordinates, dimensions, and
 attributes:

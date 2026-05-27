@@ -82,6 +82,13 @@ def phasor_to_simfcs_referenced(
         Character codes for `mean` dimensions used to format file names.
         Only used when chunking multidimensional data into multiple files.
 
+    Raises
+    ------
+    ValueError
+        If the file extension is not `'.r64'`.
+        If `mean`, `real`, and `imag` shapes are inconsistent.
+        If `size` is out of range [4, 65535].
+
     See Also
     --------
     phasorpy.io.phasor_from_simfcs_referenced
@@ -222,6 +229,9 @@ def phasor_from_simfcs_referenced(
 
     Raises
     ------
+    ValueError
+        If file extension is not ``'.ref'``, ``'.r64'``, or ``'.re<n>'``.
+        If referenced file size is invalid.
     lfdfiles.LfdFileError
         If file is not a SimFCS REF, R64, or RE<n> file.
 
@@ -447,7 +457,7 @@ def signal_from_b64(
 ) -> DataArray:
     """Return intensity image and metadata from SimFCS B64 file.
 
-    B64 files contain one or more square intensity image(s), a carpet
+    B64 files contain one or more square intensity images, a carpet
     of lines, or a stream of intensity data. B64 files contain no metadata.
 
     Parameters

@@ -266,7 +266,7 @@ def signal_from_ptu(
         Specifies number of bins in TCSPC histogram.
         If 0 (default), return the number of bins in one period.
         If < 0, integrate delay-time axis (image mode only).
-        If > 0, return up to specified bin.
+        If > 0, return up to the specified bin.
         Overrides `selection` for axis `'H'`.
     keepdims : bool, optional, default: False
         Return reduced axes as length-1 dimensions.
@@ -507,7 +507,7 @@ def signal_from_imspector_tiff(
     tifffile.TiffFileError
         If file is not a TIFF file.
     ValueError
-        If file is not an ImSpector FLIM TIFF file.
+        If file is not an ImSpector TIFF file or does not contain FLIM data.
 
     Notes
     -----
@@ -716,22 +716,22 @@ def phasor_from_ifli(
 
     Examples
     --------
-    >>> mean, real, imag, attr = phasor_from_ifli(
+    >>> mean, real, imag, attrs = phasor_from_ifli(
     ...     fetch('frequency_domain.ifli'), harmonic='all'
     ... )
     >>> mean.shape
     (256, 256)
     >>> real.shape
     (4, 256, 256)
-    >>> attr['dims']
+    >>> attrs['dims']
     ('Y', 'X')
-    >>> attr['harmonic']
+    >>> attrs['harmonic']
     [1, 2, 3, 5]
-    >>> attr['frequency']  # doctest: +NUMBER
+    >>> attrs['frequency']  # doctest: +NUMBER
     80.33
-    >>> attr['samples']
+    >>> attrs['samples']
     64
-    >>> attr['ifli_header']
+    >>> attrs['ifli_header']
     {'Version': 16, ... 'ModFrequency': (...), 'RefLifetime': (2.5,), ...}
 
     """
@@ -832,7 +832,7 @@ def signal_from_flif(
     Returns
     -------
     xarray.DataArray
-        Phase images with :ref:`axes codes <axes>` `'THYX'` and
+        Phase images with :ref:`axes codes <axes>` `'THYX'` or `'HYX'` and
         type `uint16`, and selected metadata:
 
         - ``coords['H']``: phases in radians.

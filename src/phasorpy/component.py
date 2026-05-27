@@ -2,32 +2,49 @@
 
 The ``phasorpy.component`` module provides functions to:
 
-- calculate fractions of two known components by projecting onto the
-  line between the components (:py:func:`phasor_component_fraction`)
+- project phasor coordinates onto the line between two known components:
 
-- calculate phasor coordinates of a second component if only one is
-  known (not implemented yet)
+  - :py:func:`phasor_component_fraction`
 
-- calculate fractions of multiple known components by using higher-harmonic
-  information (:py:func:`phasor_component_fit`)
+- fit fractions of multiple known components using higher-harmonic information:
 
-- calculate fractions of two or three known components by resolving
-  graphically with a histogram (:py:func:`phasor_component_graphical`)
+  - :py:func:`phasor_component_fit`
 
-- calculate mean value coordinates of phasors with respect to three
-  or more components (:py:func:`phasor_component_mvc`)
+- estimate fractions of two or three known components using a graphical
+  histogram method:
 
-- blindly resolve fractions of multiple components by using harmonic
-  information (:py:func:`phasor_component_blind`, not implemented yet)
+  - :py:func:`phasor_component_graphical`
 
-- calculate phasor coordinates from fractional intensities of
-  components (:py:func:`phasor_from_component`)
+- calculate mean value coordinates of phasors with respect to components:
+
+  - :py:func:`phasor_component_mvc`
+
+- calculate phasor coordinates from fractional component intensities:
+
+  - :py:func:`phasor_from_component`
 
 - calculate absolute concentrations of two components from phasor
-  coordinates and calibration (:py:func:`phasor_component_concentration`)
+  coordinates and calibration:
 
-See also :py:func:`phasorpy.lifetime.phasor_to_lifetime_search` for estimating
-two component lifetimes and fractions from multi-harmonic phasor coordinates.
+  - :py:func:`phasor_component_concentration`
+
+- resolve fractions of multiple components using harmonic information:
+
+  - :py:func:`phasor_component_blind` (not implemented yet)
+
+See also the :py:mod:`phasorpy.lifetime` module to:
+
+- calculate intersection of a line through phasors with the universal
+  semicircle, which can be used to calculate a second lifetime component
+  when one is known, or to determine two single-lifetime components
+  from two phasor coordinates on their connecting line:
+
+  - :py:func:`~phasorpy.lifetime.phasor_semicircle_intersect`
+
+- estimate two-component lifetimes and fractions from multi-harmonic
+  phasor coordinates:
+
+  - :py:func:`~phasorpy.lifetime.phasor_to_lifetime_search`
 
 """
 
@@ -334,7 +351,7 @@ def phasor_component_graphical(
 
     .. code-block:: python
 
-        fractions = numpy.linspace(0.0, 1.0, len(counts[0]))
+        fractions = numpy.linspace(0.0, 1.0, counts.shape[-1])
 
     References
     ----------
@@ -750,7 +767,7 @@ def phasor_component_concentration(
     ValueError
         If `component_real` values are equal (degenerate component line).
         If `component_real` or `component_imag` do not have shape ``(2,)``.
-        If `reference_mean` is zero (cannot normalize).
+        If `reference_mean` is not finite and positive.
         If `reference_concentration` is not positive.
         If `brightness_ratio` is not positive.
 

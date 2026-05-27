@@ -2,12 +2,12 @@ Release notes
 =============
 
 The release notes describe changes to the PhasorPy library that
-are specific to a release. It includes descriptions of bug fixes,
+are specific to a release. They include descriptions of bug fixes,
 feature enhancements, documentation and maintenance changes.
 
 .. note::
-    The PhasorPy library is still under construction. Backwards-incompatible
-    changes may occur between revisions.
+    PhasorPy is still under active development, and changes in new releases
+    may require updates to existing code.
 
 .. toctree::
     :maxdepth: 2

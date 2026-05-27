@@ -52,8 +52,8 @@ def phasor_from_flimlabs_json(
         If `'all'`, return all harmonics as stored in the file.
         If a sequence, the first axis of the returned `real` and `imag` arrays
         contains the specified harmonics.
-        If an integer, the returned `real` and `imag` arrays are single
-        harmonic and have the same shape as `mean`.
+        If an integer, the returned `real` and `imag` arrays represent a
+        single harmonic and have the same shape as `mean`.
 
     Returns
     -------
@@ -73,7 +73,7 @@ def phasor_from_flimlabs_json(
           Number of time bins (always 256).
         - ``'harmonic'`` (int or list of int):
           Harmonic(s) of `real` and `imag`.
-          Single int if one harmonic, list if multiple harmonics.
+          `int` if one harmonic is returned, else `list[int]`.
         - ``'frequency'`` (float):
           Laser repetition frequency in MHz.
         - ``'flimlabs_header'`` (dict):

@@ -10,7 +10,7 @@ with ``phasor_filter_median``, adds support for multiple harmonics to
 ``phasor_threshold``, and adds the ``read_imspector_tiff`` function to read
 ImSpector FLIM TIFF files.
 
-This release supports Python 3.10 to 3.13.
+This release supports Python 3.10 through 3.13.
 
 What's Changed
 --------------

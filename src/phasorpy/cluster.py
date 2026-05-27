@@ -53,8 +53,8 @@ def phasor_cluster_gmm(
         Imaginary component of phasor coordinates.
     sigma : float, optional, default: 2
         Scaling factor for radii of major and minor axes.
-        The default 2.0 corresponds to the scaling of eigenvalues for
-        a 95% confidence ellipse.
+        The default 2.0 is commonly used for visualization of confidence
+        ellipses (~98.2%).
     clusters : int, optional, default: 1
         Number of Gaussian distributions to fit to phasor coordinates.
     sort : {'polar', 'phasor', 'area'}, optional
@@ -62,7 +62,7 @@ def phasor_cluster_gmm(
         By default, use 'polar' sorting.
 
         - 'polar': Sort by polar coordinates (phase, then modulation).
-        - 'phasor': Sort by phasor coordinates (real, then imaginary).
+        - 'phasor': Sort by phasor coordinates (imaginary, then real).
         - 'area': Sort by inverse area of ellipse (-major * minor).
 
     **kwargs

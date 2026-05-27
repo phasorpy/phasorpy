@@ -328,6 +328,7 @@ HSI = "HSI"
 NDTiff = "NDTiff"
 ND = "ND"
 ND2 = "ND2"
+OIF = "OIF"
 
 [tool.mypy]
 packages = ["phasorpy"]

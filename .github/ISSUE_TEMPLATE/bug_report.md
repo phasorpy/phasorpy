@@ -12,7 +12,7 @@ A clear and concise description of what the bug is and what was expected to happ
 
 **To Reproduce**
 
-A minimal, self-contained Python code reproducing the problem. Format the code using markdown, for example:
+A minimal, self-contained Python script reproducing the problem. Format the code using Markdown, for example:
 
 ```Python
 import phasorpy
@@ -29,7 +29,7 @@ AttributeError: module 'phasorpy' has no attribute 'do_something'
 
 Any data files necessary to run the code can be attached to the issue or shared via cloud storage, preferably on [Zenodo.org](https://zenodo.org/communities/phasorpy/).
 
-Information how PhasorPy was installed (pip, conda, or other) and the console output of:
+Information about how PhasorPy was installed (pip, conda, or other), and the console output of:
 
 ```
 $ python -m phasorpy versions
