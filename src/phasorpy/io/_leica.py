@@ -44,6 +44,8 @@ def phasor_from_lif(
 
         - ``'dims'`` (tuple of str):
           :ref:`Axes codes <axes>` for `mean` image dimensions.
+        - ``'coords'`` (dict[str, ndarray]):
+          Coordinate arrays for image dimensions.
         - ``'frequency'`` (float):
           Fundamental frequency of phasor coordinates in MHz.
           May not be present in all files.
@@ -148,6 +150,8 @@ def lifetime_from_lif(
 
         - ``'dims'`` (tuple of str):
           :ref:`Axes codes <axes>` for `intensity` image dimensions.
+        - ``'coords'`` (dict[str, ndarray]):
+            Coordinate arrays for image dimensions.
         - ``'frequency'`` (float):
           Laser pulse frequency in MHz. May not be present in all files.
         - ``'samples'`` (int):

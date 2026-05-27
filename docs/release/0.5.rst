@@ -10,7 +10,8 @@ using a Gaussian mixture model.
 The ``phasor_filter_pawflim`` function applies a wavelet filter using the
 pawFLIM library.
 
-This release supports Python 3.11 to 3.13. Python 3.10 is no longer supported.
+This release supports Python 3.11 through 3.13.
+Python 3.10 is no longer supported.
 
 What's Changed
 --------------

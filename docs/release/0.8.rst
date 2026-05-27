@@ -16,7 +16,8 @@ renamed to ``filter.signal_filter_svd``.
 The ``io.signal_from_fbd`` function has been updated to use
 the ``fbdfile`` package.
 
-This release supports Python 3.12 to 3.14. Python 3.11 is no longer supported.
+This release supports Python 3.12 through 3.14.
+Python 3.11 is no longer supported.
 
 What's Changed
 --------------

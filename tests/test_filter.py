@@ -83,6 +83,15 @@ def test_phasor_filter_gaussian_nan():
     assert numpy.isfinite(imag_out[0, 0])
 
 
+def test_phasor_filter_gaussian_mean_nan():
+    """Test that NaN in mean is unchanged by phasor_filter_gaussian."""
+    mean = numpy.array([[1.0, numpy.nan], [3.0, 4.0]])
+    real = numpy.zeros((2, 2))
+    imag = numpy.zeros((2, 2))
+    mean_out, _, _ = phasor_filter_gaussian(mean, real, imag, sigma=1.0)
+    assert_array_equal(mean_out, mean)
+
+
 def test_phasor_filter_gaussian_scipy_equivalence():
     """phasor_filter_gaussian matches scipy.ndimage.convolve1d with NaNmask."""
     from scipy.ndimage import convolve1d
@@ -444,19 +453,28 @@ def test_phasor_filter_median(
     real, imag, use_scipy, repeat, size, skip_axis, kwargs, expected
 ):
     """Test phasor_filter_median function."""
-    assert_allclose(
-        phasor_filter_median(
-            numpy.full_like(real, 1),
-            real,
-            imag,
-            use_scipy=use_scipy,
-            repeat=repeat,
-            size=size,
-            skip_axis=skip_axis,
-            **kwargs,
-        )[1:],
-        expected,
+    mean = numpy.full_like(real, 1)
+    mean_out, real_out, imag_out = phasor_filter_median(
+        mean,
+        real,
+        imag,
+        use_scipy=use_scipy,
+        repeat=repeat,
+        size=size,
+        skip_axis=skip_axis,
+        **kwargs,
     )
+    assert_array_equal(mean_out, mean)
+    assert_allclose((real_out, imag_out), expected)
+
+
+def test_phasor_filter_median_mean_nan():
+    """Test that NaN in mean is returned unchanged by phasor_filter_median."""
+    mean = numpy.array([[1.0, numpy.nan], [3.0, 4.0]])
+    real = numpy.zeros((2, 2))
+    imag = numpy.zeros((2, 2))
+    mean_out, _, _ = phasor_filter_median(mean, real, imag)
+    assert_array_equal(mean_out, mean)
 
 
 def test_phasor_filter_median_errors():
@@ -1118,6 +1136,15 @@ def test_phasor_filter_pawflim(
     assert_allclose(mean, expected[0])
     assert_allclose(real, expected[1])
     assert_allclose(imag, expected[2])
+
+
+def test_phasor_filter_pawflim_mean_nan():
+    """Test that NaN in mean is returned unchanged by phasor_filter_pawflim."""
+    mean = numpy.array([[1.0, numpy.nan], [3.0, 4.0]])
+    real = numpy.ones((2, 2, 2)) * 0.5
+    imag = numpy.ones((2, 2, 2)) * 0.4
+    mean_out, _, _ = phasor_filter_pawflim(mean, real, imag, harmonic=[1, 2])
+    assert_array_equal(mean_out, mean)
 
 
 def test_phasor_filter_pawflim_errors():

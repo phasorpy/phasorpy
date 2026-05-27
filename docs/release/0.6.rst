@@ -20,7 +20,7 @@ frequency domain, and phasor plot. It can be invoked from the command line
 with ``python -m phasorpy lifetime``.
 
 The ``two_fractions_from_phasor`` and ``graphical_component_analysis``
-functions are renamed to ``phasor_component_fraction`` and
+functions have been renamed to ``phasor_component_fraction`` and
 ``phasor_component_graphical``, respectively.
 The ``versions`` function has moved to the ``phasorpy.utils`` namespace.
 The ``spectral_vector_denoise``, ``anscombe_transform``, and
@@ -29,10 +29,10 @@ The ``spectral_vector_denoise``, ``anscombe_transform``, and
 
 Functions in the ``io`` module now return only the first channel by default.
 
-Three new tutorials are added: "Geometrical interpretation of lifetimes",
+Three new tutorials have been added: "Geometrical interpretation of lifetimes",
 "Multi-component fit", and "FRET efficiency image".
 
-This release supports Python 3.11 to 3.13.
+This release supports Python 3.11 through 3.13.
 
 What's Changed
 --------------

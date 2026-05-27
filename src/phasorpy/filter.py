@@ -90,8 +90,8 @@ def phasor_filter_median(
         Size of median filter kernel.
     skip_axis : int or sequence of int or None, optional, default: None
         Axes in `mean` to exclude from filtering.
-        By default, all axes except harmonics are included.
-        If None, all axes are filtered.
+        By default, all axes of `mean` are filtered.
+        The harmonics axis, if present, is always excluded.
     use_scipy : bool, optional, default: False
         Use :py:func:`scipy.ndimage.median_filter`.
         This function has undefined behavior if the input arrays contain
@@ -132,7 +132,7 @@ def phasor_filter_median(
 
     Examples
     --------
-    Apply three times a median filter with a kernel size of three:
+    Apply a median filter three times with a kernel size of three:
 
     >>> mean, real, imag = phasor_filter_median(
     ...     [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
@@ -338,7 +338,7 @@ def phasor_filter_gaussian(
 
     Examples
     --------
-    Apply a Gaussian filter with sigma=1:
+    Apply a Gaussian filter with `sigma=1`:
 
     >>> mean, real, imag = phasor_filter_gaussian(
     ...     [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
@@ -422,7 +422,7 @@ def phasor_filter_pawflim(
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     """Return pawFLIM wavelet-filtered phasor coordinates.
 
-    This function must only be used with calibrated, unprocessed phasor
+    This function should only be used with calibrated, unprocessed phasor
     coordinates obtained from FLIM data. The coordinates must not be filtered,
     thresholded, or otherwise pre-processed.
     Return the intensity unchanged.
@@ -442,7 +442,7 @@ def phasor_filter_pawflim(
     sigma : float, optional, default: 2
         Significance level to test difference between two phasors.
         Given in terms of the equivalent 1D standard deviations.
-        sigma=2 corresponds to ~95% significance.
+        A value of `sigma=2` is commonly used in practice.
     levels : int, optional, default: 1
         Number of levels for wavelet decomposition.
         Controls the maximum averaging area, which has a length of
@@ -454,8 +454,8 @@ def phasor_filter_pawflim(
         All harmonics must have a corresponding half or double harmonic.
     skip_axis : int or sequence of int or None, optional, default: None
         Axes in `mean` to exclude from filtering.
-        By default, all axes except harmonics are included.
-        If None, all axes are filtered.
+        By default, all axes of `mean` are filtered.
+        The harmonics axis, if present, is always excluded.
 
     Returns
     -------
@@ -493,7 +493,7 @@ def phasor_filter_pawflim(
 
     Examples
     --------
-    Apply a pawFLIM wavelet filter with four significance levels (sigma)
+    Apply a pawFLIM wavelet filter with four significance levels (`sigma`)
     and three decomposition levels:
 
     >>> mean, real, imag = phasor_filter_pawflim(
@@ -556,13 +556,13 @@ def phasor_filter_pawflim(
         msg = f'{len(harmonics)=} != {real.shape[0]=}'
         raise ValueError(msg)
 
-    mean = numpy.asarray(numpy.nan_to_num(mean, copy=False))
+    mean_num = numpy.asarray(numpy.nan_to_num(mean, copy=True))
     real = numpy.asarray(numpy.nan_to_num(real, copy=False))
     imag = numpy.asarray(numpy.nan_to_num(imag, copy=False))
-    real *= mean
-    imag *= mean
+    real *= mean_num
+    imag *= mean_num
 
-    mean_expanded = numpy.broadcast_to(mean, real.shape).copy()
+    mean_expanded = numpy.broadcast_to(mean_num, real.shape).copy()
     original_mean_expanded = mean_expanded.copy()
     real_filtered = real.copy()
     imag_filtered = imag.copy()
@@ -921,7 +921,7 @@ def signal_filter_median(
 
     Examples
     --------
-    Apply three times a median filter with a kernel size of three,
+    Apply a median filter three times with a kernel size of three,
     skipping the first axis:
 
     >>> signal_filter_median(

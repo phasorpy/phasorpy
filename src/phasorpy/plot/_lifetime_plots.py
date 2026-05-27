@@ -39,7 +39,7 @@ class LifetimePlots:
 
     Plot the time-domain signals, phasor coordinates, and multi-frequency
     phase and modulation curves for a set of lifetime components and their
-    mixture at given frequency and fractional intensities.
+    mixture at the given frequency and fractional intensities.
 
     Parameters
     ----------
@@ -62,7 +62,7 @@ class LifetimePlots:
     interactive : bool, optional, default: False
         Add sliders to change frequency and lifetimes interactively.
     **kwargs
-        Optional arguments passed to matplotlib figure.
+        Optional arguments passed to :py:func:`matplotlib.pyplot.figure`.
 
     See Also
     --------

@@ -8,7 +8,7 @@ The ``phasorpy.cursor`` module provides functions to:
   - :py:func:`mask_from_elliptic_cursor`
   - :py:func:`mask_from_polar_cursor`
 
-- create pseudo-color images from average signal and cursor masks:
+- create pseudo-color images from intensity images and cursor masks:
 
   - :py:func:`pseudo_color`
 
@@ -169,7 +169,7 @@ def mask_from_elliptic_cursor(
         Boolean array of shape ``(n, *real.shape)``.
         The first dimension is omitted if `center_real`, `center_imag`,
         `radius`, `radius_minor`, and `angle` are scalars.
-        Values are True if phasor coordinates are inside elliptical cursor,
+        Values are True if phasor coordinates are inside elliptical cursors,
         else False.
 
     Raises
@@ -286,7 +286,7 @@ def mask_from_polar_cursor(
     modulation_max: ArrayLike,
     /,
 ) -> NDArray[numpy.bool_]:
-    """Return masks for polar cursor of polar coordinates.
+    """Return masks for polar cursors in phasor coordinates.
 
     Parameters
     ----------
@@ -317,8 +317,7 @@ def mask_from_polar_cursor(
     Raises
     ------
     ValueError
-        If the array shapes of `phase` and `modulation`, or `phase_range` and
-        `modulation_range` do not match.
+        If the array shapes of `real` and `imag` do not match.
         If the array shapes of `phase_*` or `modulation_*` have more than
         one dimension.
 
@@ -404,7 +403,7 @@ def pseudo_color(
         Boolean mask for each cursor.
     intensity : array_like, optional
         Intensity used as base layer to blend cursor colors in "overlay" mode.
-        By default, cursor masks are blended using "screen" mode.
+        By default, cursor masks are blended using "normal" mode.
     colors : array_like, shape (n, 3), optional
         RGB colors assigned to each cursor.
         The last dimension contains the normalized RGB floating point values.
@@ -427,7 +426,7 @@ def pseudo_color(
         If no `masks` are provided.
     ValueError
         If `colors` is not a ``(n, 3)`` shaped floating point array.
-        If the array shapes of `masks` or `mean` cannot broadcast.
+        If the array shapes of `masks` or `intensity` cannot broadcast.
         If the number of `masks` exceeds number of available `colors`.
 
     See Also

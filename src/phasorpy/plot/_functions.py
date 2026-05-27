@@ -154,7 +154,7 @@ def plot_phasor_image(
     harmonics : int, optional
         Number of harmonics to show.
         If `mean` is None, a nonzero value indicates the presence of harmonics
-        in the first axis of `mean` and `real`. Else, the presence of harmonics
+        in the first axis of `real` and `imag`. Else, the presence of harmonics
         is determined from the shapes of `mean` and `real`.
         By default, up to four harmonics are shown.
     percentile : float, optional
@@ -327,8 +327,7 @@ def plot_signal_image(
         names, else the last axis (-1).
     percentile : float or [float, float], optional
         The [q, 100-q] percentiles of image data are covered by colormaps.
-        By default, the complete value range of `mean` is covered,
-        for `real` and `imag` the range [-1, 1].
+        By default, the complete value range of the averaged image is covered.
     title : str, optional
         Figure title. By default, no title is set.
     xlabel : str, optional
@@ -574,7 +573,7 @@ def plot_polar_frequency(
 
     Parameters
     ----------
-    frequency : array_like, shape (n, )
+    frequency : array_like, shape (n,)
         Laser pulse or modulation frequency in MHz.
     phase : array_like
         Angular component of polar coordinates in radians.
@@ -643,7 +642,7 @@ def plot_histograms(
         Label for x-axis.
     ylabel : str, optional
         Label for y-axis.
-    labels: sequence of str, optional
+    labels : sequence of str, optional
         Labels for each data array.
     show : bool, optional, default: True
         Show figure.

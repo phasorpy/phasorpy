@@ -15,7 +15,7 @@ Datasets from the following repositories are available:
   <https://zenodo.org/records/13625087>`_
   (`second record <https://zenodo.org/records/14860228>`_)
 - `Convallaria slice acquired with time-resolved 2-photon microscope
-  <https://zenodo.org/records/14026720>`_
+  <https://zenodo.org/records/14026719>`_
 - `Convallaria FLIM dataset in FLIM LABS JSON format
   <https://zenodo.org/records/15007900>`_
 - `FLIM and spectral dataset for GSLab
@@ -641,7 +641,7 @@ def fetch(
     Parameters
     ----------
     *args : str, iterable of str, or pooch.Pooch
-        Name(s) of file(s) or repositories to fetch from local storage.
+        File names or repository names to fetch from local storage.
         Can be:
 
         - File names (for example, 'simfcs.r64')
@@ -652,11 +652,11 @@ def fetch(
         If omitted, return files in all repositories.
     extract_dir : str or None, optional
         Path, relative to cache location, where ZIP files will be unpacked.
-        The cache location by default.
+        By default, the cache location.
     return_scalar : bool, optional, default: True
         Return single path as string instead of tuple of strings.
     **kwargs
-        Optional arguments passed to :py:func:`pooch.fetch`.
+        Optional arguments passed to :py:meth:`pooch.Pooch.fetch`.
         For example, ``progressbar=True``.
 
     Returns

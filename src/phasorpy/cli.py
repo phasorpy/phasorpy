@@ -51,7 +51,7 @@ def versions(*, verbose: bool) -> None:
     help='Show progress bar.',
 )
 def fetch(*, files: Iterable[str], show_progress: bool) -> None:
-    """Fetch command."""
+    """Fetch sample files from remote repositories."""
     from . import datasets
 
     files = datasets.fetch(
@@ -72,7 +72,7 @@ def fetch(*, files: Iterable[str], show_progress: bool) -> None:
     help='Do not show interactive plot.',
 )
 def fret(*, hide: bool) -> None:
-    """FRET command group."""
+    """Start interactive FRET phasor plot."""
     from .plot import PhasorPlotFret
 
     plot = PhasorPlotFret(
@@ -133,7 +133,7 @@ def lifetime(
     fraction: tuple[float, ...],
     hide: bool,
 ) -> None:
-    """Lifetime command."""
+    """Start interactive lifetime plots."""
     from .lifetime import phasor_semicircle, phasor_to_normal_lifetime
     from .plot import LifetimePlots
 

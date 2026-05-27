@@ -4,7 +4,7 @@ Contributing guide
 As a community-maintained project, PhasorPy welcomes contributions in the form
 of bug reports, bug fixes, feature implementations, documentation, datasets,
 and enhancement proposals.
-This document provides information on how to contribute.
+This guide explains how to contribute.
 
 The :doc:`code_of_conduct` applies to everyone participating in the
 PhasorPy community.
@@ -74,13 +74,13 @@ a GitHub repository at
 `https://github.com/phasorpy/phasorpy <https://github.com/phasorpy/phasorpy>`_.
 
 The repository is based on `git <https://git-scm.com/>`_, a distributed
-version control software for tracking changes in the source code files and for
+version control system for tracking changes in source code files and for
 coordinating work among programmers collaboratively developing the code.
 
 PhasorPy uses GitHub's `fork and pull collaborative development model
 <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests>`_.
 All contributions to the PhasorPy source code and documentation should
-be developed in personal forks/copies of the code, and then submitted as
+be developed in personal forks of the repository, and then submitted as
 `pull requests <https://github.com/phasorpy/phasorpy/pulls>`_ (PRs).
 
 The PhasorPy project loosely follows the
@@ -203,7 +203,6 @@ static type checker::
 
     $ python -m mypy
 
-
 The PhasorPy project follows the Scientific Python
 `SPEC 0 - Minimum Supported Dependencies
 <https://scientific-python.org/specs/spec-0000/>`_ recommendation
@@ -219,7 +218,7 @@ following the `numpydoc
 standard.
 
 Examples in docstrings must run and pass as
-`doctests <https://docs.python.org/3/library/doctest.html>`_ ::
+`doctests <https://docs.python.org/3/library/doctest.html>`_::
 
     $ python -m pytest -v src/phasorpy
 
@@ -232,7 +231,7 @@ to generate the documentation in HTML format published at
 
 Sphinx documentation is written in the
 `reStructuredText <https://docutils.sourceforge.io/rst.html>`_
-markup language in the .rst files in the ``docs`` and ``tutorials`` folders.
+markup language in .rst files in the ``docs`` and ``tutorials`` folders.
 
 All user-facing classes and functions should be included in the
 ``docs/api/*.rst`` files.
@@ -251,8 +250,8 @@ Examples in the .rst files must run and pass as doctests::
 
     $ python -m pytest -v docs
 
-Documentation in HTML format can be built from the docstrings, .rst,
-and tutorial files by running::
+Documentation can be built in HTML format from docstrings, .rst files,
+and tutorials by running::
 
     $ cd docs
     $ make clean
@@ -263,7 +262,7 @@ Then open ``_build/html/index.html`` in a web browser.
 Commit the changes
 ..................
 
-Commit changed and new files to the local repository::
+Commit modified and new files to the local repository::
 
     $ git add phasorpy/new_file.py
     $ git commit -a -m "Summarize changes in 50 characters or less"

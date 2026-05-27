@@ -40,7 +40,7 @@ def number_threads(
 ) -> int:
     """Return number of threads for parallel computations across CPU cores.
 
-    This function is used to parse ``num_threads`` parameters in the API.
+    This function is used to parse ``num_threads`` parameters across the API.
 
     Parameters
     ----------
@@ -59,6 +59,12 @@ def number_threads(
     -------
     int
         Number of threads for parallel computations.
+
+    Raises
+    ------
+    ValueError
+        If ``num_threads=0`` and the ``PHASORPY_NUM_THREADS`` environment
+        variable is set to a non-integer value.
 
     Examples
     --------
@@ -114,7 +120,8 @@ def versions(
     -------
     str
         Formatted string containing version information.
-        Format: ``"<package><dash><version>[<space>(<path>)]<sep>"``
+        Format: ``"<item><sep><item>...<item>"``, where each item is
+        ``"<package><dash><version>[<space><space>(<path>)]"``.
 
     Examples
     --------

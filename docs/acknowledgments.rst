@@ -11,11 +11,11 @@ PhasorPy was inspired by the
 `Globals for Images - SimFCS <https://www.lfd.uci.edu/globals/>`_ software by
 Enrico Gratton.
 
-This software project was supported in part by the
+This project was supported in part by the
 `Essential Open Source Software for Science (EOSS)
 <https://chanzuckerberg.com/eoss/>`_ program at
 `Chan Zuckerberg Initiative <https://chanzuckerberg.com/>`_
-(grant number 2022-252604, 2022-2024).
+(grant number 2022-252604; 2022-2024).
 
 .. _contributors:
 
@@ -32,7 +32,7 @@ and
 User Community
 --------------
 
-Many thanks to the PhasorPy user community for their feedback, bug reports,
+Thanks to the PhasorPy user community for their feedback, bug reports,
 feature suggestions, and data files that have helped improve the library.
 
 Citation

@@ -1,6 +1,6 @@
 """Color palettes and color manipulation utilities.
 
-The ``phasorpy.color`` module provides color palattes and functions to
+The ``phasorpy.color`` module provides color palettes and functions to
 manipulate colors.
 
 """
@@ -38,7 +38,7 @@ def wavelength2rgb(
     -------
     ndarray or tuple of float
         Approximate sRGB color components for visible wavelength(s).
-        If input is scalar, return tuple of three floats.
+        If input is scalar, return tuple of three values.
         If input is array, return ndarray with shape (..., 3).
         Floating-point values are in range [0.0, 1.0].
         Integer values are scaled to the dtype's maximum value.
@@ -52,7 +52,7 @@ def wavelength2rgb(
            [133, 190,   0]], dtype=uint8)
 
     """
-    astuple = isinstance(wavelength, (float, int))
+    astuple = numpy.isscalar(wavelength)
     indices = numpy.asarray(wavelength)
     indices = numpy.clip(indices, 360, 750)
     indices -= 360

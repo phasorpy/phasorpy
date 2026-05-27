@@ -77,9 +77,9 @@ class PhasorPlotFret(PhasorPlot):
     ax : matplotlib.axes.Axes, optional
         Matplotlib axes used for plotting.
         By default, a new subplot axes is created.
-        Cannot be used with `interactive` mode.
+        If provided, `interactive` mode is disabled.
     interactive : bool, optional, default: False
-        Use matplotlib slider widgets to interactively control parameters.
+        Use Matplotlib slider widgets to interactively control parameters.
     **kwargs
         Optional arguments passed to :py:class:`~phasorpy.plot.PhasorPlot`.
 

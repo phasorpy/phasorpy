@@ -5,8 +5,8 @@ This documents the application programming and command-line interfaces of
 the PhasorPy library version |version|.
 
 .. note::
-    The PhasorPy library is still under construction. Backwards-incompatible
-    changes may occur between revisions.
+    PhasorPy is still under active development, and changes in new releases
+    may require updates to existing code.
 
 .. toctree::
     :maxdepth: 3

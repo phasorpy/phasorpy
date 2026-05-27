@@ -237,7 +237,7 @@ Details:
   .. _flopa:
 
   `FLOPA <https://github.com/IMCF-Biocev/FLOPA>`__
-  is a napari plugin for FLIM data opening, processing and analysis.
+  is a napari plugin for FLIM data opening, processing, and analysis.
   The plugin is distributed under the GPLv3 license.
 
 -
@@ -268,7 +268,7 @@ Details:
   .. _flimpa:
 
   `FLIMPA <https://github.com/SofiaKapsiani/FLIMPA>`__
-  is an open-source GUI software designed for the phasor plot analysis of
+  is an open-source GUI application designed for phasor-plot analysis of
   raw TCSPC-FLIM data. The software is written in Python and distributed
   under the BSD-3-Clause license.
 
@@ -369,7 +369,7 @@ Details:
   .. _flimfit:
 
   `FLIMfit <https://github.com/flimfit/FLIMfit>`__ is an open-source,
-  MATLAB-based tool to analyse and visualize time-resolved data from FLIM
+  MATLAB-based tool to analyze and visualize time-resolved data from FLIM
   measurements including TCSPC and wide-field time-gated imaging.
   It includes a segmentation tool based on the phasor approach.
   The affiliated `FlimReader <https://github.com/flimfit/FlimReader>`__
@@ -381,7 +381,7 @@ Details:
 
   `PAM <https://pam.readthedocs.io/en/latest/phasor.html>`__
   is an open-source GUI-based MATLAB package for the analysis of fluorescence
-  experiments. The phasor analysis includes region of interests, fractions,
+  experiments. The phasor analysis includes regions of interest, fractions,
   triangular mixtures, and FRET estimation. PAM is licensed under the GPL v3.
 
 -
@@ -404,7 +404,7 @@ Details:
   .. _flim_studio:
 
   `FLIM Studio <https://www.flimlabs.com/software/>`__
-  is a commercial software by FLIM LABS, a vendor of portable devices for
+  is commercial software by FLIM LABS, a vendor of portable devices for
   fluorescence lifetime imaging and spectroscopy. The software provides
   real-time FLIM phasor-plot analysis, AI-driven phasor-plot analysis
   techniques, and an application programming interface. Python modules
@@ -414,7 +414,7 @@ Details:
   .. _vistavision:
 
   `VistaVision <https://iss.com/software/vistavision>`__
-  is a commercial Windows desktop software by ISS, Inc., for confocal
+  is a commercial Windows desktop application by ISS, Inc., for confocal
   microscopy applications, including instrument control, data acquisition,
   and data processing. It performs image segmentation of FLIM images via
   the phasor plot.
@@ -423,7 +423,7 @@ Details:
   .. _spcimage:
 
   `SPCImage <https://www.becker-hickl.com/literature/documents/flim/spcimage-ng/>`__
-  is a commercial Windows desktop software by Becker & Hickl (tm) for
+  is a commercial Windows desktop application by Becker & Hickl (tm) for
   TCSPC-FLIM data analysis. It performs image segmentation of time-resolved
   data via the phasor plot.
 
@@ -431,24 +431,24 @@ Details:
   .. _lasx:
 
   `LAS X <https://www.leica-microsystems.com/science-lab/phasor-analysis-for-flim-fluorescence-lifetime-imaging-microscopy/>`__
-  is a commercial Windows desktop software by Leica Microsystems.
-  The software allows, by using phasors, to follow microenvironmental changes,
-  select components to multiplex signal, and determine FRET efficiency.
+  is a commercial Windows desktop application by Leica Microsystems.
+  The software uses phasors to track microenvironmental changes,
+  select components for signal multiplexing, and determine FRET efficiency.
 
 -
   .. _luminosa:
 
   `Luminosa <https://www.picoquant.com/products/category/fluorescence-microscopes/luminosa-single-photon-counting-confocal-microscope#documents>`__
-  is a commercial Windows desktop software by PicoQuant GmbH, which includes
+  is a commercial Windows desktop application by PicoQuant GmbH, which includes
   single molecule detection, FCS, and time-resolved imaging methods.
-  The InstaFLIM module allows simultaneous TCSPC and phasor analysis
-  options for ROI determination.
+  The InstaFLIM module supports simultaneous TCSPC and phasor analysis
+  for ROI determination.
 
 -
   .. _eztime:
 
   `EzTime <https://www.horiba.com/int/scientific/products/detail/action/show/Product/eztime-software-6283/>`__
-  is a commercial software by HORIBA Scientific. It allows real-time TCSPC
+  is commercial software by HORIBA Scientific. It allows real-time TCSPC
   image analysis and visualization, including phasor plots, in conjunction
   with the FLIMera wide-field camera.
 
@@ -456,19 +456,19 @@ Details:
   .. _lifa:
 
   `LIFA <https://lambertinstruments.com/lifa-software>`__
-  is a commercial software by Lambert Instruments to record and analyze
+  is commercial software by Lambert Instruments to record and analyze
   fluorescence lifetime images, integrating all Lambert hardware.
 
 -
   .. _flimfast:
 
   `FlimFast <https://www.cgohlke.com/flimfast/>`__
-  was a research-grade Windows desktop software for frequency-domain,
+  was a research-grade Windows desktop application for frequency-domain,
   full-field, fluorescence lifetime imaging at video rate, developed by
   Christoph Gohlke during 2000-2002 at UIUC. It enabled phasor vs intensity
   plots of FLIM images during real-time acquisition.
 
-The following software are related to FLIM analysis but are primarily
+The following software packages are related to FLIM analysis but are primarily
 fitting-based and therefore not included in the phasor-focused list above:
 
 -

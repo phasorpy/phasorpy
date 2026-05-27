@@ -8,7 +8,7 @@ It fixes NaN handling in the median filter, simplifies multiple harmonic
 calibration, and adds functions for spectral vector denoising and Anscombe
 transformation.
 
-This release supports Python 3.10 to 3.13.
+This release supports Python 3.10 through 3.13.
 
 What's Changed
 --------------

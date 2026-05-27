@@ -162,7 +162,8 @@ def phasor_from_signal(
     Returns
     -------
     mean : ndarray
-        Average of `signal` along `axis` (zero harmonic).
+        Average of `signal` along `axis` (zero harmonic) if `normalize`
+        is True, else sum of `signal` along `axis`.
     real : ndarray
         Real component of phasor coordinates at `harmonic` along `axis`.
     imag : ndarray
@@ -398,6 +399,19 @@ def phasor_to_signal(
     -------
     signal : ndarray
         Reconstructed signal with samples of one period along `axis`.
+
+    Raises
+    ------
+    ValueError
+        If `samples` is less than three.
+        If the array shapes of `real` and `imag` do not match.
+        If `real` or `imag` are not floating-point arrays.
+        If the number of `harmonic` values does not match the first axis of
+        phasor coordinates.
+    IndexError
+        If any `harmonic` value is out of range `[1, samples // 2]`.
+    TypeError
+        If `harmonic` type is not supported.
 
     See Also
     --------
@@ -1085,7 +1099,7 @@ def phasor_to_principal_plane(
     real : array_like
         Real component of multi-harmonic phasor coordinates.
         The first axis is the frequency dimension.
-        If less than two-dimensional, length-1 dimensions are prepended.
+        If fewer than two dimensions, length-1 dimensions are prepended.
     imag : array_like
         Imaginary component of multi-harmonic phasor coordinates.
         Must have the same shape as `real`.
@@ -1124,11 +1138,13 @@ def phasor_to_principal_plane(
     .. code-block:: python
 
         x, y = numpy.dot(
-            numpy.vstack(
-                real.reshape((real.shape[0], -1)),
-                imag.reshape((imag.shape[0], -1)),
-            ),
             transformation_matrix,
+            numpy.vstack(
+                (
+                    real.reshape((real.shape[0], -1)),
+                    imag.reshape((imag.shape[0], -1)),
+                )
+            ),
         ).reshape((2, *real.shape[1:]))
 
     An application of PCA to full-harmonic phasor coordinates from MRI signals
@@ -1294,7 +1310,7 @@ def phasor_nearest_neighbor(
     Raises
     ------
     ValueError
-        If the array shapes of `real`, and `imag` do not match.
+        If the array shapes of `real` and `imag` do not match.
         If the array shapes of `neighbor_real` and `neighbor_imag`
         do not match.
         If the array shapes of `values` and `neighbor_real` do not match.
@@ -1308,7 +1324,7 @@ def phasor_nearest_neighbor(
     -----
     This function uses a linear search, which is inefficient for a large
     number of coordinates or neighbors.
-    ``scipy.spatial.KDTree.query()`` would be more efficient in those cases.
+    ``scipy.spatial.KDTree.query()`` is more efficient in those cases.
     However, KDTree is known to return non-deterministic results when
     multiple neighbors have the same distance.
 
