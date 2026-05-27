@@ -25,6 +25,8 @@ jobs:
         python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: pypa/cibuildwheel@v3.4.1
         env:
           CIBW_ARCHS_LINUX: auto
