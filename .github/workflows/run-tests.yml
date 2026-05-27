@@ -29,6 +29,14 @@ jobs:
         # 3.12 tested with build-wheels
     steps:
       - uses: actions/checkout@v6
+      - name: Cache datasets
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/phasorpy
+            ~/Library/Caches/phasorpy
+            ~/AppData/Local/phasorpy/Cache
+          key: phasorpy-data-${{ runner.os }}-${{ hashFiles('src/phasorpy/datasets.py') }}
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
