@@ -430,11 +430,9 @@ def phasor_filter_gaussian(
         else numpy.float64
     )
     # track whether asarray creates new arrays we own (safe to modify in-place)
-    owned = not (
-        isinstance(real, numpy.ndarray)
-        and real.dtype == dtype
-        and isinstance(imag, numpy.ndarray)
-        and imag.dtype == dtype
+    owned = not any(
+        isinstance(a, numpy.ndarray) and a.dtype == dtype
+        for a in (real, imag)
     )
     mean = numpy.asarray(mean, dtype=dtype)
     real = numpy.asarray(real, dtype=dtype)
