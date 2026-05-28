@@ -431,8 +431,7 @@ def phasor_filter_gaussian(
     )
     # track whether asarray creates new arrays we own (safe to modify in-place)
     owned = not any(
-        isinstance(a, numpy.ndarray) and a.dtype == dtype
-        for a in (real, imag)
+        isinstance(a, numpy.ndarray) and a.dtype == dtype for a in (real, imag)
     )
     mean = numpy.asarray(mean, dtype=dtype)
     real = numpy.asarray(real, dtype=dtype)
