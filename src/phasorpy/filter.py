@@ -67,7 +67,7 @@ def phasor_filter_median(
     num_threads: int | None = None,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-    """Return median-filtered phasor coordinates.
+    r"""Return median-filtered phasor coordinates.
 
     By default, apply a NaN-aware median filter independently to the real
     and imaginary components of phasor coordinates once, with a kernel of
@@ -128,7 +128,29 @@ def phasor_filter_median(
     See Also
     --------
     phasorpy.filter.signal_filter_median
+    phasorpy.filter.phasor_filter_gaussian
     :ref:`sphx_glr_tutorials_api_phasorpy_filter.py`
+
+    Notes
+    -----
+    The median filter is applied directly to the normalized phasor coordinates
+    (`real` and `imag`), treating each pixel equally regardless of its
+    intensity (`mean`).
+
+    Because the median is a non-linear operation, there is no
+    intensity-weighted equivalent:
+
+    .. math::
+
+        \text{median}(G_i \cdot \bar{I}_i) / \text{median}(\bar{I}_i)
+        \neq \text{intensity-weighted median}(G_i)
+
+    As a result, operations that combine median-filtered phasor coordinates
+    using intensity weighting, such as computing the mean phasor of a region
+    of interest, will give incorrect results.
+
+    For intensity-weighted spatial filtering, use
+    :py:func:`phasor_filter_gaussian` instead.
 
     Examples
     --------
@@ -276,15 +298,19 @@ def phasor_filter_gaussian(
     sigma: float | None = None,
     mode: str = 'nearest',
     skip_axis: int | Sequence[int] | None = None,
+    weighted: bool = True,
+    nan_safe: bool = True,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     r"""Return Gaussian-filtered phasor coordinates.
 
-    By default, apply a NaN-aware Gaussian filter independently to the real
-    and imaginary components of phasor coordinates once, with a kernel of
+    By default, apply a NaN-aware, intensity-weighted Gaussian filter to the
+    real and imaginary components of phasor coordinates once, with a kernel of
     size 3 in each filtered dimension.
+    Each pixel's phasor coordinate is weighted by its intensity (`mean`)
+    before averaging with its neighbors.
     NaN values in the input are preserved in the output and are excluded from
-    the weighted average of their neighbors.
-    Return the intensity unchanged.
+    the average of their neighbors.
+    Return the Gaussian-filtered intensity.
 
     Parameters
     ----------
@@ -297,7 +323,7 @@ def phasor_filter_gaussian(
     repeat : int, optional, default: 1
         Number of times to apply Gaussian filter.
     size : int, optional, default: 3
-        Size of the Gaussian kernel. Must be a positive odd integer.
+        Size of Gaussian kernel. Must be a positive odd integer.
     sigma : float or None, optional
         Standard deviation of Gaussian kernel.
         By default, sigma is computed from `size` using the OpenCV formula
@@ -311,11 +337,20 @@ def phasor_filter_gaussian(
         Axes in `mean` to exclude from filtering.
         By default, all axes of `mean` are filtered.
         The harmonics axis, if present, is always excluded.
+    weighted : bool, optional, default: True
+        Apply intensity weighting when filtering phasor coordinates.
+        If False, real and imaginary components are filtered independently
+        without intensity weighting.
+    nan_safe : bool, optional, default: True
+        Ensure that filter is applied to same elements of input arrays.
+        By default, NaNs are distributed among input arrays before filtering.
+        This may be disabled if the phasor coordinates were previously
+        filtered by :py:func:`phasor_threshold`.
 
     Returns
     -------
     mean : ndarray
-        Unchanged intensity of phasor coordinates.
+        Gaussian-filtered intensity of phasor coordinates.
     real : ndarray
         Gaussian-filtered real component of phasor coordinates.
     imag : ndarray
@@ -336,23 +371,34 @@ def phasor_filter_gaussian(
     phasorpy.filter.signal_filter_gaussian
     :ref:`sphx_glr_tutorials_api_phasorpy_filter.py`
 
+    Notes
+    -----
+    Intensity weighting (``weighted=True``, the default) is the physically
+    correct approach for averaging phasor coordinates.
+    Each phasor coordinate is weighted by its mean intensity before spatial
+    averaging, which is equivalent to applying a Gaussian filter to the signal
+    before computing phasor coordinates (the two operations commute).
+    Setting ``weighted=False`` may be useful to reproduce results from software
+    that does not apply intensity weighting, or as part of a workflow using
+    unnormalized phasor coordinates.
+
     Examples
     --------
     Apply a Gaussian filter with `sigma=1`:
 
     >>> mean, real, imag = phasor_filter_gaussian(
-    ...     [[1, 2, 3], [4, 5, 6], [7, 8, 9]],
+    ...     [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
     ...     [[0.0, 0.0, 0.0], [0.5, 0.5, 0.5], [0.2, 0.2, 0.2]],
     ...     [[0.3, 0.3, 0.3], [0.6, math.nan, 0.6], [0.4, 0.4, 0.4]],
     ...     sigma=1,
     ... )
     >>> mean
-    array([[1, 2, 3],
-           [4, 5, 6],
-           [7, 8, 9]])
+    array([[1, 1, 1],
+           [1, nan, 1],
+           [1, 1, 1]])
     >>> real
     array([[0..., 0..., 0...],
-           [0..., 0..., 0...],
+           [0..., nan, 0...],
            [0..., 0..., 0...]])
     >>> imag
     array([[0..., 0..., 0...],
@@ -378,12 +424,16 @@ def phasor_filter_gaussian(
         raise ValueError(msg)
     radius = size // 2
 
-    mean = numpy.asarray(mean)
     dtype = (
         numpy.float32
         if isinstance(real, numpy.ndarray) and real.dtype == numpy.float32
         else numpy.float64
     )
+    # track whether asarray creates new arrays we own (safe to modify in-place)
+    owned = not any(
+        isinstance(a, numpy.ndarray) and a.dtype == dtype for a in (real, imag)
+    )
+    mean = numpy.asarray(mean, dtype=dtype)
     real = numpy.asarray(real, dtype=dtype)
     imag = numpy.asarray(imag, dtype=dtype)
 
@@ -400,13 +450,35 @@ def phasor_filter_gaussian(
     if repeat == 0 or radius == 0:
         return mean, real, imag
 
+    if nan_safe:
+        mean, real, imag = phasor_threshold(mean, real, imag)
+        owned = True
+
     kernel = gaussian(size, std=sigma)
 
-    return (
-        mean,
-        _gaussian_filter(real, kernel, axes, repeat, mode, dtype),
-        _gaussian_filter(imag, kernel, axes, repeat, mode, dtype),
-    )
+    if prepend_axis:
+        mean = numpy.expand_dims(mean, 0)
+
+    if weighted:
+        if owned:
+            real *= mean
+            imag *= mean
+        else:
+            real = numpy.asarray(real * mean)
+            imag = numpy.asarray(imag * mean)
+
+    mean = _gaussian_filter(mean, kernel, axes, repeat, mode, dtype)
+    real = _gaussian_filter(real, kernel, axes, repeat, mode, dtype)
+    imag = _gaussian_filter(imag, kernel, axes, repeat, mode, dtype)
+
+    if weighted:
+        with numpy.errstate(divide='ignore', invalid='ignore'):
+            real /= mean
+            imag /= mean
+
+    if prepend_axis:
+        return numpy.asarray(mean[0]), real, imag
+    return mean, real, imag
 
 
 def phasor_filter_pawflim(

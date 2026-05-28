@@ -19,7 +19,11 @@ from phasorpy.filter import (
     signal_filter_svd,
 )
 from phasorpy.io import signal_from_imspector_tiff, signal_from_lsm
-from phasorpy.phasor import phasor_from_polar, phasor_from_signal
+from phasorpy.phasor import (
+    phasor_from_polar,
+    phasor_from_signal,
+    phasor_normalize,
+)
 
 SKIP_FETCH = bool(os.environ.get('SKIP_FETCH', ''))
 
@@ -84,12 +88,33 @@ def test_phasor_filter_gaussian_nan():
 
 
 def test_phasor_filter_gaussian_mean_nan():
-    """Test that NaN in mean is unchanged by phasor_filter_gaussian."""
+    """Test NaN handling in phasor_filter_gaussian."""
+    # NaN in mean: propagates to real/imag outputs (nan_safe=True default)
     mean = numpy.array([[1.0, numpy.nan], [3.0, 4.0]])
     real = numpy.zeros((2, 2))
     imag = numpy.zeros((2, 2))
-    mean_out, _, _ = phasor_filter_gaussian(mean, real, imag, sigma=1.0)
-    assert_array_equal(mean_out, mean)
+    mean_out, real_out, imag_out = phasor_filter_gaussian(
+        mean, real, imag, sigma=1.0
+    )
+    assert numpy.isnan(mean_out[0, 1])
+    assert numpy.isnan(real_out[0, 1])
+    assert numpy.isnan(imag_out[0, 1])
+    assert numpy.isfinite(mean_out[0, 0])
+
+    # NaN in real propagates to mean_out when nan_safe=True,
+    # but not when nan_safe=False
+    mean2 = numpy.array([[1.0, 1.0], [1.0, 1.0]])
+    real2 = numpy.array([[0.0, numpy.nan], [0.3, 0.4]])
+    imag2 = numpy.zeros((2, 2))
+    mean_out2, _, _ = phasor_filter_gaussian(
+        mean2, real2, imag2, sigma=1.0, nan_safe=True
+    )
+    assert numpy.isnan(mean_out2[0, 1])  # NaN propagated from real
+
+    mean_out3, _, _ = phasor_filter_gaussian(
+        mean2, real2, imag2, sigma=1.0, nan_safe=False
+    )
+    assert numpy.isfinite(mean_out3[0, 1])  # NaN not propagated to mean
 
 
 def test_phasor_filter_gaussian_scipy_equivalence():
@@ -117,6 +142,33 @@ def test_phasor_filter_gaussian_scipy_equivalence():
         assert_allclose(out, expected, atol=1e-12)
 
 
+def test_phasor_filter_gaussian_intensity_weighted():
+    """Test that phasor_filter_gaussian applies intensity weighting."""
+    from scipy.ndimage import convolve1d
+    from scipy.signal.windows import gaussian as scipy_gaussian
+
+    real = rng.uniform(0.1, 0.9, (7, 7))
+    imag = rng.uniform(0.1, 0.9, (7, 7))
+    mean = rng.uniform(0.5, 5.0, (7, 7))
+
+    size = 3
+    sigma = 1.0
+    kernel = scipy_gaussian(size, std=sigma)
+
+    _, real_out, imag_out = phasor_filter_gaussian(
+        mean, real, imag, size=size, sigma=sigma
+    )
+
+    for arr, out in [(real, real_out), (imag, imag_out)]:
+        filled_w = arr * mean
+        filled_m = mean.copy()
+        for ax in range(arr.ndim):
+            filled_w = convolve1d(filled_w, kernel, axis=ax, mode='nearest')
+            filled_m = convolve1d(filled_m, kernel, axis=ax, mode='nearest')
+        expected = filled_w / filled_m
+        assert_allclose(out, expected, atol=1e-12)
+
+
 def test_phasor_filter_gaussian_float32():
     """Test phasor_filter_gaussian preserves float32 dtype."""
     real = rng.uniform(0.1, 0.9, (5, 5)).astype(numpy.float32)
@@ -139,6 +191,88 @@ def test_phasor_filter_gaussian_noop():
     )
     assert_array_equal(real_out, real)
     assert_array_equal(imag_out, imag)
+
+
+def test_phasor_filter_gaussian_harmonics():
+    """Test phasor_filter_gaussian with a harmonics axis (prepend_axis)."""
+    # mean has shape (H, W), real/imag have shape (N, H, W)
+    # axis 0 of real/imag is the harmonics axis and must not be filtered
+    mean = rng.uniform(0.5, 5.0, (5, 5))
+    real = rng.uniform(0.1, 0.9, (2, 5, 5))
+    imag = rng.uniform(0.1, 0.9, (2, 5, 5))
+
+    mean_out, real_out, imag_out = phasor_filter_gaussian(
+        mean, real, imag, sigma=1.0
+    )
+    assert mean_out.shape == mean.shape
+    assert real_out.shape == real.shape
+    assert imag_out.shape == imag.shape
+    assert not numpy.any(numpy.isnan(real_out))
+    assert not numpy.any(numpy.isnan(imag_out))
+    # each harmonic must equal the single-harmonic result
+    for h in range(2):
+        _, real_h, imag_h = phasor_filter_gaussian(
+            mean, real[h], imag[h], sigma=1.0
+        )
+        assert_allclose(real_out[h], real_h)
+        assert_allclose(imag_out[h], imag_h)
+
+
+def test_phasor_filter_gaussian_unweighted_equivalence():
+    """Test weighted=False + phasor_normalize matches weighted=True workflow.
+
+    Filtering unnormalized phasor coordinates (from phasor_from_signal with
+    normalize=False) using an unweighted Gaussian and then normalizing with
+    phasor_normalize is mathematically equivalent to filtering normalized
+    phasor coordinates with intensity weighting (the default).
+    """
+    rng_local = numpy.random.default_rng(123)
+    samples = 32
+    signal = rng_local.uniform(0.5, 2.0, (5, 5, samples))
+
+    # Workflow 1: normalized phasor + intensity-weighted filter (default)
+    mean1, real1, imag1 = phasor_from_signal(signal, normalize=True)
+    mean1, real1, imag1 = phasor_filter_gaussian(
+        mean1, real1, imag1, sigma=1.0, nan_safe=False
+    )
+
+    # Workflow 2: unnormalized phasor + unweighted filter + normalize
+    mean2, real2, imag2 = phasor_from_signal(signal, normalize=False)
+    mean2, real2, imag2 = phasor_filter_gaussian(
+        mean2, real2, imag2, sigma=1.0, weighted=False, nan_safe=False
+    )
+    mean2, real2, imag2 = phasor_normalize(
+        mean2, real2, imag2, samples=samples
+    )
+
+    assert_allclose(mean1, mean2, atol=1e-10)
+    assert_allclose(real1, real2, atol=1e-10)
+    assert_allclose(imag1, imag2, atol=1e-10)
+
+
+def test_phasor_filter_gaussian_signal_prefilter_equivalence():
+    """Test pre- and post-gaussian filtering produce identical results."""
+    # Because the Gaussian filter is linear and commutes with the phasor
+    # transform, filtering the signal before computing phasor coordinates is
+    # mathematically equivalent to computing phasor coordinates first and then
+    # applying the intensity-weighted Gaussian filter (weighted=True,
+    # the default).
+    rng_local = numpy.random.default_rng(456)
+    signal = rng_local.uniform(0.5, 2.0, (5, 5, 32))
+
+    # filter signal first, then compute phasor coordinates
+    signal_filtered = signal_filter_gaussian(signal, skip_axis=-1, sigma=1.0)
+    mean1, real1, imag1 = phasor_from_signal(signal_filtered)
+
+    # compute phasor coordinates first, then intensity-weighted filter
+    mean2, real2, imag2 = phasor_from_signal(signal)
+    mean2, real2, imag2 = phasor_filter_gaussian(
+        mean2, real2, imag2, sigma=1.0, nan_safe=False
+    )
+
+    assert_allclose(mean1, mean2, atol=1e-6)
+    assert_allclose(real1, real2, atol=1e-6)
+    assert_allclose(imag1, imag2, atol=1e-6)
 
 
 def test_phasor_filter_gaussian_errors():
@@ -475,6 +609,28 @@ def test_phasor_filter_median_mean_nan():
     imag = numpy.zeros((2, 2))
     mean_out, _, _ = phasor_filter_median(mean, real, imag)
     assert_array_equal(mean_out, mean)
+
+
+def test_phasor_filter_median_harmonics():
+    """Test phasor_filter_median with a harmonics axis (prepend_axis)."""
+    # mean has shape (H, W), real/imag have shape (N, H, W)
+    # axis 0 of real/imag is the harmonics axis and must not be filtered
+    mean = numpy.full((5, 5), 1.0)
+    real = rng.uniform(0.1, 0.9, (2, 5, 5))
+    imag = rng.uniform(0.1, 0.9, (2, 5, 5))
+
+    mean_out, real_out, imag_out = phasor_filter_median(mean, real, imag)
+    assert mean_out.shape == mean.shape
+    assert_array_equal(mean_out, mean)
+    assert real_out.shape == real.shape
+    assert imag_out.shape == imag.shape
+    assert not numpy.any(numpy.isnan(real_out))
+    assert not numpy.any(numpy.isnan(imag_out))
+    # each harmonic must equal the single-harmonic result
+    for h in range(2):
+        _, real_h, imag_h = phasor_filter_median(mean, real[h], imag[h])
+        assert_allclose(real_out[h], real_h)
+        assert_allclose(imag_out[h], imag_h)
 
 
 def test_phasor_filter_median_errors():
@@ -1505,6 +1661,23 @@ def test_phasor_threshold_harmonic():
     assert_allclose(mean1, mean_)
     assert_allclose(real1, real_)
     assert_allclose(imag1, imag_)
+
+
+def test_phasor_threshold_returns_copies():
+    """Test phasor_threshold always returns new arrays, never views."""
+    mean = numpy.ones((3, 3))
+    real = numpy.full((3, 3), 0.5)
+    imag = numpy.full((3, 3), 0.3)
+
+    for kwargs in (
+        {},  # NaN-propagation only
+        {'mean_min': 0.5},  # mean threshold
+        {'real_min': 0.1, 'imag_max': 0.9},  # coordinate thresholds
+    ):
+        m2, r2, i2 = phasor_threshold(mean, real, imag, **kwargs)
+        assert not numpy.shares_memory(mean, m2)
+        assert not numpy.shares_memory(real, r2)
+        assert not numpy.shares_memory(imag, i2)
 
 
 @pytest.mark.parametrize('dtype', [None, 'float32'])
