@@ -133,6 +133,13 @@ plot_image(
 )
 
 # %%
+# Note that the median filter is a non-linear operation applied directly to
+# the normalized phasor coordinates.
+# As a result, operations that combine median-filtered phasor coordinates
+# using intensity weighting, such as computing the mean phasor of a region
+# of interest, will give incorrect results.
+
+# %%
 # For comparison, the function :py:func:`~phasorpy.filter.signal_filter_median`
 # applies a median filter to the signal before phasor transformation:
 
@@ -169,9 +176,11 @@ plot_phasor(
 # Gaussian filtering replaces each pixel value with a weighted average of its
 # neighbors, where weights follow a Gaussian distribution.
 # Unlike median filtering, it is linear and smooths more gradually.
-# The function :py:func:`~phasorpy.filter.phasor_filter_gaussian` applies a
-# Gaussian filter to phasor coordinates. By default, a 3x3 kernel with sigma
-# of about 0.8 is used:
+# The function :py:func:`~phasorpy.filter.phasor_filter_gaussian` applies an
+# intensity-weighted Gaussian filter to phasor coordinates: each phasor
+# coordinate is weighted by the mean intensity before spatial averaging,
+# which is the physically correct approach for phasor analysis.
+# By default, a 3x3 kernel with sigma of about 0.8 is used:
 
 mean, real, imag = phasor_from_signal(signal, axis=0)
 
@@ -247,9 +256,11 @@ plot_phasor(
 )
 
 # %%
-# Unlike median filtering, Gaussian filtering is a linear operation, so the
-# phasor coordinates of the Gaussian-filtered signal are close to those
-# obtained by filtering the phasor coordinates directly.
+# Unlike median filtering, Gaussian filtering is a linear operation that
+# commutes with the phasor transform.
+# Consequently, the phasor coordinates of the Gaussian-filtered signal are
+# identical to those obtained by intensity-weighted filtering of the phasor
+# coordinates directly.
 
 # %%
 # pawFLIM wavelet filter
