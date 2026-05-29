@@ -180,7 +180,7 @@ version = { attr = "phasorpy.__version__" }
 phasorpy = ["py.typed"]
 
 [tool.check-unicode]
-allow-codepoints = ["U+00B0", "U+00F6", "U+039B", "U+03BB"]
+allow-codepoints = ["U+00A0", "U+00B0", "U+00F6", "U+039B", "U+03BB"]
 check-confusables = true
 
 [tool.ruff]
