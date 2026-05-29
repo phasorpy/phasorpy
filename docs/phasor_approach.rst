@@ -1,4 +1,4 @@
-Phasor approach
+Phasor approach
 ===============
 
 "The phasor approach to fluorescence lifetime imaging, and more recently
@@ -146,17 +146,39 @@ luminescence time-resolved or spectral images:
 .. list-table::
    :header-rows: 0
 
+   * - **Library**
+     - :ref:`PhasorPy <phasorpy>`,
+       :ref:`tttrlib <tttrlib>`,
+       :ref:`FLIMLib <flimlib>`:sup:`2`,
+       :ref:`BrightEyes <brighteyes>`:sup:`2`,
+       :ref:`FLIM_tools <flim_tools>`:sup:`2,4`,
+       :ref:`Cell-analysis-tools <cell_analysis_tools>`:sup:`2,4`
    * - **Desktop**
-     - :ref:`SimFCS <simfcs>`,
+     - :ref:`SimFCS <simfcs>`:sup:`3,4`,
+       :ref:`FLIM Playground <flim_playground>`:sup:`1`,
        :ref:`FLUTE <flute>`,
        :ref:`FLIMPA <flimpa>`,
        :ref:`GSLab <gslab>`,
        :ref:`AlliGator <alligator>`,
-       :ref:`BrightEyes <brighteyes>`,
-       :ref:`FLIM Playground <flim_playground>`,
-       :ref:`HySP <hysp>`,
-       :ref:`FlimFast <flimfast>`
-   * - **Commercial**
+       :ref:`HySP <hysp>`:sup:`3,4`,
+       :ref:`FlimFast <flimfast>`:sup:`3,4`
+   * - **Napari**
+     - :ref:`Napari-phasors <napari_phasors>`:sup:`1`,
+       :ref:`FLIMari <flimari>`:sup:`1`,
+       :ref:`Napari-flim-phasor-plotter <napari_flim_phasor_plotter>`,
+       :ref:`FLOPA <flopa>`:sup:`2`,
+       :ref:`Napari-live-flim <napari_live_flim>`:sup:`2,4`
+   * - **ImageJ**
+     - :ref:`Spectral/Time Gated Phasor PlugIns <phasor_plugins>`:sup:`4`
+   * - **Notebook**
+     - :ref:`PhasorAnalysis <phasor_analysis>`,
+       :ref:`PhasorIdentifier <phasor_identifier>`:sup:`4`,
+       :ref:`PhasorPlots for dummies <phasorplots_for_dummies>`:sup:`2,4`
+   * - **Matlab**
+     - :ref:`FLIMfit <flimfit>`:sup:`2`,
+       :ref:`PAM <pam>`:sup:`2`,
+       :ref:`Instant-FLIM-Analysis <instant_flim_analysis>`:sup:`4`
+   * - **Commercial**:sup:`3`
      - :ref:`FLIM Studio <flim_studio>`,
        :ref:`VistaVision <vistavision>`,
        :ref:`SPCImage <spcimage>`,
@@ -164,28 +186,11 @@ luminescence time-resolved or spectral images:
        :ref:`Luminosa <luminosa>`,
        :ref:`EzTime <eztime>`,
        :ref:`LIFA <lifa>`
-   * - **Napari**
-     - :ref:`Napari-phasors <napari_phasors>`,
-       :ref:`Napari-flim-phasor-plotter <napari_flim_phasor_plotter>`,
-       :ref:`Napari-live-flim <napari_live_flim>`,
-       :ref:`FLOPA <flopa>`,
-       :ref:`FLIMari <flimari>`
-   * - **ImageJ**
-     - :ref:`Spectral/Time Gated Phasor PlugIns <phasor_plugins>`
-   * - **MATLAB**
-     - :ref:`FLIMfit <flimfit>`,
-       :ref:`PAM <pam>`,
-       :ref:`Instant-FLIM-Analysis <instant_flim_analysis>`
-   * - **Library**
-     - :ref:`PhasorPy <phasorpy>`,
-       :ref:`FLIMLib <flimlib>`,
-       :ref:`tttrlib <tttrlib>`,
-       :ref:`FLIM_tools <flim_tools>`,
-       :ref:`Cell-analysis-tools <cell_analysis_tools>`
-   * - **Notebook**
-     - :ref:`PhasorAnalysis <phasor_analysis>`,
-       :ref:`PhasorIdentifier <phasor_identifier>`,
-       :ref:`PhasorPlots for dummies <phasorplots_for_dummies>`
+
+| :sup:`1` Uses PhasorPy internally.
+| :sup:`2` GPL-licensed.
+| :sup:`3` Proprietary or closed-source.
+| :sup:`4` Legacy: no known maintenance activity for at least 2 years.
 
 Details:
 
@@ -195,8 +200,14 @@ Details:
   `PhasorPy <https://github.com/phasorpy/phasorpy/>`__
   is an open-source Python library for the analysis of luminescence lifetime
   and hyperspectral images using the phasor approach.
-  It is a thoroughly tested, well-documented, and actively maintained
-  library for phasor analysis, distributed under the permissive MIT license.
+  The library enables reproducible phasor-based FLIM and HSI workflows.
+  It provides tools to read microscopy data in many file formats and to
+  calculate, calibrate, filter, visualize, and interconvert phasor coordinates,
+  lifetimes, and signals. Phasor coordinates can be exported to standard
+  formats and analyzed through cursor-based region-of-interest selection,
+  cluster detection, multi-component unmixing, FRET efficiency and
+  concentration estimation.
+  It is distributed under the permissive MIT license.
 
 -
   .. _simfcs:
@@ -205,9 +216,8 @@ Details:
   is a free, closed-source, Windows desktop application for fluorescence image
   analysis, visualization, simulation, and acquisition.
   The software was developed by Enrico Gratton during 1998-2022 at the
-  Laboratory for Fluorescence Dynamics. It provides the most comprehensive
-  set of features for phasor analysis of fluorescence lifetime and
-  hyperspectral images.
+  Laboratory for Fluorescence Dynamics. It provides a broad set of features
+  for phasor analysis of fluorescence lifetime and hyperspectral images.
   Many `tutorials <https://www.lfd.uci.edu/globals/tutorials/>`__ are
   available.
 
