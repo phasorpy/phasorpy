@@ -599,13 +599,16 @@ def phasor_component_fit(
         raise ValueError(msg)
 
     if component_real.ndim == 1:
+        num_harmonics = 1
+        num_components = component_real.shape[0]
         component_real = component_real.reshape((1, -1))
         component_imag = component_imag.reshape((1, -1))
-    elif component_real.ndim > 2:
+    elif component_real.ndim == 2:
+        num_harmonics = component_real.shape[0]
+        num_components = component_real.size // num_harmonics
+    else:
         msg = f'{component_real.ndim=} > 2'
         raise ValueError(msg)
-
-    num_harmonics, num_components = component_real.shape
 
     # create component matrix for least squares solving:
     # [real coordinates of components (for each harmonic)] +
