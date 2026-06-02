@@ -1172,10 +1172,14 @@ class PhasorPlot:
             ax.add_patch(Polygon(xy, fill=False, **kwargs))
 
         if radii is None:
-            radii = [1 / 3, 2 / 3, 1.0]
+            radii_list: list[float] = [1 / 3, 2 / 3, 1.0]
         elif isinstance(radii, int):
-            radii = numpy.linspace(0, 1, radii + 1, endpoint=True)[1:].tolist()
-        for r in radii:  # type: ignore[union-attr]
+            radii_list = numpy.linspace(0, 1, radii + 1, endpoint=True)[
+                1:
+            ].tolist()
+        else:
+            radii_list = list(radii)
+        for r in radii_list:
             if r < 1e-3:
                 # skip zero radius
                 continue
@@ -1190,12 +1194,16 @@ class PhasorPlot:
             ax.add_patch(circle)
 
         if angles is None:
-            angles = 12
-        if isinstance(angles, int):
-            angles = numpy.linspace(
+            angles_list: list[float] = numpy.linspace(
+                0, 2 * math.pi, 12, endpoint=False
+            ).tolist()
+        elif isinstance(angles, int):
+            angles_list = numpy.linspace(
                 0, 2 * math.pi, angles, endpoint=False
             ).tolist()
-        for a in angles:  # type: ignore[union-attr]
+        else:
+            angles_list = list(angles)
+        for a in angles_list:
             if a < 0 or a > 2 * math.pi:
                 # skip angles out of range
                 continue

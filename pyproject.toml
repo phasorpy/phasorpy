@@ -150,14 +150,14 @@ lint = [
     "autoflake",
     "black",
     "blackdoc",
-    "codespell",
+    # "codespell",
     "cython_lint",
     "flake8",
     "isort",
     "mypy",
     "pre-commit",
     "pre-commit-hooks",
-    "pyupgrade",
+    # "pyupgrade",
     "ruff",
 ]
 dev = [

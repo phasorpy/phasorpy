@@ -501,14 +501,14 @@ def plot_image(
         vmax = kwargs.pop('vmax', None)
         if vmin is None:
             vmin = numpy.inf
-            for im in images:
-                vmin = min(vmin, numpy.nanmin(im))
+            for image in arrays:
+                vmin = min(vmin, numpy.nanmin(image))
             if vmin == numpy.inf:
                 vmin = None
         if vmax is None:
             vmax = -numpy.inf
-            for im in images:
-                vmax = max(vmax, numpy.nanmax(im))
+            for image in arrays:
+                vmax = max(vmax, numpy.nanmax(image))
             if vmax == -numpy.inf:
                 vmax = None
 

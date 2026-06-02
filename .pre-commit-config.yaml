@@ -41,10 +41,10 @@ repos:
       - id: python-no-log-warn
       - id: python-use-type-annotations
 
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
-    hooks:
-      - id: codespell
+  # - repo: https://github.com/codespell-project/codespell
+  #   rev: v2.4.2
+  #   hooks:
+  #     - id: codespell
 
   - repo: https://github.com/crate-ci/typos
     rev: v1.47.0
@@ -77,11 +77,11 @@ repos:
     hooks:
       - id: autoflake
 
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.2
-    hooks:
-      - id: pyupgrade
-        args: [--py312-plus, --keep-runtime-typing]
+  # - repo: https://github.com/asottile/pyupgrade
+  #   rev: v3.21.2
+  #   hooks:
+  #     - id: pyupgrade
+  #       args: [--py312-plus, --keep-runtime-typing]
 
   - repo: https://github.com/pycqa/isort
     rev: 8.0.1

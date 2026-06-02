@@ -1,6 +1,6 @@
 """
-Multi-component fit
-===================
+Spectral unmixing
+=================
 
 Spectral unmixing using multi-component analysis in phasor space.
 
