@@ -6,10 +6,10 @@ PhasorPy 0.11 (2026-06-06)
 This is the second beta release of the PhasorPy library.
 It contains several new functions, improvements, and bug fixes.
 
-The new ``io.signal_from_ome_tiff`` function reads hyperspectral and RGB
+The new ``io.signal_from_ometiff`` function reads hyperspectral and RGB
 images from OME-TIFF files using the ``tifffile`` library.
 
-The ``phasor_filter_gaussian`` function was fixed to apply intensity
+The ``filter.phasor_filter_gaussian`` function was fixed to apply intensity
 weighting by default.
 
 The new ``nadh_fraction`` application tutorial demonstrates how to estimate
