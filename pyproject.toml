@@ -159,6 +159,7 @@ lint = [
     "pre-commit-hooks",
     # "pyupgrade",
     "ruff",
+    "typos",
 ]
 dev = [
     # all development requirements

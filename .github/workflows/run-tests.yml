@@ -86,4 +86,4 @@ jobs:
           python -m isort --check src/phasorpy tutorials
       - name: Check spelling
         run: |
-          python -m codespell_lib
+          typos .
