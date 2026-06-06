@@ -1,0 +1,36 @@
+.. currentmodule:: phasorpy
+
+PhasorPy 0.11 (2026-06-06)
+==========================
+
+This is the second beta release of the PhasorPy library.
+It contains several new functions, improvements, and bug fixes.
+
+The new ``io.signal_from_ometiff`` function reads hyperspectral and RGB
+images from OME-TIFF files using the ``tifffile`` library.
+
+The ``filter.phasor_filter_gaussian`` function was fixed to apply intensity
+weighting by default.
+
+The new ``nadh_fraction`` application tutorial demonstrates how to estimate
+the bound NADH fraction using phasor component analysis.
+
+Several documentation inconsistencies have been fixed.
+
+This release supports Python 3.12 through 3.14.
+
+What's Changed
+--------------
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/339
+* Add nadh_fraction tutorial and improve documentation by @cgohlke in https://github.com/phasorpy/phasorpy/pull/341
+* Add signal_from_ometiff function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/342
+* Update phasor approach software list by @cgohlke in https://github.com/phasorpy/phasorpy/pull/343
+* Update GitHub workflows by @cgohlke in https://github.com/phasorpy/phasorpy/pull/344
+* Fix documentation inconsistencies by @cgohlke in https://github.com/phasorpy/phasorpy/pull/345
+* Fix phasor_filter_gaussian to apply intensity weighting by default by @cgohlke in https://github.com/phasorpy/phasorpy/pull/346
+* Revise phasor software table by @cgohlke in https://github.com/phasorpy/phasorpy/pull/347
+* Fix Mypy errors with numpy 2.5.0rc1 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/348
+* Release v0.11 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/349
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.10...v0.11

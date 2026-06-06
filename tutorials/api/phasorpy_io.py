@@ -395,13 +395,17 @@ plot_phasor(
 # `Convallaria FBD dataset <https://zenodo.org/records/14026720>`_, which was
 # acquired at the second harmonic frequency. The dataset is a time series of
 # two channels. Since the photon count is low and the second channel empty,
-# only the first channel is read and the time-axis integrated:
+# only the first channel is read and the time-axis integrated.
+# A corrected ``scanner_line_start`` parameter is specified to account for
+# additional hardware trigger latency not present in the file metadata:
 
 from phasorpy.io import signal_from_fbd
 
 filename = 'Convallaria_$EI0S.fbd'
 
-signal = signal_from_fbd(fetch(filename), frame=-1, channel=0)
+signal = signal_from_fbd(
+    fetch(filename), frame=-1, channel=0, scanner_line_start=41
+)
 
 frequency = signal.attrs['frequency'] * signal.attrs['harmonic']
 
@@ -416,7 +420,7 @@ plot_signal_image(
 reference_filename = 'Calibration_Rhodamine110_$EI0S.fbd'
 
 reference_signal = signal_from_fbd(
-    fetch(reference_filename), frame=-1, channel=0
+    fetch(reference_filename), frame=-1, channel=0, scanner_line_start=41
 )
 reference_lifetime = 4.0
 

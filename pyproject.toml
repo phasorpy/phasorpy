@@ -65,7 +65,7 @@ all = [
     "ptufile>=2024.9.14",
     "sdtfile>=2024.5.24",
     "pawflim>=1.0.4",
-    "imagecodecs==2026.3.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "imagecodecs==2026.6.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     # "mkl-fft>=2.1.1",
 ]
 
@@ -92,7 +92,7 @@ optional = [
     "ptufile>=2024.9.14",
     "sdtfile>=2024.5.24",
     "pawflim>=1.0.4",
-    "imagecodecs==2026.3.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "imagecodecs==2026.6.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
 minimal = [
     # minimal runtime versions for testing against oldest supported versions
@@ -437,7 +437,7 @@ test-requires = [
 [[tool.cibuildwheel.overrides]]
 select = "*-macosx_x86_64"
 inherit.test-requires = "append"
-test-requires = ["imagecodecs==2026.3.6"]
+test-requires = ["imagecodecs==2026.6.6"]
 
 [tool.cibuildwheel.test-environment]
 PHASORPY_DATA_ON_GITHUB = "1"

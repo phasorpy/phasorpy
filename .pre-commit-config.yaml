@@ -47,7 +47,7 @@ repos:
   #     - id: codespell
 
   - repo: https://github.com/crate-ci/typos
-    rev: v1.47.0
+    rev: v1.47.2
     hooks:
       - id: typos
         args: []
@@ -103,7 +103,7 @@ repos:
   # when running with --fix place ruff lint hook
   # before ruff-format, black, isort, etc
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.15
+    rev: v0.15.16
     hooks:
       - id: ruff-check
   #     args: [--fix --show-fixes]
