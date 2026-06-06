@@ -4,12 +4,12 @@ Geometric interpretation of lifetimes
 
 Illustrate the geometric interpretation of lifetimes in the phasor plot.
 
-The PhasorPy library is used to illustrate the geometrical interpretation
-of lifetimes and other quantities in the phasor plot:
+This tutorial uses the PhasorPy library to illustrate the following
+quantities in the phasor plot:
 
 - single-exponential lifetimes
 - fractional intensities of lifetime components
-- apparent single lifetime from phase and modulation
+- apparent single lifetimes from phase and modulation
 - normal lifetime
 - phase and modulation
 - phasor coordinates
@@ -70,7 +70,7 @@ plot = PhasorPlot(
     yticklabels=['0', '1/2'],
     xlabel=None,
     ylabel=None,
-    title='Geometrical interpretation of lifetimes in the phasor plot',
+    title='Geometric interpretation of lifetimes in the phasor plot',
 )
 plot.ax.tick_params(axis='both', which='major', labelsize=fontsize * 2 / 3)
 plot.ax.spines['top'].set_visible(False)
@@ -249,7 +249,7 @@ if len(lifetime) == 2:
         plot.ax.text(
             real + (component_real[i] - real) / 2,
             imag + (component_imag[i] - imag) / 2 - textoffset,
-            f'$\\alpha_{i}$',
+            f'$\\alpha_{1 - i}$',
             color=color_component,
             fontsize=fontsize,
             ha='center',
@@ -294,25 +294,26 @@ plot.show()
 #   two components with single-exponential lifetimes, weighted by their
 #   **fractional intensities** :math:`\alpha_{0}` and :math:`\alpha_{1}`,
 #   lie on a line between the phasor coordinates of the single components.
+#   As :math:`\alpha_{i}` increases, the mixture moves closer to component
+#   :math:`i`.
 # - the **phase** :math:`\varphi` of the phasor coordinates :math:`G` and
 #   :math:`S` is the angle of the phasor coordinates with respect to the
 #   origin.
 # - the **modulation** :math:`M` of the phasor coordinates :math:`G` and
 #   :math:`S` is the distance from the origin to the phasor coordinates.
 # - the **apparent single lifetime from phase** :math:`\tau_{\varphi}`
-#   of the component mixture is the single-exponential lifetime corresponding
-#   to the intersection of the universal circle with a line through the origin
-#   and the phasor coordinates :math:`G` and :math:`S`.
+#   of the component mixture is the single-exponential lifetime at the
+#   intersection of the universal circle with a line through the origin and
+#   the phasor coordinates :math:`G` and :math:`S`.
 # - the **apparent single lifetime from modulation** :math:`\tau_{M}`
-#   of the component mixture is the single-exponential lifetime corresponding
-#   to the intersection of the universal circle with a circle around the origin
-#   of radius equal to the modulation :math:`M`.
+#   of the component mixture is the single-exponential lifetime at the
+#   intersection of the universal circle with a circle around the origin of
+#   radius equal to the modulation :math:`M`.
 # - the **normal lifetime** :math:`\tau_{N}` of the component mixture
-#   is the single-exponential lifetime corresponding to the nearest point on
-#   the universal circle to the phasor coordinates :math:`G` and :math:`S`,
-#   which is the intersection of the universal circle with the line through the
-#   center of the universal circle and the phasor coordinates :math:`G` and
-#   :math:`S`.
+#   is the single-exponential lifetime at the nearest point on the universal
+#   circle to the phasor coordinates :math:`G` and :math:`S`, which is the
+#   intersection of the universal circle with the line through the center of
+#   the universal circle and the phasor coordinates :math:`G` and :math:`S`.
 
 # sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -1
