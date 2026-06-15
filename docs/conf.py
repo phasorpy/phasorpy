@@ -148,9 +148,6 @@ sphinx_gallery_conf = {
     # 'backreferences_dir': None,
 }
 
-# TODO: remove MathJax 3 link once scroll bar issue is resolved
-mathjax_path = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
-
 
 class TutorialOrder:
     """Order tutorials in gallery subsections."""

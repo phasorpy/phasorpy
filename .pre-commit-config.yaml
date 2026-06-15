@@ -103,7 +103,7 @@ repos:
   # when running with --fix place ruff lint hook
   # before ruff-format, black, isort, etc
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.16
+    rev: v0.15.17
     hooks:
       - id: ruff-check
   #     args: [--fix --show-fixes]
@@ -116,7 +116,7 @@ repos:
   #     additional_dependencies: [flake8-typing-imports, flake8-docstrings]
 
   # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.20.2
+  #   rev: v2.1.0
   #   hooks:
   #   - id: mypy
   #     files: src

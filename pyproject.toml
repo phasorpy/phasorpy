@@ -409,13 +409,14 @@ skip = [
     "cp311*",
     "cp313*",
     "cp314-*",
+    "cp315*",
     "*musllinux*",
     "*i686*",
     "*ppc64le*",
     "*s390x*",
 ]
 test-command = "pytest {project}/tests"
-test-skip = ["cp314t*"]
+test-skip = ["cp314t*", "cp315t*"]
 test-requires = [
     # sync with [dependency-groups.optional]
     "czifile>=2026.4.11",

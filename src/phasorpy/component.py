@@ -818,7 +818,7 @@ def phasor_component_concentration(
         m = \frac{I}{I_\text{ref} + I}
 
     where :math:`I` is the pixel mean intensity and
-    :math:`I_\text{ref} = 2 \cdot \text{reference_mean}` is twice the
+    :math:`I_\text{ref} = 2 \cdot \text{reference\_mean}` is twice the
     fluorescence-only mean intensity of the calibration solution.
 
     The component-0 concentration is then:
