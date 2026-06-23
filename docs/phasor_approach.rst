@@ -160,6 +160,7 @@ luminescence time-resolved or spectral images:
        :ref:`FLIMPA <flimpa>`,
        :ref:`GSLab <gslab>`,
        :ref:`AlliGator <alligator>`,
+       :ref:`Spectral Phasors Analysis <spectral_phasors_analysis>`:sup:`2`,
        :ref:`HySP <hysp>`:sup:`3,4`,
        :ref:`FlimFast <flimfast>`:sup:`3,4`
    * - **Napari**
@@ -332,6 +333,14 @@ Details:
   time-tagged time-resolved (TTTR) data. It includes functions for computing
   and correcting phasor coordinates. The library is distributed under the
   BSD license.
+
+-
+  .. _spectral_phasors_analysis:
+
+  `Spectral Phasors Analysis <https://github.com/DBP008/spectral-phasors-analysis>`__
+  is a Python application to explore spectral phasors through simulations and
+  analyze experimental data. The software is distributed under the AGPL-3.0
+  license.
 
 -
   .. _phasor_analysis:

@@ -47,7 +47,6 @@ extensions = [
     # don't enable intersphinx since tutorials are getting littered with links
     # 'sphinx.ext.intersphinx',
     # 'numpydoc',
-    'sphinx_inline_tabs',
     'sphinx_copybutton',
     'sphinx_click',
     'sphinx_issues',

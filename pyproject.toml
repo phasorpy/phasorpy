@@ -140,7 +140,6 @@ docs = [
     "sphinx",
     "sphinx-copybutton",
     "sphinx-design",
-    "sphinx-inline-tabs",
     "sphinx-issues",
     "sphinx_click",
     "sphinx_gallery",

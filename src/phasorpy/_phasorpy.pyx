@@ -2748,7 +2748,7 @@ def _median_filter_2d(
         ssize_t rows = image.shape[0]
         ssize_t cols = image.shape[1]
         ssize_t k = kernel_size // 2
-        ssize_t i, j, r, di, dj, ki, kj, valid_count
+        ssize_t i, j, _r, di, dj, ki, kj, valid_count
         float_t element
         float_t* kernel
 
@@ -2766,7 +2766,7 @@ def _median_filter_2d(
             with gil:
                 raise MemoryError('failed to allocate kernel')
 
-        for r in range(repeat):
+        for _r in range(repeat):
             for i in prange(rows):
                 for j in range(cols):
                     if isnan(image[i, j]):
@@ -2846,7 +2846,7 @@ def _flimlabs_mean(
     cdef:
         float_t[::] mean_
         list channels, pixels
-        ssize_t c, i, h, count
+        ssize_t c, i, _h, count
         double sum
 
     if channel < 0:
@@ -2856,7 +2856,7 @@ def _flimlabs_mean(
             i = 0
             for pixels in channels:
                 sum = 0.0
-                for h, count in pixels:
+                for _h, count in pixels:
                     sum += <double> count
                 mean_[i] = <float_t> (sum / 256.0)
                 i += 1
@@ -2866,7 +2866,7 @@ def _flimlabs_mean(
         mean_ = mean[0]
         for pixels in data[channel]:
             sum = 0.0
-            for h, count in pixels:
+            for _h, count in pixels:
                 sum += <double> count
             mean_[i] = <float_t> (sum / 256.0)
             i += 1
