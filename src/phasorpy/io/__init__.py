@@ -16,6 +16,7 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`signal_from_pqbin` - PicoQuant BIN
   - :py:func:`signal_from_sdt` - Becker & Hickl SDT
   - :py:func:`signal_from_fbd` - FLIMbox FBD
+  - :py:func:`signal_from_tdflim` - ISS TDFLIM
   - :py:func:`signal_from_flimlabs_json` - FLIM LABS JSON
   - :py:func:`signal_from_imspector_tiff` - ImSpector FLIM TIFF
   - :py:func:`signal_from_flif` - FlimFast FLIF
@@ -36,6 +37,7 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`phasor_from_flimlabs_json` - FLIM LABS JSON
   - :py:func:`phasor_from_simfcs_referenced` - SimFCS REF and R64
   - :py:func:`lifetime_from_lif` - Leica LIF and XLEF
+  - :py:func:`lifetime_from_tdflim` - ISS TDFLIM
 
 - write phasor coordinate images to OME-TIFF and SimFCS file formats:
 
@@ -68,15 +70,15 @@ For advanced or unsupported use cases, consider using these libraries directly.
 
 The signal-reading functions typically have the following signature::
 
-    signal_from_ext(
+    signal_from_format(
         filename: str | os.PathLike,
         /,
         **kwargs
     ) -> xarray.DataArray:
 
-where ``ext`` indicates the file format and ``kwargs`` are optional arguments
-passed to the underlying file reader libraries or used to select which data
-is returned. The returned `xarray.DataArray
+where ``format`` indicates the file format and ``kwargs`` are optional
+arguments passed to the underlying file reader libraries or used to select
+which data is returned. The returned `xarray.DataArray
 <https://docs.xarray.dev/en/stable/user-guide/data-structures.html>`_
 contains an N-dimensional array with labeled coordinates, dimensions, and
 attributes:

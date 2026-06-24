@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 __all__ = [
+    'lifetime_from_tdflim',
     'phasor_from_ifli',
     'signal_from_czi',
     'signal_from_flif',
@@ -11,6 +12,7 @@ __all__ = [
     'signal_from_pqbin',
     'signal_from_ptu',
     'signal_from_sdt',
+    'signal_from_tdflim',
 ]
 
 import os
@@ -994,6 +996,184 @@ def signal_from_pqbin(
             0, size_x * pixel_resolution * 1e-6, size_x, endpoint=False
         ),
         H=numpy.linspace(0, size_h * tcspc_resolution, size_h, endpoint=False),
+    )
+
+    from xarray import DataArray
+
+    return DataArray(data, **metadata)
+
+
+def signal_from_tdflim(
+    filename: str | PathLike[Any],
+    /,
+    *,
+    channel: int | None = 0,
+) -> DataArray:
+    """Return TCSPC histogram and metadata from ISS Vista TDFLIM file.
+
+    ISS Vista TDFLIM files are ZIP archives containing acquisition metadata
+    and raw photon histogram data from fluorescence lifetime imaging
+    measurements.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of ISS Vista TDFLIM file to read.
+        The file extension is typically ``.iss-tdflim``.
+    channel : int or None, optional, default: 0
+        Index of channel to return.
+        By default, return the first channel.
+        If None, return all channels.
+
+    Returns
+    -------
+    xarray.DataArray
+        TCSPC histogram with :ref:`axes codes <axes>` `'TCYXH'` and
+        type `uint16` or `uint32`, and selected metadata:
+
+        - ``coords['T']``: time series coordinates, if available.
+        - ``coords['C']``: channel IDs, if available.
+        - ``coords['Y']``: Y spatial coordinates
+        - ``coords['X']``: X spatial coordinates
+        - ``coords['H']``: delay times of histogram bins in ns.
+        - ``attrs['frequency']``: repetition frequency in MHz.
+
+        Length-1 dimensions are squeezed.
+
+    Raises
+    ------
+    lfdfiles.LfdFileError
+        If file is not an ISS Vista TDFLIM file containing TCSPC histogram.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
+
+    Examples
+    --------
+    >>> signal = signal_from_tdflim('vista.iss-tdflim')  # doctest: +SKIP
+    >>> signal.values  # doctest: +SKIP
+    array(...)
+    >>> signal.dtype  # doctest: +SKIP
+    dtype('uint16')
+    >>> signal.dims  # doctest: +SKIP
+    ('Y', 'X', 'H')
+    >>> signal.coords['H'].data  # doctest: +SKIP
+    array([0, ..., ...])
+    >>> signal.attrs['frequency']  # doctest: +SKIP
+    80.0
+
+    """
+    import lfdfiles
+
+    with lfdfiles.VistaTdflim(filename) as tdflim:
+        data = tdflim.asarray()
+        axes = tdflim.axes or 'TCYXH'
+        coords = dict(tdflim.coords)
+        attrs = {'frequency': tdflim.attrs['frequency']}
+
+    if channel is not None:
+        data = data[:, channel]
+        axes = axes[0] + axes[2:]
+
+    shape, dims, _ = squeeze_dims(data.shape, axes, skip='YXH')
+    data = data.reshape(shape)
+    metadata = xarray_metadata(
+        dims,
+        shape,
+        os.path.basename(filename),
+        attrs=attrs,
+        **{k: coords[k] for k in dims if k in coords},
+    )
+
+    from xarray import DataArray
+
+    return DataArray(data, **metadata)
+
+
+def lifetime_from_tdflim(
+    filename: str | PathLike[Any],
+    /,
+    *,
+    channel: int | None = 0,
+) -> DataArray:
+    """Return lifetime and metadata from ISS Vista TDFLIM version 2 file.
+
+    ISS Vista TDFLIM files are ZIP archives containing acquisition metadata
+    and raw photon histogram data from fluorescence lifetime imaging
+    measurements. Version 2 of the file format also contains lifetime images
+    computed from the TCSPC histograms.
+
+    Parameters
+    ----------
+    filename : str or Path
+        Name of ISS Vista TDFLIM file to read.
+        The file extension is typically ``.iss-tdflim``.
+    channel : int or None, optional, default: 0
+        Index of channel to return.
+        By default, return the first channel.
+        If None, return all channels.
+
+    Returns
+    -------
+    xarray.DataArray
+        Lifetime image with :ref:`axes codes <axes>` `'TCYX'` and
+        type `float32`, and selected metadata:
+
+        - ``coords['T']``: time series coordinates, if available.
+        - ``coords['C']``: channel IDs, if available.
+        - ``coords['Y']``: Y spatial coordinates
+        - ``coords['X']``: X spatial coordinates
+        - ``attrs['frequency']``: repetition frequency in MHz.
+
+        Length-1 dimensions are squeezed.
+
+    Raises
+    ------
+    lfdfiles.LfdFileError
+        If file is not an ISS Vista TDFLIM file.
+    ValueError
+        If file does not contain a lifetime image.
+
+    Notes
+    -----
+    The implementation is based on the
+    `lfdfiles <https://github.com/cgohlke/lfdfiles/>`__ library.
+
+    Examples
+    --------
+    >>> lifetime = lifetime_from_tdflim('vista.iss-tdflim')  # doctest: +SKIP
+    >>> lifetime.values  # doctest: +SKIP
+    array(...)
+    >>> lifetime.dtype  # doctest: +SKIP
+    dtype('float32')
+    >>> lifetime.dims  # doctest: +SKIP
+    ('Y', 'X')
+    >>> lifetime.attrs['frequency']  # doctest: +SKIP
+    80.0
+
+    """
+    import lfdfiles
+
+    with lfdfiles.VistaTdflim(filename) as tdflim:
+        data = tdflim.lifetime()
+        axes = (tdflim.axes or 'TCYXH')[:-1]
+        coords = dict(tdflim.coords)
+        attrs = {'frequency': tdflim.attrs['frequency']}
+
+    if channel is not None:
+        data = data[:, channel]
+        axes = axes[0] + axes[2:]
+
+    shape, dims, _ = squeeze_dims(data.shape, axes)
+    data = data.reshape(shape)
+    metadata = xarray_metadata(
+        dims,
+        shape,
+        os.path.basename(filename),
+        attrs=attrs,
+        **{k: coords[k] for k in dims if k in coords},
     )
 
     from xarray import DataArray

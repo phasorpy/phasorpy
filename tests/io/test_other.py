@@ -10,6 +10,7 @@ from numpy.testing import assert_almost_equal, assert_array_equal
 
 from phasorpy.datasets import fetch
 from phasorpy.io import (
+    lifetime_from_tdflim,
     phasor_from_ifli,
     signal_from_czi,
     signal_from_flif,
@@ -18,6 +19,7 @@ from phasorpy.io import (
     signal_from_pqbin,
     signal_from_ptu,
     signal_from_sdt,
+    signal_from_tdflim,
 )
 
 
@@ -224,6 +226,53 @@ def test_phasor_from_ifli():
     filename = fetch('simfcs.r64')
     with pytest.raises(lfdfiles.LfdFileError):
         phasor_from_ifli(filename)
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_signal_from_tdflim():
+    """Test read ISS Vista TDFLIM file."""
+    filename = private_file('version1.iss-tdflim')
+    signal = signal_from_tdflim(filename, channel=None)
+    assert signal.values.sum(dtype=numpy.uint64) == 1098769946
+    assert signal.dtype == numpy.uint16
+    assert signal.shape == (2, 128, 128, 1024)
+    assert signal.dims == ('C', 'Y', 'X', 'H')
+    assert_almost_equal(
+        signal.coords['H'].data[[1, -1]], [0.012215228, 12.496178]
+    )
+    assert pytest.approx(signal.attrs['frequency']) == 79.946319
+
+    signal = signal_from_tdflim(filename)
+    assert signal.values.sum(dtype=numpy.uint64) == 694177148
+    assert signal.shape == (128, 128, 1024)
+    assert signal.dims == ('Y', 'X', 'H')
+
+    with pytest.raises(lfdfiles.LfdFileError):
+        signal_from_tdflim(fetch('flimfast.flif'))
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_lifetime_from_tdflim():
+    """Test read ISS Vista TDFLIM file."""
+    filename = private_file('version2.iss-tdflim')
+    lifetime = lifetime_from_tdflim(filename, channel=None)
+    assert lifetime.values.mean() == pytest.approx(3.0074844)
+    assert lifetime.dtype == numpy.float32
+    assert lifetime.shape == (128, 128)
+    assert lifetime.dims == ('Y', 'X')
+    assert lifetime.attrs['frequency'] == 20.0
+    assert_almost_equal(
+        lifetime.coords['X'].data[[1, -1]], [-3.8046875, 20.8046875]
+    )
+
+    lifetime = lifetime_from_tdflim(filename)
+    assert lifetime.values.mean() == pytest.approx(3.0074844)
+    assert lifetime.dtype == numpy.float32
+    assert lifetime.shape == (128, 128)
+    assert lifetime.dims == ('Y', 'X')
+
+    with pytest.raises(ValueError):
+        lifetime_from_tdflim(private_file('version1.iss-tdflim'))
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
