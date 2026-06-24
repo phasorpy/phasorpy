@@ -163,6 +163,8 @@ def signal_from_sdt(
     ------
     ValueError
         If file is not an SDT file containing TCSPC histogram.
+    IndexError
+        If dataset index is out of bounds.
 
     Notes
     -----
@@ -1044,6 +1046,8 @@ def signal_from_tdflim(
     ------
     lfdfiles.LfdFileError
         If file is not an ISS Vista TDFLIM file containing TCSPC histogram.
+    IndexError
+        If channel index is out of bounds.
 
     Notes
     -----
@@ -1135,6 +1139,8 @@ def lifetime_from_tdflim(
         If file is not an ISS Vista TDFLIM file.
     ValueError
         If file does not contain a lifetime image.
+    IndexError
+        If channel index is out of bounds.
 
     Notes
     -----
