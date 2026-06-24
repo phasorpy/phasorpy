@@ -740,6 +740,7 @@ with TemporaryDirectory() as tmpdir:
 #
 # PhasorPy supports reading time-resolved signals from additional file formats:
 # :py:func:`~phasorpy.io.signal_from_pqbin` (PicoQuant BIN),
+# :py:func:`~phasorpy.io.signal_from_tdflim` (ISS TDFLIM),
 # :py:func:`~phasorpy.io.signal_from_imspector_tiff` (ImSpector FLIM TIFF),
 # and :py:func:`~phasorpy.io.signal_from_flif` (FlimFast FLIF).
 #

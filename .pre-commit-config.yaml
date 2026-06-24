@@ -103,7 +103,7 @@ repos:
   # when running with --fix place ruff lint hook
   # before ruff-format, black, isort, etc
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.18
+    rev: v0.15.19
     hooks:
       - id: ruff-check
   #     args: [--fix --show-fixes]
