@@ -156,6 +156,7 @@ luminescence time-resolved or spectral images:
    * - **Desktop**
      - :ref:`SimFCS <simfcs>`:sup:`3,4`,
        :ref:`FLIM Playground <flim_playground>`:sup:`1`,
+       :ref:`FLIMKit <flimkit>`:sup:`1`,
        :ref:`FLUTE <flute>`,
        :ref:`FLIMPA <flimpa>`,
        :ref:`GSLab <gslab>`,
@@ -316,6 +317,13 @@ Details:
   raw data and analyze extracted features using visual-analytic modules.
   The software is written in Python, is web deployable, and is distributed
   under the MIT license.
+
+-
+  .. _flimkit:
+
+  `FLIMKit <https://github.com/alex1075/FLIMKit>`__
+  is an open-source Python toolkit focused on PTU-based FLIM data. It includes
+  a phasor analysis workflow and is distributed under the MIT license.
 
 -
   .. _flim_tools:
