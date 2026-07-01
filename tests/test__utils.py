@@ -288,9 +288,10 @@ def test_chunk_iter():
 def test_init_module():
     """Test init_module function."""
     from phasorpy._utils import init_module  # noqa: F401
-    from phasorpy.io import phasor_from_ometiff
+    from phasorpy.io import phasor_from_h5, phasor_from_ometiff
 
     assert phasor_from_ometiff.__module__ == 'phasorpy.io._ometiff'
+    assert phasor_from_h5.__module__ == 'phasorpy.io._mcs_h5'
 
 
 # mypy: allow-untyped-defs, allow-untyped-calls
