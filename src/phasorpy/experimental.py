@@ -208,7 +208,7 @@ def signal_from_dho(
     the Gaussian spectral broadening factor :math:`\sigma`,
     the Huang-Rhys factor :math:`S`,
     and the vibrational frequency :math:`\nu_{\text{vib}}`
-    using the DHO model with :math:`N = 6` vibronic terms:
+    using the DHO model with :math:`N = 5` vibronic terms:
 
     .. math::
 

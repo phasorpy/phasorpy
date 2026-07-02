@@ -367,7 +367,7 @@ class SpectralPlots:
             linestyle=':',
             linewidth=0.5,
             zorder=2,
-            visible=self._samples <= 8,
+            visible=self._samples <= 16,
         )
         self._samples_polygon = lines[0]
 
@@ -566,6 +566,14 @@ class SpectralPlots:
                 _gaussian_signal(spec, mean_s, stdev_s, folds=0)
                 spectra.append(spec)
             component_spectra = numpy.stack(spectra)
+
+        # normalize fractions to sum to 1
+        fractions = numpy.asarray(fractions, dtype=numpy.float64)
+        s = fractions.sum()
+        if s > 0.0:
+            fractions = numpy.clip(fractions / s, 0.0, 1.0)
+        else:
+            fractions = numpy.ones(num_components) / num_components
 
         # weight spectra by fraction
         component_signals = component_spectra * fractions[:, numpy.newaxis]

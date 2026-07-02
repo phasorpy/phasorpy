@@ -2905,7 +2905,7 @@ cdef float_t _signal_from_dho(
         double intensity_nu = 0.0
         double weight = 1.0  # w[0] = hr_factor^0 / 0! = 1
         double sign = 1.0 if absorption else -1.0
-        ssize_t max_n = 6  # N=6 terms; error <1% for S<=1.65
+        ssize_t max_n = 6  # N=5 in math notation; error <1% for S<=1.65
         ssize_t n
 
     if (
