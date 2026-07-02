@@ -6,10 +6,10 @@ Explore phasor concepts using interactive educational applications.
 
 The PhasorPy library includes interactive applications for educational
 purposes. They open graphical user interfaces where parameters can be
-adjusted via sliders and the resulting phasor and lifetime plots are
-updated in real time. The applications can be started from the :doc:`/api/cli`
-or programmatically. A matplotlib backend that supports interactive
-windows is required.
+adjusted via sliders and the resulting phasor, lifetime, and spectral plots
+are updated in real time. The applications can be started from the
+:doc:`/api/cli` or programmatically.
+A matplotlib backend that supports interactive windows is required.
 
 """
 
@@ -21,9 +21,9 @@ windows is required.
 # multi-frequency phase and modulation curves for a set of lifetime
 # components and their mixture at given frequency and fractional intensities.
 #
-# Start the lifetime app from the command line::
+# Start the lifetime app with three components from the command line::
 #
-#     $ python -m phasorpy lifetime
+#     $ python -m phasorpy lifetime 3
 #
 # or run the following code in a Python interpreter:
 
@@ -39,6 +39,43 @@ LifetimePlots(
 # %%
 # Change frequency, lifetimes, and fractional intensities to see how the
 # phasor coordinates, phase and modulation, and decay curves respond.
+
+# %%
+# Spectral application
+# --------------------
+#
+# Interactively plot emission spectra and spectral phasor coordinates for
+# one or more spectral components and their mixture over a selectable
+# wavelength range.
+#
+# By default, each component is modelled as a Gaussian in wavelength space.
+# Shifting the origin rotates the phasor without changing the modulation
+# (provided the spectrum fits within the wavelength window), and changing
+# sigma alters the modulation independently.
+# Optionally, the Displaced Harmonic Oscillator (DHO) model can be used for
+# more realistic fluorophore spectra with vibronic structure (`dho=True`).
+#
+# Start the spectral app with two components from the command line::
+#
+#     $ python -m phasorpy spectral 2
+#
+# or run the following code in a Python interpreter:
+
+from phasorpy.plot import SpectralPlots
+
+SpectralPlots(
+    origin=(500.0, 580.0),  # center wavelengths in nm
+    sigma=(20.0, 40.0),  # Gaussian widths (standard deviations) in nm
+    fraction=(0.6, 0.4),  # fractional intensities
+    wavelength_range=(400.0, 700.0),
+    interactive=True,
+).show()
+
+# %%
+# Change the wavelength range, number of samples, origin, and sigma sliders
+# to see how the spectrum shape and phasor position respond.
+# Narrow the wavelength window until a Gaussian is truncated to observe how
+# clipping the spectrum reduces the modulation.
 
 # %%
 # FRET application

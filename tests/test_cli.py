@@ -59,5 +59,34 @@ def test_lifetime():
     assert result.exit_code == 0
 
 
+def test_spectral():
+    """Test ``python -m phasorpy spectral``."""
+    runner = CliRunner()
+    result = runner.invoke(main, ['spectral', '--hide'])
+    assert result.exit_code == 0
+    result = runner.invoke(main, ['spectral', '2', '--hide'])
+    assert result.exit_code == 0
+    result = runner.invoke(
+        main, ['spectral', '-o', '518', '-s', '16', '--hide']
+    )
+    assert result.exit_code == 0
+    result = runner.invoke(
+        main,
+        [
+            'spectral',
+            '-o',
+            '490',
+            '-o',
+            '570',
+            '-a',
+            '0.6',
+            '-a',
+            '0.4',
+            '--hide',
+        ],
+    )
+    assert result.exit_code == 0
+
+
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type"

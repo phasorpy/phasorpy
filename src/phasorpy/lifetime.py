@@ -399,7 +399,7 @@ def lifetime_to_signal(
     zero_phase : float, optional, default: 0
         Position of instrument response function in radians along one period.
         Must be in the range [0, 2 pi].
-        If `None`, the 8th sample is used to place the IRF peak visually away
+        If None, the 8th sample is used to place the IRF peak visually away
         from the period boundary.
     zero_modulation : float, optional, default: 1.0
         Modulation depth of the excitation source. Must be in range (0, 1].
