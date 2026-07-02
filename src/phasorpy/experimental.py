@@ -11,6 +11,7 @@ from __future__ import annotations
 __all__ = [
     'anscombe_transform',
     'anscombe_transform_inverse',
+    'signal_from_dho',
 ]
 
 from typing import TYPE_CHECKING
@@ -22,6 +23,7 @@ from ._phasorpy import (
     _anscombe,
     _anscombe_inverse,
     _anscombe_inverse_approx,
+    _signal_from_dho,
 )
 
 
@@ -144,3 +146,119 @@ def anscombe_transform_inverse(
             data, **kwargs
         )
     return _anscombe_inverse(data, **kwargs)  # type: ignore[no-any-return]
+
+
+def signal_from_dho(
+    wavelength: ArrayLike,
+    origin: ArrayLike,
+    sigma: ArrayLike,
+    hr_factor: ArrayLike,
+    vib_frequency: ArrayLike,
+    *,
+    scale: ArrayLike = 1.0,
+    offset: ArrayLike = 0.0,
+    absorption: bool = False,
+    **kwargs: Any,
+) -> NDArray[Any]:
+    r"""Return normalized fluorescence emission or absorption at wavelengths.
+
+    Using the area-normalized Displaced Harmonic Oscillator (DHO) model
+    to approximate the absorption or fluorescence emission spectrum of a
+    fluorophore with a single vibrational mode.
+
+    Parameters
+    ----------
+    wavelength : array_like
+        Wavelength at which to calculate emission intensity in nm.
+    origin : array_like
+        Center wavelength of 0->0 electronic origin transition in nm.
+        Typically in the range 400 to 700 nm.
+    sigma : array_like
+        Gaussian spectral broadening factor in :math:`cm^{-1}`.
+        Typically in the range 200 to 600 :math:`cm^{-1}`.
+    hr_factor : array_like
+        Huang-Rhys structural coupling/displacement parameter (dimensionless).
+        Typically in the range 0.1 to 2.0.
+    vib_frequency : array_like
+        Vibrational spacing frequency in :math:`cm^{-1}`.
+        Typically in the range 1000 to 1600 :math:`cm^{-1}`.
+    scale : array_like, optional, default: 1.0
+        Factor multiplied to normalized DHO intensity.
+    offset : array_like, optional, default: 0.0
+        Offset added after scaling.
+    absorption: bool, optional
+        If True, return absorption intensity instead of fluorescence emission.
+    **kwargs
+        Optional arguments passed to `numpy universal functions
+        <https://numpy.org/doc/stable/reference/ufuncs.html#ufuncs-kwargs>`_.
+
+    Returns
+    -------
+    intensity : ndarray
+        Absorption or fluorescence emission intensities.
+
+    See Also
+    --------
+    :ref:`sphx_glr_tutorials_misc_phasorpy_apps.py`
+
+    Notes
+    -----
+    The intensity in wavenumber space :math:`I(\nu)` is calculated from the
+    :math:`0\rightarrow0` electronic origin :math:`\nu_0 = 10^7 / \lambda_0`,
+    the Gaussian spectral broadening factor :math:`\sigma`,
+    the Huang-Rhys factor :math:`S`,
+    and the vibrational frequency :math:`\nu_{\text{vib}}`
+    using the DHO model with :math:`N = 6` vibronic terms:
+
+    .. math::
+
+        I(\nu) = \frac{1}{\sigma\sqrt{2\pi}}
+        \sum_{n=0}^{N} \frac{S^n e^{-S}}{n!}
+        \exp\left( - \frac{(\nu - \nu_n)^2}{2\sigma^2} \right)
+
+    where :math:`\nu_n = \nu_0 - n \cdot \nu_{\text{vib}}` for emission
+    (red-shifted sidebands) and
+    :math:`\nu_n = \nu_0 + n \cdot \nu_{\text{vib}}` for absorption
+    (blue-shifted sidebands).
+
+    Calculations are performed in wavenumber :math:`\nu` space and
+    transformed to wavelength :math:`\lambda` space using the Jacobian:
+
+    .. math::
+
+        I(\lambda) = I(\nu) \cdot \left| \frac{d\nu}{d\lambda} \right| =
+        I(\nu) \cdot \frac{10^7}{\lambda^2}
+
+    The returned signal can be affine-transformed for measured spectra:
+
+    .. math::
+
+        I_{\text{out}}(\lambda) = I(\lambda) \cdot \text{scale} + \text{offset}
+
+    Examples
+    --------
+    Approximate the fluorescence emission spectrum of Fluorescein:
+
+    >>> signal_from_dho(
+    ...     wavelength=numpy.linspace(450, 650, 100),
+    ...     origin=518,
+    ...     sigma=500,
+    ...     hr_factor=0.4,
+    ...     vib_frequency=1200,
+    ... )
+    array([..., 0.0001434, 0.0001329, 0.0001228])
+
+    """
+    # TODO: move this function to phasorpy.spectral?
+    # TODO: find citation for DHO model and add to docstring
+    return _signal_from_dho(  # type: ignore[no-any-return]
+        wavelength,
+        origin,
+        sigma,
+        hr_factor,
+        vib_frequency,
+        scale,
+        offset,
+        absorption,
+        **kwargs,
+    )
