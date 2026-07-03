@@ -3,6 +3,7 @@
 import numpy
 import pytest
 import tifffile
+from _conftest import SKIP_FETCH, TempFileName
 from numpy.testing import assert_almost_equal
 
 from phasorpy._typing import Any
@@ -12,7 +13,6 @@ from phasorpy.io import (
     phasor_to_ometiff,
     signal_from_ometiff,
 )
-from tests.io._conftest import SKIP_FETCH, TempFileName
 
 rng = numpy.random.default_rng(42)
 

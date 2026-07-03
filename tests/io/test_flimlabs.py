@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy
 import pytest
+from _conftest import SKIP_FETCH, SKIP_PRIVATE, private_file
 from numpy.testing import (
     assert_allclose,
     assert_almost_equal,
@@ -13,7 +14,6 @@ from numpy.testing import (
 from phasorpy.datasets import fetch
 from phasorpy.io import phasor_from_flimlabs_json, signal_from_flimlabs_json
 from phasorpy.phasor import phasor_from_signal, phasor_transform
-from tests.io._conftest import SKIP_FETCH, SKIP_PRIVATE, private_file
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
