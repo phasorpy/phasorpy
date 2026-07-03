@@ -17,13 +17,13 @@ INTERACTIVE = False  # enable for interactive plotting
 class TestPhasorPlot:
     """Test PhasorPlot class."""
 
-    def show(self, plot):
+    def show(self, plot: PhasorPlot) -> None:
         """Show plot."""
         if INTERACTIVE:
             plot.show()
         pyplot.close()
 
-    def test_init(self):
+    def test_init(self) -> None:
         """Test __init__ and attributes."""
         plot = PhasorPlot(title='default')
         self.show(plot)
@@ -60,13 +60,13 @@ class TestPhasorPlot:
         assert plot.fig == fig
         self.show(plot)
 
-    def test_dataunit_to_point(self):
+    def test_dataunit_to_point(self) -> None:
         """Test dataunit_to_point method."""
         plot = PhasorPlot(title='dataunit_to_point')
         assert 100 < plot.dataunit_to_point < 500
         self.show(plot)
 
-    def test_on_format_coord(self):
+    def test_on_format_coord(self) -> None:
         """Test on_format_coord callback."""
         plot = PhasorPlot(frequency=80.0, title='on_format_coord')
         coords = plot._on_format_coord(0.5, 0.5)
@@ -74,7 +74,7 @@ class TestPhasorPlot:
         assert 'ns' in coords
         self.show(plot)
 
-    def test_save(self):
+    def test_save(self) -> None:
         """Test save method."""
         fh = io.BytesIO()
         plot = PhasorPlot(title='save')
@@ -82,13 +82,14 @@ class TestPhasorPlot:
         assert fh.getvalue()[:6] == b'\x89PNG\r\n'
         pyplot.close()
 
-    def test_legend(self):
+    def test_legend(self) -> None:
+        """Test legend method."""
         plot = PhasorPlot(title='legend')
         plot.ax.plot(0.6, 0.4, 'o', label='label')
         plot.legend(loc='upper right')
         self.show(plot)
 
-    def test_plot(self):
+    def test_plot(self) -> None:
         """Test plot method."""
         plot = PhasorPlot(title='plot')
         plot.plot(0.6, 0.4, label='1')
@@ -103,7 +104,7 @@ class TestPhasorPlot:
         plot.plot(0.5, 0.25, marker='v', label='v')
         self.show(plot)
 
-    def test_hist2d(self):
+    def test_hist2d(self) -> None:
         """Test hist2d method."""
         real, imag = rng.multivariate_normal(
             [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
@@ -118,7 +119,7 @@ class TestPhasorPlot:
         )
         self.show(plot)
 
-    def test_contour(self):
+    def test_contour(self) -> None:
         """Test contour method."""
         real, imag = rng.multivariate_normal(
             [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
@@ -135,7 +136,7 @@ class TestPhasorPlot:
         plot.contour(real, imag, colors='red')
         self.show(plot)
 
-    def test_histogram_contour(self):
+    def test_histogram_contour(self) -> None:
         """Test histogram and contour match."""
         real, imag = rng.multivariate_normal(
             (0.6, 0.4), [[3e-3, -1e-3], [-1e-3, 1e-3]], (256, 256)
@@ -147,7 +148,7 @@ class TestPhasorPlot:
         plot.contour(real, imag, bins=32, levels=4, cmap='Reds')
         self.show(plot)
 
-    def test_imshow(self):
+    def test_imshow(self) -> None:
         """Test imshow method."""
         plot = PhasorPlot(title='imshow')
         with pytest.raises(NotImplementedError):
@@ -155,7 +156,7 @@ class TestPhasorPlot:
         self.show(plot)
 
     @pytest.mark.parametrize('allquadrants', [True, False])
-    def test_components(self, allquadrants):
+    def test_components(self, *, allquadrants: bool) -> None:
         """Test components method."""
         real = [0.1, 0.2, 0.5, 0.9]
         imag = [0.3, 0.4, 0.5, 0.3]
@@ -197,13 +198,13 @@ class TestPhasorPlot:
         plot.components(real[-1], imag[-1], labels=['D'])
         self.show(plot)
 
-    def test_line(self):
+    def test_line(self) -> None:
         """Test line method."""
         plot = PhasorPlot(title='line')
         plot.line([0.8, 0.4], [0.2, 0.3], color='tab:red', linestyle='--')
         self.show(plot)
 
-    def test_arrow(self):
+    def test_arrow(self) -> None:
         """Test arrow method."""
         plot = PhasorPlot(title='arrow')
         plot.arrow([0.0, 0.0], [0.8, 0.4], color='tab:blue', linewidth=2)
@@ -217,7 +218,7 @@ class TestPhasorPlot:
         )
         self.show(plot)
 
-    def test_circle(self):
+    def test_circle(self) -> None:
         """Test circle method."""
         plot = PhasorPlot(title='circle')
         plot.circle(0.5, 0.2, 0.1, color='tab:red', linestyle='-')
@@ -225,14 +226,14 @@ class TestPhasorPlot:
 
     @pytest.mark.parametrize('allquadrants', [False, True])
     @pytest.mark.parametrize('polar', [False, True])
-    def test_cursor(self, allquadrants, polar):
+    def test_cursor(self, *, allquadrants: bool, polar: bool) -> None:
         """Test cursor method."""
         plot = PhasorPlot(
             allquadrants=allquadrants,
             title=f'cursor {allquadrants=} {polar=}',
         )
 
-        def p(x, y):
+        def p(x: float, y: float) -> tuple[PhasorPlot, float, float]:
             if polar:
                 return plot, math.atan2(y, x), math.hypot(x, y)
             return plot, x, y
@@ -314,7 +315,7 @@ class TestPhasorPlot:
 
         self.show(plot)
 
-    def test_cursor_special(self):
+    def test_cursor_special(self) -> None:
         """Test cursor method special cases."""
         plot = PhasorPlot(title='cursor special cases')
         plot._cursor(color='tab:olive', polar=False, label='none')
@@ -344,7 +345,7 @@ class TestPhasorPlot:
 
         self.show(plot)
 
-    def test_polar_grid(self):
+    def test_polar_grid(self) -> None:
         """Test polar_grid method."""
         phase_angles = numpy.linspace(0, 2 * math.pi, 8, endpoint=False)
 
@@ -441,7 +442,7 @@ class TestPhasorPlot:
                 labels=['1', '2'], ticks=[1, 2], tick_space=[[1, 2, 3]]
             )
 
-    def test_semicircle(self):
+    def test_semicircle(self) -> None:
         """Test semicircle method."""
         plot = PhasorPlot(grid=False, title='empty')
         plot.semicircle(label='semicircle')
@@ -490,7 +491,3 @@ class TestPhasorPlot:
         plot = PhasorPlot(grid=False, title='use_lines')
         plot.semicircle(frequency=80, use_lines=True)
         self.show(plot)
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

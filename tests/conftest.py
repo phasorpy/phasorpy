@@ -1,12 +1,15 @@
 """Pytest configuration."""
 
 import os
+from pathlib import Path
+
+import pytest
 
 import phasorpy
 from phasorpy.utils import number_threads, versions
 
 
-def pytest_report_header(config, start_path):
+def pytest_report_header(config: pytest.Config, start_path: Path) -> str:
     """Return versions of relevant installed packages."""
     return '\n'.join(
         (
@@ -18,6 +21,3 @@ def pytest_report_header(config, start_path):
 
 
 collect_ignore = ['data']
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls

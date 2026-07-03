@@ -13,7 +13,7 @@ from phasorpy.io import lifetime_from_lif, phasor_from_lif, signal_from_lif
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 @pytest.mark.parametrize('ext', ['lif', 'xlef'])
-def test_phasor_from_lif(ext):
+def test_phasor_from_lif(ext: str) -> None:
     """Test read phasor coordinates from Leica LIF file."""
     filename = fetch(f'FLIM_testdata.{ext}')
     mean, real, imag, attrs = phasor_from_lif(filename)
@@ -50,7 +50,7 @@ def test_phasor_from_lif(ext):
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 @pytest.mark.parametrize('ext', ['lif', 'xlef'])
-def test_lifetime_from_lif(ext):
+def test_lifetime_from_lif(ext: str) -> None:
     """Test read lifetime image from Leica LIF file."""
     filename = fetch(f'FLIM_testdata.{ext}')
     lifetime, intensity, stddev, attrs = lifetime_from_lif(filename)
@@ -90,7 +90,7 @@ def test_lifetime_from_lif(ext):
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_lif():
+def test_signal_from_lif() -> None:
     """Test read hyperspectral signal from Leica LIF file."""
     filename = fetch('Convalaria_LambdaScan.lif')
     signal = signal_from_lif(filename)
@@ -107,7 +107,7 @@ def test_signal_from_lif():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_signal_from_lif_private():
+def test_signal_from_lif_private() -> None:
     """Test read hyperspectral signal from Leica LIF file."""
     filename = private_file('ScanModesExamples.lif')
     signal = signal_from_lif(filename)
@@ -131,7 +131,3 @@ def test_signal_from_lif_private():
     assert signal.dims == ('C', 'Y', 'X')
     assert signal.shape == (10, 128, 128)
     assert_allclose(signal.coords['C'].data[[0, 1]], [470.0, 492.0])
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

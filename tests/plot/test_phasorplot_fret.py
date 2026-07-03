@@ -7,7 +7,7 @@ from phasorpy.plot import PhasorPlotFret
 INTERACTIVE = False  # enable for interactive plotting
 
 
-def test_phasorplot_fret():
+def test_phasorplot_fret() -> None:
     """Test PhasorPlotFret."""
     plot = PhasorPlotFret(
         frequency=60.0,
@@ -23,7 +23,7 @@ def test_phasorplot_fret():
     pyplot.close()
 
 
-def test_phasorplot_fret_interactive():
+def test_phasorplot_fret_interactive() -> None:
     """Test PhasorPlotFret interactive."""
     plot = PhasorPlotFret(
         frequency=60.0,
@@ -47,7 +47,3 @@ def test_phasorplot_fret_interactive():
     if INTERACTIVE:
         plot.show()
     pyplot.close()
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

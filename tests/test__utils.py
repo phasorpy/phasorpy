@@ -20,7 +20,7 @@ from phasorpy._utils import (
 )
 
 
-def test_phasor_to_polar_scalar():
+def test_phasor_to_polar_scalar() -> None:
     """Test phasor_to_polar_scalar function."""
     assert phasor_to_polar_scalar(0.0, 0.0) == (0.0, 0.0)
     assert_allclose(
@@ -35,7 +35,7 @@ def test_phasor_to_polar_scalar():
     )
 
 
-def test_phasor_from_polar_scalar():
+def test_phasor_from_polar_scalar() -> None:
     """Test phasor_from_polar_scalar function."""
     assert phasor_from_polar_scalar(0.0, 0.0) == (0.0, 0.0)
     assert_allclose(
@@ -62,7 +62,7 @@ def test_phasor_from_polar_scalar():
     )
 
 
-def test_parse_kwargs():
+def test_parse_kwargs() -> None:
     """Test parse_kwargs function."""
     kwargs = {'one': 1, 'two': 2, 'four': 4}
     kwargs2 = parse_kwargs(kwargs, 'two', 'three', four=None, five=5)
@@ -70,7 +70,7 @@ def test_parse_kwargs():
     assert kwargs2 == {'two': 2, 'four': 4, 'five': 5}
 
 
-def test_update_kwargs():
+def test_update_kwargs() -> None:
     """Test update_kwargs function."""
     kwargs = {
         'one': 1,
@@ -79,21 +79,21 @@ def test_update_kwargs():
     assert kwargs == {'one': 1, 'two': 2}
 
 
-def test_kwargs_notnone():
+def test_kwargs_notnone() -> None:
     """Test kwargs_notnone function."""
     assert kwargs_notnone(one=1, none=None) == {'one': 1}
 
 
-def test_scale_matrix():
+def test_scale_matrix() -> None:
     """Test scale_matrix function."""
     assert_allclose(
         scale_matrix(1.1, (0.0, 0.5)),
-        [[1.1, 0, -0], [0, 1.1, -0.05], [0, 0, 1]],
+        numpy.array([[1.1, 0, -0], [0, 1.1, -0.05], [0, 0, 1]]),
         1e-6,
     )
 
 
-def test_sort_coordinates():
+def test_sort_coordinates() -> None:
     """Test sort_coordinates function."""
     x, y, i = sort_coordinates([0, 1, 2, 3], [0, 1, -1, 0])
     assert_allclose(x, [2, 3, 1, 0])
@@ -114,7 +114,7 @@ def test_sort_coordinates():
         sort_coordinates([0, 1, 2, 3], [0, 1, -1])
 
 
-def test_dilate_coordinates():
+def test_dilate_coordinates() -> None:
     """Test dilate_coordinates function."""
     x, y = dilate_coordinates([0, 1, 2, 3], [0, 1, -1, 0], 0.05)
     assert_allclose(x, [-0.048507, 1.0, 2.0, 3.048507], atol=1e-3)
@@ -128,13 +128,13 @@ def test_dilate_coordinates():
         dilate_coordinates([0, 1, 2, 3], [0, 1, -1], 0.05)
 
 
-def test_parse_harmonic():
+def test_parse_harmonic() -> None:
     """Test parse_harmonic function."""
     assert parse_harmonic(None) == ([1], False)
     assert parse_harmonic(None, 1) == ([1], False)
     assert parse_harmonic(1) == ([1], False)
     assert parse_harmonic(1, 1) == ([1], False)
-    assert parse_harmonic(numpy.int32(1), 1) == ([1], False)
+    assert parse_harmonic(numpy.int32(1), 1) == ([1], False)  # type: ignore[arg-type]
     assert parse_harmonic([1], 1) == ([1], True)
     assert parse_harmonic((1,), 1) == ([1], True)
     assert parse_harmonic([numpy.int32(1)], 1) == (  # type: ignore[list-item]
@@ -144,7 +144,7 @@ def test_parse_harmonic():
     assert parse_harmonic([1, 2], 2) == ([1, 2], True)
     assert parse_harmonic([2, 1], 2) == ([2, 1], True)
     assert parse_harmonic((1, 2), 2) == ([1, 2], True)
-    assert parse_harmonic(numpy.array([1, 2]), 2) == ([1, 2], True)
+    assert parse_harmonic(numpy.array([1, 2]), 2) == ([1, 2], True)  # type: ignore[arg-type]
     assert parse_harmonic('all', 1) == ([1], True)
     assert parse_harmonic('all', 2) == ([1, 2], True)
 
@@ -165,15 +165,15 @@ def test_parse_harmonic():
     with pytest.raises(ValueError):
         parse_harmonic('alles', 1)
     with pytest.raises(TypeError):
-        parse_harmonic(1.0, 1)
+        parse_harmonic(1.0, 1)  # type: ignore[arg-type]
     with pytest.raises(TypeError):
         parse_harmonic('all')
 
 
-def test_parse_signal_axis():
+def test_parse_signal_axis() -> None:
     """Test parse_signal_axis function."""
 
-    class DataArray:
+    class DataArray(bytes):
         dims = ('T', 'C', 'H', 'Y', 'X')
 
     assert parse_signal_axis(DataArray()) == (2, 'H')
@@ -192,7 +192,7 @@ def test_parse_signal_axis():
         parse_signal_axis(DataArray(), 'not found')
 
 
-def test_parse_skip_axis():
+def test_parse_skip_axis() -> None:
     """Test parse_skip_axis function."""
     assert parse_skip_axis(None, 0) == ((), ())
     assert parse_skip_axis(None, 1) == ((), (0,))
@@ -211,9 +211,8 @@ def test_parse_skip_axis():
         parse_skip_axis(-2, 1)
 
 
-def test_chunk_iter():
+def test_chunk_iter() -> None:
     """Test chunk_iter function."""
-
     assert list(chunk_iter((), ())) == [((), '', False)]
     assert list(chunk_iter((), (), '')) == [((), '', False)]
     assert list(chunk_iter((2,), ())) == [
@@ -285,13 +284,9 @@ def test_chunk_iter():
         list(chunk_iter((2,), (1, 2)))
 
 
-def test_init_module():
+def test_init_module() -> None:
     """Test init_module function."""
     from phasorpy._utils import init_module  # noqa: F401
     from phasorpy.io import phasor_from_ometiff
 
     assert phasor_from_ometiff.__module__ == 'phasorpy.io._ometiff'
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

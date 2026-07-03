@@ -522,7 +522,7 @@ def phasor_to_complex(
     /,
     *,
     dtype: DTypeLike | None = None,
-) -> NDArray[numpy.complex64 | numpy.complex128]:
+) -> NDArray[numpy.complex64] | NDArray[numpy.complex128]:
     """Return phasor coordinates as complex numbers.
 
     Parameters

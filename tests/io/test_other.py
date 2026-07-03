@@ -24,7 +24,7 @@ from phasorpy.io import (
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_czi():
+def test_signal_from_czi() -> None:
     """Test read CZI hyperspectral image."""
     import czifile
 
@@ -53,7 +53,7 @@ def test_signal_from_czi():
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_signal_from_lsm_non_hyperspectral():
+def test_signal_from_lsm_non_hyperspectral() -> None:
     """Test read non-hyperspectral LSM image fails."""
     filename = private_file('non_hyperspectral.lsm')
     with pytest.raises(ValueError):
@@ -65,7 +65,7 @@ def test_signal_from_lsm_non_hyperspectral():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_signal_from_lsm_tzcyx():
+def test_signal_from_lsm_tzcyx() -> None:
     """Test read TZC hyperspectral LSM image."""
     filename = private_file('tzcyx.lsm')
     signal = signal_from_lsm(filename)
@@ -83,7 +83,7 @@ def test_signal_from_lsm_tzcyx():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_lsm_paramecium():
+def test_signal_from_lsm_paramecium() -> None:
     """Test read paramecium.lsm."""
     filename = fetch('paramecium.lsm')
     signal = signal_from_lsm(filename)
@@ -100,7 +100,7 @@ def test_signal_from_lsm_paramecium():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_imspector_tiff():
+def test_signal_from_imspector_tiff() -> None:
     """Test read Imspector FLIM TIFF file."""
     signal = signal_from_imspector_tiff(fetch('Embryo.tif'))
     assert signal.values.sum(dtype=numpy.uint64) == 31348436
@@ -118,7 +118,7 @@ def test_signal_from_imspector_tiff():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_sdt():
+def test_signal_from_sdt() -> None:
     """Test read Becker & Hickl SDT file."""
     filename = fetch('tcspc.sdt')
     signal = signal_from_sdt(filename)
@@ -137,7 +137,7 @@ def test_signal_from_sdt():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_signal_from_sdt_fcs():
+def test_signal_from_sdt_fcs() -> None:
     """Test read Becker & Hickl SDT FCS file."""
     # file provided by lmalacrida via email on Nov 13, 2023
     filename = private_file('j3_405_z1.sdt')
@@ -153,7 +153,7 @@ def test_signal_from_sdt_fcs():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_signal_from_sdt_bruker():
+def test_signal_from_sdt_bruker() -> None:
     """Test read Becker & Hickl SDT file with routing channel."""
     # file provided by bruno-pannunzio via email on March 25, 2025
     filename = private_file('LifetimeData_Cycle00001_000001.sdt')
@@ -168,7 +168,7 @@ def test_signal_from_sdt_bruker():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_phasor_from_ifli():
+def test_phasor_from_ifli() -> None:
     """Test read ISS VistaVision file."""
     # TODO: test spectral file
     filename = fetch('frequency_domain.ifli')
@@ -229,7 +229,7 @@ def test_phasor_from_ifli():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_signal_from_tdflim():
+def test_signal_from_tdflim() -> None:
     """Test read ISS Vista TDFLIM file."""
     filename = private_file('version1.iss-tdflim')
     signal = signal_from_tdflim(filename, channel=None)
@@ -252,7 +252,7 @@ def test_signal_from_tdflim():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_lifetime_from_tdflim():
+def test_lifetime_from_tdflim() -> None:
     """Test read ISS Vista TDFLIM file."""
     filename = private_file('version2.iss-tdflim')
     lifetime = lifetime_from_tdflim(filename, channel=None)
@@ -276,7 +276,7 @@ def test_lifetime_from_tdflim():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_flif():
+def test_signal_from_flif() -> None:
     """Test read FlimFast FLIF file."""
     # TODO: test time series
     filename = fetch('flimfast.flif')
@@ -301,7 +301,7 @@ def test_signal_from_flif():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_ptu():
+def test_signal_from_ptu() -> None:
     """Test read PicoQuant PTU file."""
     filename = fetch('hazelnut_FLIM_single_image.ptu')
     signal = signal_from_ptu(
@@ -341,7 +341,7 @@ def test_signal_from_ptu():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_signal_from_ptu_irf():
+def test_signal_from_ptu_irf() -> None:
     """Test read PicoQuant PTU file containing IRF."""
     # data file from PicoQuant's Samples.sptw
     filename = private_file('Cy5_diff_IRF+FLCS-pattern.ptu')
@@ -383,7 +383,7 @@ def test_signal_from_ptu_irf():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_signal_from_pqbin():
+def test_signal_from_pqbin() -> None:
     """Test read PicoQuant BIN file."""
     filename = private_file('picoquant.bin')
     signal = signal_from_pqbin(filename)
@@ -405,7 +405,3 @@ def test_signal_from_pqbin():
     filename = fetch('simfcs.r64')
     with pytest.raises(ValueError):
         signal_from_pqbin(filename)
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

@@ -14,7 +14,7 @@ rng = numpy.random.default_rng(42)
 
 
 @pytest.mark.parametrize('dtype', ['float32', 'uint16'])
-def test_anscombe_transform(dtype):
+def test_anscombe_transform(dtype: str) -> None:
     """Test anscombe_transform and inverse functions."""
     x = rng.poisson(10, 100000).astype(dtype)
     if dtype == 'float32':
@@ -34,7 +34,7 @@ def test_anscombe_transform(dtype):
         assert numpy.isnan(x3[0])
 
 
-def test_signal_from_dho():
+def test_signal_from_dho() -> None:
     """Test signal_from_dho function."""
     wavelength = numpy.linspace(450, 650, 100)
     base = signal_from_dho(
@@ -112,7 +112,3 @@ def test_signal_from_dho():
     )
     assert broadcasted.shape == (2, wavelength.size)
     assert numpy.all(numpy.isfinite(broadcasted))
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

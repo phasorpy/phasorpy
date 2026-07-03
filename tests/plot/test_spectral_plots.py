@@ -10,7 +10,7 @@ from phasorpy.plot import SpectralPlots
 INTERACTIVE = False  # enable for interactive plotting
 
 
-def test_spectral_plots():
+def test_spectral_plots() -> None:
     """Test SpectralPlots single Gaussian component, non-interactive."""
     plot = SpectralPlots(origin=518.0)
     if INTERACTIVE:
@@ -18,7 +18,7 @@ def test_spectral_plots():
     pyplot.close()
 
 
-def test_spectral_plots_one():
+def test_spectral_plots_one() -> None:
     """Test SpectralPlots interactive, one Gaussian component."""
     plot = SpectralPlots(origin=[518.0], sigma=[30.0], interactive=True)
     assert len(plot._origin_sliders) == 1
@@ -35,7 +35,7 @@ def test_spectral_plots_one():
     pyplot.close()
 
 
-def test_spectral_plots_two():
+def test_spectral_plots_two() -> None:
     """Test SpectralPlots interactive, two Gaussian components."""
     plot = SpectralPlots(
         origin=[490.0, 570.0],
@@ -58,7 +58,7 @@ def test_spectral_plots_two():
     pyplot.close()
 
 
-def test_spectral_plots_dho_one():
+def test_spectral_plots_dho_one() -> None:
     """Test SpectralPlots interactive, one DHO component."""
     plot = SpectralPlots(
         origin=[518.0],
@@ -81,7 +81,7 @@ def test_spectral_plots_dho_one():
     pyplot.close()
 
 
-def test_spectral_plots_dho_two():
+def test_spectral_plots_dho_two() -> None:
     """Test SpectralPlots interactive, two DHO components."""
     plot = SpectralPlots(
         origin=[490.0, 570.0],
@@ -107,7 +107,7 @@ def test_spectral_plots_dho_two():
     pyplot.close()
 
 
-def test_spectral_plots_wavelength_slider():
+def test_spectral_plots_wavelength_slider() -> None:
     """Test SpectralPlots wavelength RangeSlider."""
     plot = SpectralPlots(
         origin=[490.0, 570.0],
@@ -119,7 +119,7 @@ def test_spectral_plots_wavelength_slider():
     pyplot.close()
 
 
-def test_spectral_plots_polygon():
+def test_spectral_plots_polygon() -> None:
     """Test samples polygon update for <=16 and >16 samples."""
     plot = SpectralPlots(origin=[518.0], interactive=True)
     assert plot._samples_polygon is not None
@@ -136,10 +136,10 @@ def test_spectral_plots_polygon():
 
     plot._samples_slider.set_val(17.0)
     assert not plot._samples_polygon.get_visible()
-    pyplot.close(plot._spectrum_plot.figure)
+    pyplot.close(plot._spectrum_plot.figure)  # type: ignore[arg-type]
 
 
-def test_spectral_plots_zero_sum_fractions():
+def test_spectral_plots_zero_sum_fractions() -> None:
     """Test zero-sum fractions fallback to uniform in __init__."""
     plot_default = SpectralPlots(
         origin=[490.0, 570.0, 630.0],
@@ -152,22 +152,22 @@ def test_spectral_plots_zero_sum_fractions():
     )
 
     assert_allclose(
-        plot_zero._spectrum_line.get_ydata(),
-        plot_default._spectrum_line.get_ydata(),
+        numpy.asarray(plot_zero._spectrum_line.get_ydata()),
+        numpy.asarray(plot_default._spectrum_line.get_ydata()),
     )
     assert_allclose(
-        plot_zero._phasor_point.get_xdata(),
-        plot_default._phasor_point.get_xdata(),
+        numpy.asarray(plot_zero._phasor_point.get_xdata()),
+        numpy.asarray(plot_default._phasor_point.get_xdata()),
     )
     assert_allclose(
-        plot_zero._phasor_point.get_ydata(),
-        plot_default._phasor_point.get_ydata(),
+        numpy.asarray(plot_zero._phasor_point.get_ydata()),
+        numpy.asarray(plot_default._phasor_point.get_ydata()),
     )
-    pyplot.close(plot_zero._spectrum_plot.figure)
-    pyplot.close(plot_default._spectrum_plot.figure)
+    pyplot.close(plot_zero._spectrum_plot.figure)  # type: ignore[arg-type]
+    pyplot.close(plot_default._spectrum_plot.figure)  # type: ignore[arg-type]
 
 
-def test_spectral_plots_raw_fractions():
+def test_spectral_plots_raw_fractions() -> None:
     """Test 3-component slider branch uses raw fractions."""
     plot = SpectralPlots(
         origin=[470.0, 540.0, 620.0],
@@ -197,13 +197,19 @@ def test_spectral_plots_raw_fractions():
         expected[6],
     )
 
-    assert_allclose(plot._spectrum_line.get_ydata(), expected_signal)
-    assert_allclose(plot._phasor_point.get_xdata(), [expected_real])
-    assert_allclose(plot._phasor_point.get_ydata(), [expected_imag])
+    assert_allclose(
+        numpy.asarray(plot._spectrum_line.get_ydata()), expected_signal
+    )
+    assert_allclose(
+        numpy.asarray(plot._phasor_point.get_xdata()), [expected_real]
+    )
+    assert_allclose(
+        numpy.asarray(plot._phasor_point.get_ydata()), [expected_imag]
+    )
     pyplot.close()
 
 
-def test_spectral_plots_exceptions():
+def test_spectral_plots_exceptions() -> None:
     """Test SpectralPlots raises on invalid parameters."""
     with pytest.raises(ValueError, match='num_components'):
         SpectralPlots(origin=[400.0, 450.0, 500.0, 550.0, 600.0])
@@ -234,7 +240,3 @@ def test_spectral_plots_exceptions():
             dho=True,
         )
     pyplot.close()
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"
