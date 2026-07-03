@@ -12,6 +12,7 @@ from numpy.testing import (
     assert_array_equal,
 )
 
+from phasorpy._typing import Any, ArrayLike, NDArray
 from phasorpy.lifetime import (
     lifetime_fraction_from_amplitude,
     lifetime_fraction_to_amplitude,
@@ -70,9 +71,14 @@ rng = numpy.random.default_rng(42)
         ),
     ],
 )
-def test_lifetime_to_signal(harmonic, expected, zero_expected):
+def test_lifetime_to_signal(
+    harmonic: Any, expected: ArrayLike, zero_expected: ArrayLike
+) -> None:
     """Test lifetime_to_signal function."""
     index = [0, 1, -2, -1]
+    expected = numpy.asarray(expected)
+    zero_expected = numpy.asarray(zero_expected)
+
     # single lifetime
     signal, zero, time = lifetime_to_signal(
         40.0, 4.2, zero_phase=None, samples=16, harmonic=harmonic
@@ -149,7 +155,7 @@ def test_lifetime_to_signal(harmonic, expected, zero_expected):
     assert zero.shape == (16,)
 
 
-def test_lifetime_to_signal_multiharmonic():
+def test_lifetime_to_signal_multiharmonic() -> None:
     """Test lifetime_to_signal with a sequence of harmonics."""
     index = [0, 1, -2, -1]
     expected = [0.38780, 0.34679, 0.64469, 0.44264]
@@ -177,7 +183,7 @@ def test_lifetime_to_signal_multiharmonic():
     assert_allclose(zero[[0, 9, 10, -1]], zero_expected, atol=1e-3)
 
 
-def test_lifetime_to_signal_parameters():
+def test_lifetime_to_signal_parameters() -> None:
     """Test lifetime_to_signal function parameters."""
     # TODO: test mean, background, zero_phase, zero_stdev parameters
     # zero_modulation=0.5 guarantees non-negative homodyne signal
@@ -205,13 +211,13 @@ def test_lifetime_to_signal_parameters():
         assert_allclose(zero.mean(), mean_val, atol=1e-6)
 
 
-def test_lifetime_to_signal_error():
+def test_lifetime_to_signal_error() -> None:
     """Test lifetime_to_signal function exceptions."""
     lifetime_to_signal(40.0, 4.2)
     with pytest.raises(ValueError):
         lifetime_to_signal(0.0, 4.2)
     with pytest.raises(ValueError):
-        lifetime_to_signal([40.0, 80.0], 4.2)
+        lifetime_to_signal([40.0, 80.0], 4.2)  # type: ignore[arg-type]
     with pytest.raises(ValueError):
         lifetime_to_signal(40.0, 4.2, samples=15)
     with pytest.raises(ValueError):
@@ -240,7 +246,7 @@ def test_lifetime_to_signal_error():
         lifetime_to_signal(40.0, 4.2, harmonic=1, zero_stdev=0.1)
 
 
-def test_phasor_semicircle():
+def test_phasor_semicircle() -> None:
     """Test phasor_semicircle function."""
     real, imag = phasor_semicircle(1)
     assert_allclose(real, 0.0, atol=1e-6)
@@ -257,7 +263,7 @@ def test_phasor_semicircle():
         phasor_semicircle(0)
 
 
-def test_phasor_semicircle_intersect():
+def test_phasor_semicircle_intersect() -> None:
     """Test phasor_semicircle_intersect function."""
     assert_allclose(
         phasor_semicircle_intersect(
@@ -308,7 +314,7 @@ def test_phasor_semicircle_intersect():
             *phasor_from_lifetime(80, 4.2),  # single component
             *phasor_from_lifetime(80, [4.2, 1.1], [1, 1]),  # mixture
         ),
-        numpy.array(
+        numpy.asarray(
             phasor_from_lifetime(80, [4.2, 1.1])  # two single components
         ).T.flat,
         atol=1e-4,
@@ -346,13 +352,13 @@ def test_phasor_semicircle_intersect():
     ],
 )
 def test_polar_from_reference(
-    measured_phase,
-    measured_modulation,
-    known_phase,
-    known_modulation,
-    expected_phase,
-    expected_modulation,
-):
+    measured_phase: ArrayLike,
+    measured_modulation: ArrayLike,
+    known_phase: ArrayLike,
+    known_modulation: ArrayLike,
+    expected_phase: ArrayLike,
+    expected_modulation: ArrayLike,
+) -> None:
     """Test polar_from_reference function with various inputs."""
     measured_phase_copy = copy.deepcopy(measured_phase)
     measured_modulation_copy = copy.deepcopy(measured_modulation)
@@ -368,8 +374,8 @@ def test_polar_from_reference(
     assert_array_equal(measured_modulation, measured_modulation_copy)
     assert_array_equal(known_phase, known_phase_copy)
     assert_array_equal(known_modulation, known_modulation_copy)
-    assert_almost_equal(phase0, expected_phase)
-    assert_almost_equal(modulation0, expected_modulation)
+    assert_almost_equal(phase0, numpy.asarray(expected_phase))
+    assert_almost_equal(modulation0, numpy.asarray(expected_modulation))
 
 
 @pytest.mark.parametrize(
@@ -405,13 +411,13 @@ def test_polar_from_reference(
     ],
 )
 def test_polar_from_reference_phasor(
-    measured_real,
-    measured_imag,
-    known_real,
-    known_imag,
-    expected_phase,
-    expected_modulation,
-):
+    measured_real: ArrayLike,
+    measured_imag: ArrayLike,
+    known_real: ArrayLike,
+    known_imag: ArrayLike,
+    expected_phase: ArrayLike,
+    expected_modulation: ArrayLike,
+) -> None:
     """Test polar_from_reference_phasor function with various inputs."""
     measured_real_copy = copy.deepcopy(measured_real)
     measured_imag_copy = copy.deepcopy(measured_imag)
@@ -427,11 +433,11 @@ def test_polar_from_reference_phasor(
     assert_array_equal(measured_imag, measured_imag_copy)
     assert_array_equal(known_real, known_real_copy)
     assert_array_equal(known_imag, known_imag_copy)
-    assert_almost_equal(phase0, expected_phase)
-    assert_almost_equal(modulation0, expected_modulation)
+    assert_almost_equal(phase0, numpy.asarray(expected_phase))
+    assert_almost_equal(modulation0, numpy.asarray(expected_modulation))
 
 
-def test_polar_from_reference_functions():
+def test_polar_from_reference_functions() -> None:
     """Test polar_from_reference and polar_from_reference_phasor match."""
     # https://github.com/phasorpy/phasorpy/issues/43
     measured_real = rng.random((5, 7))
@@ -558,15 +564,17 @@ def test_polar_from_reference_functions():
         ),
     ],
 )
-def test_phasor_from_lifetime(args, kwargs, expected):
+def test_phasor_from_lifetime(
+    args: Any, kwargs: Any, expected: tuple[ArrayLike, ArrayLike]
+) -> None:
     """Test phasor_from_lifetime function."""
     result = phasor_from_lifetime(*args, **kwargs, keepdims=True)
     for actual, desired in zip(result, expected, strict=True):
         assert actual.ndim == 2
-        assert_allclose(actual.squeeze(), desired, atol=1e-6)
+        assert_allclose(actual.squeeze(), numpy.asarray(desired), atol=1e-6)
 
 
-def test_phasor_from_lifetime_exceptions():
+def test_phasor_from_lifetime_exceptions() -> None:
     """Test exceptions in phasor_from_lifetime function."""
     with pytest.raises(ValueError):
         phasor_from_lifetime(80.0, 0.0, unit_conversion=0.0)
@@ -588,7 +596,7 @@ def test_phasor_from_lifetime_exceptions():
         phasor_from_lifetime(80.0, [[[0.0]]], [[[1.0]]])  # matching but > 2D
 
 
-def test_phasor_from_lifetime_modify():
+def test_phasor_from_lifetime_modify() -> None:
     """Test phasor_from_lifetime function does not modify input."""
     frequency = 80.0
     lifetime = numpy.array([0.0, 1.9894368, 1e9], dtype=numpy.float64)
@@ -1101,7 +1109,9 @@ def test_phasor_from_lifetime_modify():
         ),
     ],
 )
-def test_phasor_calibrate(args, kwargs, expected):
+def test_phasor_calibrate(
+    args: Any, kwargs: Any, expected: NDArray[Any]
+) -> None:
     """Test phasor_calibrate function with various inputs."""
     real, imag, real_ref, imag_ref = args
     mean_ref = numpy.full_like(real_ref, 2)
@@ -1120,9 +1130,9 @@ def test_phasor_calibrate(args, kwargs, expected):
     assert_almost_equal(result, args[:2])
 
 
-def test_phasor_calibrate_exceptions():
+def test_phasor_calibrate_exceptions() -> None:
     """Test exceptions in phasor_calibrate function."""
-    kwargs = {'frequency': 1, 'lifetime': 1}
+    kwargs: Any = {'frequency': 1, 'lifetime': 1}
     phasor_calibrate(0, 0, 0, 0, 0, **kwargs)
     with pytest.raises(ValueError):
         phasor_calibrate(0, 0, 0, [0], [0, 0], **kwargs)
@@ -1181,7 +1191,7 @@ def test_phasor_calibrate_exceptions():
         )
 
 
-def test_phasor_to_normal_lifetime():
+def test_phasor_to_normal_lifetime() -> None:
     """Test phasor_to_normal_lifetime function."""
     taunorm = phasor_to_normal_lifetime(
         [0.5, 0.5, 0, 1, -1.1], [0.5, 0.45, 0, 0, 1.1], frequency=80
@@ -1225,7 +1235,7 @@ def test_phasor_to_normal_lifetime():
     )
 
 
-def test_phasor_to_apparent_lifetime():
+def test_phasor_to_apparent_lifetime() -> None:
     """Test phasor_to_apparent_lifetime function."""
     tauphi, taumod = phasor_to_apparent_lifetime(
         [0.5, 0.5, 0, 1, -1.1], [0.5, 0.45, 0, 0, 1.1], frequency=80
@@ -1258,7 +1268,7 @@ def test_phasor_to_apparent_lifetime():
     )
 
 
-def test_phasor_from_apparent_lifetime():
+def test_phasor_from_apparent_lifetime() -> None:
     """Test phasor_from_apparent_lifetime function."""
     real, imag = phasor_from_apparent_lifetime(
         [1.989437, 1.790493, 1e9, 0.0],
@@ -1293,7 +1303,7 @@ def test_phasor_from_apparent_lifetime():
     assert_allclose(imag, imag2, atol=1e-3)
 
 
-def test_polar_to_apparent_lifetime():
+def test_polar_to_apparent_lifetime() -> None:
     """Test polar_to_apparent_lifetime function."""
     tauphi, taumod = polar_to_apparent_lifetime(
         *phasor_to_polar([0.5, 0.5, 0, 1, -1.1], [0.5, 0.45, 0, 0, 1.1]),
@@ -1327,7 +1337,7 @@ def test_polar_to_apparent_lifetime():
     )
 
 
-def test_polar_from_apparent_lifetime():
+def test_polar_from_apparent_lifetime() -> None:
     """Test polar_from_apparent_lifetime function."""
     phase, modulation = polar_from_apparent_lifetime(
         [1.989437, 1.790493, 1e9, 0.0],
@@ -1370,7 +1380,7 @@ def test_polar_from_apparent_lifetime():
     assert_allclose(imag, [0.5, 0.49723, 0.0, 0.0], atol=1e-3)
 
 
-def test_phasor_from_fret_donor():
+def test_phasor_from_fret_donor() -> None:
     """Test phasor_from_fret_donor function."""
     re, im = phasor_from_lifetime(80, 4.2)
     # no FRET
@@ -1396,7 +1406,7 @@ def test_phasor_from_fret_donor():
         phasor_from_fret_donor(
             80, 4.2, fret_efficiency=[0.0, 0.3, 1.0], donor_fretting=0.9
         ),
-        [[re, 0.296158, re], [im, 0.453563, im]],
+        numpy.array([[re, 0.296158, re], [im, 0.453563, im]]),
         atol=1e-3,
     )
     # background
@@ -1428,7 +1438,7 @@ def test_phasor_from_fret_donor():
     )
 
 
-def test_phasor_from_fret_acceptor():
+def test_phasor_from_fret_acceptor() -> None:
     """Test phasor_from_fret_acceptor function."""
     re, im = phasor_from_lifetime(80, 3.0)
     # no FRET
@@ -1442,13 +1452,13 @@ def test_phasor_from_fret_acceptor():
         phasor_from_fret_acceptor(
             80, 4.2, 3.0, fret_efficiency=[0.0, 0.3, 1.0]
         ),
-        [[-0.122219, -0.117851, re], [0.202572, 0.286433, im]],
+        numpy.array([[-0.122219, -0.117851, re], [0.202572, 0.286433, im]]),
         atol=1e-3,
     )
     # frequency
     assert_allclose(
         phasor_from_fret_acceptor([40, 80], 4.2, 3.0, fret_efficiency=0.3),
-        [[0.182643, -0.117851], [0.615661, 0.286433]],
+        numpy.array([[0.182643, -0.117851], [0.615661, 0.286433]]),
         atol=1e-3,
     )
     # acceptor_bleedthrough
@@ -1460,7 +1470,7 @@ def test_phasor_from_fret_acceptor():
             fret_efficiency=[0.0, 0.3, 1.0],
             acceptor_bleedthrough=0.1,
         ),
-        [[re, -0.012028, re], [im, 0.329973, im]],
+        numpy.array([[re, -0.012028, re], [im, 0.329973, im]]),
         atol=1e-3,
     )
     # donor_bleedthrough
@@ -1473,7 +1483,7 @@ def test_phasor_from_fret_acceptor():
             fret_efficiency=[0.0, 0.3, 1.0],
             donor_bleedthrough=0.1,
         ),
-        [[dre, -0.036135, re], [dim, 0.320055, im]],
+        numpy.array([[dre, -0.036135, re], [dim, 0.320055, im]]),
         atol=1e-3,
     )
     # donor_fretting
@@ -1486,7 +1496,7 @@ def test_phasor_from_fret_acceptor():
             donor_bleedthrough=0.1,
             donor_fretting=0.9,
         ),
-        [[dre, -0.02974, 0.3041], [dim, 0.322, 0.4598]],
+        numpy.array([[dre, -0.02974, 0.3041], [dim, 0.322, 0.4598]]),
         atol=1e-3,
     )
     # background
@@ -1500,7 +1510,7 @@ def test_phasor_from_fret_acceptor():
             background_real=0.11,
             background_imag=0.12,
         ),
-        [[0.11, -0.060888, 0.287673], [0.12, 0.244825, 0.429631]],
+        numpy.array([[0.11, -0.060888, 0.287673], [0.12, 0.244825, 0.429631]]),
         atol=1e-3,
     )
     # complex
@@ -1517,12 +1527,14 @@ def test_phasor_from_fret_acceptor():
             background_real=0.11,
             background_imag=0.12,
         ),
-        [[0.199564, 0.057723, 0.286733], [0.322489, 0.310325, 0.429246]],
+        numpy.array(
+            [[0.199564, 0.057723, 0.286733], [0.322489, 0.310325, 0.429246]]
+        ),
         atol=1e-3,
     )
 
 
-def test_lifetime_to_frequency():
+def test_lifetime_to_frequency() -> None:
     """Test lifetime_to_frequency function."""
     assert isinstance(lifetime_to_frequency(1.0), float)
     assert lifetime_to_frequency(1.0) == pytest.approx(186.015665)
@@ -1531,7 +1543,7 @@ def test_lifetime_to_frequency():
     )
 
 
-def test_lifetime_from_frequency():
+def test_lifetime_from_frequency() -> None:
     """Test lifetime_from_frequency function."""
     assert isinstance(lifetime_from_frequency(186.015665), float)
     assert lifetime_from_frequency(186.015665) == pytest.approx(1.0)
@@ -1540,7 +1552,7 @@ def test_lifetime_from_frequency():
     )
 
 
-def test_lifetime_fraction_to_amplitude():
+def test_lifetime_fraction_to_amplitude() -> None:
     """Test lifetime_fraction_to_amplitude function."""
     # assert isinstance(lifetime_fraction_to_amplitude(1.0, 1.0), float)
     assert_allclose(lifetime_fraction_to_amplitude(1.0, 1.0), 1.0, atol=1e-3)
@@ -1573,7 +1585,7 @@ def test_lifetime_fraction_to_amplitude():
         )
 
 
-def test_lifetime_fraction_from_amplitude():
+def test_lifetime_fraction_from_amplitude() -> None:
     """Test lifetime_fraction_from_amplitude function."""
     # assert isinstance(lifetime_fraction_from_amplitude(1.0, 1.0), float)
     assert_allclose(lifetime_fraction_from_amplitude(1.0, 1.0), 1.0, atol=1e-3)
@@ -1613,7 +1625,7 @@ def test_lifetime_fraction_from_amplitude():
         )
 
 
-def test_phasor_at_harmonic():
+def test_phasor_at_harmonic() -> None:
     """Test phasor_at_harmonic function."""
     # identity
     assert_allclose(phasor_at_harmonic(0.5, 1, 1), [0.5, 0.5], atol=1e-6)
@@ -1660,7 +1672,7 @@ def test_phasor_at_harmonic():
         phasor_at_harmonic(0.5, 1, 0)
 
 
-def test_phasor_component_search_exceptions():
+def test_phasor_component_search_exceptions() -> None:
     """Test exceptions in phasor_to_lifetime_search function."""
     real = [0.1, 0.2]
     imag = [0.4, 0.3]
@@ -1734,18 +1746,22 @@ def test_phasor_component_search_exceptions():
     ],
 )
 def test_phasor_to_lifetime_search_two(
-    real, imag, expected_real, expected_imag, expected_fraction
-):
+    real: ArrayLike,
+    imag: ArrayLike,
+    expected_real: ArrayLike,
+    expected_imag: ArrayLike,
+    expected_fraction: ArrayLike,
+) -> None:
     """Test phasor_to_lifetime_search function with two components."""
     expected_lifetime = phasor_to_normal_lifetime(
         expected_real, expected_imag, frequency=80.0
     )
     lifetime, fraction = phasor_to_lifetime_search(real, imag, 80.0)
     assert_allclose(lifetime, expected_lifetime, atol=1e-6)
-    assert_allclose(fraction, expected_fraction, atol=1e-6)
+    assert_allclose(fraction, numpy.asarray(expected_fraction), atol=1e-6)
 
 
-def test_phasor_to_lifetime_search_two_range():
+def test_phasor_to_lifetime_search_two_range() -> None:
     """Test phasor_to_lifetime_search function, two components with range."""
     lifetime = [0.5, 4.2]
     fraction = [0.3, 0.7]
@@ -1765,7 +1781,7 @@ def test_phasor_to_lifetime_search_two_range():
         real,
         imag,
         frequency,
-        lifetime_range=(phase_lifetime, lifetime[1] + 1.0, 0.01),
+        lifetime_range=(float(phase_lifetime), float(lifetime[1]) + 1.0, 0.01),
     )
     assert_allclose(lifetimes, lifetime, atol=1e-6)
     assert_allclose(fractions, fraction, atol=1e-6)
@@ -1775,7 +1791,11 @@ def test_phasor_to_lifetime_search_two_range():
         real,
         imag,
         frequency,
-        lifetime_range=(lifetime[0] - 0.1, normal_lifetime, 0.01),
+        lifetime_range=(
+            float(lifetime[0]) - 0.1,
+            float(normal_lifetime),
+            0.01,
+        ),
     )
     assert_allclose(lifetimes, lifetime, atol=1e-6)
     assert_allclose(fractions, fraction, atol=1e-6)
@@ -1785,7 +1805,11 @@ def test_phasor_to_lifetime_search_two_range():
         real,
         imag,
         frequency,
-        lifetime_range=(phase_lifetime, lifetime[1] + 0.01, 0.01),
+        lifetime_range=(
+            float(phase_lifetime),
+            float(lifetime[1]) + 0.01,
+            0.01,
+        ),
     )
     assert_allclose(lifetimes, lifetime, atol=1e-6)
     assert_allclose(fractions, fraction, atol=1e-6)
@@ -1795,7 +1819,11 @@ def test_phasor_to_lifetime_search_two_range():
         real,
         imag,
         frequency,
-        lifetime_range=(lifetime[0] + 0.1, lifetime[1] - 0.1, 0.01),
+        lifetime_range=(
+            float(lifetime[0]) + 0.1,
+            float(lifetime[1]) - 0.1,
+            0.01,
+        ),
     )
     with pytest.raises(AssertionError):
         assert_allclose(lifetimes, lifetime, atol=1e-6)
@@ -1805,14 +1833,14 @@ def test_phasor_to_lifetime_search_two_range():
         real,
         imag,
         frequency,
-        lifetime_range=(phase_lifetime, normal_lifetime, 0.01),
+        lifetime_range=(float(phase_lifetime), float(normal_lifetime), 0.01),
     )
     assert_allclose(lifetimes, [nan, nan], atol=1e-6)
     assert_allclose(fractions, [nan, nan], atol=1e-6)
 
 
 @pytest.mark.parametrize('exact', [True, False])
-def test_phasor_to_lifetime_search_two_distribution(exact):
+def test_phasor_to_lifetime_search_two_distribution(*, exact: bool) -> None:
     """Test phasor_to_lifetime_search function with two components."""
     # test that two lifetime components can be recovered from a distribution
     shape = (256, 256)
@@ -1859,7 +1887,13 @@ def test_phasor_to_lifetime_search_two_distribution(exact):
     # _plot(frequency, real, imag, component_real, component_imag)
 
 
-def _plot(frequency, real, imag, component_real=None, component_imag=None):
+def _plot(
+    frequency: float,
+    real: NDArray[Any],
+    imag: NDArray[Any],
+    component_real: NDArray[Any] | None = None,
+    component_imag: NDArray[Any] | None = None,
+) -> None:
     # helper function to visualize lifetime component distribution results
     from phasorpy.plot import PhasorPlot
 
@@ -1878,7 +1912,3 @@ def _plot(frequency, real, imag, component_real=None, component_imag=None):
                 numpy.nanmean(component_imag[i]),
             )
     pp.show()
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type, unreachable"

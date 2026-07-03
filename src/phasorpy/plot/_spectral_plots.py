@@ -104,7 +104,7 @@ class SpectralPlots:
     _samples: int  # number of wavelength samples
     _wl_min: float  # current wavelength range min
     _wl_max: float  # current wavelength range max
-    _dho: bool  # True → DHO model, False → Gaussian model
+    _dho: bool  # True: DHO model, False: Gaussian model
 
     _spectrum_plot: Axes
     _phasor_plot: Axes

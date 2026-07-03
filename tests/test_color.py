@@ -7,7 +7,7 @@ from numpy.testing import assert_almost_equal, assert_array_equal
 from phasorpy.color import float2int, wavelength2rgb
 
 
-def test_wavelength2rgb():
+def test_wavelength2rgb() -> None:
     """Test wavelength2rgb function."""
     rgb = wavelength2rgb(517)
     assert isinstance(rgb, tuple)
@@ -26,14 +26,10 @@ def test_wavelength2rgb():
     )
 
 
-def test_float2int():
+def test_float2int() -> None:
     """Test float2int function."""
     assert_array_equal(float2int([0.0, 0.5, 1.0]), [0, 128, 255])
     with pytest.raises(ValueError):
         float2int(500.0, numpy.float32)  # not an integer type
     with pytest.raises(ValueError):
         float2int(500, numpy.uint8)  # not a floating-point array
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

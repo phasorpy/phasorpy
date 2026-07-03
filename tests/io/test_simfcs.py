@@ -25,7 +25,7 @@ rng = numpy.random.default_rng(42)
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_fbd():
+def test_signal_from_fbd() -> None:
     """Test read FLIMbox FBD file."""
     # TODO: test files with different firmwares
     # TODO: gather public FBD files and upload to Zenodo
@@ -79,7 +79,7 @@ def test_signal_from_fbd():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_bh():
+def test_signal_from_bh() -> None:
     """Test read SimFCS B&H file."""
     filename = fetch('simfcs.b&h')
     signal = signal_from_bh(filename)
@@ -95,7 +95,7 @@ def test_signal_from_bh():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_bhz():
+def test_signal_from_bhz() -> None:
     """Test read SimFCS BHZ file."""
     filename = fetch('simfcs.bhz')
     signal = signal_from_bhz(filename)
@@ -111,7 +111,7 @@ def test_signal_from_bhz():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_b64():
+def test_signal_from_b64() -> None:
     """Test read SimFCS B64 file."""
     filename = fetch('simfcs.b64')
     signal = signal_from_b64(filename)
@@ -127,7 +127,7 @@ def test_signal_from_b64():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_z64():
+def test_signal_from_z64() -> None:
     """Test read SimFCS Z64 file."""
     filename = fetch('simfcs.z64')
     signal = signal_from_z64(filename)
@@ -143,7 +143,7 @@ def test_signal_from_z64():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_phasor_from_simfcs_referenced_ref():
+def test_phasor_from_simfcs_referenced_ref() -> None:
     """Test phasor_from_simfcs_referenced with SimFCS REF file."""
     filename = fetch('simfcs.ref')
     mean, real, imag, attrs = phasor_from_simfcs_referenced(filename)
@@ -203,7 +203,7 @@ def test_phasor_from_simfcs_referenced_ref():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_phasor_from_simfcs_referenced_r64():
+def test_phasor_from_simfcs_referenced_r64() -> None:
     """Test phasor_from_simfcs_referenced with SimFCS R64 file."""
     filename = fetch('simfcs.r64')
     mean, real, imag, attrs = phasor_from_simfcs_referenced(filename)
@@ -244,7 +244,7 @@ def test_phasor_from_simfcs_referenced_r64():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_phasor_from_simfcs_referenced_re2():
+def test_phasor_from_simfcs_referenced_re2() -> None:
     """Test phasor_from_simfcs_referenced with RE2 file."""
     filename = private_file(
         'Mosaic04_10x3_FOV600_z95_32A1_t06_uncalibrated.re2'
@@ -287,7 +287,7 @@ def test_phasor_from_simfcs_referenced_re2():
         )
 
 
-def test_phasor_to_simfcs_referenced():
+def test_phasor_to_simfcs_referenced() -> None:
     """Test phasor_to_simfcs_referenced with square image."""
     data = rng.random((3, 32, 32))
     data[..., 0, 0] = numpy.nan
@@ -305,7 +305,7 @@ def test_phasor_to_simfcs_referenced():
         assert_allclose(imag, data[2], atol=1e-3)
 
 
-def test_phasor_to_simfcs_referenced_scalar():
+def test_phasor_to_simfcs_referenced_scalar() -> None:
     """Test phasor_to_simfcs_referenced with scalar."""
     data = rng.random((3, 1))
 
@@ -324,7 +324,7 @@ def test_phasor_to_simfcs_referenced_scalar():
             assert numpy.isnan(numpy.nanmean(real[1:, 1:]))
 
 
-def test_phasor_to_simfcs_referenced_exceptions():
+def test_phasor_to_simfcs_referenced_exceptions() -> None:
     """Test phasor_to_simfcs_referenced exceptions."""
     data = rng.random((32, 32))
 
@@ -340,7 +340,7 @@ def test_phasor_to_simfcs_referenced_exceptions():
             phasor_to_simfcs_referenced(filename, data, data, data, size=3)
 
 
-def test_phasor_to_simfcs_referenced_multiharmonic():
+def test_phasor_to_simfcs_referenced_multiharmonic() -> None:
     """Test phasor_to_simfcs_referenced with multi-harmonic phasor."""
     data = rng.random((3, 4, 35, 31))
     data[..., 0, 0] = numpy.nan
@@ -387,7 +387,7 @@ def test_phasor_to_simfcs_referenced_multiharmonic():
             assert imag.shape == (2, 32, 32)
 
 
-def test_phasor_to_simfcs_referenced_nanpad():
+def test_phasor_to_simfcs_referenced_nanpad() -> None:
     """Test phasor_to_simfcs_referenced with NaN padding."""
     data = rng.random((2, 95, 97))
     with TemporaryDirectory() as tempdir:
@@ -419,7 +419,3 @@ def test_phasor_to_simfcs_referenced_nanpad():
             atol=1e-3,
             equal_nan=True,
         )
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

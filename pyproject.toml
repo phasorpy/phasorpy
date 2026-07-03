@@ -259,7 +259,7 @@ typing-modules = ["_typing"]
 "__init__.py" = ["F401", "F403"]
 "conftest.py" = ["ARG001"]
 "setup.py" = ["T201"]
-"tests/*" = ["ANN", "D", "INP001", "PT011", "SLF001", "S101"]
+"tests/*" = ["INP001", "PT011", "SLF001", "TC001"]
 "tools/*" = ["ANN", "INP001", "T201"]
 "tutorials/*" = ["ANN", "D", "E402", "INP001", "T201", "S101", "ERA001"]
 "docs/conf.py" = ["A001", "ANN204", "D102", "E402", "INP001", "RUF012"]
@@ -331,7 +331,7 @@ ND2 = "ND2"
 OIF = "OIF"
 
 [tool.mypy]
-packages = ["phasorpy"]
+packages = ["phasorpy", "tests"]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
 plugins = []
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
@@ -340,6 +340,7 @@ warn_unreachable = true
 
 [[tool.mypy.overrides]]
 module = [
+    "_conftest",
     "phasorpy._phasorpy",
     "pooch.*",
     "scipy.*",

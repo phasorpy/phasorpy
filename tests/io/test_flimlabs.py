@@ -1,5 +1,7 @@
 """Test FLIM LABS file reader functions."""
 
+from __future__ import annotations
+
 import numpy
 import pytest
 from _conftest import SKIP_FETCH, SKIP_PRIVATE, private_file
@@ -15,7 +17,7 @@ from phasorpy.phasor import phasor_from_signal, phasor_transform
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_flimlabs_reproduce():
+def test_flimlabs_reproduce() -> None:
     """Test FLIM LABS multiharmonic results can be reproduced with PhasorPy."""
     import json
 
@@ -50,7 +52,7 @@ def test_flimlabs_reproduce():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_phasor_from_flimlabs_json():
+def test_phasor_from_flimlabs_json() -> None:
     """Test phasor_from_flimlabs_json function."""
     filename = fetch('Convallaria_m2_1740751781_phasor_ch1.json')
     mean, real, imag, attrs = phasor_from_flimlabs_json(
@@ -128,7 +130,7 @@ def test_phasor_from_flimlabs_json():
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_flimlabs_json():
+def test_signal_from_flimlabs_json() -> None:
     """Test signal_from_flimlabs_json function."""
     filename = fetch('Convallaria_m2_1740751781_phasor_ch1.json')
     signal = signal_from_flimlabs_json(filename)
@@ -169,7 +171,7 @@ def test_signal_from_flimlabs_json():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_signal_from_flimlabs_json_old():
+def test_signal_from_flimlabs_json_old() -> None:
     """Test signal_from_flimlabs_json function with old format file."""
     filename = private_file('calibrator_2_5_1737112045_imaging.json')
     signal = signal_from_flimlabs_json(filename)
@@ -181,7 +183,7 @@ def test_signal_from_flimlabs_json_old():
 
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
-def test_signal_from_flimlabs_json_channel():
+def test_signal_from_flimlabs_json_channel() -> None:
     """Test read FLIM LABS JSON multi-channel image file."""
     filename = private_file('test03_1733492714_imaging.json')
     signal = signal_from_flimlabs_json(filename, channel=None)
@@ -207,7 +209,7 @@ def test_signal_from_flimlabs_json_channel():
 
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
 @pytest.mark.parametrize('channel', [0, 1])
-def test_phasor_from_flimlabs_json_channel(channel):
+def test_phasor_from_flimlabs_json_channel(channel: int) -> None:
     """Test read FLIM LABS JSON phasor file from multi-channel dataset."""
     filename = private_file(
         f'FLIMLABS/convallaria-03_1742566249_phasor_ch{channel + 1}.json'
@@ -233,7 +235,3 @@ def test_phasor_from_flimlabs_json_channel(channel):
         phasor_from_flimlabs_json(filename, channel=channel + 1)
     with pytest.raises(IndexError):
         phasor_from_flimlabs_json(filename, channel=channel - 1)
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

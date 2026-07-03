@@ -6,7 +6,7 @@ from phasorpy import __version__
 from phasorpy.utils import logger, number_threads, versions
 
 
-def test_versions():
+def test_versions() -> None:
     """Test versions function."""
     ver = versions()
     assert 'Python-' in ver
@@ -17,14 +17,14 @@ def test_versions():
     assert f', phasorpy {__version__}  (' in ver
 
 
-def test_logger():
+def test_logger() -> None:
     """Test logger function."""
     import logging
 
     assert logger() is logging.getLogger('phasorpy')
 
 
-def test_number_threads():
+def test_number_threads() -> None:
     """Test number_threads function."""
     assert number_threads() == 1
     assert number_threads(None, 0) == 1
@@ -42,7 +42,3 @@ def test_number_threads():
         assert number_threads(0) == 4
         assert number_threads(6) == 6
         del os.environ['PHASORPY_NUM_THREADS']
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

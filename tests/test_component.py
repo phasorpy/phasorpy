@@ -6,6 +6,7 @@ import numpy
 import pytest
 from numpy.testing import assert_allclose
 
+from phasorpy._typing import Any, ArrayLike
 from phasorpy.component import (
     phasor_component_concentration,
     phasor_component_fit,
@@ -21,21 +22,23 @@ rng = numpy.random.default_rng(42)
 
 @pytest.mark.parametrize('swap', [False, True])
 @pytest.mark.parametrize('func', [phasor_component_mvc, phasor_component_fit])
-def test_three_components(swap, func):
+def test_three_components(*, swap: bool, func: Any) -> None:
     """Test functions can calculate barycentric coordinates within triangle."""
     frequency = 40.0
     lifetime = [0.5, 4.2, 12.0]
-    fraction = [
-        [1, 0, 0],
-        [0, 1, 0],
-        [0, 0, 1],
-        [0.0, 0.6, 0.4],
-        [0.6, 0.0, 0.4],
-        [0.6, 0.4, 0.0],
-        [0.3, 0.5, 0.2],
-        [1 / 3, 1 / 3, 1 / 3],
-        [nan, nan, nan],
-    ]
+    fraction = numpy.array(
+        [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1],
+            [0.0, 0.6, 0.4],
+            [0.6, 0.0, 0.4],
+            [0.6, 0.4, 0.0],
+            [0.3, 0.5, 0.2],
+            [1 / 3, 1 / 3, 1 / 3],
+            [nan, nan, nan],
+        ]
+    )
     if swap:
         lifetime = [lifetime[i] for i in (1, 0, 2)]
     real, imag = phasor_from_lifetime(frequency, lifetime, fraction)
@@ -46,33 +49,35 @@ def test_three_components(swap, func):
         )
     elif func is phasor_component_mvc:
         result = phasor_component_mvc(real, imag, real[:3], imag[:3])
-    assert_allclose(result, numpy.asarray(fraction).T, atol=1e-6)
+    assert_allclose(result, fraction.T, atol=1e-6)
 
 
-def test_phasor_component_mvc():
+def test_phasor_component_mvc() -> None:
     """Test phasor_component_mvc function."""
     component_real = [1.0, 0.0, 0.0, -0.5]
     component_imag = [0.0, -0.5, 1.0, 0.0]
-    fraction = [
-        [1, 0, 0, 0],
-        [0, 1, 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1],
-        [0.6, 0.4, 0.0, 0.0],
-        [0.6, 0.0, 0.4, 0.0],
-        [0.6, 0.0, 0.0, 0.4],
-        [0.0, 0.6, 0.4, 0.0],
-        [0.0, 0.6, 0.0, 0.4],
-        [0.0, 0.0, 0.6, 0.4],
-        [0.6, 0.3, 0.1, 0.0],
-        [0.6, 0.3, 0.0, 0.1],
-        [0.6, 0.0, 0.3, 0.1],
-        [0.0, 0.6, 0.3, 0.1],
-        [0.3, 0.4, 0.2, 0.1],
-        [-0.1, 0.4, -0.2, 0.9],
-        [1 / 4, 1 / 4, 1 / 4, 1 / 4],
-        [nan, nan, nan, nan],
-    ]
+    fraction = numpy.array(
+        [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1],
+            [0.6, 0.4, 0.0, 0.0],
+            [0.6, 0.0, 0.4, 0.0],
+            [0.6, 0.0, 0.0, 0.4],
+            [0.0, 0.6, 0.4, 0.0],
+            [0.0, 0.6, 0.0, 0.4],
+            [0.0, 0.0, 0.6, 0.4],
+            [0.6, 0.3, 0.1, 0.0],
+            [0.6, 0.3, 0.0, 0.1],
+            [0.6, 0.0, 0.3, 0.1],
+            [0.0, 0.6, 0.3, 0.1],
+            [0.3, 0.4, 0.2, 0.1],
+            [-0.1, 0.4, -0.2, 0.9],
+            [1 / 4, 1 / 4, 1 / 4, 1 / 4],
+            [nan, nan, nan, nan],
+        ]
+    )
 
     real, imag = phasor_from_component(
         component_real, component_imag, fraction, axis=-1
@@ -115,7 +120,7 @@ def test_phasor_component_mvc():
 
 
 @pytest.mark.parametrize('num_components', [3, 4, 5])
-def test_phasor_component_mvc_plot(num_components):
+def test_phasor_component_mvc_plot(num_components: int) -> None:
     """Test phasor_component_mvc function visually."""
     from matplotlib import pyplot
 
@@ -168,7 +173,7 @@ def test_phasor_component_mvc_plot(num_components):
         pyplot.close()
 
 
-def test_phasor_from_component():
+def test_phasor_from_component() -> None:
     """Test phasor_from_component function."""
     frequency = 40.0
     lifetime = [0.5, 4.2, 12.0]
@@ -261,7 +266,7 @@ def test_phasor_from_component():
         )
 
 
-def test_phasor_component_fraction():
+def test_phasor_component_fraction() -> None:
     """Test phasor_component_fraction function."""
     assert_allclose(
         phasor_component_fraction(
@@ -319,7 +324,7 @@ def test_phasor_component_fraction():
 
 
 @pytest.mark.xfail
-def test_phasor_component_fraction_channels():
+def test_phasor_component_fraction_channels() -> None:
     """Test phasor_component_fraction function for multiple channels."""
     assert_allclose(
         phasor_component_fraction(
@@ -443,14 +448,14 @@ def test_phasor_component_fraction_channels():
     ],
 )
 def test_phasor_component_graphical(
-    real,
-    imag,
-    component_real,
-    component_imag,
-    radius,
-    fractions,
-    expected_counts,
-):
+    real: ArrayLike,
+    imag: ArrayLike,
+    component_real: ArrayLike,
+    component_imag: ArrayLike,
+    radius: float,
+    fractions: ArrayLike,
+    expected_counts: ArrayLike,
+) -> None:
     """Test phasor_component_graphical function."""
     actual_counts = phasor_component_graphical(
         real,
@@ -460,7 +465,7 @@ def test_phasor_component_graphical(
         radius=radius,
         fractions=fractions,
     )
-    assert_allclose(actual_counts, expected_counts)
+    assert_allclose(actual_counts, numpy.asarray(expected_counts))
 
 
 @pytest.mark.parametrize(
@@ -515,8 +520,12 @@ def test_phasor_component_graphical(
     ],
 )
 def test_errors_phasor_component_graphical(
-    real, imag, component_real, component_imag, fractions
-):
+    real: ArrayLike,
+    imag: ArrayLike,
+    component_real: ArrayLike,
+    component_imag: ArrayLike,
+    fractions: ArrayLike,
+) -> None:
     """Test errors in phasor_component_graphical function."""
     with pytest.raises(ValueError):
         phasor_component_graphical(
@@ -524,7 +533,7 @@ def test_errors_phasor_component_graphical(
         )
 
 
-def test_errors_phasor_component_graphical_radius_and_components():
+def test_errors_phasor_component_graphical_radius_and_components() -> None:
     """Test radius and component errors in phasor_component_graphical."""
     # radius = 0
     with pytest.raises(ValueError):
@@ -558,11 +567,11 @@ def test_errors_phasor_component_graphical_radius_and_components():
         )
 
 
-def test_phasor_component_fit():
+def test_phasor_component_fit() -> None:
     """Test phasor_component_fit function."""
     size = 5
-    component_real = [0.1, 0.9]
-    component_imag = [0.2, 0.3]
+    component_real = (0.1, 0.9)
+    component_imag = (0.2, 0.3)
     mean = rng.random(size)
     real = numpy.linspace(*component_real, size)
     imag = numpy.linspace(*component_imag, size)
@@ -666,16 +675,16 @@ def test_phasor_component_fit():
             mean, real, imag, component_real[:-1], component_imag
         )
 
-    component_real[0] = nan
     with pytest.raises(ValueError):
-        phasor_component_fit(mean, real, imag, component_real, component_real)
+        phasor_component_fit(mean, real, imag, (nan, 0.9), component_imag)
 
-    component_imag[0] = numpy.inf
     with pytest.raises(ValueError):
-        phasor_component_fit(mean, real, imag, component_imag, component_imag)
+        phasor_component_fit(
+            mean, real, imag, component_real, (numpy.inf, 0.3)
+        )
 
 
-def test_phasor_component_concentration():
+def test_phasor_component_concentration() -> None:
     """Test phasor_component_concentration."""
     free_real = 0.6
     free_imag = 0.1
@@ -733,7 +742,7 @@ def test_phasor_component_concentration():
     assert numpy.isnan(result)
 
 
-def test_phasor_component_concentration_errors():
+def test_phasor_component_concentration_errors() -> None:
     """Test phasor_component_concentration raises ValueError for bad inputs."""
     args = ([0.6, 0.2], [0.1, 0.4], 500.0, 0.8, 0.1, 100.0)
 
@@ -778,7 +787,3 @@ def test_phasor_component_concentration_errors():
         phasor_component_concentration(
             1.0, 0.4, 0.05, *args, brightness_ratio=-1.0
         )
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type, call-overload"

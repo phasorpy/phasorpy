@@ -21,7 +21,7 @@ rng = numpy.random.default_rng(42)
 INTERACTIVE = False  # enable for interactive plotting
 
 
-def test_plot_phasor():
+def test_plot_phasor() -> None:
     """Test plot_phasor function."""
     real, imag = rng.multivariate_normal(
         [0.6, 0.4], [[3e-3, -1e-3], [-1e-3, 1e-3]], 32
@@ -65,10 +65,10 @@ def test_plot_phasor():
     pyplot.close()
 
     with pytest.raises(ValueError):
-        plot_phasor(0, 0, style='invalid')
+        plot_phasor(0, 0, style='invalid')  # type: ignore[arg-type]
 
 
-def test_plot_polar_frequency():
+def test_plot_polar_frequency() -> None:
     """Test plot_polar_frequency function."""
     plot_polar_frequency(
         [1, 10, 100],
@@ -82,15 +82,15 @@ def test_plot_polar_frequency():
     _, ax = pyplot.subplots()
     plot_polar_frequency(
         [1, 10, 100],
-        [[0, 0.1], [0.5, 0.55], [1, 1]],
-        [[[1, 0.9], [0.5, 0.45], [0, 0]]],
+        numpy.array([[0, 0.1], [0.5, 0.55], [1, 1]]),
+        numpy.array([[[1, 0.9], [0.5, 0.45], [0, 0]]]),
         ax=ax,
         show=INTERACTIVE,
     )
     pyplot.close()
 
 
-def test_plot_signal_image():
+def test_plot_signal_image() -> None:
     """Test plot_signal_image function."""
     shape = (7, 31, 33, 11)
     data_ = numpy.arange(math.prod(shape)).reshape(shape)
@@ -135,7 +135,7 @@ def test_plot_signal_image():
     pyplot.close()
 
 
-def test_plot_phasor_image():
+def test_plot_phasor_image() -> None:
     """Test plot_phasor_image function."""
     shape = (7, 11, 31, 33)
     data_ = numpy.arange(math.prod(shape)).reshape(shape)
@@ -216,7 +216,7 @@ def test_plot_phasor_image():
     pyplot.close()
 
 
-def test_plot_plot_histograms():
+def test_plot_plot_histograms() -> None:
     """Test plot_histograms function."""
     data = (rng.normal(0, 1, 1000), rng.normal(4, 2, 1000))
     plot_histograms(data[0], show=INTERACTIVE)
@@ -240,18 +240,22 @@ def test_plot_plot_histograms():
 @pytest.mark.parametrize('location', ['right', 'bottom'])
 @pytest.mark.parametrize('aspect', [1.0, 0.75])
 @pytest.mark.parametrize('nimages', [1, 2, 4, 5])
-def test_plot_image(percentile, labels, location, aspect, nimages):
+def test_plot_image(
+    percentile: float | None,
+    labels: str | None,
+    location: str,
+    aspect: float,
+    nimages: int,
+) -> None:
     """Test plot_image function."""
     images = rng.normal(1.0, 0.2, (nimages, int(100 * aspect), 100))
     images[0] *= 2
     title = f'{nimages=}, {aspect=}, {percentile=}, {labels=}, {location=}'
-    if labels is not None:
-        labels = [labels] * nimages
     plot_image(
         *images,
         percentile=percentile,
         location=location,
-        labels=labels,
+        labels=[labels] * nimages if labels is not None else None,
         title=title,
         show=INTERACTIVE,
     )
@@ -260,7 +264,9 @@ def test_plot_image(percentile, labels, location, aspect, nimages):
 
 @pytest.mark.parametrize('columns', [None, 4])
 @pytest.mark.parametrize('percentile', [None, 0.9])
-def test_plot_image_shapes(columns, percentile):
+def test_plot_image_shapes(
+    columns: int | None, percentile: float | None
+) -> None:
     """Test plot_image function with images of different shapes."""
     images = [
         rng.normal(0.5, 0.1, shape)
@@ -284,7 +290,7 @@ def test_plot_image_shapes(columns, percentile):
     pyplot.close()
 
 
-def test_plot_image_other():
+def test_plot_image_other() -> None:
     """Test plot_image function with special cases."""
     images = [rng.normal(0.5, 0.1, (100, 100, 3))] * 7
     plot_image(*images, title='RGB only', show=INTERACTIVE)
@@ -300,7 +306,3 @@ def test_plot_image_other():
 
     with pytest.raises(ValueError):
         plot_image(numpy.zeros(100), show=INTERACTIVE)
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

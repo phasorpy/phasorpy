@@ -4,6 +4,7 @@ import numpy
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
+from phasorpy._typing import Any, ArrayLike, NDArray
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursor import (
     mask_from_circular_cursor,
@@ -80,8 +81,14 @@ from phasorpy.phasor import phasor_from_polar
     ],
 )
 def test_mask_from_circular_cursor(
-    func, real, imag, center_real, center_imag, radius, expected
-):
+    func: Any,
+    real: ArrayLike,
+    imag: ArrayLike,
+    center_real: ArrayLike,
+    center_imag: ArrayLike,
+    radius: ArrayLike,
+    expected: ArrayLike,
+) -> None:
     """Test mask_from_circular/elliptic_cursor functions."""
     mask = func(real, imag, center_real, center_imag, radius=radius)
     assert_array_equal(mask, expected)
@@ -99,8 +106,13 @@ def test_mask_from_circular_cursor(
     ],
 )
 def test_mask_from_circular_cursor_errors(
-    func, real, imag, center_real, center_imag, radius
-):
+    func: Any,
+    real: ArrayLike,
+    imag: ArrayLike,
+    center_real: ArrayLike,
+    center_imag: ArrayLike,
+    radius: float,
+) -> None:
     """Test errors for mask_from_circular/elliptic_cursor functions."""
     with pytest.raises(ValueError):
         func(real, imag, center_real, center_imag, radius=radius)
@@ -127,7 +139,12 @@ def test_mask_from_circular_cursor_errors(
         (0.5, 0.5, 0.0, [[True, True], [True, True]]),
     ],
 )
-def test_mask_from_elliptic_cursor(radius, radius_minor, angle, expected):
+def test_mask_from_elliptic_cursor(
+    radius: ArrayLike,
+    radius_minor: ArrayLike,
+    angle: ArrayLike,
+    expected: ArrayLike,
+) -> None:
     """Test mask_from_elliptic_cursor function."""
     # the function is also tested in test_mask_from_circular_cursor
     mask = mask_from_elliptic_cursor(
@@ -142,7 +159,7 @@ def test_mask_from_elliptic_cursor(radius, radius_minor, angle, expected):
     assert_array_equal(mask, expected)
 
 
-def test_mask_from_elliptic_cursor_error():
+def test_mask_from_elliptic_cursor_error() -> None:
     """Test mask_from_elliptic_cursor function error."""
     with pytest.raises(ValueError):
         mask_from_elliptic_cursor(
@@ -243,14 +260,14 @@ def test_mask_from_elliptic_cursor_error():
     ],
 )
 def test_mask_from_polar_cursor(
-    phase,
-    modulation,
-    phase_min,
-    phase_max,
-    modulation_min,
-    modulation_max,
-    expected,
-):
+    phase: ArrayLike,
+    modulation: ArrayLike,
+    phase_min: ArrayLike,
+    phase_max: ArrayLike,
+    modulation_min: ArrayLike,
+    modulation_max: ArrayLike,
+    expected: ArrayLike,
+) -> None:
     """Test mask_from_cursor function."""
     real, imag = phasor_from_polar(numpy.deg2rad(phase), modulation)
     phase_min = numpy.deg2rad(phase_min)
@@ -283,14 +300,17 @@ def test_mask_from_polar_cursor(
     ],
 )
 def test_mask_from_polar_cursor_errors(
-    real, imag, phase_range, modulation_range
-):
+    real: ArrayLike,
+    imag: ArrayLike,
+    phase_range: list[ArrayLike],
+    modulation_range: list[ArrayLike],
+) -> None:
     """Test errors for mask_from_polar_cursor function."""
     with pytest.raises(ValueError):
         mask_from_polar_cursor(real, imag, *phase_range, *modulation_range)
 
 
-def test_cursors_on_grid():
+def test_cursors_on_grid() -> None:
     """Plot cursor functions on grid of points."""
     from math import pi
 
@@ -298,7 +318,13 @@ def test_cursors_on_grid():
 
     show = False  # enable to see figure
 
-    def plot_mask(real, imag, mask, **kwargs):
+    def plot_mask(
+        real: NDArray[Any],
+        imag: NDArray[Any],
+        mask: NDArray[Any],
+        **kwargs: Any,
+    ) -> None:
+        """Plot masked points."""
         show = 'ax' not in kwargs
         ax = kwargs.pop('ax') if not show else pyplot.subplot()
         mask = mask.astype(bool)
@@ -439,15 +465,20 @@ def test_cursors_on_grid():
         ),  # 1D array with custom color
     ],
 )
-def test_pseudo_color(masks, mean, colors, expected):
+def test_pseudo_color(
+    masks: list[ArrayLike],
+    mean: ArrayLike,
+    colors: ArrayLike,
+    expected: ArrayLike,
+) -> None:
     """Test pseudo_color function."""
     assert_allclose(
         pseudo_color(*masks, intensity=mean, colors=colors),
-        expected,
+        numpy.asarray(expected),
     )
 
 
-def test_pseudo_color_overlay():
+def test_pseudo_color_overlay() -> None:
     """Test pseudo_color function with intensity."""
     assert_allclose(
         pseudo_color(True, intensity=1.0), [1, 1, 1]  # noqa: FBT003
@@ -481,7 +512,7 @@ def test_pseudo_color_overlay():
     )
 
 
-def test_pseudo_color_errors():
+def test_pseudo_color_errors() -> None:
     """Test errors for pseudo_color function."""
     # no masks
     with pytest.raises(TypeError):
@@ -503,7 +534,3 @@ def test_pseudo_color_errors():
         pseudo_color(
             [True], [True], [True], colors=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
         )
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"
