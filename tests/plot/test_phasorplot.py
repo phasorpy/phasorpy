@@ -234,6 +234,7 @@ class TestPhasorPlot:
         )
 
         def p(x: float, y: float) -> tuple[PhasorPlot, float, float]:
+            """Return plot and coordinates."""
             if polar:
                 return plot, math.atan2(y, x), math.hypot(x, y)
             return plot, x, y

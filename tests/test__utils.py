@@ -174,6 +174,8 @@ def test_parse_signal_axis() -> None:
     """Test parse_signal_axis function."""
 
     class DataArray(bytes):
+        """Mock class for testing parse_signal_axis."""
+
         dims = ('T', 'C', 'H', 'Y', 'X')
 
     assert parse_signal_axis(DataArray()) == (2, 'H')

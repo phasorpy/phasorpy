@@ -331,8 +331,9 @@ ND2 = "ND2"
 OIF = "OIF"
 
 [tool.mypy]
-packages = ["phasorpy"]
+packages = ["phasorpy", "tests"]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
+explicit_package_bases = true
 plugins = []
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 strict = true

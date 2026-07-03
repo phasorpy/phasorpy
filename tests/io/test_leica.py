@@ -4,11 +4,11 @@ import math
 
 import numpy
 import pytest
-from _conftest import SKIP_FETCH, SKIP_PRIVATE, private_file
 from numpy.testing import assert_allclose, assert_array_equal
 
 from phasorpy.datasets import fetch
 from phasorpy.io import lifetime_from_lif, phasor_from_lif, signal_from_lif
+from tests.io._conftest import SKIP_FETCH, SKIP_PRIVATE, private_file
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')

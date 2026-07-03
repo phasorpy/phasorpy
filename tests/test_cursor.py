@@ -324,6 +324,7 @@ def test_cursors_on_grid() -> None:
         mask: NDArray[Any],
         **kwargs: Any,
     ) -> None:
+        """Plot masked points."""
         show = 'ax' not in kwargs
         ax = kwargs.pop('ax') if not show else pyplot.subplot()
         mask = mask.astype(bool)

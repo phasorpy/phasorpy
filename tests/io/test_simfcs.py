@@ -7,7 +7,6 @@ from tempfile import TemporaryDirectory
 import lfdfiles
 import numpy
 import pytest
-from _conftest import SKIP_FETCH, SKIP_PRIVATE, TempFileName, private_file
 from numpy.testing import assert_allclose, assert_almost_equal
 
 from phasorpy.datasets import fetch
@@ -19,6 +18,12 @@ from phasorpy.io import (
     signal_from_bhz,
     signal_from_fbd,
     signal_from_z64,
+)
+from tests.io._conftest import (
+    SKIP_FETCH,
+    SKIP_PRIVATE,
+    TempFileName,
+    private_file,
 )
 
 rng = numpy.random.default_rng(42)

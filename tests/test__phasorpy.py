@@ -348,6 +348,7 @@ def test_geometric_ufunc_on_grid() -> None:
         mask: NDArray[Any],
         **kwargs: Any,
     ) -> None:
+        """Plot masked points."""
         show = 'ax' not in kwargs
         ax = kwargs.pop('ax') if not show else pyplot.subplot()
         mask = mask.astype(bool)
@@ -364,6 +365,7 @@ def test_geometric_ufunc_on_grid() -> None:
             pyplot.show()
 
     def plot_points(real: ArrayLike, imag: ArrayLike, **kwargs: Any) -> None:
+        """Plot points."""
         show = 'ax' not in kwargs
         ax = kwargs.pop('ax') if not show else pyplot.subplot()
         ax.set(
@@ -379,6 +381,7 @@ def test_geometric_ufunc_on_grid() -> None:
             pyplot.show()
 
     def plot_image(values: NDArray[Any], **kwargs: Any) -> None:
+        """Plot image."""
         show = 'ax' not in kwargs
         ax = kwargs.pop('ax') if not show else pyplot.subplot()
         ax.set(xticks=[], yticks=[], **kwargs)

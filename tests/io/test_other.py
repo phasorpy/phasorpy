@@ -5,7 +5,6 @@ import numpy
 import ptufile
 import pytest
 import tifffile
-from _conftest import SKIP_FETCH, SKIP_PRIVATE, private_file
 from numpy.testing import assert_almost_equal, assert_array_equal
 
 from phasorpy.datasets import fetch
@@ -21,6 +20,7 @@ from phasorpy.io import (
     signal_from_sdt,
     signal_from_tdflim,
 )
+from tests.io._conftest import SKIP_FETCH, SKIP_PRIVATE, private_file
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')

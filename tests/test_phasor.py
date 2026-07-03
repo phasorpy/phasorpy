@@ -1137,6 +1137,7 @@ def test_phasor_to_principal_plane() -> None:
     def distribution(
         values: list[float], stddev: float = 0.05, samples: int = 1000
     ) -> numpy.ndarray:
+        """Return distribution of values with Gaussian noise."""
         return numpy.ascontiguousarray(
             numpy.vstack(
                 [rng.normal(value, stddev, samples) for value in values]
