@@ -43,6 +43,20 @@ _MCS_H5_AXES = {
     ),
 }
 _GENERIC_H5_AXES = ('R', 'Z', 'Y', 'X', 'H', 'C')
+_REPETITION_AXES = {'repetition', 'rep', 'r'}
+_Z_AXES = {'z'}
+_Y_AXES = {'y'}
+_X_AXES = {'x'}
+_TIME_AXES = {'time_bin', 'time', 'histogram', 'histogram_bin', 'h'}
+_CHANNEL_AXES = {
+    'channel',
+    'detector_channel',
+    'spad_channel',
+    'aux_channel',
+    'c',
+}
+_CIRCULAR_REPETITION_AXES = {'circular_repetition', 'circular_rep'}
+_CIRCULAR_POINT_AXES = {'circular_point'}
 
 
 def _normalize_h5_value(value: Any) -> Any:
@@ -130,17 +144,181 @@ def _first_existing_dataset(h5: Any, *paths: str) -> str:
     return str(paths[0]).strip('/')
 
 
-def _mcs_default_data_dataset(h5: Any, requested: str) -> str:
+def _mcs_default_data_dataset(h5: Any, requested: str | None) -> str:
     """Return default BrightEyes data dataset unless caller selected one."""
-    requested = str(requested).strip('/')
+    if requested is not None:
+        requested = str(requested).strip('/')
+        if requested != _GENERIC_DATASET:
+            return requested
+    else:
+        requested = _DATASET
     if requested not in {_DATASET, _GENERIC_DATASET}:
         return requested
+    if 'output' in h5:
+        output_default = _normalize_h5_value(
+            h5['output'].attrs.get('default', '')
+        )
+        if _h5_path_exists(h5, output_default):
+            return str(output_default).strip('/')
+        default_run = _normalize_h5_value(
+            h5['output'].attrs.get('default_run', '')
+        )
+        if isinstance(default_run, str):
+            path = f'{default_run.strip("/")}/products/spad'
+            if _h5_path_exists(h5, path):
+                return path
     default = _normalize_h5_value(h5.attrs.get('default', ''))
     if _h5_path_exists(h5, default):
         return str(default).strip('/')
     if _h5_path_exists(h5, _DATASET):
         return _DATASET
     return requested
+
+
+def _mcs_default_output_dataset(
+    h5: Any,
+    requested: str,
+    attr_name: str,
+) -> str:
+    """Return default BrightEyes output dataset unless caller selected one."""
+    requested = str(requested).strip('/')
+    if requested not in {_REFERENCE_DATASET, _IRF_DATASET}:
+        return requested
+    if 'output' not in h5:
+        return requested
+    default = _normalize_h5_value(h5['output'].attrs.get(attr_name, ''))
+    if _h5_path_exists(h5, default):
+        return str(default).strip('/')
+    if isinstance(default, str) and '/' not in default.strip('/'):
+        path = f'output/{default}/products/trace'
+        if _h5_path_exists(h5, path):
+            return path
+    return requested
+
+
+def _axis_order(
+    data: Any,
+    fallback: Sequence[str] | None = None,
+) -> tuple[str, ...]:
+    """Return axis names from dataset metadata or fallback."""
+    attrs = _read_h5_attrs(data)
+    axis_order = attrs.get('axis_order') or attrs.get('axes')
+    if isinstance(axis_order, str):
+        axes = tuple(axis.strip() for axis in axis_order.split(','))
+        if len(axes) == data.ndim and all(axes):
+            return axes
+
+    axes = []
+    for index in range(data.ndim):
+        axis = attrs.get(f'axis_{index}')
+        if not isinstance(axis, str) or not axis:
+            axes = []
+            break
+        axes.append(axis)
+    if len(axes) == data.ndim:
+        return tuple(axes)
+
+    if fallback is not None and len(fallback) == data.ndim:
+        return tuple(fallback)
+    return ()
+
+
+def _axis_index(axes: Sequence[str], names: set[str]) -> int | None:
+    """Return index of first axis with normalized name in names."""
+    for index, axis in enumerate(axes):
+        if str(axis).strip().lower() in names:
+            return index
+    return None
+
+
+def _required_axis_index(
+    axes: Sequence[str],
+    names: set[str],
+    description: str,
+) -> int:
+    """Return required axis index or raise ValueError."""
+    index = _axis_index(axes, names)
+    if index is None:
+        msg = f'HDF5 dataset axes {tuple(axes)!r} do not contain {description}'
+        raise ValueError(msg)
+    return index
+
+
+def _select_mcs_dataset(
+    data: Any,
+    axes: Sequence[str],
+    *,
+    repetition: int,
+    z: int,
+    channel: int | Literal['sum'],
+) -> tuple[NDArray[Any], tuple[str, ...], int, dict[str, Any]]:
+    """Return selected MCS-H5 signal and selection metadata."""
+    y_axis = _required_axis_index(axes, _Y_AXES, 'y axis')
+    x_axis = _required_axis_index(axes, _X_AXES, 'x axis')
+    h_axis = _required_axis_index(axes, _TIME_AXES, 'time axis')
+    rep_axis = _axis_index(axes, _REPETITION_AXES)
+    z_axis = _axis_index(axes, _Z_AXES)
+    channel_axis = _axis_index(axes, _CHANNEL_AXES)
+    q_axis = _axis_index(axes, _CIRCULAR_REPETITION_AXES)
+    p_axis = _axis_index(axes, _CIRCULAR_POINT_AXES)
+
+    key: list[Any] = [slice(None)] * data.ndim
+    selection: dict[str, Any] = {}
+    output_axes = [y_axis, x_axis]
+    signal_dims = ['Y', 'X']
+
+    if rep_axis is not None:
+        repetition = _as_index(repetition, data.shape[rep_axis], 'repetition')
+        key[rep_axis] = repetition
+        selection['repetition'] = repetition
+    elif repetition not in (0, None):
+        msg = f'{repetition=} is out of bounds for data without repetition axis'
+        raise IndexError(msg)
+
+    if z_axis is not None:
+        z = _as_index(z, data.shape[z_axis], 'z')
+        key[z_axis] = z
+        selection['z'] = z
+    elif z not in (0, None):
+        msg = f'{z=} is out of bounds for data without z axis'
+        raise IndexError(msg)
+
+    if q_axis is not None:
+        output_axes.append(q_axis)
+        signal_dims.append('Q')
+    if p_axis is not None:
+        output_axes.append(p_axis)
+        signal_dims.append('P')
+
+    if channel_axis is None:
+        if channel not in (0, 'sum', None):
+            msg = f'{channel=} is out of bounds for unchannelled data'
+            raise IndexError(msg)
+        channel_selection: int | str | None = None
+    elif channel == 'sum':
+        channel_selection = 'sum'
+    else:
+        channel = _as_index(channel, data.shape[channel_axis], 'channel')
+        key[channel_axis] = channel
+        channel_selection = channel
+
+    selection['channel'] = channel_selection
+
+    output_axes.append(h_axis)
+    signal_dims.append('H')
+
+    array = numpy.asarray(data[tuple(key)])
+    kept_axes = [axis for axis in range(data.ndim) if isinstance(key[axis], slice)]
+    if channel_axis is not None and channel_selection == 'sum':
+        current_channel_axis = kept_axes.index(channel_axis)
+        array = array.sum(axis=current_channel_axis)
+        kept_axes.pop(current_channel_axis)
+
+    transpose_axes = [kept_axes.index(axis) for axis in output_axes]
+    if transpose_axes != list(range(array.ndim)):
+        array = numpy.transpose(array, transpose_axes)
+
+    return array, tuple(signal_dims), data.shape[h_axis], selection
 
 
 def _axis_coordinates(h5: Any, path: Any, size: int) -> NDArray[Any] | None:
@@ -345,7 +523,7 @@ def _signal_from_generic_h5(
     h5: Any,
     filename: str | PathLike[Any],
     *,
-    data_dataset: str,
+    data_dataset: str | None,
     reference_dataset: str,
     irf_dataset: str,
     reference: bool,
@@ -359,7 +537,7 @@ def _signal_from_generic_h5(
     """Return histogram image from the legacy generic HDF5 convention."""
     import h5py
 
-    if data_dataset == _DATASET:
+    if data_dataset in (None, _DATASET):
         data_dataset = _GENERIC_DATASET
     if reference_dataset == _REFERENCE_DATASET:
         reference_dataset = _GENERIC_REFERENCE_DATASET
@@ -504,7 +682,7 @@ def signal_from_h5(
     filename: str | PathLike[Any],
     /,
     *,
-    data_dataset: str = _DATASET,
+    data_dataset: str | None = None,
     reference_dataset: str = _REFERENCE_DATASET,
     irf_dataset: str = _IRF_DATASET,
     reference: bool = False,
@@ -524,9 +702,10 @@ def signal_from_h5(
     ----------
     filename : str or Path
         Name of HDF5 file to read.
-    data_dataset : str, optional, default: 'raw/spad'
-        HDF5 path of the histogram dataset. For non-BrightEyes files, the
-        default falls back to ``/data``.
+    data_dataset : str, optional
+        HDF5 path of the histogram dataset. By default, use the BrightEyes
+        output or file default. For non-BrightEyes files, the default falls
+        back to ``/data``.
     reference_dataset : str, optional
         HDF5 path of the common reference histogram dataset.
     irf_dataset : str, optional
@@ -594,6 +773,16 @@ def signal_from_h5(
             )
 
         data_dataset = _mcs_default_data_dataset(h5, data_dataset)
+        reference_dataset = _mcs_default_output_dataset(
+            h5,
+            reference_dataset,
+            'default_ref_trace_id',
+        )
+        irf_dataset = _mcs_default_output_dataset(
+            h5,
+            irf_dataset,
+            'default_irf_trace_id',
+        )
         reference_dataset = _first_existing_dataset(
             h5,
             reference_dataset,
@@ -723,52 +912,31 @@ def signal_from_h5(
             msg = f'HDF5 object {data_dataset!r} is not a dataset'
             raise ValueError(msg)
 
-        if data.ndim not in _MCS_H5_AXES:
+        shape = tuple(int(size) for size in data.shape)
+        data_ndim = data.ndim
+        h5_axes = _axis_order(data, _MCS_H5_AXES.get(data_ndim))
+        if not h5_axes:
             msg = (
                 f'HDF5 dataset {data.name!r} has shape {data.shape!r}; '
-                'expected (repetition, z, y, x, time[, channel])'
+                'expected axes containing y, x, and time_bin; '
+                'missing supported axis metadata'
             )
             raise ValueError(msg)
 
-        shape = tuple(int(size) for size in data.shape)
-        data_ndim = data.ndim
-        repetition = _as_index(repetition, shape[0], 'repetition')
-        z = _as_index(z, shape[1], 'z')
-
-        if data.ndim == 5:
-            if channel not in (0, 'sum'):
-                msg = f'{channel=} is out of bounds for unchannelled data'
-                raise IndexError(msg)
-            channel_selection: int | str | None = None
-            signal = numpy.asarray(data[repetition, z, :, :, :])
-            samples = shape[4]
-            signal_dims = ('Y', 'X', 'H')
-        elif data.ndim == 6:
-            if channel == 'sum':
-                channel_selection = 'sum'
-                signal = numpy.asarray(data[repetition, z, :, :, :, :]).sum(
-                    axis=-1
-                )
-            else:
-                channel = _as_index(channel, shape[5], 'channel')
-                channel_selection = channel
-                signal = numpy.asarray(data[repetition, z, :, :, :, channel])
-            samples = shape[4]
-            signal_dims = ('Y', 'X', 'H')
-        else:
-            if channel == 'sum':
-                channel_selection = 'sum'
-                signal = numpy.asarray(
-                    data[repetition, z, :, :, :, :, :, :]
-                ).sum(axis=-1)
-            else:
-                channel = _as_index(channel, shape[7], 'channel')
-                channel_selection = channel
-                signal = numpy.asarray(
-                    data[repetition, z, :, :, :, :, :, channel]
-                )
-            samples = shape[6]
-            signal_dims = ('Y', 'X', 'Q', 'P', 'H')
+        try:
+            signal, signal_dims, samples, selection = _select_mcs_dataset(
+                data,
+                h5_axes,
+                repetition=repetition,
+                z=z,
+                channel=channel,
+            )
+        except ValueError as exc:
+            msg = (
+                f'HDF5 dataset {data.name!r} has shape {data.shape!r}; '
+                'expected axes containing y, x, and time_bin'
+            )
+            raise ValueError(msg) from exc
         if dtype is not None:
             signal = signal.astype(dtype, copy=False)
 
@@ -796,11 +964,6 @@ def signal_from_h5(
             timing_attrs,
         )
         dataset_name = str(data.name)
-        h5_axes = (
-            tuple(str(data_attrs['axis_order']).split(','))
-            if data_attrs.get('axis_order') is not None
-            else _MCS_H5_AXES[data_ndim]
-        )
         reference_lifetime_ns = _reference_lifetime_ns(
             h5,
             data_attrs,
@@ -816,11 +979,7 @@ def signal_from_h5(
         'h5_dataset': dataset_name,
         'h5_shape': shape,
         'h5_axes': h5_axes,
-        'h5_selection': {
-            'repetition': repetition,
-            'z': z,
-            'channel': channel_selection,
-        },
+        'h5_selection': selection,
         'h5_attrs': {
             'file': file_attrs,
             'group': parent_attrs,
@@ -863,7 +1022,7 @@ def phasor_from_h5(
     filename: str | PathLike[Any],
     /,
     *,
-    data_dataset: str = _DATASET,
+    data_dataset: str | None = None,
     reference_dataset: str = _REFERENCE_DATASET,
     irf_dataset: str = _IRF_DATASET,
     reference: bool = False,
@@ -885,8 +1044,9 @@ def phasor_from_h5(
     ----------
     filename : str or Path
         Name of HDF5 file to read.
-    data_dataset : str, optional, default: 'raw/spad'
-        HDF5 path of the raw histogram dataset.
+    data_dataset : str, optional
+        HDF5 path of the histogram dataset. By default, use the BrightEyes
+        output or file default.
     reference_dataset : str, optional
         HDF5 path of the common reference histogram dataset.
     irf_dataset : str, optional

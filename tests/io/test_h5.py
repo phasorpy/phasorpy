@@ -177,6 +177,97 @@ def test_signal_from_h5_sum_channel(tmp_path):
     }
 
 
+def test_signal_from_h5_uses_current_output_default_product(tmp_path):
+    """Test reading the current-schema default output product."""
+    filename = tmp_path / 'histogram.h5'
+    data, _, _ = _write_h5(filename)
+    apr = data.sum(axis=-1)
+
+    with h5py.File(filename, 'a') as h5:
+        output = h5['output']
+        output.attrs['default'] = '/output/apr_001/products/apr_sum'
+        output.attrs['default_run'] = '/output/apr_001'
+        h5.create_dataset('output/apr_001/products/apr', data=data)
+        dataset = h5.create_dataset('output/apr_001/products/apr_sum', data=apr)
+        dataset.attrs['axis_order'] = 'repetition,z,y,x,time_bin'
+        dataset.attrs['metadata_path'] = '/raw/metadata'
+        dataset.attrs['time_axis_path'] = '/raw/axes/digital_time_ns'
+
+    signal = signal_from_h5(filename, repetition=1, z=2)
+
+    assert signal.shape == (4, 5, 8)
+    assert_array_equal(signal.values, apr[1, 2])
+    assert signal.attrs['h5_dataset'] == '/output/apr_001/products/apr_sum'
+
+
+def test_signal_from_h5_uses_3d_output_product_axes(tmp_path):
+    """Test reading output product with y,x,time_bin axes."""
+    filename = tmp_path / 'histogram.h5'
+    data, _, _ = _write_h5(filename)
+    s2ism = data[1, 2].sum(axis=-1)
+
+    with h5py.File(filename, 'a') as h5:
+        output = h5['output']
+        output.attrs['default'] = '/output/s2ism_001/products/s2ism'
+        output.attrs['default_run'] = '/output/s2ism_001'
+        dataset = h5.create_dataset(
+            'output/s2ism_001/products/s2ism',
+            data=s2ism,
+        )
+        dataset.attrs['axis_order'] = 'y,x,time_bin'
+        dataset.attrs['metadata_path'] = '/raw/metadata'
+        dataset.attrs['time_axis_path'] = '/raw/axes/digital_time_ns'
+        dataset.attrs['laser_frequency_mhz'] = 80.0
+
+    signal = signal_from_h5(filename)
+
+    assert signal.dims == ('Y', 'X', 'H')
+    assert signal.shape == (4, 5, 8)
+    assert_array_equal(signal.values, s2ism)
+    assert signal.attrs['h5_dataset'] == '/output/s2ism_001/products/s2ism'
+    assert signal.attrs['h5_axes'] == ('y', 'x', 'time_bin')
+    assert signal.attrs['h5_selection'] == {'channel': None}
+    assert signal.attrs['samples'] == 8
+    assert signal.attrs['frequency'] == 80.0
+
+    signal = signal_from_h5(
+        filename,
+        data_dataset='/raw/spad',
+        repetition=1,
+        z=2,
+        channel=1,
+    )
+
+    assert_array_equal(signal.values, data[1, 2, :, :, :, 1])
+    assert signal.attrs['h5_dataset'] == '/raw/spad'
+
+
+def test_signal_from_h5_uses_axis_number_metadata(tmp_path):
+    """Test reading output product with axis_N metadata."""
+    filename = tmp_path / 'histogram.h5'
+    data, _, _ = _write_h5(filename)
+    image = data[0, 0, :, :, :, 0]
+
+    with h5py.File(filename, 'a') as h5:
+        output = h5['output']
+        output.attrs['default'] = '/output/image_001/products/image'
+        dataset = h5.create_dataset(
+            'output/image_001/products/image',
+            data=image,
+        )
+        dataset.attrs['axis_0'] = 'y'
+        dataset.attrs['axis_1'] = 'x'
+        dataset.attrs['axis_2'] = 'time_bin'
+        dataset.attrs['metadata_path'] = '/raw/metadata'
+        dataset.attrs['time_axis_path'] = '/raw/axes/digital_time_ns'
+
+    signal = signal_from_h5(filename)
+
+    assert signal.dims == ('Y', 'X', 'H')
+    assert_array_equal(signal.values, image)
+    assert signal.attrs['h5_axes'] == ('y', 'x', 'time_bin')
+
+
 def test_signal_from_h5_reference(tmp_path):
     """Test reading an MCS-H5 reference histogram as a 1x1 image."""
     filename = tmp_path / 'histogram.h5'
@@ -224,6 +315,47 @@ def test_signal_from_h5_irf(tmp_path):
         'irf': True,
         'channel': None,
     }
+
+
+def test_signal_from_h5_current_output_trace_defaults(tmp_path):
+    """Test reading current-schema default REF and IRF output traces."""
+    filename = tmp_path / 'histogram.h5'
+    _, _, _ = _write_h5(filename)
+    reference = numpy.arange(8, dtype=numpy.float32) + 1000.0
+    irf = reference + 100.0
+
+    with h5py.File(filename, 'a') as h5:
+        output = h5['output']
+        output.attrs['default_ref_trace_id'] = (
+            '/output/sum_ref_002/products/trace'
+        )
+        output.attrs['default_irf_trace_id'] = (
+            '/output/sum_irf_002/products/trace'
+        )
+
+        ref = h5.create_dataset(
+            'output/sum_ref_002/products/trace',
+            data=reference,
+        )
+        ref.attrs['time_axis_path'] = '/calibration/axes/time_ns'
+        ref.attrs['output_type'] = 'trace'
+        ref.attrs['trace_kind'] = 'sum_reference_trace'
+
+        irf_dataset = h5.create_dataset(
+            'output/sum_irf_002/products/trace',
+            data=irf,
+        )
+        irf_dataset.attrs['time_axis_path'] = '/calibration/axes/time_ns'
+        irf_dataset.attrs['output_type'] = 'trace'
+        irf_dataset.attrs['trace_kind'] = 'sum_irf_trace'
+
+    signal = signal_from_h5(filename, reference=True)
+    assert_array_equal(signal.values, reference.reshape(1, 1, 8))
+    assert signal.attrs['h5_dataset'] == '/output/sum_ref_002/products/trace'
+
+    signal = signal_from_h5(filename, irf=True)
+    assert_array_equal(signal.values, irf.reshape(1, 1, 8))
+    assert signal.attrs['h5_dataset'] == '/output/sum_irf_002/products/trace'
 
 
 def test_signal_from_h5_generic_fallback(tmp_path):
