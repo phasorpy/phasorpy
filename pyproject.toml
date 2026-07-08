@@ -65,6 +65,7 @@ all = [
     "ptufile>=2024.9.14",
     "sdtfile>=2024.5.24",
     "pawflim>=1.0.4",
+    "brighteyes-mcs-file>=0.4.1",
     "imagecodecs==2026.6.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     # "mkl-fft>=2.1.1",
 ]
@@ -92,6 +93,7 @@ optional = [
     "ptufile>=2024.9.14",
     "sdtfile>=2024.5.24",
     "pawflim>=1.0.4",
+    "brighteyes-mcs-file>=0.4.1",
     "imagecodecs==2026.6.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
 minimal = [

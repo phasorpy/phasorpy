@@ -20,7 +20,7 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`signal_from_flimlabs_json` - FLIM LABS JSON
   - :py:func:`signal_from_imspector_tiff` - ImSpector FLIM TIFF
   - :py:func:`signal_from_flif` - FlimFast FLIF
-  - :py:func:`signal_from_h5` - BrightEyes MCS-H5 or HDF5 histogram
+  - :py:func:`signal_from_brighteyes_mcs` - BrightEyes-MCS HDF5
 
 - read signals from SimFCS file formats:
 
@@ -36,7 +36,6 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`phasor_from_ifli` - ISS IFLI
   - :py:func:`phasor_from_lif` - Leica LIF and XLEF
   - :py:func:`phasor_from_flimlabs_json` - FLIM LABS JSON
-  - :py:func:`phasor_from_h5` - BrightEyes MCS-H5 or HDF5 histogram
   - :py:func:`phasor_from_simfcs_referenced` - SimFCS REF and R64
   - :py:func:`lifetime_from_lif` - Leica LIF and XLEF
   - :py:func:`lifetime_from_tdflim` - ISS TDFLIM
@@ -66,8 +65,10 @@ specialized third-party file reader libraries:
 `ptufile <https://github.com/cgohlke/ptufile>`_,
 `liffile <https://github.com/cgohlke/liffile>`_,
 `sdtfile <https://github.com/cgohlke/sdtfile>`_,
-`fbdfile <https://github.com/cgohlke/fbdfile>`_, and
-`lfdfiles <https://github.com/cgohlke/lfdfiles>`_.
+`fbdfile <https://github.com/cgohlke/fbdfile>`_,
+`lfdfiles <https://github.com/cgohlke/lfdfiles>`_, and
+`brighteyes-mcs-file
+<https://github.com/VicidominiLab/BrightEyes-MCS-File>`_.
 For advanced or unsupported use cases, consider using these libraries directly.
 
 The signal-reading functions typically have the following signature::

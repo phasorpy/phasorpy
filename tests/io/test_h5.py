@@ -1,454 +1,137 @@
-"""Test BrightEyes MCS-H5 file reader functions."""
+"""Test BrightEyes-MCS HDF5 file reader wrapper."""
+
+from __future__ import annotations
+
+import builtins
 
 import numpy
 import pytest
-from numpy.testing import assert_allclose, assert_array_equal
+from numpy.testing import assert_array_equal
 
-from phasorpy.io import phasor_from_h5, signal_from_h5
-from phasorpy.phasor import phasor_from_signal
+from phasorpy.io import signal_from_brighteyes_mcs
 
-h5py = pytest.importorskip('h5py')
+h5py = pytest.importorskip("h5py")
 
 
 def _write_h5(filename):
     data = numpy.arange(2 * 3 * 4 * 5 * 8 * 2, dtype=numpy.uint16).reshape(
         2, 3, 4, 5, 8, 2
     )
-    reference = numpy.arange(8 * 2, dtype=numpy.float32).reshape(8, 2)
-    irf = reference + 100.0
+    output = data.sum(axis=-1)
+    reference = numpy.arange(8, dtype=numpy.float32)
 
-    with h5py.File(filename, 'w') as h5:
-        h5.attrs['data_format_version'] = '0.0.6'
-        h5.attrs['default'] = '/raw/spad'
+    with h5py.File(filename, "w") as h5:
+        h5.attrs["schema_name"] = "brighteyes_mcs_file"
+        h5.attrs["data_format_version"] = "0.0.6"
+        h5.attrs["default"] = "/raw/spad"
 
-        raw = h5.create_group('raw')
-        raw.attrs['metadata_path'] = '/raw/metadata'
-        raw.attrs['axes_path'] = '/raw/axes'
-        dataset = raw.create_dataset('spad', data=data)
-        dataset.attrs['axis_order'] = (
-            'repetition,z,y,x,time_bin,detector_channel'
+        raw = h5.create_group("raw")
+        raw.attrs["metadata_path"] = "/raw/metadata"
+        raw.attrs["axes_path"] = "/raw/axes"
+        raw_data = raw.create_dataset("spad", data=data)
+        raw_data.attrs["axis_order"] = (
+            "repetition,z,y,x,time_bin,detector_channel"
         )
-        dataset.attrs['metadata_path'] = '/raw/metadata'
-        dataset.attrs['time_axis_path'] = '/raw/axes/digital_time_ns'
-        dataset.attrs['calibration_result_path'] = (
-            '/calibration/results/spad'
-        )
+        raw_data.attrs["source_key"] = "data"
+        raw_data.attrs["time_axis_path"] = "/raw/axes/digital_time_ns"
+        raw_data.attrs["metadata_path"] = "/raw/metadata"
 
-        metadata = raw.create_group('metadata')
-        metadata.attrs['laser_frequency_mhz'] = 80.0
-        metadata.attrs['digital_time_bin_ns'] = 12.5 / 8
-        timing = metadata.create_group('acquisition').create_group('timing')
-        timing.attrs['laser_frequency_mhz'] = 80.0
-        timing.attrs['digital_time_bin_ns'] = 12.5 / 8
-
-        axes = raw.create_group('axes')
+        metadata = raw.create_group("metadata")
+        metadata.attrs["laser_frequency_mhz"] = 80.0
+        timing = metadata.create_group("acquisition").create_group("timing")
+        timing.attrs["digital_time_bin_ns"] = 12.5 / 8
+        axes = raw.create_group("axes")
         axes.create_dataset(
-            'digital_time_ns',
+            "digital_time_ns",
             data=numpy.linspace(0.0, 12.5, 8, endpoint=False),
         )
 
-        calibration = h5.create_group('calibration')
-        calibration.create_group('metadata')
-        calibration.create_group('axes').create_dataset(
-            'time_ns',
-            data=numpy.linspace(0.0, 12.5, 8, endpoint=False),
-        )
-        group = calibration.create_group('results').create_group('spad')
-        group.attrs['laser_frequency_mhz'] = 80.0
-        group.attrs['time_bin_ns'] = 12.5 / 8
-        group.attrs['time_axis_path'] = '/calibration/axes/time_ns'
-        fit = group.create_group('fit')
-        fit.create_dataset('tau_reference_ns', data=numpy.array([2.7, 2.7]))
-        aligned = group.create_group('aligned')
-        aligned.create_dataset('reference_trace', data=reference)
-        aligned.create_dataset('irf_trace', data=irf)
+        calibration = h5.create_group("calibration")
+        result = calibration.create_group("results").create_group("spad")
+        result.attrs["laser_frequency_mhz"] = 80.0
+        fit = result.create_group("fit")
+        fit.create_dataset("tau_reference_ns", data=numpy.array([2.7, 2.7]))
 
-        output = h5.create_group('output')
-        output.create_dataset(
-            'sum_reference_trace',
-            data=reference.sum(axis=1),
-        ).attrs['time_axis_path'] = '/calibration/axes/time_ns'
-        output.create_dataset(
-            'sum_irf_trace',
-            data=irf.sum(axis=1),
-        ).attrs['time_axis_path'] = '/calibration/axes/time_ns'
-
-    return data, reference.sum(axis=1), irf.sum(axis=1)
-
-
-def _write_generic_h5(filename):
-    data = numpy.arange(2 * 3 * 4 * 5 * 8 * 2, dtype=numpy.uint16).reshape(
-        2, 3, 4, 5, 8, 2
-    )
-    reference = numpy.arange(8 * 2, dtype=numpy.float32).reshape(8, 2)
-    irf = reference + 100.0
-
-    with h5py.File(filename, 'w') as h5:
-        h5.attrs['frequency'] = 80.0
-        dataset = h5.create_dataset('data', data=data)
-        dataset.attrs['time'] = numpy.linspace(0.0, 12.5, 8, endpoint=False)
-        group = h5.create_group('calibration/data')
-        ref = group.create_dataset('ref_common_delay_realigned', data=reference)
-        ref.attrs['time'] = numpy.linspace(0.0, 12.5, 8, endpoint=False)
-        irf_dataset = group.create_dataset(
-            'irf_common_delay_realigned', data=irf
-        )
-        irf_dataset.attrs['time'] = numpy.linspace(
-            0.0, 12.5, 8, endpoint=False
+        output_group = h5.create_group("output")
+        output_group.attrs["default"] = "/output/sum_001/products/spad"
+        output_group.attrs["default_run"] = "/output/sum_001"
+        output_group.attrs["default_ref_trace_id"] = (
+            "/output/sum_ref_001/products/trace"
         )
 
-    return data, reference, irf
+        run = output_group.create_group("sum_001")
+        run.create_group("metadata").attrs["laser_frequency_mhz"] = 80.0
+        run.create_group("axes").create_dataset(
+            "time_ns", data=numpy.linspace(0.0, 12.5, 8, endpoint=False)
+        )
+        product = run.create_group("products").create_dataset(
+            "spad", data=output
+        )
+        product.attrs["axis_order"] = "repetition,z,y,x,time_bin"
+        product.attrs["time_axis_path"] = "/output/sum_001/axes/time_ns"
+        product.attrs["metadata_path"] = "/output/sum_001/metadata"
+
+        ref_run = output_group.create_group("sum_ref_001")
+        ref_run.create_group("axes").create_dataset(
+            "time_ns", data=numpy.linspace(0.0, 12.5, 8, endpoint=False)
+        )
+        ref = ref_run.create_group("products").create_dataset(
+            "trace", data=reference
+        )
+        ref.attrs["output_type"] = "trace"
+        ref.attrs["trace_kind"] = "sum_reference_trace"
+        ref.attrs["time_axis_path"] = "/output/sum_ref_001/axes/time_ns"
+
+    return output, reference
 
 
-def test_signal_from_h5(tmp_path):
-    """Test reading a selected MCS-H5 histogram image."""
-    filename = tmp_path / 'histogram.h5'
-    data, _, _ = _write_h5(filename)
+def test_signal_from_brighteyes_mcs(tmp_path):
+    """Test wrapping a BrightEyes-MCS signal as xarray."""
+    pytest.importorskip("brighteyes_mcs_file")
+    pytest.importorskip("xarray")
+    filename = tmp_path / "histogram.h5"
+    data, _ = _write_h5(filename)
 
-    signal = signal_from_h5(filename, repetition=1, z=2, channel=1)
+    signal = signal_from_brighteyes_mcs(filename, time=1, depth=2)
 
-    assert signal.dims == ('Y', 'X', 'H')
+    assert signal.dims == ("Y", "X", "H")
     assert signal.shape == (4, 5, 8)
-    assert_array_equal(signal.values, data[1, 2, :, :, :, 1])
+    assert_array_equal(signal.values, data[1, 2])
     assert_array_equal(
-        signal.coords['H'].values,
+        signal.coords["H"].values,
         numpy.linspace(0.0, 12.5, 8, endpoint=False),
     )
-    assert signal.attrs['frequency'] == 80.0
-    assert signal.attrs['reference_lifetime_ns'] == 2.7
-    assert signal.attrs['samples'] == 8
-    assert signal.attrs['h5_dataset'] == '/raw/spad'
-    assert signal.attrs['h5_shape'] == data.shape
-    assert signal.attrs['h5_axes'] == (
-        'repetition',
-        'z',
-        'y',
-        'x',
-        'time_bin',
-        'detector_channel',
-    )
-    assert signal.attrs['h5_selection'] == {
-        'repetition': 1,
-        'z': 2,
-        'channel': 1,
-    }
+    assert signal.attrs["frequency"] == 80.0
+    assert signal.attrs["reference_lifetime_ns"] == 2.7
+    assert signal.attrs["h5_dataset"] == "/output/sum_001/products/spad"
 
 
-def test_signal_from_h5_negative_indices(tmp_path):
-    """Test reading MCS-H5 histogram image with negative indices."""
-    filename = tmp_path / 'histogram.h5'
-    data, _, _ = _write_h5(filename)
+def test_signal_from_brighteyes_mcs_reference(tmp_path):
+    """Test reading a default BrightEyes-MCS reference trace."""
+    pytest.importorskip("brighteyes_mcs_file")
+    pytest.importorskip("xarray")
+    filename = tmp_path / "histogram.h5"
+    _, reference = _write_h5(filename)
 
-    signal = signal_from_h5(filename, repetition=-1, z=-1, channel=-1)
+    signal = signal_from_brighteyes_mcs(filename, dataset="reference")
 
-    assert_array_equal(signal.values, data[-1, -1, :, :, :, -1])
-    assert signal.attrs['h5_selection'] == {
-        'repetition': 1,
-        'z': 2,
-        'channel': 1,
-    }
-
-
-def test_signal_from_h5_sum_channel(tmp_path):
-    """Test reading an MCS-H5 histogram image summed over channels."""
-    filename = tmp_path / 'histogram.h5'
-    data, reference, _ = _write_h5(filename)
-
-    signal = signal_from_h5(filename, repetition=1, z=2, channel='sum')
-
-    assert signal.dims == ('Y', 'X', 'H')
-    assert signal.shape == (4, 5, 8)
-    assert_array_equal(signal.values, data[1, 2, :, :, :, :].sum(axis=-1))
-    assert signal.attrs['h5_selection'] == {
-        'repetition': 1,
-        'z': 2,
-        'channel': 'sum',
-    }
-
-    signal = signal_from_h5(filename, reference=True, channel='sum')
-
-    assert signal.dims == ('Y', 'X', 'H')
+    assert signal.dims == ("Y", "X", "H")
     assert signal.shape == (1, 1, 8)
     assert_array_equal(signal.values, reference.reshape(1, 1, 8))
-    assert signal.attrs['h5_selection'] == {
-        'reference': True,
-        'irf': False,
-        'channel': None,
-    }
+    assert signal.attrs["reference"] is True
+    assert signal.attrs["irf"] is False
 
 
-def test_signal_from_h5_uses_current_output_default_product(tmp_path):
-    """Test reading the current-schema default output product."""
-    filename = tmp_path / 'histogram.h5'
-    data, _, _ = _write_h5(filename)
-    apr = data.sum(axis=-1)
+def test_signal_from_brighteyes_mcs_import_error(monkeypatch):
+    """Test optional dependency error message."""
+    real_import = builtins.__import__
 
-    with h5py.File(filename, 'a') as h5:
-        output = h5['output']
-        output.attrs['default'] = '/output/apr_001/products/apr_sum'
-        output.attrs['default_run'] = '/output/apr_001'
-        h5.create_dataset('output/apr_001/products/apr', data=data)
-        dataset = h5.create_dataset('output/apr_001/products/apr_sum', data=apr)
-        dataset.attrs['axis_order'] = 'repetition,z,y,x,time_bin'
-        dataset.attrs['metadata_path'] = '/raw/metadata'
-        dataset.attrs['time_axis_path'] = '/raw/axes/digital_time_ns'
+    def blocked_import(name, *args, **kwargs):
+        if name == "brighteyes_mcs_file":
+            raise ImportError("blocked")
+        return real_import(name, *args, **kwargs)
 
-    signal = signal_from_h5(filename, repetition=1, z=2)
+    monkeypatch.setattr(builtins, "__import__", blocked_import)
 
-    assert signal.shape == (4, 5, 8)
-    assert_array_equal(signal.values, apr[1, 2])
-    assert signal.attrs['h5_dataset'] == '/output/apr_001/products/apr_sum'
-
-
-def test_signal_from_h5_uses_3d_output_product_axes(tmp_path):
-    """Test reading output product with y,x,time_bin axes."""
-    filename = tmp_path / 'histogram.h5'
-    data, _, _ = _write_h5(filename)
-    s2ism = data[1, 2].sum(axis=-1)
-
-    with h5py.File(filename, 'a') as h5:
-        output = h5['output']
-        output.attrs['default'] = '/output/s2ism_001/products/s2ism'
-        output.attrs['default_run'] = '/output/s2ism_001'
-        dataset = h5.create_dataset(
-            'output/s2ism_001/products/s2ism',
-            data=s2ism,
-        )
-        dataset.attrs['axis_order'] = 'y,x,time_bin'
-        dataset.attrs['metadata_path'] = '/raw/metadata'
-        dataset.attrs['time_axis_path'] = '/raw/axes/digital_time_ns'
-        dataset.attrs['laser_frequency_mhz'] = 80.0
-
-    signal = signal_from_h5(filename)
-
-    assert signal.dims == ('Y', 'X', 'H')
-    assert signal.shape == (4, 5, 8)
-    assert_array_equal(signal.values, s2ism)
-    assert signal.attrs['h5_dataset'] == '/output/s2ism_001/products/s2ism'
-    assert signal.attrs['h5_axes'] == ('y', 'x', 'time_bin')
-    assert signal.attrs['h5_selection'] == {'channel': None}
-    assert signal.attrs['samples'] == 8
-    assert signal.attrs['frequency'] == 80.0
-
-    signal = signal_from_h5(
-        filename,
-        data_dataset='/raw/spad',
-        repetition=1,
-        z=2,
-        channel=1,
-    )
-
-    assert_array_equal(signal.values, data[1, 2, :, :, :, 1])
-    assert signal.attrs['h5_dataset'] == '/raw/spad'
-
-
-def test_signal_from_h5_uses_axis_number_metadata(tmp_path):
-    """Test reading output product with axis_N metadata."""
-    filename = tmp_path / 'histogram.h5'
-    data, _, _ = _write_h5(filename)
-    image = data[0, 0, :, :, :, 0]
-
-    with h5py.File(filename, 'a') as h5:
-        output = h5['output']
-        output.attrs['default'] = '/output/image_001/products/image'
-        dataset = h5.create_dataset(
-            'output/image_001/products/image',
-            data=image,
-        )
-        dataset.attrs['axis_0'] = 'y'
-        dataset.attrs['axis_1'] = 'x'
-        dataset.attrs['axis_2'] = 'time_bin'
-        dataset.attrs['metadata_path'] = '/raw/metadata'
-        dataset.attrs['time_axis_path'] = '/raw/axes/digital_time_ns'
-
-    signal = signal_from_h5(filename)
-
-    assert signal.dims == ('Y', 'X', 'H')
-    assert_array_equal(signal.values, image)
-    assert signal.attrs['h5_axes'] == ('y', 'x', 'time_bin')
-
-
-def test_signal_from_h5_reference(tmp_path):
-    """Test reading an MCS-H5 reference histogram as a 1x1 image."""
-    filename = tmp_path / 'histogram.h5'
-    _, reference, _ = _write_h5(filename)
-
-    signal = signal_from_h5(filename, reference=True)
-
-    assert signal.dims == ('Y', 'X', 'H')
-    assert signal.shape == (1, 1, 8)
-    assert_array_equal(signal.values, reference.reshape(1, 1, 8))
-    assert_array_equal(
-        signal.coords['H'].values,
-        numpy.linspace(0.0, 12.5, 8, endpoint=False),
-    )
-    assert signal.attrs['reference'] is True
-    assert signal.attrs['h5_dataset'] == (
-        '/output/sum_reference_trace'
-    )
-    assert signal.attrs['h5_shape'] == reference.shape
-    assert signal.attrs['h5_axes'] == ('H',)
-    assert signal.attrs['h5_selection'] == {
-        'reference': True,
-        'irf': False,
-        'channel': None,
-    }
-
-
-def test_signal_from_h5_irf(tmp_path):
-    """Test reading an MCS-H5 IRF histogram as a 1x1 image."""
-    filename = tmp_path / 'histogram.h5'
-    _, _, irf = _write_h5(filename)
-
-    signal = signal_from_h5(filename, irf=True)
-
-    assert signal.dims == ('Y', 'X', 'H')
-    assert signal.shape == (1, 1, 8)
-    assert_array_equal(signal.values, irf.reshape(1, 1, 8))
-    assert signal.attrs['reference'] is True
-    assert signal.attrs['irf'] is True
-    assert signal.attrs['h5_dataset'] == (
-        '/output/sum_irf_trace'
-    )
-    assert signal.attrs['h5_selection'] == {
-        'reference': True,
-        'irf': True,
-        'channel': None,
-    }
-
-
-def test_signal_from_h5_current_output_trace_defaults(tmp_path):
-    """Test reading current-schema default REF and IRF output traces."""
-    filename = tmp_path / 'histogram.h5'
-    _, _, _ = _write_h5(filename)
-    reference = numpy.arange(8, dtype=numpy.float32) + 1000.0
-    irf = reference + 100.0
-
-    with h5py.File(filename, 'a') as h5:
-        output = h5['output']
-        output.attrs['default_ref_trace_id'] = (
-            '/output/sum_ref_002/products/trace'
-        )
-        output.attrs['default_irf_trace_id'] = (
-            '/output/sum_irf_002/products/trace'
-        )
-
-        ref = h5.create_dataset(
-            'output/sum_ref_002/products/trace',
-            data=reference,
-        )
-        ref.attrs['time_axis_path'] = '/calibration/axes/time_ns'
-        ref.attrs['output_type'] = 'trace'
-        ref.attrs['trace_kind'] = 'sum_reference_trace'
-
-        irf_dataset = h5.create_dataset(
-            'output/sum_irf_002/products/trace',
-            data=irf,
-        )
-        irf_dataset.attrs['time_axis_path'] = '/calibration/axes/time_ns'
-        irf_dataset.attrs['output_type'] = 'trace'
-        irf_dataset.attrs['trace_kind'] = 'sum_irf_trace'
-
-    signal = signal_from_h5(filename, reference=True)
-    assert_array_equal(signal.values, reference.reshape(1, 1, 8))
-    assert signal.attrs['h5_dataset'] == '/output/sum_ref_002/products/trace'
-
-    signal = signal_from_h5(filename, irf=True)
-    assert_array_equal(signal.values, irf.reshape(1, 1, 8))
-    assert signal.attrs['h5_dataset'] == '/output/sum_irf_002/products/trace'
-
-
-def test_signal_from_h5_generic_fallback(tmp_path):
-    """Test reading a non-BrightEyes generic HDF5 histogram file."""
-    filename = tmp_path / 'generic.h5'
-    data, reference, _ = _write_generic_h5(filename)
-
-    signal = signal_from_h5(filename, repetition=1, z=2, channel=1)
-
-    assert signal.dims == ('Y', 'X', 'H')
-    assert signal.shape == (4, 5, 8)
-    assert_array_equal(signal.values, data[1, 2, :, :, :, 1])
-    assert_array_equal(
-        signal.coords['H'].values,
-        numpy.linspace(0.0, 12.5, 8, endpoint=False),
-    )
-    assert signal.attrs['frequency'] == 80.0
-    assert signal.attrs['h5_dataset'] == '/data'
-    assert signal.attrs['h5_axes'] == ('R', 'Z', 'Y', 'X', 'H', 'C')
-    assert signal.attrs['h5_selection'] == {
-        'repetition': 1,
-        'z': 2,
-        'channel': 1,
-    }
-
-    signal = signal_from_h5(filename, reference=True, channel=1)
-
-    assert signal.shape == (1, 1, 8)
-    assert_array_equal(signal.values, reference[:, 1].reshape(1, 1, 8))
-    assert signal.attrs['h5_dataset'] == (
-        '/calibration/data/ref_common_delay_realigned'
-    )
-    assert signal.attrs['h5_selection'] == {
-        'reference': True,
-        'irf': False,
-        'channel': 1,
-    }
-
-
-def test_phasor_from_h5(tmp_path):
-    """Test calculating phasor coordinates from MCS-H5 histogram image."""
-    filename = tmp_path / 'histogram.h5'
-    data, _, _ = _write_h5(filename)
-    selected = data[1, 2, :, :, :, 1]
-
-    mean, real, imag, attrs = phasor_from_h5(
-        filename,
-        repetition=1,
-        z=2,
-        channel=1,
-        harmonic=[1, 2],
-    )
-    mean_expected, real_expected, imag_expected = phasor_from_signal(
-        selected,
-        axis=-1,
-        harmonic=[1, 2],
-    )
-
-    assert_allclose(mean, mean_expected)
-    assert_allclose(real, real_expected)
-    assert_allclose(imag, imag_expected)
-    assert attrs['dims'] == ('Y', 'X')
-    assert attrs['signal_dims'] == ('Y', 'X', 'H')
-    assert attrs['harmonic'] == [1, 2]
-    assert attrs['h5_selection'] == {
-        'repetition': 1,
-        'z': 2,
-        'channel': 1,
-    }
-
-
-def test_signal_from_h5_errors(tmp_path):
-    """Test invalid MCS-H5 histogram image errors."""
-    filename = tmp_path / 'invalid.h5'
-
-    with h5py.File(filename, 'w') as h5:
-        h5.create_group('raw').create_dataset(
-            'spad', data=numpy.zeros((2, 3, 4))
-        )
-
-    with pytest.raises(ValueError, match='expected'):
-        signal_from_h5(filename)
-
-    with h5py.File(filename, 'w') as h5:
-        h5.create_group('raw').create_dataset(
-            'spad', data=numpy.zeros((1, 1, 2, 2, 8, 1))
-        )
-
-    with pytest.raises(IndexError, match='repetition'):
-        signal_from_h5(filename, repetition=1)
-
-    with pytest.raises(IndexError, match='z'):
-        signal_from_h5(filename, z=1)
-
-    with pytest.raises(IndexError, match='channel'):
-        signal_from_h5(filename, channel=1)
+    with pytest.raises(ImportError, match="brighteyes-mcs-file"):
+        signal_from_brighteyes_mcs("missing.h5")
