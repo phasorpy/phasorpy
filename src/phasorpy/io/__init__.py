@@ -67,8 +67,8 @@ specialized third-party file reader libraries:
 `sdtfile <https://github.com/cgohlke/sdtfile>`_,
 `fbdfile <https://github.com/cgohlke/fbdfile>`_,
 `lfdfiles <https://github.com/cgohlke/lfdfiles>`_, and
-`brighteyes-mcs-file
-<https://github.com/VicidominiLab/BrightEyes-MCS-File>`_.
+`brighteyes-mcs-reader
+<https://github.com/VicidominiLab/BrightEyes-MCS-Reader>`_.
 For advanced or unsupported use cases, consider using these libraries directly.
 
 The signal-reading functions typically have the following signature::

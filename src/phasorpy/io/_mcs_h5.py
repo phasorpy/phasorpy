@@ -47,15 +47,15 @@ def signal_from_brighteyes_mcs(
     Raises
     ------
     ImportError
-        If the ``brighteyes-mcs-file`` package is not installed.
+        If the ``brighteyes-mcs-reader`` package is not installed.
     ValueError
         If the file is not a supported BrightEyes-MCS HDF5 file.
 
     Notes
     -----
     The implementation is based on the
-    `brighteyes-mcs-file
-    <https://github.com/VicidominiLab/BrightEyes-MCS-File/>`__ library.
+    `brighteyes-mcs-reader
+    <https://github.com/VicidominiLab/BrightEyes-MCS-Reader/>`__ library.
 
     Examples
     --------
@@ -65,10 +65,10 @@ def signal_from_brighteyes_mcs(
 
     """
     try:
-        from brighteyes_mcs_file import read_signal
+        from brighteyes_mcs_reader import read_signal
     except ImportError as exc:
         msg = (
-            "the brighteyes-mcs-file package is required to read "
+            "the brighteyes-mcs-reader package is required to read "
             "BrightEyes-MCS HDF5 files"
         )
         raise ImportError(msg) from exc

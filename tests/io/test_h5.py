@@ -87,7 +87,7 @@ def _write_h5(filename):
 
 def test_signal_from_brighteyes_mcs(tmp_path):
     """Test wrapping a BrightEyes-MCS signal as xarray."""
-    pytest.importorskip("brighteyes_mcs_file")
+    pytest.importorskip("brighteyes_mcs_reader")
     pytest.importorskip("xarray")
     filename = tmp_path / "histogram.h5"
     data, _ = _write_h5(filename)
@@ -108,7 +108,7 @@ def test_signal_from_brighteyes_mcs(tmp_path):
 
 def test_signal_from_brighteyes_mcs_reference(tmp_path):
     """Test reading a default BrightEyes-MCS reference trace."""
-    pytest.importorskip("brighteyes_mcs_file")
+    pytest.importorskip("brighteyes_mcs_reader")
     pytest.importorskip("xarray")
     filename = tmp_path / "histogram.h5"
     _, reference = _write_h5(filename)
@@ -127,11 +127,11 @@ def test_signal_from_brighteyes_mcs_import_error(monkeypatch):
     real_import = builtins.__import__
 
     def blocked_import(name, *args, **kwargs):
-        if name == "brighteyes_mcs_file":
+        if name == "brighteyes_mcs_reader":
             raise ImportError("blocked")
         return real_import(name, *args, **kwargs)
 
     monkeypatch.setattr(builtins, "__import__", blocked_import)
 
-    with pytest.raises(ImportError, match="brighteyes-mcs-file"):
+    with pytest.raises(ImportError, match="brighteyes-mcs-reader"):
         signal_from_brighteyes_mcs("missing.h5")
