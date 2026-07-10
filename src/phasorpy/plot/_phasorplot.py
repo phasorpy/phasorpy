@@ -107,6 +107,9 @@ class PhasorPlot:
     _unitcircle_ticks: CircleTicks | None
     """Last CircleTicks instance created for unit circle."""
 
+    _unitcircle_tick_line: Line2D | None
+    """Last tick Line2D created by polar_grid."""
+
     _frequency: float
     """Laser pulse or modulation frequency in MHz."""
 
@@ -144,6 +147,7 @@ class PhasorPlot:
 
         self._semicircle_ticks = None
         self._unitcircle_ticks = None
+        self._unitcircle_tick_line = None
 
         self._full = bool(allquadrants)
         if self._full:
@@ -1251,7 +1255,10 @@ class PhasorPlot:
         real = numpy.cos(ticks)
         imag = numpy.sin(ticks)
         self._unitcircle_ticks = CircleTicks(labels=labels)
-        ax.plot(real, imag, path_effects=[self._unitcircle_ticks], **kwargs)
+        lines = ax.plot(
+            real, imag, path_effects=[self._unitcircle_ticks], **kwargs
+        )
+        self._unitcircle_tick_line = lines[0]
 
     def semicircle(
         self,

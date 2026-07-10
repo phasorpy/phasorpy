@@ -6,6 +6,7 @@ import tifffile
 from _conftest import SKIP_FETCH, TempFileName
 from numpy.testing import assert_almost_equal
 
+from phasorpy._typing import Any
 from phasorpy.datasets import fetch
 from phasorpy.io import (
     phasor_from_ometiff,
@@ -16,7 +17,7 @@ from phasorpy.io import (
 rng = numpy.random.default_rng(42)
 
 
-def test_phasor_ometiff_multiharmonic():
+def test_phasor_ometiff_multiharmonic() -> None:
     """Test storing multi-harmonic phasor coordinates as OME-TIFF."""
     description = 'PhasorPy\n  <&test> test'
     data = rng.random((3, 31, 35, 31))
@@ -83,7 +84,7 @@ def test_phasor_ometiff_multiharmonic():
             mean, real, imag, attrs = phasor_from_ometiff(filename, harmonic=4)
 
 
-def test_phasor_ometiff_tiled():
+def test_phasor_ometiff_tiled() -> None:
     """Test storing phasor coordinates as tiled OME-TIFF."""
     data = rng.random((1281, 1283))
     data[0, 0] = numpy.nan
@@ -133,7 +134,7 @@ def test_phasor_ometiff_tiled():
             mean, real, imag, attrs = phasor_from_ometiff(filename, harmonic=1)
 
 
-def test_phasor_ometiff_scalar():
+def test_phasor_ometiff_scalar() -> None:
     """Test scalar storing phasor coordinates as OME-TIFF."""
     data = rng.random((1,))
 
@@ -167,7 +168,7 @@ def test_phasor_ometiff_scalar():
             mean, real, imag, attrs = phasor_from_ometiff(filename, harmonic=2)
 
 
-def test_phasor_ometiff_scalar_multiharmonic():
+def test_phasor_ometiff_scalar_multiharmonic() -> None:
     """Test scalar storing phasor coordinates as OME-TIFF."""
     data = rng.random((3, 1))
 
@@ -216,7 +217,7 @@ def test_phasor_ometiff_scalar_multiharmonic():
         assert_almost_equal(imag, data[1].reshape((1, *mean.shape)))
 
 
-def test_phasor_to_ometiff_exceptions():
+def test_phasor_to_ometiff_exceptions() -> None:
     """Test phasor_to_ometiff function exceptions."""
     data = rng.random((3, 35, 31))
 
@@ -246,17 +247,19 @@ def test_phasor_to_ometiff_exceptions():
 
         # frequency must be scalar
         with pytest.raises(ValueError):
-            phasor_to_ometiff(filename, *data, frequency=[80, 90])
+            phasor_to_ometiff(filename, *data, frequency=[80, 90])  # type: ignore[arg-type]
 
         # len(dims) != mean.ndim
         with pytest.raises(ValueError):
             phasor_to_ometiff(filename, *data, dims='ZYX')
 
 
-def test_phasor_from_ometiff_exceptions(caplog):
+def test_phasor_from_ometiff_exceptions(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """Test phasor_from_ometiff function exceptions and warnings."""
     data = rng.random((3, 35, 31)).astype(numpy.float32)
-    kwargs = {'photometric': 'minisblack'}
+    kwargs: Any = {'photometric': 'minisblack'}
 
     with TempFileName('invalid.ome.tif') as filename:
 
@@ -308,7 +311,7 @@ def test_phasor_from_ometiff_exceptions(caplog):
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_from_ometiff():
+def test_signal_from_ometiff() -> None:
     """Test signal_from_ometiff."""
     filename = fetch('test_file.ome.tiff')
     signal = signal_from_ometiff(filename)
@@ -326,7 +329,3 @@ def test_signal_from_ometiff():
     # reject non-OME-TIFF file
     with pytest.raises(ValueError):
         signal_from_ometiff(fetch('paramecium.lsm'))
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

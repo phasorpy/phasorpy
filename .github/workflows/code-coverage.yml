@@ -18,9 +18,9 @@ jobs:
       matrix:
         python-version: ["3.12", "3.14"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Cache datasets
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/phasorpy
           key: phasorpy-data-${{ runner.os }}-${{ hashFiles('src/phasorpy/datasets.py') }}
@@ -38,7 +38,7 @@ jobs:
         run: |
           python -X dev -m pytest --cov=phasorpy --cov-report=xml tests
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           env_vars: OS,PYTHON
           fail_ci_if_error: false

@@ -4,6 +4,7 @@ import numpy
 import pytest
 from numpy.testing import assert_allclose
 
+from phasorpy._typing import ArrayLike
 from phasorpy.cluster import phasor_cluster_gmm
 
 rng = numpy.random.default_rng(42)
@@ -11,7 +12,8 @@ rng = numpy.random.default_rng(42)
 
 @pytest.mark.parametrize('clusters', [1, 2, 3])
 @pytest.mark.parametrize('sort', ['polar', 'phasor', 'area'])
-def test_phasor_cluster_gmm_basic(clusters, sort):
+def test_phasor_cluster_gmm_basic(clusters: int, sort: str) -> None:
+    """Test phasor_cluster_gmm function with basic cases."""
     real1, imag1 = rng.multivariate_normal(
         [0.2, 0.3], [[3e-3, 1e-3], [1e-3, 1e-3]], 2**15
     ).T
@@ -21,7 +23,7 @@ def test_phasor_cluster_gmm_basic(clusters, sort):
     real = numpy.concatenate([real1, real2])
     imag = numpy.concatenate([imag1, imag2])
     center_real, center_imag, radius_major, radius_minor, angle = (
-        phasor_cluster_gmm(real, imag, clusters=clusters, sort=sort)
+        phasor_cluster_gmm(real, imag, clusters=clusters, sort=sort)  # type: ignore[arg-type]
     )
     assert len(center_real) == clusters
     assert len(center_imag) == clusters
@@ -36,14 +38,15 @@ def test_phasor_cluster_gmm_basic(clusters, sort):
         assert_allclose(angle, [0.396, 2.369], atol=0.2)
 
 
-def test_phasor_cluster_gmm_invalid_shapes():
+def test_phasor_cluster_gmm_invalid_shapes() -> None:
+    """Test phasor_cluster_gmm function with invalid shapes."""
     # shape mismatch
     with pytest.raises(ValueError):
         phasor_cluster_gmm([1, 2, 3], [1, 2])
 
     # invalid sort method
     with pytest.raises(ValueError):
-        phasor_cluster_gmm([1, 2], [1, 2], clusters=2, sort='invalid')
+        phasor_cluster_gmm([1, 2], [1, 2], clusters=2, sort='invalid')  # type: ignore[arg-type]
 
     # clusters < 1
     with pytest.raises(ValueError):
@@ -57,7 +60,8 @@ def test_phasor_cluster_gmm_invalid_shapes():
         phasor_cluster_gmm([1, 2], [1, 2], clusters=3)
 
 
-def test_phasor_cluster_gmm_invalid_sigma():
+def test_phasor_cluster_gmm_invalid_sigma() -> None:
+    """Test phasor_cluster_gmm function with invalid sigma."""
     with pytest.raises(ValueError):
         phasor_cluster_gmm([1, 2], [1, 2], sigma=-1.0)
 
@@ -65,7 +69,8 @@ def test_phasor_cluster_gmm_invalid_sigma():
 @pytest.mark.parametrize(
     'covariance_type', ['full', 'tied', 'diag', 'spherical']
 )
-def test_phasor_cluster_gmm_covariance(covariance_type):
+def test_phasor_cluster_gmm_covariance(covariance_type: str) -> None:
+    """Test phasor_cluster_gmm function with different covariance types."""
     center_real, center_imag, radius_major, _radius_minor, _angles = (
         phasor_cluster_gmm(
             [0.1, 0.2, 0.3],
@@ -88,7 +93,10 @@ def test_phasor_cluster_gmm_covariance(covariance_type):
         ([1.0, numpy.nan, 2.0], [1.0, 2.0, numpy.nan]),
     ],
 )
-def test_phasor_cluster_gmm_exceptions(real, imag):
+def test_phasor_cluster_gmm_exceptions(
+    real: ArrayLike, imag: ArrayLike
+) -> None:
+    """Test phasor_cluster_gmm function raises exceptions on invalid input."""
     with pytest.raises(ValueError):
         phasor_cluster_gmm(real, imag, clusters=2)
 
@@ -100,11 +108,10 @@ def test_phasor_cluster_gmm_exceptions(real, imag):
         ([1, 2, 3, 4], [1, 2, 3, 4]),
     ],
 )
-def test_phasor_cluster_gmm_column_stack(real, imag):
+def test_phasor_cluster_gmm_column_stack(
+    real: ArrayLike, imag: ArrayLike
+) -> None:
+    """Test phasor_cluster_gmm function with column stack input."""
     center_real, center_imag, *_ = phasor_cluster_gmm(real, imag, clusters=1)
     assert len(center_real) == 1
     assert len(center_imag) == 1
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type, unreachable, redundant-expr"

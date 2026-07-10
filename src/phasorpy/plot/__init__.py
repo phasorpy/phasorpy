@@ -15,6 +15,9 @@ from ._functions import *
 from ._lifetime_plots import *
 from ._phasorplot import *
 from ._phasorplot_fret import *
+from ._spectral_plots import *
+
+# TODO: move plot classes used in applications to a separate module?
 
 # The `init_module()` function dynamically populates the `__all__` list with
 # all public symbols imported from submodules or defined in this module.

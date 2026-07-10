@@ -39,12 +39,13 @@ from phasorpy._phasorpy import (
     _point_on_segment,
     _segment_direction_and_length,
 )
+from phasorpy._typing import Any, ArrayLike, NDArray
 
 LINE = 0.2, 0.4, 0.9, 0.3
 POINTS = [0.4, 0.86, 0.82], [0.38, 0.4, 0.4]
 
 
-def test_is_inside_circle():
+def test_is_inside_circle() -> None:
     """Test _is_inside_circle function."""
     circle = 0.8, 0.4, 0.05
     assert_array_equal(
@@ -53,7 +54,7 @@ def test_is_inside_circle():
     )
 
 
-def test_is_inside_ellipse():
+def test_is_inside_ellipse() -> None:
     """Test _is_inside_ellipse function."""
     # compare to circle
     circle = 0.8, 0.4, 0.05
@@ -80,7 +81,7 @@ def test_is_inside_ellipse():
     )
 
 
-def test_is_inside_range():
+def test_is_inside_range() -> None:
     """Test _is_inside_range function."""
     assert_array_equal(
         _is_inside_range(*POINTS, 0.3, 0.5, 0.35, 0.5).astype(bool),
@@ -88,7 +89,7 @@ def test_is_inside_range():
     )
 
 
-def test_is_inside_rectangle():
+def test_is_inside_rectangle() -> None:
     """Test _is_inside_rectangle function."""
     assert_array_equal(
         _is_inside_rectangle(*POINTS, 0.4, 0.38, 0.83, 0.4, 0.1).astype(bool),
@@ -96,7 +97,7 @@ def test_is_inside_rectangle():
     )
 
 
-def test_is_inside_polar_rectangle():
+def test_is_inside_polar_rectangle() -> None:
     """Test _is_inside_polar_rectangle function."""
     assert_array_equal(
         _is_inside_polar_rectangle(
@@ -106,7 +107,7 @@ def test_is_inside_polar_rectangle():
     )
 
 
-def test_is_inside_stadium():
+def test_is_inside_stadium() -> None:
     """Test _is_inside_stadium function."""
     stadium = 0.8, 0.4, 0.042, 0.2, 0.025
     assert_allclose(
@@ -128,7 +129,7 @@ def test_is_inside_stadium():
     assert _is_near_segment is _is_inside_stadium
 
 
-def test_is_inside_semicircle():
+def test_is_inside_semicircle() -> None:
     """Test _is_inside_semicircle function."""
     real = [0.0, 0.5, 1.0, 0.5, -0.01, 1.01, 0.5, -0.015, math.nan]
     imag = [0.0, 0.5, 0.0, 0.25, -0.01, -0.01, -1.0, -0.015, 0.0]
@@ -146,7 +147,7 @@ def test_is_inside_semicircle():
     )
 
 
-def test_is_near_semicircle():
+def test_is_near_semicircle() -> None:
     """Test _is_near_semicircle function."""
     real = [0.0, 0.5, 1.0, 0.5, -0.01, 1.01, 0.5, -0.015, math.nan]
     imag = [0.0, 0.5, 0.0, 0.25, -0.01, -0.01, -1.0, -0.015, 0.0]
@@ -164,7 +165,7 @@ def test_is_near_semicircle():
     )
 
 
-def test_is_near_line():
+def test_is_near_line() -> None:
     """Test _is_near_line function."""
     assert_array_equal(
         _is_near_line(*POINTS, 0.4, 0.38, 0.83, 0.4, 0.001).astype(bool),
@@ -172,7 +173,7 @@ def test_is_near_line():
     )
 
 
-def test_distance_from_point():
+def test_distance_from_point() -> None:
     """Test _distance_from_point function."""
     assert_allclose(
         _distance_from_point(*POINTS, 0.8, 0.4),
@@ -181,7 +182,7 @@ def test_distance_from_point():
     )
 
 
-def test_distance_from_line():
+def test_distance_from_line() -> None:
     """Test _distance_from_line function."""
     assert_allclose(
         _distance_from_line(*POINTS, 0.4, 0.38, 0.83, 0.4),
@@ -190,7 +191,7 @@ def test_distance_from_line():
     )
 
 
-def test_distance_from_segment():
+def test_distance_from_segment() -> None:
     """Test _distance_from_segment function."""
     assert_allclose(
         _distance_from_segment(*POINTS, 0.4, 0.38, 0.83, 0.4),
@@ -199,7 +200,7 @@ def test_distance_from_segment():
     )
 
 
-def test_distance_from_semicircle():
+def test_distance_from_semicircle() -> None:
     """Test _distance_from_semicircle function."""
     assert_allclose(
         _distance_from_semicircle(
@@ -211,7 +212,7 @@ def test_distance_from_semicircle():
     )
 
 
-def test_fraction_on_line():
+def test_fraction_on_line() -> None:
     """Test _fraction_on_line function."""
     assert_allclose(
         _fraction_on_line(*POINTS, 0.4, 0.38, 0.83, 0.4),
@@ -220,7 +221,7 @@ def test_fraction_on_line():
     )
 
 
-def test_fraction_on_segment():
+def test_fraction_on_segment() -> None:
     """Test _fraction_on_segment function."""
     assert_allclose(
         _fraction_on_segment(*POINTS, 0.4, 0.38, 0.83, 0.4),
@@ -229,7 +230,7 @@ def test_fraction_on_segment():
     )
 
 
-def test_point_on_line():
+def test_point_on_line() -> None:
     """Test _point_on_line function."""
     assert_allclose(
         _point_on_line([0.7, 0.5, 0.3], [0.3, 0.4, 0.3], *LINE),
@@ -247,7 +248,7 @@ def test_point_on_line():
     )
 
 
-def test_point_on_segment():
+def test_point_on_segment() -> None:
     """Test _point_on_segment function."""
     assert_allclose(
         _point_on_segment([0.7, 0.5, 0.3], [0.3, 0.4, 0.3], *LINE),
@@ -272,12 +273,14 @@ def test_point_on_segment():
         ((0.9, 0.3, 0.2, 0.4), [-0.98994949, 0.14142136, 0.70710678]),
     ],
 )
-def test_segment_direction_and_length(segment, expected):
+def test_segment_direction_and_length(
+    segment: tuple[float, ...], expected: list[float]
+) -> None:
     """Test _segment_direction_and_length function."""
     assert_allclose(_segment_direction_and_length(*segment), expected)
 
 
-def test_intersect_circle_circle():
+def test_intersect_circle_circle() -> None:
     """Test _intersect_circle_circle function."""
     assert_allclose(
         _intersect_circle_circle(
@@ -292,7 +295,7 @@ def test_intersect_circle_circle():
     )
 
 
-def test_intersect_circle_line():
+def test_intersect_circle_line() -> None:
     """Test _intersect_circle_line function."""
     assert_allclose(
         _intersect_circle_line(0.6, 0.4, 0.2, 0.0, 0.0, 0.6, 0.4),
@@ -305,7 +308,7 @@ def test_intersect_circle_line():
     )
 
 
-def test_intersect_line_line():
+def test_intersect_line_line() -> None:
     """Test _intersect_line_line function."""
     # two diagonal lines crossing at (0.5, 0.5)
     assert_allclose(
@@ -331,7 +334,7 @@ def test_intersect_line_line():
     )
 
 
-def test_geometric_ufunc_on_grid():
+def test_geometric_ufunc_on_grid() -> None:
     """Plot geometric ufuncs used on grid of points."""
     from math import pi
 
@@ -339,7 +342,13 @@ def test_geometric_ufunc_on_grid():
 
     show = False  # enable to see figure
 
-    def plot_mask(real, imag, mask, **kwargs):
+    def plot_mask(
+        real: NDArray[Any],
+        imag: NDArray[Any],
+        mask: NDArray[Any],
+        **kwargs: Any,
+    ) -> None:
+        """Plot masked points."""
         show = 'ax' not in kwargs
         ax = kwargs.pop('ax') if not show else pyplot.subplot()
         mask = mask.astype(bool)
@@ -355,7 +364,8 @@ def test_geometric_ufunc_on_grid():
         if show:
             pyplot.show()
 
-    def plot_points(real, imag, **kwargs):
+    def plot_points(real: ArrayLike, imag: ArrayLike, **kwargs: Any) -> None:
+        """Plot points."""
         show = 'ax' not in kwargs
         ax = kwargs.pop('ax') if not show else pyplot.subplot()
         ax.set(
@@ -370,7 +380,8 @@ def test_geometric_ufunc_on_grid():
         if show:
             pyplot.show()
 
-    def plot_image(values, **kwargs):
+    def plot_image(values: NDArray[Any], **kwargs: Any) -> None:
+        """Plot image."""
         show = 'ax' not in kwargs
         ax = kwargs.pop('ax') if not show else pyplot.subplot()
         ax.set(xticks=[], yticks=[], **kwargs)
@@ -454,7 +465,7 @@ def test_geometric_ufunc_on_grid():
     ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.6), (0.6, 0.1, 0.1), (0.1, nan, 0.1), (nan, 0.6, 0.6)],
 )
-def test_blend_normal(a, b, expected):
+def test_blend_normal(a: float, b: float, expected: float) -> None:
     """Test _blend_normal function."""
     assert_allclose(_blend_normal(a, b), expected)
 
@@ -463,7 +474,7 @@ def test_blend_normal(a, b, expected):
     ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.06), (0.6, 0.1, 0.06), (0.1, nan, 0.1), (nan, 0.6, nan)],
 )
-def test_blend_multiply(a, b, expected):
+def test_blend_multiply(a: float, b: float, expected: float) -> None:
     """Test _blend_multiply function."""
     assert_allclose(_blend_multiply(a, b), expected)
 
@@ -472,7 +483,7 @@ def test_blend_multiply(a, b, expected):
     ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.64), (0.6, 0.1, 0.64), (0.1, nan, 0.1), (nan, 0.6, nan)],
 )
-def test_blend_screen(a, b, expected):
+def test_blend_screen(a: float, b: float, expected: float) -> None:
     """Test _blend_screen function."""
     assert_allclose(_blend_screen(a, b), expected)
 
@@ -481,7 +492,7 @@ def test_blend_screen(a, b, expected):
     ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.12), (0.6, 0.1, 0.28), (0.1, nan, 0.1), (nan, 0.6, nan)],
 )
-def test_blend_overlay(a, b, expected):
+def test_blend_overlay(a: float, b: float, expected: float) -> None:
     """Test _blend_overlay function."""
     assert_allclose(_blend_overlay(a, b), expected)
 
@@ -491,7 +502,7 @@ def test_blend_overlay(a, b, expected):
     ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.1), (0.6, 0.1, 0.1), (0.1, nan, 0.1), (nan, 0.6, nan)],
 )
-def test_blend_darken(a, b, expected):
+def test_blend_darken(a: float, b: float, expected: float) -> None:
     """Test _blend_darken function."""
     assert_allclose(_blend_darken(a, b), expected)
 
@@ -501,10 +512,6 @@ def test_blend_darken(a, b, expected):
     ('a', 'b', 'expected'),
     [(0.1, 0.6, 0.6), (0.6, 0.1, 0.6), (0.1, nan, 0.1), (nan, 0.6, nan)],
 )
-def test_blend_lighten(a, b, expected):
+def test_blend_lighten(a: float, b: float, expected: float) -> None:
     """Test _blend_lighten function."""
     assert_allclose(_blend_lighten(a, b), expected)
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"

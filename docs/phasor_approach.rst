@@ -148,6 +148,7 @@ luminescence time-resolved or spectral images:
 
    * - **Library**
      - :ref:`PhasorPy <phasorpy>`,
+       :ref:`PyFLI <pyfli>`,
        :ref:`tttrlib <tttrlib>`,
        :ref:`FLIMLib <flimlib>`:sup:`2`,
        :ref:`BrightEyes <brighteyes>`:sup:`2`,
@@ -324,6 +325,15 @@ Details:
   `FLIMKit <https://github.com/alex1075/FLIMKit>`__
   is an open-source Python toolkit focused on PTU-based FLIM data. It includes
   a phasor analysis workflow and is distributed under the MIT license.
+
+-
+  .. _pyfli:
+
+  `PyFLI <https://github.com/vkp217/pyfli-pkg>`__
+  is an open-source Python platform for Fluorescence Lifetime Imaging
+  (FLI) data simulation, processing and visualization, including phasor
+  analysis.
+  The library is distributed under the CC BY-NC-ND 4.0 license.
 
 -
   .. _flim_tools:

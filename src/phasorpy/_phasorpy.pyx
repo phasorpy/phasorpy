@@ -413,6 +413,7 @@ def _gaussian_signal(
     float_t[::1] signal,
     const double mean,
     const double stdev,
+    ssize_t folds = -1
 ):
     """Return normal distribution, wrapped around at borders.
 
@@ -420,20 +421,27 @@ def _gaussian_signal(
     ----------
     signal : memoryview of `float32` or `float64`
         Writable buffer where calculated signal samples are stored.
+        Must be initialized.
     mean : float
         Mean of normal distribution.
     stdev : float
         Standard deviation of normal distribution.
+    folds : int, optional, default=-1
+        Number of times to wrap around distribution at borders.
+        If negative (default), it is automatically calculated based on
+        `stdev` and the size of `signal` (number of samples).
 
     """
     cdef:
         ssize_t samples = signal.shape[0]
-        ssize_t folds = 1  # TODO: calculate from stddev and samples
         ssize_t i
         double t, c
 
     if samples < 1:
         return
+
+    if folds < 0:
+        folds = <ssize_t> (-floor(-6.0 * stdev / <double> samples))
 
     with nogil:
         if isnan(mean) or isnan(stdev) or stdev <= 0.0:
@@ -2870,3 +2878,73 @@ def _flimlabs_mean(
                 sum += <double> count
             mean_[i] = <float_t> (sum / 256.0)
             i += 1
+
+
+###############################################################################
+# Synthesize spectra
+
+
+@cython.ufunc
+cdef float_t _signal_from_dho(
+    float_t wavelength,
+    float_t origin,
+    float_t sigma,
+    float_t hr_factor,
+    float_t vib_frequency,
+    float_t scale,
+    float_t offset,
+    int absorption,
+) noexcept nogil:
+    """Return DHO model intensity for emission or absorption.
+
+    Using the area-normalized Displaced Harmonic Oscillator (DHO) model.
+
+    """
+    cdef:
+        double wavenumber, gaussian, nu_0, nu_n, poisson_factor
+        double intensity_nu = 0.0
+        double weight = 1.0  # w[0] = hr_factor^0 / 0! = 1
+        double sign = 1.0 if absorption else -1.0
+        ssize_t max_n = 6  # N=5 in math notation; error <1% for S<=1.65
+        ssize_t n
+
+    if (
+        wavelength <= 0.0
+        or origin <= 0.0
+        or sigma <= 0.0
+        or hr_factor < 0.0
+        or vib_frequency < 0.0
+    ):
+        return <float_t> NAN
+
+    # convert to wavenumber domain (cm^-1)
+    wavenumber = 1e7 / wavelength
+    nu_0 = 1e7 / origin  # 0->0 electronic origin
+
+    # Poisson PMF normalization factor exp(-S); sum of weights over all n is ~1
+    poisson_factor = exp(-hr_factor)
+
+    for n in range(max_n):
+        if n > 0:
+            weight = weight * hr_factor / n  # Iterative w[n] = hr_factor^n/n!
+
+        # In emission, vibronic sidebands go to lower energy
+        #   (red-shifted) -> subtract frequency
+        # In absorption, sidebands go to HIGHER energy
+        #   (blue-shifted) -> add frequency
+        nu_n = nu_0 + sign * n * vib_frequency
+
+        gaussian = exp(
+            -((wavenumber - nu_n) * (wavenumber - nu_n))
+            / (2.0 * sigma * sigma)
+        )
+
+        intensity_nu += weight * poisson_factor * gaussian
+
+    # normalize the Gaussian peak heights in wavenumber space,
+    # transform coordinates to wavelength space via the Jacobian: 1e7/lambda^2,
+    # and apply affine transformation
+    return <float_t> (
+        (intensity_nu / (sigma * sqrt(2.0 * M_PI)))
+        * (1e7 / (wavelength * wavelength))
+    ) * scale + offset

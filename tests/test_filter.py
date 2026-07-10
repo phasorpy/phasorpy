@@ -7,6 +7,7 @@ import numpy
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
+from phasorpy._typing import Any, ArrayLike, DTypeLike, Sequence
 from phasorpy.datasets import fetch
 from phasorpy.filter import (
     phasor_filter_gaussian,
@@ -40,7 +41,9 @@ rng = numpy.random.default_rng(42)
         (1.0, 1, 0),  # 3-D with skip_axis
     ],
 )
-def test_phasor_filter_gaussian(sigma, repeat, skip_axis):
+def test_phasor_filter_gaussian(
+    sigma: float, repeat: int, skip_axis: int | None
+) -> None:
     """Test phasor_filter_gaussian function."""
     if skip_axis is None:
         real = rng.uniform(0.1, 0.9, (5, 5))
@@ -68,7 +71,7 @@ def test_phasor_filter_gaussian(sigma, repeat, skip_axis):
     assert not numpy.any(numpy.isnan(imag_out))
 
 
-def test_phasor_filter_gaussian_nan():
+def test_phasor_filter_gaussian_nan() -> None:
     """Test that NaN values in phasor_filter_gaussian are preserved."""
     real = numpy.array(
         [[0.2, 0.3, 0.2], [0.4, numpy.nan, 0.4], [0.2, 0.3, 0.2]]
@@ -87,7 +90,7 @@ def test_phasor_filter_gaussian_nan():
     assert numpy.isfinite(imag_out[0, 0])
 
 
-def test_phasor_filter_gaussian_mean_nan():
+def test_phasor_filter_gaussian_mean_nan() -> None:
     """Test NaN handling in phasor_filter_gaussian."""
     # NaN in mean: propagates to real/imag outputs (nan_safe=True default)
     mean = numpy.array([[1.0, numpy.nan], [3.0, 4.0]])
@@ -117,7 +120,7 @@ def test_phasor_filter_gaussian_mean_nan():
     assert numpy.isfinite(mean_out3[0, 1])  # NaN not propagated to mean
 
 
-def test_phasor_filter_gaussian_scipy_equivalence():
+def test_phasor_filter_gaussian_scipy_equivalence() -> None:
     """phasor_filter_gaussian matches scipy.ndimage.convolve1d with NaNmask."""
     from scipy.ndimage import convolve1d
 
@@ -142,7 +145,7 @@ def test_phasor_filter_gaussian_scipy_equivalence():
         assert_allclose(out, expected, atol=1e-12)
 
 
-def test_phasor_filter_gaussian_intensity_weighted():
+def test_phasor_filter_gaussian_intensity_weighted() -> None:
     """Test that phasor_filter_gaussian applies intensity weighting."""
     from scipy.ndimage import convolve1d
     from scipy.signal.windows import gaussian as scipy_gaussian
@@ -169,7 +172,7 @@ def test_phasor_filter_gaussian_intensity_weighted():
         assert_allclose(out, expected, atol=1e-12)
 
 
-def test_phasor_filter_gaussian_float32():
+def test_phasor_filter_gaussian_float32() -> None:
     """Test phasor_filter_gaussian preserves float32 dtype."""
     real = rng.uniform(0.1, 0.9, (5, 5)).astype(numpy.float32)
     imag = rng.uniform(0.1, 0.9, (5, 5)).astype(numpy.float32)
@@ -180,7 +183,7 @@ def test_phasor_filter_gaussian_float32():
     assert imag_out.dtype == numpy.float32
 
 
-def test_phasor_filter_gaussian_noop():
+def test_phasor_filter_gaussian_noop() -> None:
     """Test phasor_filter_gaussian no-op modes."""
     real = rng.uniform(0.1, 0.9, (5, 5))
     imag = rng.uniform(0.1, 0.9, (5, 5))
@@ -193,7 +196,7 @@ def test_phasor_filter_gaussian_noop():
     assert_array_equal(imag_out, imag)
 
 
-def test_phasor_filter_gaussian_harmonics():
+def test_phasor_filter_gaussian_harmonics() -> None:
     """Test phasor_filter_gaussian with a harmonics axis (prepend_axis)."""
     # mean has shape (H, W), real/imag have shape (N, H, W)
     # axis 0 of real/imag is the harmonics axis and must not be filtered
@@ -218,7 +221,7 @@ def test_phasor_filter_gaussian_harmonics():
         assert_allclose(imag_out[h], imag_h)
 
 
-def test_phasor_filter_gaussian_unweighted_equivalence():
+def test_phasor_filter_gaussian_unweighted_equivalence() -> None:
     """Test weighted=False + phasor_normalize matches weighted=True workflow.
 
     Filtering unnormalized phasor coordinates (from phasor_from_signal with
@@ -250,7 +253,7 @@ def test_phasor_filter_gaussian_unweighted_equivalence():
     assert_allclose(imag1, imag2, atol=1e-10)
 
 
-def test_phasor_filter_gaussian_signal_prefilter_equivalence():
+def test_phasor_filter_gaussian_signal_prefilter_equivalence() -> None:
     """Test pre- and post-gaussian filtering produce identical results."""
     # Because the Gaussian filter is linear and commutes with the phasor
     # transform, filtering the signal before computing phasor coordinates is
@@ -275,7 +278,7 @@ def test_phasor_filter_gaussian_signal_prefilter_equivalence():
     assert_allclose(imag1, imag2, atol=1e-6)
 
 
-def test_phasor_filter_gaussian_errors():
+def test_phasor_filter_gaussian_errors() -> None:
     """Test phasor_filter_gaussian function errors."""
     # shape mismatch mean vs real
     with pytest.raises(ValueError):
@@ -584,8 +587,16 @@ def test_phasor_filter_gaussian_errors():
     ],
 )
 def test_phasor_filter_median(
-    real, imag, use_scipy, repeat, size, skip_axis, kwargs, expected
-):
+    *,
+    real: ArrayLike,
+    imag: ArrayLike,
+    use_scipy: bool,
+    repeat: int,
+    size: int,
+    skip_axis: bool | None,
+    kwargs: Any,
+    expected: tuple[ArrayLike, ArrayLike],
+) -> None:
     """Test phasor_filter_median function."""
     mean = numpy.full_like(real, 1)
     mean_out, real_out, imag_out = phasor_filter_median(
@@ -599,10 +610,10 @@ def test_phasor_filter_median(
         **kwargs,
     )
     assert_array_equal(mean_out, mean)
-    assert_allclose((real_out, imag_out), expected)
+    assert_allclose((real_out, imag_out), numpy.asarray(expected))
 
 
-def test_phasor_filter_median_mean_nan():
+def test_phasor_filter_median_mean_nan() -> None:
     """Test that NaN in mean is returned unchanged by phasor_filter_median."""
     mean = numpy.array([[1.0, numpy.nan], [3.0, 4.0]])
     real = numpy.zeros((2, 2))
@@ -611,7 +622,7 @@ def test_phasor_filter_median_mean_nan():
     assert_array_equal(mean_out, mean)
 
 
-def test_phasor_filter_median_harmonics():
+def test_phasor_filter_median_harmonics() -> None:
     """Test phasor_filter_median with a harmonics axis (prepend_axis)."""
     # mean has shape (H, W), real/imag have shape (N, H, W)
     # axis 0 of real/imag is the harmonics axis and must not be filtered
@@ -633,7 +644,7 @@ def test_phasor_filter_median_harmonics():
         assert_allclose(imag_out[h], imag_h)
 
 
-def test_phasor_filter_median_errors():
+def test_phasor_filter_median_errors() -> None:
     """Test phasor_filter_median function errors."""
     # shape mismatch
     with pytest.raises(ValueError):
@@ -650,7 +661,7 @@ def test_phasor_filter_median_errors():
 
 
 @pytest.mark.parametrize('dtype', [numpy.float32, numpy.float64])
-def test_signal_filter_median(dtype):
+def test_signal_filter_median(dtype: DTypeLike) -> None:
     """Test signal_filter_median function."""
     signal = numpy.array(
         [
@@ -680,7 +691,7 @@ def test_signal_filter_median(dtype):
     assert_allclose(filtered_seq, expected)
 
 
-def test_signal_filter_median_scipy_equivalence():
+def test_signal_filter_median_scipy_equivalence() -> None:
     """Test signal_filter_median against scipy with finite input."""
     from scipy.ndimage import median_filter
 
@@ -691,7 +702,7 @@ def test_signal_filter_median_scipy_equivalence():
     assert_allclose(filtered, expected)
 
 
-def test_signal_filter_median_nan():
+def test_signal_filter_median_nan() -> None:
     """Test signal_filter_median function NaN handling."""
     signal = numpy.array(
         [
@@ -705,7 +716,7 @@ def test_signal_filter_median_nan():
     assert not numpy.isnan(filtered[0, 1, 1])
 
 
-def test_signal_filter_median_noop():
+def test_signal_filter_median_noop() -> None:
     """Test signal_filter_median no-op modes."""
     signal = numpy.arange(8).reshape((2, 4))
 
@@ -713,7 +724,7 @@ def test_signal_filter_median_noop():
     assert_array_equal(signal_filter_median(signal, size=1), signal)
 
 
-def test_signal_filter_median_skip_axis_none():
+def test_signal_filter_median_skip_axis_none() -> None:
     """Test signal_filter_median with skip_axis=None filters all axes."""
     signal = numpy.array(
         [[1.0, 0.0, 1.0], [0.0, numpy.nan, 0.0], [1.0, 0.0, 1.0]]
@@ -724,7 +735,7 @@ def test_signal_filter_median_skip_axis_none():
     assert numpy.isnan(filtered[1, 1])
 
 
-def test_signal_filter_median_scipy():
+def test_signal_filter_median_scipy() -> None:
     """Test signal_filter_median with use_scipy=True."""
     from scipy.ndimage import median_filter
 
@@ -737,7 +748,7 @@ def test_signal_filter_median_scipy():
     assert_allclose(filtered, expected)
 
 
-def test_signal_filter_median_ndim():
+def test_signal_filter_median_ndim() -> None:
     """Test signal_filter_median numpy nD filter when len(axes) != 2."""
     from scipy.ndimage import median_filter
 
@@ -754,7 +765,7 @@ def test_signal_filter_median_ndim():
     assert_allclose(filtered, expected)
 
 
-def test_signal_filter_median_errors():
+def test_signal_filter_median_errors() -> None:
     """Test signal_filter_median function errors."""
     with pytest.raises(ValueError):
         signal_filter_median([[0]], repeat=-1)
@@ -767,7 +778,7 @@ def test_signal_filter_median_errors():
 
 
 @pytest.mark.parametrize('dtype', [numpy.float32, numpy.float64])
-def test_signal_filter_gaussian(dtype):
+def test_signal_filter_gaussian(dtype: DTypeLike) -> None:
     """Test signal_filter_gaussian function."""
     signal = numpy.array(
         [
@@ -783,7 +794,7 @@ def test_signal_filter_gaussian(dtype):
     assert_allclose(filtered[1], signal[1], atol=1e-6)
 
 
-def test_signal_filter_gaussian_nan():
+def test_signal_filter_gaussian_nan() -> None:
     """Test signal_filter_gaussian NaN handling."""
     signal = numpy.array(
         [
@@ -796,7 +807,7 @@ def test_signal_filter_gaussian_nan():
     assert not numpy.isnan(filtered[0, 1, 1])
 
 
-def test_signal_filter_gaussian_equivalence():
+def test_signal_filter_gaussian_equivalence() -> None:
     """Test signal_filter_gaussian matches normalized convolve1d (no NaNs)."""
     from scipy.ndimage import convolve1d
     from scipy.signal.windows import gaussian as scipy_gaussian
@@ -816,14 +827,14 @@ def test_signal_filter_gaussian_equivalence():
     assert_allclose(filtered, expected, atol=1e-12)
 
 
-def test_signal_filter_gaussian_noop():
+def test_signal_filter_gaussian_noop() -> None:
     """Test signal_filter_gaussian no-op modes."""
     signal = numpy.arange(8, dtype=numpy.float64).reshape((2, 4))
     assert_array_equal(signal_filter_gaussian(signal, repeat=0), signal)
     assert_array_equal(signal_filter_gaussian(signal, size=1), signal)
 
 
-def test_signal_filter_gaussian_errors():
+def test_signal_filter_gaussian_errors() -> None:
     """Test signal_filter_gaussian error handling."""
     with pytest.raises(ValueError):
         signal_filter_gaussian([[0]], repeat=-1)
@@ -1277,8 +1288,15 @@ def test_signal_filter_gaussian_errors():
     ],
 )
 def test_phasor_filter_pawflim(
-    mean, real, imag, sigma, levels, harmonic, skip_axis, expected
-):
+    mean: ArrayLike,
+    real: ArrayLike,
+    imag: ArrayLike,
+    sigma: float,
+    levels: int,
+    harmonic: Sequence[int] | None,
+    skip_axis: int,
+    expected: list[ArrayLike],
+) -> None:
     """Test phasor_filter_pawflim function."""
     mean, real, imag = phasor_filter_pawflim(
         mean,
@@ -1289,12 +1307,12 @@ def test_phasor_filter_pawflim(
         harmonic=harmonic,
         skip_axis=skip_axis,
     )
-    assert_allclose(mean, expected[0])
-    assert_allclose(real, expected[1])
-    assert_allclose(imag, expected[2])
+    assert_allclose(mean, numpy.asarray(expected[0]))
+    assert_allclose(real, numpy.asarray(expected[1]))
+    assert_allclose(imag, numpy.asarray(expected[2]))
 
 
-def test_phasor_filter_pawflim_mean_nan():
+def test_phasor_filter_pawflim_mean_nan() -> None:
     """Test that NaN in mean is returned unchanged by phasor_filter_pawflim."""
     mean = numpy.array([[1.0, numpy.nan], [3.0, 4.0]])
     real = numpy.ones((2, 2, 2)) * 0.5
@@ -1303,7 +1321,7 @@ def test_phasor_filter_pawflim_mean_nan():
     assert_array_equal(mean_out, mean)
 
 
-def test_phasor_filter_pawflim_errors():
+def test_phasor_filter_pawflim_errors() -> None:
     """Test phasor_filter_pawflim function errors."""
     # shape mismatch between real and imag
     with pytest.raises(ValueError):
@@ -1347,7 +1365,7 @@ def test_phasor_filter_pawflim_errors():
         phasor_filter_pawflim([1], [[1], [1]], [[1], [1]], harmonic=[1, 2, 3])
 
 
-def test_phasor_threshold():
+def test_phasor_threshold() -> None:
     """Test phasor_threshold function."""
     # no threshold
     assert_allclose(
@@ -1590,7 +1608,7 @@ def test_phasor_threshold():
         {'real_min': 0.5, 'phase_max': 0.7},
     ],
 )
-def test_phasor_threshold_dtype(dtype, kwargs):
+def test_phasor_threshold_dtype(dtype: DTypeLike, kwargs: Any) -> None:
     """Test phasor_threshold function preserves dtype."""
     mean, real, imag = phasor_threshold(
         numpy.asarray([0.5, 0.4], dtype=dtype),
@@ -1603,7 +1621,7 @@ def test_phasor_threshold_dtype(dtype, kwargs):
     assert imag.dtype == dtype
 
 
-def test_phasor_threshold_harmonic():
+def test_phasor_threshold_harmonic() -> None:
     """Test phasor_threshold function with multiple harmonics."""
     data = rng.random((3, 2, 8))
     data[0, 0, 0] = nan
@@ -1663,12 +1681,13 @@ def test_phasor_threshold_harmonic():
     assert_allclose(imag1, imag_)
 
 
-def test_phasor_threshold_returns_copies():
+def test_phasor_threshold_returns_copies() -> None:
     """Test phasor_threshold always returns new arrays, never views."""
     mean = numpy.ones((3, 3))
     real = numpy.full((3, 3), 0.5)
     imag = numpy.full((3, 3), 0.3)
 
+    kwargs: Any
     for kwargs in (
         {},  # NaN-propagation only
         {'mean_min': 0.5},  # mean threshold
@@ -1682,7 +1701,7 @@ def test_phasor_threshold_returns_copies():
 
 @pytest.mark.parametrize('dtype', [None, 'float32'])
 @pytest.mark.parametrize('spectral_vector', [None, True])
-def test_signal_filter_svd(dtype, spectral_vector):
+def test_signal_filter_svd(*, dtype: DTypeLike, spectral_vector: Any) -> None:
     """Test signal_filter_svd function."""
     # TODO: test synthetic data
 
@@ -1712,7 +1731,7 @@ def test_signal_filter_svd(dtype, spectral_vector):
 
 
 @pytest.mark.skipif(SKIP_FETCH, reason='fetch is disabled')
-def test_signal_filter_svd_nan():
+def test_signal_filter_svd_nan() -> None:
     """Test signal_filter_svd function NaN handling."""
     signal = signal_from_lsm(fetch('paramecium.lsm')).data[:, ::16, ::16]
     signal = signal.astype(numpy.float64)
@@ -1739,7 +1758,7 @@ def test_signal_filter_svd_nan():
     assert_allclose(mean, mean1, atol=1e-3)
 
 
-def test_signal_filter_svd_exceptions():
+def test_signal_filter_svd_exceptions() -> None:
     """Test signal_filter_svd function exceptions."""
     signal = rng.integers(0, 255, (16, 8, 16)).astype(numpy.float32)
     spectral_vector = rng.random((16, 16, 2))
@@ -1767,7 +1786,7 @@ def test_signal_filter_svd_exceptions():
 
 @pytest.mark.parametrize('dtype', [None, 'float32'])
 @pytest.mark.parametrize('n_components', [None, 8, 'mle'])
-def test_signal_filter_ncpca(dtype, n_components):
+def test_signal_filter_ncpca(*, dtype: DTypeLike, n_components: Any) -> None:
     """Test signal_filter_ncpca function."""
     # TODO: test synthetic data
 
@@ -1792,7 +1811,7 @@ def test_signal_filter_ncpca(dtype, n_components):
     assert_allclose(mean1, mean, atol=1e-3 if n_components is None else 0.1)
 
 
-def test_signal_filter_ncpca_exceptions():
+def test_signal_filter_ncpca_exceptions() -> None:
     """Test signal_filter_ncpca function exceptions."""
     signal = rng.integers(0, 255, (16, 8, 2)).astype(numpy.float32)
 
@@ -1809,7 +1828,3 @@ def test_signal_filter_ncpca_exceptions():
 
     with pytest.raises(ValueError):
         signal_filter_ncpca([], axis=0)
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type, unreachable"

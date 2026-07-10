@@ -8,7 +8,7 @@ from phasorpy.plot import LifetimePlots
 INTERACTIVE = False  # enable for interactive plotting
 
 
-def test_lifetime_plots():
+def test_lifetime_plots() -> None:
     """Test LifetimePlots."""
     plot = LifetimePlots(frequency=60.0, lifetime=4.2)
     if INTERACTIVE:
@@ -16,7 +16,7 @@ def test_lifetime_plots():
     pyplot.close()
 
 
-def test_lifetime_plots_one():
+def test_lifetime_plots_one() -> None:
     """Test LifetimePlots interactive with one component."""
     plot = LifetimePlots(
         frequency=100.0,
@@ -32,7 +32,7 @@ def test_lifetime_plots_one():
     pyplot.close()
 
 
-def test_lifetime_plots_two():
+def test_lifetime_plots_two() -> None:
     """Test LifetimePlots interactive with two components."""
     plot = LifetimePlots(
         frequency=100.0,
@@ -50,7 +50,7 @@ def test_lifetime_plots_two():
     pyplot.close()
 
 
-def test_lifetime_plots_three():
+def test_lifetime_plots_three() -> None:
     """Test LifetimePlots interactive with three components."""
     plot = LifetimePlots(
         frequency=60.0,
@@ -75,7 +75,7 @@ def test_lifetime_plots_three():
     pyplot.close()
 
 
-def test_lifetime_plots_four():
+def test_lifetime_plots_four() -> None:
     """Test LifetimePlots interactive with four components."""
     plot = LifetimePlots(
         frequency=None,
@@ -92,14 +92,10 @@ def test_lifetime_plots_four():
     pyplot.close()
 
 
-def test_lifetime_plots_exceptions():
+def test_lifetime_plots_exceptions() -> None:
     """Test LifetimePlots exceptions."""
     with pytest.raises(ValueError):
         LifetimePlots(frequency=60.0, lifetime=[1.0] * 7)
 
     with pytest.raises(ValueError):
         LifetimePlots(frequency=60.0, lifetime=4.2, fraction=[0.5, 0.5])
-
-
-# mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"
