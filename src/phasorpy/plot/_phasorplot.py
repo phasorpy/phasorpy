@@ -553,7 +553,7 @@ class PhasorPlot:
         center_re, center_im = numpy.average(
             numpy.vstack([real, imag]),
             axis=-1,
-            weights=fraction,  # type: ignore[arg-type]
+            weights=fraction,
         )
         for re, im in zip(real, imag, strict=True):
             self._ax.add_line(

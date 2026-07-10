@@ -145,7 +145,6 @@ __all__: list[str] = []
 from .._utils import init_module
 from ._flimlabs import *
 from ._leica import *
-from ._mcs_h5 import *
 from ._ometiff import *
 from ._other import *
 from ._simfcs import *
