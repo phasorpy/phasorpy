@@ -47,28 +47,41 @@ def signal_from_brighteyes_mcs(
     depth: int = 0,
     channel: int | Literal['sum'] = 0,
 ) -> DataArray:
-    """Return histogram image from BrightEyes-MCS HDF5 file.
+    """Return TCSPC histogram and metadata from BrightEyes-MCS HDF5 file.
+
+    Files written by BrightEyes-MCS software contain multidimensional images
+    and metadata from laser scanning microscopy measurements in an HDF5
+    container.
 
     Parameters
     ----------
     filename : str or Path
         Name of BrightEyes-MCS HDF5 file to read.
     dataset : str, optional
-        Dataset to read. By default, read the BrightEyes-MCS default image
-        dataset. The reserved aliases ``"reference"`` and ``"irf"`` read the
-        default calibration reference and IRF traces. Other strings are
-        interpreted as literal HDF5 dataset paths.
+        Dataset to read.
+        By default, read the BrightEyes-MCS default image dataset.
+        The reserved aliases ``"reference"`` and ``"irf"`` read the default
+        calibration reference and IRF traces. Other strings are interpreted
+        as literal HDF5 dataset paths.
     time : int, optional, default: 0
-        Index along the BrightEyes-MCS repetition/time axis.
+        Index along BrightEyes-MCS repetition/time axis.
     depth : int, optional, default: 0
-        Index along the BrightEyes-MCS z/depth axis.
+        Index along BrightEyes-MCS z/depth axis.
     channel : int or 'sum', optional, default: 0
-        Channel index to read. If ``"sum"``, integrate the channel axis.
+        Index of channel to return.
+        By default, return the first channel.
+        If ``"sum"``, integrate the channel axis.
 
     Returns
     -------
     xarray.DataArray
-        Histogram image with dimensions such as ``('Y', 'X', 'H')``.
+        TCSPC histogram with :ref:`axes codes <axes>` `'YXH'`,
+        type `float32`, `float64` or `uint16` (depending on dataset),
+        and selected metadata:
+
+        - ``coords['H']``: delay times of histogram bins in ns.
+        - ``attrs['frequency']``: repetition frequency in MHz.
+        - ``attrs['reference_lifetime_ns']``: reference lifetime in ns.
 
     Raises
     ------
@@ -86,8 +99,18 @@ def signal_from_brighteyes_mcs(
     Examples
     --------
     >>> signal = signal_from_brighteyes_mcs('measurement.h5')  # doctest: +SKIP
+    >>> signal.values  # doctest: +SKIP
+    array(...)
+    >>> signal.dtype  # doctest: +SKIP
+    dtype('float32')
+    >>> signal.shape  # doctest: +SKIP
+    (256, 256, 256)
     >>> signal.dims  # doctest: +SKIP
     ('Y', 'X', 'H')
+    >>> signal.coords['H'].data  # doctest: +SKIP
+    array([0, ..., ...])
+    >>> signal.attrs['frequency']  # doctest: +SKIP
+    80.0
 
     """
     try:

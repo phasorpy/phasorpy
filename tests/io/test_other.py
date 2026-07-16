@@ -30,7 +30,7 @@ from phasorpy.io import (
 
 def _write_brighteyes_mcs_h5(
     filename: str | Path,
-) -> tuple[NDArray[Any], NDArray[Any]]:
+) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
     import h5py
 
     data = numpy.arange(2 * 3 * 4 * 5 * 8 * 2, dtype=numpy.uint16).reshape(
@@ -38,6 +38,7 @@ def _write_brighteyes_mcs_h5(
     )
     output = data.sum(axis=-1)
     reference = numpy.arange(8, dtype=numpy.float32)
+    irf = numpy.arange(8, 0, -1, dtype=numpy.float32)
 
     with h5py.File(filename, 'w') as h5:
         h5.attrs['schema_name'] = 'brighteyes_mcs_file'
@@ -77,6 +78,9 @@ def _write_brighteyes_mcs_h5(
         output_group.attrs['default_ref_trace_id'] = (
             '/output/sum_ref_001/products/trace'
         )
+        output_group.attrs['default_irf_trace_id'] = (
+            '/output/sum_irf_001/products/trace'
+        )
 
         run = output_group.create_group('sum_001')
         run.create_group('metadata').attrs['laser_frequency_mhz'] = 80.0
@@ -101,13 +105,24 @@ def _write_brighteyes_mcs_h5(
         ref.attrs['trace_kind'] = 'sum_reference_trace'
         ref.attrs['time_axis_path'] = '/output/sum_ref_001/axes/time_ns'
 
-    return output, reference
+        irf_run = output_group.create_group('sum_irf_001')
+        irf_run.create_group('axes').create_dataset(
+            'time_ns', data=numpy.linspace(0.0, 12.5, 8, endpoint=False)
+        )
+        irf_ds = irf_run.create_group('products').create_dataset(
+            'trace', data=irf
+        )
+        irf_ds.attrs['output_type'] = 'trace'
+        irf_ds.attrs['trace_kind'] = 'sum_irf_trace'
+        irf_ds.attrs['time_axis_path'] = '/output/sum_irf_001/axes/time_ns'
+
+    return output, reference, irf
 
 
 def test_signal_from_brighteyes_mcs(tmp_path: Path) -> None:
     """Test wrapping a BrightEyes-MCS signal as xarray."""
     filename = tmp_path / 'histogram.h5'
-    data, _ = _write_brighteyes_mcs_h5(filename)
+    data, _, _ = _write_brighteyes_mcs_h5(filename)
 
     signal = signal_from_brighteyes_mcs(filename, time=1, depth=2)
 
@@ -126,7 +141,7 @@ def test_signal_from_brighteyes_mcs(tmp_path: Path) -> None:
 def test_signal_from_brighteyes_mcs_reference(tmp_path: Path) -> None:
     """Test reading a default BrightEyes-MCS reference trace."""
     filename = tmp_path / 'histogram.h5'
-    _, reference = _write_brighteyes_mcs_h5(filename)
+    _, reference, _ = _write_brighteyes_mcs_h5(filename)
 
     signal = signal_from_brighteyes_mcs(filename, dataset='reference')
 
@@ -135,6 +150,181 @@ def test_signal_from_brighteyes_mcs_reference(tmp_path: Path) -> None:
     assert_array_equal(signal.values, reference.reshape(1, 1, 8))
     assert signal.attrs['reference'] is True
     assert signal.attrs['irf'] is False
+
+
+def test_signal_from_brighteyes_mcs_irf(tmp_path: Path) -> None:
+    """Test read default BrightEyes-MCS IRF trace."""
+    filename = tmp_path / 'histogram.h5'
+    _, _, irf = _write_brighteyes_mcs_h5(filename)
+
+    signal = signal_from_brighteyes_mcs(filename, dataset='irf')
+
+    assert signal.dims == ('Y', 'X', 'H')
+    assert signal.shape == (1, 1, 8)
+    assert_array_equal(signal.values, irf.reshape(1, 1, 8))
+    assert signal.attrs['reference'] is True
+    assert signal.attrs['irf'] is True
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_signal_from_brighteyes_mcs_convallaria_apr() -> None:
+    """Test read BrightEyes-MCS APR file."""
+    filename = private_file('BrightEyes/Convallaria_APR.h5')
+
+    # default dataset
+    signal = signal_from_brighteyes_mcs(filename)
+    assert signal.dtype == numpy.float32
+    assert signal.shape == (801, 801, 91)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert_almost_equal(signal.values.sum(), 264104736.0, decimal=0)
+    assert_almost_equal(signal.coords['H'][[0, -1]], [0.0, 24.7253], decimal=4)
+    assert signal.attrs['frequency'] == 40.0
+    assert signal.attrs['reference_lifetime_ns'] == 2.5
+    assert signal.attrs['h5_dataset'] == '/output/apr_001/products/apr_sum'
+
+    # reference trace
+    signal = signal_from_brighteyes_mcs(filename, dataset='reference')
+    assert signal.shape == (1, 1, 91)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert signal.attrs['reference'] is True
+    assert signal.attrs['irf'] is False
+    assert_almost_equal(signal.values.sum(), 1.0, decimal=6)
+
+    # irf trace
+    signal = signal_from_brighteyes_mcs(filename, dataset='irf')
+    assert signal.shape == (1, 1, 91)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert signal.attrs['reference'] is True
+    assert signal.attrs['irf'] is True
+    assert_almost_equal(signal.values.sum(), 1.0, decimal=6)
+
+    # literal HDF5 dataset path
+    signal = signal_from_brighteyes_mcs(
+        filename, dataset='/output/apr_001/products/apr_sum'
+    )
+    assert signal.shape == (801, 801, 91)
+    assert signal.dtype == numpy.float32
+
+    # channel='sum' (no channel axis in processed output, equals default)
+    signal = signal_from_brighteyes_mcs(filename, channel='sum')
+    assert signal.shape == (801, 801, 91)
+    assert_almost_equal(signal.values.sum(), 264104736.0, decimal=0)
+
+    # raw spad dataset exposes all 25 detector channels
+    signal = signal_from_brighteyes_mcs(
+        filename, dataset='/raw/spad', channel=0
+    )
+    assert signal.shape == (801, 801, 91)
+    assert signal.dtype == numpy.uint16
+    assert signal.values.sum(dtype=numpy.uint64) == 8238938
+
+    signal = signal_from_brighteyes_mcs(
+        filename, dataset='/raw/spad', channel=1
+    )
+    assert signal.shape == (801, 801, 91)
+    assert signal.dtype == numpy.uint16
+    assert signal.values.sum(dtype=numpy.uint64) == 9450704
+
+    signal = signal_from_brighteyes_mcs(
+        filename, dataset='/raw/spad', channel=24
+    )
+    assert signal.shape == (801, 801, 91)
+    assert signal.dtype == numpy.uint16
+    assert signal.values.sum(dtype=numpy.uint64) == 8768652
+
+    with pytest.raises(IndexError):
+        signal_from_brighteyes_mcs(filename, dataset='/raw/spad', channel=25)
+
+    # time=1 and depth=1 are out of bounds (only one repetition/z slice)
+    with pytest.raises(IndexError):
+        signal_from_brighteyes_mcs(filename, time=1)
+    with pytest.raises(IndexError):
+        signal_from_brighteyes_mcs(filename, depth=1)
+
+    # channel=1 is out of bounds for the processed output (channels pre-summed)
+    with pytest.raises(IndexError):
+        signal_from_brighteyes_mcs(filename, channel=1)
+
+
+@pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
+def test_signal_from_brighteyes_mcs_convallaria_s2ism() -> None:
+    """Test read BrightEyes-MCS S2ISM file."""
+    # https://zenodo.org/records/21158280
+    filename = private_file('BrightEyes/Convallaria_S2ISM.h5')
+
+    # default dataset
+    signal = signal_from_brighteyes_mcs(filename)
+    assert signal.dtype == numpy.float64
+    assert signal.shape == (801, 801, 91)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert_almost_equal(signal.values.sum(), 57787537.717, decimal=0)
+    assert_almost_equal(signal.coords['H'][[0, -1]], [0.0, 24.7253], decimal=4)
+    assert signal.attrs['frequency'] == 40.0
+    assert signal.attrs['reference_lifetime_ns'] == 2.5
+    assert signal.attrs['h5_dataset'] == '/output/s2ism_001/products/s2ism'
+
+    # reference trace
+    signal = signal_from_brighteyes_mcs(filename, dataset='reference')
+    assert signal.shape == (1, 1, 91)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert signal.attrs['reference'] is True
+    assert signal.attrs['irf'] is False
+    assert_almost_equal(signal.values.sum(), 1.0, decimal=6)
+
+    # irf trace
+    signal = signal_from_brighteyes_mcs(filename, dataset='irf')
+    assert signal.shape == (1, 1, 91)
+    assert signal.dims == ('Y', 'X', 'H')
+    assert signal.attrs['reference'] is True
+    assert signal.attrs['irf'] is True
+    assert_almost_equal(signal.values.sum(), 1.0, decimal=6)
+
+    # literal HDF5 dataset path
+    signal = signal_from_brighteyes_mcs(
+        filename, dataset='/output/s2ism_001/products/s2ism'
+    )
+    assert signal.shape == (801, 801, 91)
+    assert signal.dtype == numpy.float64
+
+    # channel='sum' (no channel axis in processed output, equals default)
+    signal = signal_from_brighteyes_mcs(filename, channel='sum')
+    assert signal.shape == (801, 801, 91)
+    assert_almost_equal(signal.values.sum(), 57787537.717, decimal=0)
+
+    # raw spad dataset exposes all 25 detector channels
+    signal = signal_from_brighteyes_mcs(
+        filename, dataset='/raw/spad', channel=0
+    )
+    assert signal.shape == (801, 801, 91)
+    assert signal.dtype == numpy.uint16
+    assert signal.values.sum(dtype=numpy.uint64) == 8238938
+
+    signal = signal_from_brighteyes_mcs(
+        filename, dataset='/raw/spad', channel=1
+    )
+    assert signal.shape == (801, 801, 91)
+    assert signal.dtype == numpy.uint16
+    assert signal.values.sum(dtype=numpy.uint64) == 9450704
+
+    signal = signal_from_brighteyes_mcs(
+        filename, dataset='/raw/spad', channel=24
+    )
+    assert signal.shape == (801, 801, 91)
+    assert signal.dtype == numpy.uint16
+    assert signal.values.sum(dtype=numpy.uint64) == 8768652
+
+    with pytest.raises(IndexError):
+        signal_from_brighteyes_mcs(filename, dataset='/raw/spad', channel=25)
+
+    # time=1 and depth=1 are out of bounds (no time/depth axes in this file)
+    with pytest.raises(IndexError):
+        signal_from_brighteyes_mcs(filename, time=1)
+    with pytest.raises(IndexError):
+        signal_from_brighteyes_mcs(filename, depth=1)
+
+    # channel=1 is out of bounds for the processed output (channels pre-summed)
+    with pytest.raises(IndexError):
+        signal_from_brighteyes_mcs(filename, channel=1)
 
 
 def test_signal_from_brighteyes_mcs_import_error(
