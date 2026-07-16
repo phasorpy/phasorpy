@@ -126,8 +126,6 @@ def test_signal_from_brighteyes_mcs(tmp_path: Path) -> None:
 
 def test_signal_from_brighteyes_mcs_reference(tmp_path: Path) -> None:
     """Test reading a default BrightEyes-MCS reference trace."""
-    pytest.importorskip('brighteyes_mcs_reader')
-    pytest.importorskip('xarray')
     filename = tmp_path / 'histogram.h5'
     _, reference = _write_brighteyes_mcs_h5(filename)
 
