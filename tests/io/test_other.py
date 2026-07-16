@@ -105,8 +105,6 @@ def _write_brighteyes_mcs_h5(
 
 def test_signal_from_brighteyes_mcs(tmp_path: Path) -> None:
     """Test wrapping a BrightEyes-MCS signal as xarray."""
-    pytest.importorskip('brighteyes_mcs_reader')
-    pytest.importorskip('xarray')
     filename = tmp_path / 'histogram.h5'
     data, _ = _write_brighteyes_mcs_h5(filename)
 
