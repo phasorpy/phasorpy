@@ -65,6 +65,7 @@ all = [
     "ptufile>=2024.9.14",
     "sdtfile>=2024.5.24",
     "pawflim>=1.0.4",
+    "brighteyes-mcs-reader>=0.1.0",
     "imagecodecs==2026.6.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     # "mkl-fft>=2.1.1",
 ]
@@ -92,6 +93,7 @@ optional = [
     "ptufile>=2024.9.14",
     "sdtfile>=2024.5.24",
     "pawflim>=1.0.4",
+    "brighteyes-mcs-reader>=0.1.0",
     "imagecodecs==2026.6.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
 minimal = [
@@ -111,6 +113,7 @@ minimal = [
     "ptufile==2024.9.14; python_version == \"3.12\"",
     "sdtfile==2024.5.24; python_version == \"3.12\"",
     "pawflim==1.0.4; python_version == \"3.12\"",
+    "brighteyes-mcs-reader==0.1.0; python_version == \"3.12\""
 ]
 build = [
     # build requirements
@@ -346,6 +349,7 @@ module = [
     "scipy.*",
     "mkl_fft.*",
     "sklearn.*",
+    "h5py.*",
 ]
 ignore_missing_imports = true
 
@@ -418,6 +422,7 @@ test-command = "pytest {project}/tests"
 test-skip = ["cp314t*", "cp315t*"]
 test-requires = [
     # sync with [dependency-groups.optional]
+    "brighteyes-mcs-reader",
     "czifile>=2026.4.11",
     "fbdfile",
     "lfdfiles",
