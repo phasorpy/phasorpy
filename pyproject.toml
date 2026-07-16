@@ -349,6 +349,7 @@ module = [
     "scipy.*",
     "mkl_fft.*",
     "sklearn.*",
+    "h5py.*",
 ]
 ignore_missing_imports = true
 
