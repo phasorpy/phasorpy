@@ -32,6 +32,7 @@ def _write_brighteyes_mcs_h5(
     filename: str | Path,
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     import h5py
+
     data = numpy.arange(2 * 3 * 4 * 5 * 8 * 2, dtype=numpy.uint16).reshape(
         2, 3, 4, 5, 8, 2
     )
