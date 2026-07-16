@@ -139,7 +139,7 @@ def test_signal_from_brighteyes_mcs(tmp_path: Path) -> None:
 
 
 def test_signal_from_brighteyes_mcs_reference(tmp_path: Path) -> None:
-    """Test reading a default BrightEyes-MCS reference trace."""
+    """Test read default BrightEyes-MCS reference trace."""
     filename = tmp_path / 'histogram.h5'
     _, reference, _ = _write_brighteyes_mcs_h5(filename)
 
