@@ -422,6 +422,7 @@ test-command = "pytest {project}/tests"
 test-skip = ["cp314t*", "cp315t*"]
 test-requires = [
     # sync with [dependency-groups.optional]
+    "brighteyes-mcs-reader",
     "czifile>=2026.4.11",
     "fbdfile",
     "lfdfiles",
