@@ -742,6 +742,7 @@ with TemporaryDirectory() as tmpdir:
 # :py:func:`~phasorpy.io.signal_from_pqbin` (PicoQuant BIN),
 # :py:func:`~phasorpy.io.signal_from_tdflim` (ISS TDFLIM),
 # :py:func:`~phasorpy.io.signal_from_imspector_tiff` (ImSpector FLIM TIFF),
+# :py:func:`~phasorpy.io.signal_from_brighteyes_mcs` (BrightEyes-MCS HDF5),
 # and :py:func:`~phasorpy.io.signal_from_flif` (FlimFast FLIF).
 #
 # SimFCS signals can be read from B64, Z64, BHZ, and B&H files using

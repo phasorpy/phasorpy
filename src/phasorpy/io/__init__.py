@@ -18,9 +18,9 @@ The ``phasorpy.io`` module provides functions to:
   - :py:func:`signal_from_fbd` - FLIMbox FBD
   - :py:func:`signal_from_tdflim` - ISS TDFLIM
   - :py:func:`signal_from_flimlabs_json` - FLIM LABS JSON
+  - :py:func:`signal_from_brighteyes_mcs` - BrightEyes-MCS HDF5
   - :py:func:`signal_from_imspector_tiff` - ImSpector FLIM TIFF
   - :py:func:`signal_from_flif` - FlimFast FLIF
-  - :py:func:`signal_from_brighteyes_mcs` - BrightEyes-MCS HDF5
 
 - read signals from SimFCS file formats:
 
