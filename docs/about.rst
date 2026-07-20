@@ -1,16 +1,13 @@
 About PhasorPy
 ==============
 
-The PhasorPy project's mission is to make phasor analysis for luminescence
-lifetime and hyperspectral imaging more accessible through the PhasorPy
-library.
-
-.. _history:
+The PhasorPy project's mission is to advance and democratize phasor analysis
+through the open-source PhasorPy library.
 
 .. _funding:
 
-History and funding
--------------------
+Founding and funding
+--------------------
 
 The PhasorPy project was established in 2023 by the
 `Advanced Bioimaging Unit <https://www.uba.uy>`_
@@ -18,7 +15,7 @@ at the University of the Republic and Institut Pasteur de Montevideo, and the
 `Laboratory for Fluorescence Dynamics <https://www.lfd.uci.edu>`_
 at the University of California, Irvine.
 
-The project was supported in part by the
+The project was supported by the
 `Essential Open Source Software for Science (EOSS)
 <https://chanzuckerberg.com/eoss/>`_ program at
 `Chan Zuckerberg Initiative <https://chanzuckerberg.com/>`_
@@ -27,16 +24,18 @@ The project was supported in part by the
 Project goals
 -------------
 
-The original goals were to build an open, well-engineered software
-infrastructure, establish a community of users and developers, and reimplement
-much of the phasor-based functionality of the former closed-source
-`Globals for Images - SimFCS <https://www.lfd.uci.edu/globals/>`_ software by
-Enrico Gratton.
+The original goals were to create an open-source Python library based on
+sound software engineering principles, establish a community of users
+and developers, and reimplement core phasor-based functionality of the
+discontinued closed-source
+`Globals for Images - SimFCS <https://www.lfd.uci.edu/globals/>`_
+software by Enrico Gratton.
 
-The current goals are to advance PhasorPy toward a stable, extensible platform
-that supports large-scale automated workflows, AI-assisted analysis, and robust
-integration with the scientific Python ecosystem, while continuing to serve as
-a reliable base for graphical applications and training resources.
+The current goals are to improve community sustainability and to advance the
+PhasorPy library toward a stable, extensible platform that supports
+large-scale automated workflows, AI-assisted analysis, and robust integration
+with the scientific Python ecosystem, while continuing to serve as a reliable
+base for graphical applications and training resources.
 
 .. _governance:
 
@@ -57,15 +56,10 @@ consensus-building in issues, pull requests, and community meetings.
 Members of the PhasorPy organization make final technical and release
 decisions.
 
-The Advanced Bioimaging Unit provides institutional coordination by
-managing funded activities and supporting infrastructure that keeps
-PhasorPy sustainable and accessible. Grant proposals are coordinated
-with institutional partners.
+Infrastructure hosting, funded activities, and institutional partnerships are
+coordinated through the `Advanced Bioimaging Unit <https://www.uba.uy>`__.
 
-This governance model is reviewed as needed to remain aligned with
-project needs and sustainability goals.
-
-See the :doc:`contributing` to get involved.
+See the :doc:`Contributing guide <contributing>` to get involved.
 
 Acknowledgments
 ---------------
@@ -81,8 +75,6 @@ tools), and the documentation toolchain based on Sphinx and Sphinx-Gallery.
 We also acknowledge GitHub for providing a platform for collaborative
 development and hosting documentation, PyPI and conda-forge for package
 distribution, and Zenodo for hosting sample data.
-
-Funding support is described in the :ref:`history` section.
 
 Citation
 --------
