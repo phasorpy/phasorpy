@@ -12,6 +12,7 @@ feature enhancements, documentation and maintenance changes.
 .. toctree::
     :maxdepth: 2
 
+    0.12 (2026-07-20) <0.12>
     0.11 (2026-06-06) <0.11>
     0.10 (2026-05-12) <0.10>
     0.9 (2026-01-01) <0.9>
