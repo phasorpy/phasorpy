@@ -7,6 +7,8 @@
 - [ ] The pull request title and description are concise.
 - [ ] Related issues are linked in the description.
 - [ ] New dependencies are explained.
+- [ ] The source code is understood by the contributor and can be explained.
+- [ ] If AI was used, the tools, usage, and AI-generated code/text are disclosed.
 - [ ] The source code and documentation can be distributed under the [MIT License](https://www.phasorpy.org/docs/stable/license/).
 - [ ] The source code adheres to [code standards](https://www.phasorpy.org/docs/stable/contributing/#code-standards).
 - [ ] New classes, functions, and features are thoroughly [tested](https://www.phasorpy.org/docs/stable/contributing/#tests).

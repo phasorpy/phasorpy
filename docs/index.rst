@@ -19,14 +19,14 @@ classes of the library.
 The :doc:`release/index` list recent bug fixes, feature enhancements,
 documentation, and maintenance changes.
 
-The :doc:`contributing` explains how to get support, report bugs,
-submit fixes, and improve the documentation.
+The :doc:`Contributing guide <contributing>` explains how to get support,
+report bugs, submit fixes, and improve the documentation.
 
 The :doc:`code_of_conduct` applies to everyone participating in the
 PhasorPy community.
 
-The :doc:`acknowledgments` list individuals and organizations that
-contributed to the development of PhasorPy.
+The :doc:`About <about>` page describes the project's history, goals,
+funding, and governance.
 
 The PhasorPy library and documentation are released under the permissive
 :doc:`license`.
@@ -62,8 +62,8 @@ Contents
     api/index
     release/index
     contributing
-    acknowledgments
     license
+    about
 
 Indices and tables
 ------------------

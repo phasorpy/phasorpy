@@ -61,9 +61,9 @@ and include the following items in the bug report:
   output of::
 
     $ python -m phasorpy versions
-    Python-3.14.1
-    phasorpy-0.8
-    numpy-2.3.5
+    Python-3.14.6
+    phasorpy-0.11
+    numpy-2.5.1
     ...
 
 Contribute code or documentation
@@ -87,6 +87,30 @@ The PhasorPy project loosely follows the
 `Scientific Python <https://learn.scientific-python.org/development/>`_ and
 `pyOpenSci <https://www.pyopensci.org/python-package-guide/>`_
 development guidelines.
+
+The PhasorPy project follows and adapts the `SciPy AI policy
+<https://scipy.github.io/devdocs/dev/conduct/ai_policy.html>`_.
+
+Copyright
+.........
+
+All code in PhasorPy is released under the :doc:`license`.
+Contributors license their code under the same license when submitting it
+to PhasorPy's version control repository.
+That means contributors must have the right to submit the code to PhasorPy
+and must comply with the terms of any MIT-compatible open-source license
+associated with submitted code.
+
+Accountability
+..............
+
+Contributors are responsible for all code submitted to the PhasorPy repository.
+They must understand it and be able to explain it, regardless of whether it
+was manually written or AI-generated.
+
+Contributors must disclose whether AI has been used to assist in the
+development of code or documentation. If so, specify the tool(s) used,
+how they were used, and which code or text is AI-generated.
 
 Fork the repository
 ...................
@@ -195,7 +219,7 @@ must conform to certain styles, which can be checked and applied with
 
     $ python -m pre_commit run --all-files
 
-User-facing classes and functions must use
+Tests and user-facing classes and functions must use
 `type hints <https://peps.python.org/pep-0484/>`_
 and pass verification with the
 `MyPy <https://mypy.readthedocs.io>`_
