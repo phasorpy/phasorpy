@@ -46,7 +46,7 @@ Governance and contributors
 
 PhasorPy is developed collaboratively by
 `contributors to the PhasorPy repository
-<https://github.com/phasorpy/phasorpy/graphs/contributors>`_
+<https://github.com/phasorpy/phasorpy/graphs/contributors?all=1>`_
 and governed by
 `members of the PhasorPy organization
 <https://github.com/orgs/phasorpy/people>`_.

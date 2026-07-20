@@ -1,0 +1,49 @@
+.. currentmodule:: phasorpy
+
+PhasorPy 0.12 (2026-07-20)
+==========================
+
+This is the third beta release of the PhasorPy library.
+It contains new functions, an ``About`` page, and other documentation
+improvements.
+
+The new ``io.signal_from_brighteyes_mcs``, ``io.signal_from_tdflim``, and
+``io.lifetime_from_tdflim`` functions read TCSPC or lifetime data from
+Brighteyes MCS and ISS TDFLIM files using the ``brighteyes-mcs-reader``
+and ``lfdfiles`` libraries.
+
+The new ``experimental.signal_from_dho`` function calculates emission
+spectra using the Displaced Harmonic Oscillator model.
+
+The new spectral application (``python -m phasorpy spectral``) and
+``plot.SpectralPlots`` class interactively plot emission spectra and
+corresponding spectral phasor coordinates for a set of spectral
+components and their mixture.
+
+Conda-forge packages for osx-arm64 are now available.
+
+This release supports Python 3.12 through 3.14.
+
+What's Changed
+--------------
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/351
+* Fix mislabeled fractional intensities in lifetime geometry tutorial by @cgohlke in https://github.com/phasorpy/phasorpy/pull/352
+* Bump tooling and update configs by @cgohlke in https://github.com/phasorpy/phasorpy/pull/353
+* Mention Spectral Phasors Analysis software by @cgohlke in https://github.com/phasorpy/phasorpy/pull/354
+* Add signal_from_tdflim and lifetime_from_tdflim functions by @cgohlke in https://github.com/phasorpy/phasorpy/pull/355
+* Mention FLIMKit software by @cgohlke in https://github.com/phasorpy/phasorpy/pull/356
+* Add spectral application, SpectralPlots class, and signal_from_dho function by @cgohlke in https://github.com/phasorpy/phasorpy/pull/358
+* Enable type checking for tests by @cgohlke in https://github.com/phasorpy/phasorpy/pull/359
+* Mention PyFLI library by @cgohlke in https://github.com/phasorpy/phasorpy/pull/361
+* Add signal_from_brighteyes_mcs function by @mattia-donato in https://github.com/phasorpy/phasorpy/pull/340
+* Improve signal_from_brighteyes_mcs docs and tests by @cgohlke in https://github.com/phasorpy/phasorpy/pull/363
+* Add About page and AI contribution policy by @cgohlke in https://github.com/phasorpy/phasorpy/pull/364
+* Release v0.12 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/365
+
+New Contributors
+----------------
+
+* @mattia-donato made their first contribution in https://github.com/phasorpy/phasorpy/pull/340
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.11...v0.12
