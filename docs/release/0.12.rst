@@ -20,6 +20,8 @@ The new spectral application (``python -m phasorpy spectral``) and
 corresponding spectral phasor coordinates for a set of spectral
 components and their mixture.
 
+Conda-forge packages for osx-arm64 are now available.
+
 This release supports Python 3.12 through 3.14.
 
 What's Changed
