@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """Plot phasor coordinates and related data.
 
 The ``phasorpy.plot`` module provides functions and classes to visualize

@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """Color palettes and color manipulation utilities.
 
 The ``phasorpy.color`` module provides color palettes and functions to

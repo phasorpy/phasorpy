@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """PhasorPlot class."""
 
 from __future__ import annotations
@@ -1085,6 +1089,7 @@ class PhasorPlot:
 
     def polar_grid(
         self,
+        *,
         radii: int | Sequence[float] | None = None,
         angles: int | Sequence[float] | None = None,
         samples: int | None = None,

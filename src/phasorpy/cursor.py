@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """Select regions of interest (cursors) from phasor coordinates.
 
 The ``phasorpy.cursor`` module provides functions to:
@@ -277,7 +281,7 @@ def mask_from_elliptic_cursor(
     return mask.astype(numpy.bool_)  # type: ignore[no-any-return]
 
 
-def mask_from_polar_cursor(
+def mask_from_polar_cursor(  # noqa: PLR0917
     real: ArrayLike,
     imag: ArrayLike,
     phase_min: ArrayLike,
