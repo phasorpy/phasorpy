@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """Read Leica image file formats."""
 
 from __future__ import annotations

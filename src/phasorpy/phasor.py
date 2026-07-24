@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """Process phasor coordinates.
 
 The ``phasorpy.phasor`` module provides fundamental functions to:
@@ -788,13 +792,14 @@ def phasor_normalize(
     return mean, real, imag
 
 
-def phasor_combine(
+def phasor_combine(  # noqa: PLR0917
     int0: ArrayLike,
     real0: ArrayLike,
     imag0: ArrayLike,
     int1: ArrayLike,
     real1: ArrayLike,
     imag1: ArrayLike,
+    /,
     fraction0: ArrayLike,
     fraction1: ArrayLike | None = None,
     **kwargs: Any,

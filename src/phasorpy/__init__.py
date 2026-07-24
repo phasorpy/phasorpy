@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """PhasorPy package."""
 
 from __future__ import annotations

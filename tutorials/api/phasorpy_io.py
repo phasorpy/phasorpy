@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """
 File input/output
 =================
@@ -440,8 +444,8 @@ real, imag = phasor_calibrate(
     real,
     imag,
     *phasor_from_signal(reference_signal),
-    frequency,
-    reference_lifetime,
+    frequency=frequency,
+    lifetime=reference_lifetime,
 )
 
 plot_phasor(
@@ -500,8 +504,8 @@ real, imag = phasor_calibrate(
     reference_mean,
     reference_real,
     reference_imag,
-    frequency,
-    reference_lifetime,
+    frequency=frequency,
+    lifetime=reference_lifetime,
     harmonic=harmonic,
 )
 
