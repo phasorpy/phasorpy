@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 # distutils: language = c
 # cython: boundscheck = False
 # cython: wraparound = False

@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """
 Signal synthesis from lifetimes
 ===============================
@@ -71,8 +75,8 @@ def verify_signal(reference_signal, fractions=None):
         phasor_calibrate(
             *phasor_from_signal(signal)[1:],
             *phasor_from_signal(reference_signal),
-            frequency,
-            reference_lifetime,
+            frequency=frequency,
+            lifetime=reference_lifetime,
         ),
         phasor_from_lifetime(frequency, lifetimes, fractions),
         atol=1e-3,

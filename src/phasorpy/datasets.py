@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """Manage sample data files for testing and tutorials.
 
 The ``phasorpy.datasets`` module provides a :py:func:`fetch` function to

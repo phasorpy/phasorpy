@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """Filter signals and phasor coordinates.
 
 The ``phasorpy.filter`` module provides functions to filter:
@@ -1517,7 +1521,7 @@ def signal_filter_ncpca(
     return signal
 
 
-def _gaussian_filter(
+def _gaussian_filter(  # noqa: PLR0917
     data: NDArray[Any],
     kernel: NDArray[Any],
     axes: tuple[int, ...],

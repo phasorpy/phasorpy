@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """SpectralPlots class."""
 
 from __future__ import annotations
@@ -518,7 +522,7 @@ class SpectralPlots:
                 slider.on_changed(self._on_changed)
                 self._vib_frequency_sliders.append(slider)
 
-    def _calculate(
+    def _calculate(  # noqa: PLR0917
         self,
         wl_min: float,
         wl_max: float,

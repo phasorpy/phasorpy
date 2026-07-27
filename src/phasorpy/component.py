@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """Analyze components in phasor coordinates.
 
 The ``phasorpy.component`` module provides functions to:
@@ -703,7 +707,7 @@ def phasor_component_concentration(
 ) -> tuple[NDArray[Any], NDArray[Any]]: ...
 
 
-def phasor_component_concentration(
+def phasor_component_concentration(  # noqa: PLR0917
     mean: ArrayLike,
     real: ArrayLike,
     imag: ArrayLike,

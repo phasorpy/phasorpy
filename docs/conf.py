@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """Sphinx build configuration file.
 
 https://www.sphinx-doc.org/en/master/usage/configuration.html
@@ -231,8 +235,8 @@ def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
         except AttributeError:
             return None
 
-    if inspect.isfunction(obj):
-        obj = inspect.unwrap(obj)
+    if inspect.isfunction(obj):  # type: ignore[unreachable]
+        obj = inspect.unwrap(obj)  # type: ignore[unreachable]
     try:
         fn = inspect.getsourcefile(obj)
     except TypeError:

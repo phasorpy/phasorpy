@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """Process phasor coordinates of luminescence lifetimes.
 
 The ``phasorpy.lifetime`` module provides functions to:
@@ -635,9 +639,9 @@ def phasor_calibrate(
     reference_real: ArrayLike,
     reference_imag: ArrayLike,
     /,
+    *,
     frequency: ArrayLike,
     lifetime: ArrayLike,
-    *,
     harmonic: int | Sequence[int] | Literal['all'] | str | None = None,
     skip_axis: int | Sequence[int] | None = None,
     fraction: ArrayLike | None = None,

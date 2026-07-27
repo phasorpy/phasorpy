@@ -1,3 +1,7 @@
+# Copyright (c) PhasorPy Contributors
+# SPDX-License-Identifier: MIT
+# See LICENSE.txt file in the project root for details.
+
 """Test handling NaN coordinates."""
 
 import warnings
@@ -133,7 +137,13 @@ def test_phasor_calibrate_nan(*, nan_safe: bool) -> None:
     with warnings.catch_warnings():
         warnings.simplefilter('error')
         phasor = phasor_calibrate(
-            *VALUES_WITH_NAN[1:], 1.0, 0.0, 1.0, 80, 4.2, nan_safe=nan_safe
+            *VALUES_WITH_NAN[1:],
+            1.0,
+            0.0,
+            1.0,
+            frequency=80.0,
+            lifetime=4.2,
+            nan_safe=nan_safe,
         )
     assert_allclose(
         phasor, [[0.28506, nan, 0.05701], [0.10181, nan, 0.02036]], atol=1e-3

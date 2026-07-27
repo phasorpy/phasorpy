@@ -262,9 +262,9 @@ typing-modules = ["_typing"]
 "__init__.py" = ["F401", "F403"]
 "conftest.py" = ["ARG001"]
 "setup.py" = ["T201"]
-"tests/*" = ["INP001", "PT011", "SLF001", "TC001"]
+"tests/*" = ["INP001", "PT011", "SLF001", "TC001", "PLR0917"]
 "tools/*" = ["ANN", "INP001", "T201"]
-"tutorials/*" = ["ANN", "D", "E402", "INP001", "T201", "S101", "ERA001"]
+"tutorials/*" = ["ANN", "D", "E402", "INP001", "T201", "S101", "ERA001", "PLR0917"]
 "docs/conf.py" = ["A001", "ANN204", "D102", "E402", "INP001", "RUF012"]
 
 [tool.ruff.format]
@@ -272,6 +272,9 @@ quote-style = "single"
 
 [tool.ruff.lint.flake8-quotes]
 inline-quotes = "single"
+
+[tool.ruff.lint.flake8-copyright]
+notice-rgx = "(#\\s*Copyright\\s*\\(c\\)\\s*PhasorPy\\s*Contributors)"
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
@@ -345,6 +348,8 @@ warn_unreachable = true
 module = [
     "_conftest",
     "phasorpy._phasorpy",
+    "setuptools.*",
+    "sphinx_gallery.*",
     "pooch.*",
     "scipy.*",
     "mkl_fft.*",
