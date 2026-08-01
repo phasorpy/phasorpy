@@ -25,7 +25,7 @@ jobs:
           path: ~/.cache/phasorpy
           key: phasorpy-data-${{ runner.os }}-${{ hashFiles('src/phasorpy/datasets.py') }}
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
       - name: Editable install
