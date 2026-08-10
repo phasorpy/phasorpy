@@ -34,7 +34,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: pypa/cibuildwheel@v4.1.1
+      - uses: pypa/cibuildwheel@v4.2.0
         env:
           CIBW_ARCHS_LINUX: auto
           CIBW_ARCHS_WINDOWS: native
@@ -58,3 +58,24 @@ jobs:
         with:
           path: ./wheelhouse/*.whl
           name: wheels-${{ matrix.os }}
+
+  build_pyodide:
+    name: Build wheels on pyodide
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Install cibuildwheel
+        run: python -m pip install cibuildwheel
+      - name: Build wheel
+        env:
+          CIBW_BUILD: ""
+          CIBW_SKIP: ""
+          CIBW_TEST_SKIP: "*"
+        run: python -m cibuildwheel --platform pyodide
+      - uses: actions/upload-artifact@v7
+        with:
+          path: ./wheelhouse/*.whl
+          name: wheels-pyodide
