@@ -19,9 +19,20 @@ print()
 print(f'Building with numpy-{numpy.__version__}')
 print()
 
-if sys.platform == 'win32':
+extra_compile_args: list[str] = []
+extra_link_args: list[str] = []
+
+if 'PYODIDE' in os.environ or 'PYODIDE_ROOT' in os.environ:
+    # OpenMP/threads not available in Pyodide
+    pass
+elif sys.platform == 'darwin':
+    # OpenMP not available in Xcode
+    # https://mac.r-project.org/openmp/
+    # extra_compile_args = ['-Xclang', '-fopenmp']
+    # extra_link_args = ['-lomp']
+    pass
+elif sys.platform == 'win32':
     extra_compile_args = ['/openmp']
-    extra_link_args: list[str] = []
     if DEBUG:
         extra_compile_args += [
             '/Zi',
@@ -29,12 +40,7 @@ if sys.platform == 'win32':
             '/DCYTHON_TRACE=1',
             # '/DCYTHON_TRACE_NOGIL=1',  # too slow
         ]
-        extra_link_args += ['-debug:full']
-elif sys.platform == 'darwin':
-    # OpenMP not available in Xcode
-    # https://mac.r-project.org/openmp/
-    extra_compile_args = []  # ['-Xclang', '-fopenmp']
-    extra_link_args = []  # ['-lomp']
+        extra_link_args = ['-debug:full']
 else:
     extra_compile_args = ['-fopenmp']
     extra_link_args = ['-fopenmp']
@@ -48,7 +54,7 @@ ext_modules = [
         extra_link_args=extra_link_args,
         define_macros=[
             # ('CYTHON_TRACE_NOGIL', '1'),
-            ('NPY_NO_DEPRECATED_API', 'NPY_2_0_API_VERSION'),
+            ('NPY_NO_DEPRECATED_API', 'NPY_2_1_API_VERSION'),
         ]
         + (
             [('Py_LIMITED_API', 0x030C0000), ('CYTHON_LIMITED_API', '1')]
