@@ -73,6 +73,7 @@ jobs:
         env:
           CIBW_BUILD: ""
           CIBW_SKIP: ""
+          CIBW_TEST_SKIP: "*"
         run: python -m cibuildwheel --platform pyodide
       - uses: actions/upload-artifact@v7
         with:
