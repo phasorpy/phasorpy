@@ -72,7 +72,7 @@ jobs:
       - name: Build wheel
         env:
           CIBW_BUILD: "cp312-*"
-          CIBW_ENABLE: "pyodide"
+          CIBW_ENABLE: "pyodide-prerelease"
         run: python -m cibuildwheel --platform pyodide
       - uses: actions/upload-artifact@v7
         with:
