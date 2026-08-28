@@ -82,10 +82,12 @@ def test_signal_from_fbd() -> None:
         side_effect=fbdfile.FbdFile.asimage,
     ) as asimage:
         signal_from_fbd(filename, frame=1, channel=0)
-        assert asimage.call_args.kwargs['refine'] is True
+        kwargs = asimage.call_args.kwargs
+        assert kwargs['refine'] is True
 
         signal_from_fbd(filename, frame=1, channel=0, refine=False)
-        assert asimage.call_args.kwargs['refine'] is False
+        kwargs = asimage.call_args.kwargs
+        assert kwargs['refine'] is False
 
     with pytest.raises(IndexError):
         signal_from_fbd(filename, frame=9)
