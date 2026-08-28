@@ -314,6 +314,7 @@ def signal_from_fbd(
     channel: int | None = 0,
     keepdims: bool = False,
     laser_factor: float = -1.0,
+    refine: bool | None = True,
     **kwargs: Any,
 ) -> DataArray:
     """Return phase histogram and metadata from FLIMbox FBD file.
@@ -344,6 +345,11 @@ def signal_from_fbd(
         Return reduced axes as length-1 dimensions.
     laser_factor : float, optional, default: -1
         Factor to correct dwell_time / laser_frequency.
+    refine : bool or None, optional, default: True
+        Refine detected frame markers to match scanner settings.
+        Passed to :py:meth:`fbdfile.FbdFile.asimage`.
+        If True, always refine. If None, refine only if needed.
+        If False, never refine.
     **kwargs
         Optional arguments passed to :py:class:`fbdfile.FbdFile`.
 
@@ -400,7 +406,7 @@ def signal_from_fbd(
     integrate_frames = 0 if frame is None or frame >= 0 else 1
 
     with fbdfile.FbdFile(filename, laser_factor=laser_factor, **kwargs) as fbd:
-        data = fbd.asimage(integrate_frames=integrate_frames)
+        data = fbd.asimage(integrate_frames=integrate_frames, refine=refine)
         if integrate_frames:
             frame = None
         copy = False

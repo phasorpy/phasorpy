@@ -7,6 +7,7 @@
 import os
 from glob import glob
 from tempfile import TemporaryDirectory
+from unittest import mock
 
 import lfdfiles
 import numpy
@@ -70,6 +71,21 @@ def test_signal_from_fbd() -> None:
     assert signal.values.sum(dtype=numpy.uint64) in {1031723, 1033137}
     assert signal.shape == (1, 1, 256, 256, 64)
     assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
+
+    # refine is passed to FbdFile.asimage, by default True
+    import fbdfile
+
+    with mock.patch.object(
+        fbdfile.FbdFile,
+        'asimage',
+        autospec=True,
+        side_effect=fbdfile.FbdFile.asimage,
+    ) as asimage:
+        signal_from_fbd(filename, frame=1, channel=0)
+        assert asimage.call_args.kwargs['refine'] is True
+
+        signal_from_fbd(filename, frame=1, channel=0, refine=False)
+        assert asimage.call_args.kwargs['refine'] is False
 
     with pytest.raises(IndexError):
         signal_from_fbd(filename, frame=9)
