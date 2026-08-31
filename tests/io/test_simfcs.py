@@ -71,6 +71,16 @@ def test_signal_from_fbd() -> None:
     assert signal.shape == (1, 1, 256, 256, 64)
     assert signal.dims == ('T', 'C', 'Y', 'X', 'H')
 
+    # kwargs are dispatched to FbdFile and FbdFile.asimage
+    signal = signal_from_fbd(
+        filename, frame=-1, channel=0, refine=False, laser_factor=-1.0
+    )
+    assert signal.shape == (256, 256, 64)
+    assert signal.dims == ('Y', 'X', 'H')
+
+    with pytest.raises(TypeError):
+        signal_from_fbd(filename, not_a_parameter=0)
+
     with pytest.raises(IndexError):
         signal_from_fbd(filename, frame=9)
 

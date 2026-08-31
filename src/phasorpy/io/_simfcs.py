@@ -22,7 +22,12 @@ import struct
 import zlib
 from typing import TYPE_CHECKING
 
-from .._utils import chunk_iter, parse_harmonic, xarray_metadata
+from .._utils import (
+    chunk_iter,
+    parse_harmonic,
+    parse_kwargs,
+    xarray_metadata,
+)
 from ..phasor import phasor_from_polar, phasor_to_polar
 
 if TYPE_CHECKING:
@@ -313,7 +318,6 @@ def signal_from_fbd(
     frame: int | None = None,
     channel: int | None = 0,
     keepdims: bool = False,
-    laser_factor: float = -1.0,
     **kwargs: Any,
 ) -> DataArray:
     """Return phase histogram and metadata from FLIMbox FBD file.
@@ -342,10 +346,12 @@ def signal_from_fbd(
         If None, return all channels.
     keepdims : bool, optional, default: False
         Return reduced axes as length-1 dimensions.
-    laser_factor : float, optional, default: -1
-        Factor to correct dwell_time / laser_frequency.
     **kwargs
-        Optional arguments passed to :py:class:`fbdfile.FbdFile`.
+        Optional arguments passed to :py:class:`fbdfile.FbdFile` and
+        :py:meth:`fbdfile.FbdFile.asimage`.
+        For example, ``laser_factor`` to correct dwell time and laser
+        frequency, or ``refine=False`` to disable refinement of detected
+        frame markers to match scanner settings.
 
     Returns
     -------
@@ -399,8 +405,24 @@ def signal_from_fbd(
 
     integrate_frames = 0 if frame is None or frame >= 0 else 1
 
-    with fbdfile.FbdFile(filename, laser_factor=laser_factor, **kwargs) as fbd:
-        data = fbd.asimage(integrate_frames=integrate_frames)
+    kwargs.pop('integrate_frames', None)
+
+    kwargs_asimage = parse_kwargs(
+        kwargs,
+        'square_frame',
+        'num_threads',
+        'select_frames',
+        'aspect_range',
+        'frame_cluster',
+        'refine',
+        'word_count',
+        'skip_words',
+        'max_markers',
+        integrate_frames=integrate_frames,
+    )
+
+    with fbdfile.FbdFile(filename, **kwargs) as fbd:
+        data = fbd.asimage(**kwargs_asimage)
         if integrate_frames:
             frame = None
         copy = False
