@@ -523,7 +523,13 @@ for index, color in enumerate(CATEGORICAL[:2]):
         markersize=1,
         alpha=0.5,
     )
-    plot.plot(center_real[index], center_imag[index], color=color, markeredgecolor='k', markersize=10)
+    plot.plot(
+        center_real[index],
+        center_imag[index],
+        color=color,
+        markeredgecolor='k',
+        markersize=10,
+    )
 plot.show()
 
 # %%
