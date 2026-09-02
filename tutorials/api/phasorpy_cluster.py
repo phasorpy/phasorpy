@@ -26,7 +26,8 @@ from phasorpy.plot import PhasorPlot, plot_image
 
 # %%
 # Load a hyperspectral dataset used throughout this tutorial and calculate
-# phasor coordinates at the first harmonic and filter out pixels with low intensity:
+# phasor coordinates at the first harmonic and filter out pixels with low
+# intensity:
 
 signal = signal_from_lsm(fetch('paramecium.lsm'))
 mean, real, imag = phasor_from_signal(signal, axis=0)
