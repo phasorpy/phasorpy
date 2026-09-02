@@ -446,104 +446,6 @@ plot_phasor(
 )
 
 # %%
-# Find clusters
-# -------------
-#
-# The :py:mod:`phasorpy.cluster` module provides functions to fit clusters
-# to phasor coordinates.
-#
-# Automatically find the two elliptical clusters in the phasor space using
-# a Gaussian mixture model and plot them in distinct colors:
-
-from phasorpy.cluster import phasor_cluster_gmm
-
-center_real, center_imag, radius, radius_minor, angle = phasor_cluster_gmm(
-    real, imag, clusters=2
-)
-
-plot = PhasorPlot(allquadrants=True, title='Elliptical clusters')
-plot.hist2d(real, imag, cmap='Greys')
-plot.cursor(
-    center_real,
-    center_imag,
-    radius=radius,
-    radius_minor=radius_minor,
-    angle=angle,
-    color=CATEGORICAL[:2],
-)
-plot.show()
-
-# %%
-# Use the elliptical clusters to mask regions of interest in the phasor space:
-
-from phasorpy.cursor import mask_from_elliptic_cursor
-
-elliptic_masks = mask_from_elliptic_cursor(
-    real,
-    imag,
-    center_real,
-    center_imag,
-    radius=radius,
-    radius_minor=radius_minor,
-    angle=angle,
-)
-
-# %%
-# Plot a pseudo-color image, composited from the elliptical cursor masks and
-# the mean intensity image:
-
-pseudo_color_image = pseudo_color(*elliptic_masks, intensity=mean)
-
-plot_image(
-    pseudo_color_image, title='Pseudo-color image from elliptical cursors'
-)
-
-# %%
-# Instead of describing clusters by ellipses, k-means clustering partitions
-# the phasor coordinates into a fixed number of clusters, assigning each
-# phasor coordinate to the cluster with the nearest center:
-
-from phasorpy.cluster import phasor_cluster_kmeans
-
-center_real, center_imag, labels = phasor_cluster_kmeans(
-    real, imag, clusters=2
-)
-
-# %%
-# Plot the phasor coordinates in the color of the cluster they belong to,
-# and mark the cluster centers. Phasor coordinates that are NaN are not
-# assigned to any cluster and are labeled -1:
-
-plot = PhasorPlot(allquadrants=True, title='K-means clusters')
-for index, color in enumerate(CATEGORICAL[:2]):
-    plot.plot(
-        real[labels == index],
-        imag[labels == index],
-        color=color,
-        markersize=1,
-        alpha=0.5,
-    )
-    plot.plot(
-        center_real[index],
-        center_imag[index],
-        color=color,
-        markeredgecolor='k',
-        markersize=10,
-    )
-plot.show()
-
-# %%
-# Since every phasor coordinate is assigned to a cluster, the cluster labels
-# can be used directly to mask regions of interest and to plot a pseudo-color
-# image:
-
-pseudo_color_image = pseudo_color(labels == 0, labels == 1, intensity=mean)
-
-plot_image(
-    pseudo_color_image, title='Pseudo-color image from k-means clusters'
-)
-
-# %%
 # Appendix
 # --------
 #
@@ -554,7 +456,7 @@ from phasorpy.utils import versions
 print(versions())
 
 # sphinx_gallery_start_ignore
-# sphinx_gallery_thumbnail_number = -10
+# sphinx_gallery_thumbnail_number = -6
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type, assignment"
 # isort: skip_file

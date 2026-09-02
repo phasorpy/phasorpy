@@ -48,9 +48,16 @@ def test_phasor_cluster_gmm_invalid_shapes() -> None:
     with pytest.raises(ValueError):
         phasor_cluster_gmm([1, 2, 3], [1, 2])
 
-    # invalid sort method
+    # invalid sort method, also with a single cluster
     with pytest.raises(ValueError):
         phasor_cluster_gmm([1, 2], [1, 2], clusters=2, sort='invalid')  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError):
+        phasor_cluster_gmm([1, 2], [1, 2], clusters=1, sort='invalid')  # type: ignore[arg-type]
+
+    # sorting method of other cluster function
+    with pytest.raises(ValueError):
+        phasor_cluster_gmm([1, 2], [1, 2], clusters=2, sort='size')  # type: ignore[arg-type]
 
     # clusters < 1
     with pytest.raises(ValueError):
@@ -245,9 +252,16 @@ def test_phasor_cluster_kmeans_exceptions() -> None:
     with pytest.raises(ValueError):
         phasor_cluster_kmeans([1, 2, 3], [1, 2])
 
-    # invalid sort method
+    # invalid sort method, also with a single cluster
     with pytest.raises(ValueError):
         phasor_cluster_kmeans([1, 2], [1, 2], clusters=2, sort='invalid')  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError):
+        phasor_cluster_kmeans([1, 2], [1, 2], clusters=1, sort='invalid')  # type: ignore[arg-type]
+
+    # sorting method of other cluster function
+    with pytest.raises(ValueError):
+        phasor_cluster_kmeans([1, 2], [1, 2], clusters=2, sort='area')  # type: ignore[arg-type]
 
     # clusters < 1
     with pytest.raises(ValueError):

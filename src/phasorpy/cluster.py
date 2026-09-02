@@ -24,7 +24,7 @@ __all__ = ['phasor_cluster_gmm', 'phasor_cluster_kmeans']
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ._typing import Any, ArrayLike, Literal, NDArray
+    from ._typing import Any, ArrayLike, Literal, NDArray, Sequence
 
 import math
 
@@ -107,7 +107,7 @@ def phasor_cluster_gmm(
 
     See Also
     --------
-    phasorpy.cluster.phasor_cluster_kmeans
+    :ref:`sphx_glr_tutorials_api_phasorpy_cluster.py`
 
     References
     ----------
@@ -201,34 +201,15 @@ def phasor_cluster_gmm(
         radius_major.append(sigma * math.sqrt(2 * eigenvalues[0]))
         radius_minor.append(sigma * math.sqrt(2 * eigenvalues[1]))
 
-    if clusters == 1:
-        argsort = [0]
-    else:
-        match sort:
-            case 'polar' | None:
-
-                def sort_key(i: int) -> Any:
-                    return (
-                        math.atan2(center_imag[i], center_real[i]),
-                        math.hypot(center_real[i], center_imag[i]),
-                    )
-
-            case 'phasor':
-
-                def sort_key(i: int) -> Any:
-                    return center_imag[i], center_real[i]
-
-            case 'area':
-
-                def sort_key(i: int) -> Any:
-                    return -radius_major[i] * radius_minor[i]
-
-            case _:
-                msg = (  # type: ignore[unreachable]
-                    f"{sort=!r} not in {{'phasor', 'polar', or 'area'}}"
-                )
-                raise ValueError(msg)
-        argsort = sorted(range(len(center_real)), key=sort_key)
+    argsort = _argsort_clusters(
+        center_real,
+        center_imag,
+        sort,
+        area=[
+            -major * minor
+            for major, minor in zip(radius_major, radius_minor, strict=True)
+        ],
+    )
 
     return (
         tuple(center_real[i] for i in argsort),
@@ -251,8 +232,8 @@ def phasor_cluster_kmeans(
     """Return k-means clusters of phasor coordinates.
 
     Partition phasor coordinates into `clusters` groups using k-means
-    clustering according to [2]_, assigning each phasor coordinate to the
-    cluster with the nearest center.
+    clustering, assigning each phasor coordinate to the cluster with the
+    nearest center.
 
     Parameters
     ----------
@@ -301,7 +282,7 @@ def phasor_cluster_kmeans(
 
     See Also
     --------
-    phasorpy.cluster.phasor_cluster_gmm
+    :ref:`sphx_glr_tutorials_api_phasorpy_cluster.py`
 
     Notes
     -----
@@ -309,13 +290,6 @@ def phasor_cluster_kmeans(
     phasor coordinate to exactly one cluster. The clusters are separated by
     straight lines, which may not follow the elliptical shape of phasor
     distributions.
-
-    References
-    ----------
-    .. [2] Vallmitjana A, Torrado B, and Gratton E.
-       `Phasor-based image segmentation: machine learning clustering techniques
-       <https://doi.org/10.1364/BOE.422766>`_.
-       *Biomed Opt Express*, 12(6): 3410-3422 (2021)
 
     Examples
     --------
@@ -368,35 +342,12 @@ def phasor_cluster_kmeans(
     center_real = [float(value) for value in kmeans.cluster_centers_[:, 0]]
     center_imag = [float(value) for value in kmeans.cluster_centers_[:, 1]]
 
-    if clusters == 1:
-        argsort = [0]
-    else:
-        match sort:
-            case 'polar' | None:
-
-                def sort_key(i: int) -> Any:
-                    return (
-                        math.atan2(center_imag[i], center_real[i]),
-                        math.hypot(center_real[i], center_imag[i]),
-                    )
-
-            case 'phasor':
-
-                def sort_key(i: int) -> Any:
-                    return center_imag[i], center_real[i]
-
-            case 'size':
-                sizes = numpy.bincount(index, minlength=clusters)
-
-                def sort_key(i: int) -> Any:
-                    return -int(sizes[i])
-
-            case _:
-                msg = (  # type: ignore[unreachable]
-                    f"{sort=!r} not in {{'phasor', 'polar', or 'size'}}"
-                )
-                raise ValueError(msg)
-        argsort = sorted(range(len(center_real)), key=sort_key)
+    argsort = _argsort_clusters(
+        center_real,
+        center_imag,
+        sort,
+        size=[-int(n) for n in numpy.bincount(index, minlength=clusters)],
+    )
 
     relabel = numpy.empty(clusters, dtype=numpy.intp)
     relabel[argsort] = numpy.arange(clusters)
@@ -409,3 +360,68 @@ def phasor_cluster_kmeans(
         tuple(center_imag[i] for i in argsort),
         labels.reshape(real.shape),
     )
+
+
+def _argsort_clusters(
+    center_real: Sequence[float],
+    center_imag: Sequence[float],
+    sort: str | None,
+    /,
+    **methods: Sequence[float],
+) -> list[int]:
+    """Return indices that sort clusters by specified method.
+
+    Parameters
+    ----------
+    center_real : sequence of float
+        Real component of cluster centers.
+    center_imag : sequence of float
+        Imaginary component of cluster centers.
+        Must be same length as `center_real`.
+    sort : str or None
+        Sorting method: 'polar', 'phasor', or any name in `methods`.
+        By default, use 'polar' sorting.
+    **methods : sequence of float
+        Additional sorting methods, mapping method name to the values by
+        which clusters are sorted in increasing order.
+        Must be same length as `center_real`.
+
+    Returns
+    -------
+    list of int
+        Indices of clusters in sorted order.
+
+    Raises
+    ------
+    ValueError
+        If `sort` is not a valid sorting method.
+
+    """
+    match sort:
+        case 'polar' | None:
+
+            def sort_key(i: int) -> Any:
+                return (
+                    math.atan2(center_imag[i], center_real[i]),
+                    math.hypot(center_real[i], center_imag[i]),
+                )
+
+        case 'phasor':
+
+            def sort_key(i: int) -> Any:
+                return center_imag[i], center_real[i]
+
+        case str() as method if method in methods:
+            values = methods[method]
+
+            def sort_key(i: int) -> Any:
+                return values[i]
+
+        case _:
+            names = ', '.join(repr(s) for s in ('polar', 'phasor', *methods))
+            msg = f'{sort=!r} not in {{{names}}}'
+            raise ValueError(msg)
+
+    if len(center_real) < 2:
+        return list(range(len(center_real)))
+    return sorted(range(len(center_real)), key=sort_key)
