@@ -221,15 +221,20 @@ def phasor_cluster_gmm(
 
 
 def phasor_cluster_kmeans(
+    mean: ArrayLike | None,
     real: ArrayLike,
     imag: ArrayLike,
     /,
     *,
     clusters: int = 1,
-    intensity: ArrayLike | None = None,
     sort: Literal['polar', 'phasor', 'size'] | None = None,
     **kwargs: Any,
-) -> tuple[tuple[float, ...], tuple[float, ...], NDArray[numpy.intp]]:
+) -> tuple[
+    tuple[float, ...],
+    tuple[float, ...],
+    tuple[float, ...],
+    NDArray[numpy.intp],
+]:
     """Return k-means clusters of phasor coordinates.
 
     Partition phasor coordinates into `clusters` groups using k-means
@@ -238,17 +243,18 @@ def phasor_cluster_kmeans(
 
     Parameters
     ----------
+    mean : array_like or None
+        Intensity of phasor coordinates.
+        Must be same shape as `real`. Values must not be negative.
+        If not None, phasor coordinates are weighted by intensity, such that
+        coordinates of brighter pixels contribute more to the clusters.
+        If None, all phasor coordinates contribute equally.
     real : array_like
         Real component of phasor coordinates.
     imag : array_like
         Imaginary component of phasor coordinates.
     clusters : int, optional, default: 1
         Number of clusters to partition phasor coordinates into.
-    intensity : array_like, optional
-        Intensity values used to weight the phasor coordinates. Brighter
-        pixels contribute proportionally more to the cluster centers.
-        By default, all phasor coordinates contribute equally.
-        Must be same shape as `real`. Values must not be negative.
     sort : {'polar', 'phasor', 'size'}, optional
         Sorting method for output clusters.
         By default, use 'polar' sorting.
@@ -269,6 +275,9 @@ def phasor_cluster_kmeans(
 
     Returns
     -------
+    center_mean : tuple of float
+        Intensity centers of clusters.
+        NaN if `mean` is None.
     center_real : tuple of float
         Real component of cluster centers.
     center_imag : tuple of float
@@ -276,15 +285,15 @@ def phasor_cluster_kmeans(
     labels : ndarray
         Zero-based index of cluster each phasor coordinate belongs to.
         Same shape as `real` and `imag`.
-        Values are -1 where phasor coordinates or `intensity` are NaN.
+        Values are -1 where `mean`, `real`, or `imag` are NaN.
 
     Raises
     ------
     ValueError
         If `clusters` is less than 1.
-        If the array shapes of `real`, `imag`, or `intensity` do not match.
+        If the array shapes of `mean`, `real`, and `imag` do not match.
         If the number of valid (non-NaN) data points is less than `clusters`.
-        If `intensity` contains negative values, or sums to zero.
+        If `mean` contains negative values, or sums to zero.
         If `sort` is not a valid sorting method.
 
     See Also
@@ -303,8 +312,8 @@ def phasor_cluster_kmeans(
     Partition phasor coordinates into two clusters and return the cluster
     centers and the cluster index of each coordinate:
 
-    >>> center_real, center_imag, labels = phasor_cluster_kmeans(
-    ...     [0.1, 0.2, 0.5, 0.6], [0.1, 0.2, 0.5, 0.6], clusters=2
+    >>> center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
+    ...     None, [0.1, 0.2, 0.5, 0.6], [0.1, 0.2, 0.5, 0.6], clusters=2
     ... )
     >>> center_real  # doctest: +NUMBER
     (0.15, 0.55)
@@ -314,19 +323,21 @@ def phasor_cluster_kmeans(
     Phasor coordinates that are NaN are not assigned to any cluster:
 
     >>> phasor_cluster_kmeans(
-    ...     [0.1, numpy.nan, 0.6], [0.1, 0.2, 0.6], clusters=2
-    ... )[2]
+    ...     None, [0.1, numpy.nan, 0.6], [0.1, 0.2, 0.6], clusters=2
+    ... )[3]
     array([ 0, -1,  1])
 
     Weight phasor coordinates by intensity, moving the cluster centers
     towards the coordinates of brighter pixels:
 
-    >>> center_real, center_imag, labels = phasor_cluster_kmeans(
+    >>> center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
+    ...     [1.0, 3.0, 3.0, 1.0],
     ...     [0.1, 0.2, 0.5, 0.6],
     ...     [0.1, 0.2, 0.5, 0.6],
     ...     clusters=2,
-    ...     intensity=[1.0, 3.0, 3.0, 1.0],
     ... )
+    >>> center_mean  # doctest: +NUMBER
+    (2.0, 2.0)
     >>> center_real  # doctest: +NUMBER
     (0.175, 0.525)
 
@@ -348,12 +359,12 @@ def phasor_cluster_kmeans(
     valid_data = ~numpy.isnan(coords).any(axis=1)
 
     weight = None
-    if intensity is not None:
-        intensity = numpy.asarray(intensity)
-        if intensity.shape != real.shape:
-            msg = f'{intensity.shape=} != {real.shape=}'
+    if mean is not None:
+        mean = numpy.asarray(mean)
+        if mean.shape != real.shape:
+            msg = f'{mean.shape=} != {real.shape=}'
             raise ValueError(msg)
-        weight = intensity.astype(numpy.float64).reshape(-1)
+        weight = mean.astype(numpy.float64).reshape(-1)
         valid_data &= ~numpy.isnan(weight)
 
     size = int(valid_data.sum())
@@ -365,10 +376,10 @@ def phasor_cluster_kmeans(
     if weight is not None:
         weight = weight[valid_data]
         if weight.min() < 0.0:
-            msg = f'intensity.min()={weight.min()} < 0'
+            msg = f'mean.min()={weight.min()} < 0'
             raise ValueError(msg)
         if weight.sum() <= 0.0:
-            msg = f'intensity.sum()={weight.sum()} <= 0'
+            msg = f'mean.sum()={weight.sum()} <= 0'
             raise ValueError(msg)
 
     kwargs.pop('n_clusters', None)
@@ -376,6 +387,14 @@ def phasor_cluster_kmeans(
     kmeans = KMeans(n_clusters=clusters, **kwargs)
     index = kmeans.fit_predict(coords[valid_data], sample_weight=weight)
 
+    counts = numpy.bincount(index, minlength=clusters)
+    if weight is None:
+        center_mean = [math.nan] * clusters
+    else:
+        intensity_sums = numpy.bincount(
+            index, weights=weight, minlength=clusters
+        )
+        center_mean = [float(value) for value in intensity_sums / counts]
     center_real = [float(value) for value in kmeans.cluster_centers_[:, 0]]
     center_imag = [float(value) for value in kmeans.cluster_centers_[:, 1]]
 
@@ -383,16 +402,17 @@ def phasor_cluster_kmeans(
         center_real,
         center_imag,
         sort,
-        size=[-int(n) for n in numpy.bincount(index, minlength=clusters)],
+        size=[-int(n) for n in counts],
     )
 
     relabel = numpy.empty(clusters, dtype=numpy.intp)
     relabel[argsort] = numpy.arange(clusters)
 
-    labels = numpy.full(coords.shape[0], -1, dtype=numpy.intp)
+    labels = numpy.full(valid_data.size, -1, dtype=numpy.intp)
     labels[valid_data] = relabel[index]
 
     return (
+        tuple(center_mean[i] for i in argsort),
         tuple(center_real[i] for i in argsort),
         tuple(center_imag[i] for i in argsort),
         labels.reshape(real.shape),

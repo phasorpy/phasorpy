@@ -120,8 +120,8 @@ mean, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
 # phasor coordinates into a fixed number of clusters, assigning each phasor
 # coordinate to the cluster with the nearest center:
 
-center_real, center_imag, labels = phasor_cluster_kmeans(
-    real, imag, clusters=3, n_init=10, random_state=42
+_, center_real, center_imag, labels = phasor_cluster_kmeans(
+    None, real, imag, clusters=3, n_init=10, random_state=42
 )
 
 # %%
@@ -137,7 +137,7 @@ center_real, center_imag, labels = phasor_cluster_kmeans(
 # assigned to any cluster and are labeled -1:
 
 plot = PhasorPlot(frequency=frequency, title='K-means clusters')
-for index, color in enumerate(CATEGORICAL[:2]):
+for index, color in enumerate(CATEGORICAL[:3]):
     plot.plot(
         real[labels == index],
         imag[labels == index],
@@ -154,7 +154,9 @@ plot.show()
 # can be used directly to mask regions of interest and to plot a pseudo-color
 # image:
 
-pseudo_color_image = pseudo_color(labels == 0, labels == 1, intensity=mean)
+pseudo_color_image = pseudo_color(
+    labels == 0, labels == 1, labels == 2, intensity=mean
+)
 
 plot_image(
     pseudo_color_image, title='Pseudo-color image from k-means clusters'
@@ -164,23 +166,36 @@ plot_image(
 # Intensity weighting
 # -------------------
 #
-# By default, all phasor coordinates contribute equally to the clusters,
-# regardless of the number of photons detected at each pixel.
-# Pass the mean intensity image to weight the phasor coordinates, such that
-# the coordinates of brighter pixels contribute more:
+# Passing ``None`` as the first argument, as above, lets all phasor
+# coordinates contribute equally to the clusters, regardless of the number of
+# photons detected at each pixel. Pass the mean intensity image instead to
+# weight the phasor coordinates, such that the coordinates of brighter pixels
+# contribute more:
 
-weighted_real, weighted_imag, weighted_labels = phasor_cluster_kmeans(
-    real, imag, clusters=3, intensity=mean, n_init=10, random_state=42
+center_mean, weighted_real, weighted_imag, weighted_labels = (
+    phasor_cluster_kmeans(
+        mean, real, imag, clusters=3, n_init=10, random_state=42
+    )
 )
 
-for index in range(2):
-    print(f'cluster {index} center')
-    print(f'  unweighted: {center_real[index]:.4f}, {center_imag[index]:.4f}')
+for index in range(3):
+    print(f'cluster {index}')
     print(
-        f'  weighted:   {weighted_real[index]:.4f}, '
+        f'  unweighted center: {center_real[index]:.4f}, '
+        f'{center_imag[index]:.4f}'
+    )
+    print(
+        f'  weighted center:   {weighted_real[index]:.4f}, '
         f'{weighted_imag[index]:.4f}'
     )
+    print(f'  mean intensity:    {center_mean[index]:.4f}')
 print(f'reassigned coordinates: {(labels != weighted_labels).sum()}')
+
+# %%
+# When weighting by intensity, the cluster centers are the phasor centers of
+# the coordinates assigned to each cluster, as calculated by
+# :py:func:`phasorpy.phasor.phasor_center`. The returned ``center_mean`` is
+# the mean intensity of each cluster.
 
 # %%
 # The clusters returned by both functions are sorted, by default by their
@@ -190,5 +205,5 @@ print(f'reassigned coordinates: {(labels != weighted_labels).sum()}')
 # sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = 4
 # mypy: allow-untyped-defs, allow-untyped-calls
-# mypy: disable-error-code="arg-type"
+# mypy: disable-error-code="arg-type, assignment"
 # sphinx_gallery_end_ignore
