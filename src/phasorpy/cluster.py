@@ -109,6 +109,11 @@ def phasor_cluster_gmm(
     --------
     :ref:`sphx_glr_tutorials_api_phasorpy_cluster.py`
 
+    Notes
+    -----
+    This function operates on single-harmonic, single-channel data only.
+    Multi-harmonic or multi-channel data must be clustered separately.
+
     References
     ----------
     .. [1] Vallmitjana A, Torrado B, and Gratton E.
@@ -302,10 +307,14 @@ def phasor_cluster_kmeans(
 
     Notes
     -----
-    Unlike :py:func:`phasor_cluster_gmm`, k-means clustering assigns each
-    phasor coordinate to exactly one cluster. The clusters are separated by
-    straight lines, which may not follow the elliptical shape of phasor
-    distributions.
+    This function operates on single-harmonic, single-channel data only.
+    Multi-harmonic or multi-channel data must be clustered separately.
+
+    For a single cluster, the returned center equals the center calculated by
+    :py:func:`phasor_center`. For ``clusters > 1``, they are generally not
+    equal because centers returned by scikit-learn are subject to the
+    convergence tolerance (the `tol` argument of
+    :py:class:`sklearn.cluster.KMeans`).
 
     Examples
     --------

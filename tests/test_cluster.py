@@ -10,6 +10,7 @@ from numpy.testing import assert_allclose, assert_array_equal
 
 from phasorpy._typing import ArrayLike
 from phasorpy.cluster import phasor_cluster_gmm, phasor_cluster_kmeans
+from phasorpy.phasor import phasor_center
 
 rng = numpy.random.default_rng(42)
 
@@ -195,6 +196,42 @@ def test_phasor_cluster_kmeans_labels() -> None:
         imag[:, None] - numpy.asarray(center_imag),
     )
     assert_array_equal(distance.argmin(axis=1), labels)
+
+
+def test_phasor_cluster_kmeans_phasor_center() -> None:
+    """Test phasor_cluster_kmeans centers relate to phasor_center."""
+    coords = numpy.concatenate(
+        [
+            rng.multivariate_normal(
+                [0.2, 0.3], [[3e-3, 1e-3], [1e-3, 1e-3]], 2**13
+            ),
+            rng.multivariate_normal(
+                [0.3, 0.5], [[1e-3, -5e-4], [-5e-4, 1e-3]], 2**12
+            ),
+        ]
+    )
+    real, imag = coords.T
+    mean = rng.random(real.size) * 10.0
+
+    # a single cluster is the center of all phasor coordinates
+    center = phasor_cluster_kmeans(mean, real, imag)[:3]
+    assert_allclose(
+        [value[0] for value in center], phasor_center(mean, real, imag)
+    )
+
+    # with more clusters, the centers found by the k-means algorithm
+    # approximate the centers of the coordinates assigned to each cluster
+    center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
+        mean, real, imag, clusters=3, n_init=10, random_state=42
+    )
+    for i in range(3):
+        mask = labels == i
+        expected = phasor_center(mean[mask], real[mask], imag[mask])
+        assert_allclose(
+            (center_real[i], center_imag[i]), expected[1:], atol=1e-3
+        )
+        # center_mean is calculated from the final cluster assignment
+        assert_allclose(center_mean[i], expected[0])
 
 
 def test_phasor_cluster_kmeans_shape() -> None:

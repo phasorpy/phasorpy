@@ -1433,7 +1433,7 @@ def phasor_center(
     method : str, optional
         Method used for center calculation:
 
-        - ``'mean'``: Arithmetic mean of phasor coordinates.
+        - ``'mean'``: Intensity-weighted mean of phasor coordinates.
         - ``'median'``: Spatial median of phasor coordinates.
 
     nan_safe : bool, optional
