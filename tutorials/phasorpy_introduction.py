@@ -446,59 +446,6 @@ plot_phasor(
 )
 
 # %%
-# Find clusters
-# -------------
-#
-# The :py:mod:`phasorpy.cluster` module provides functions to fit clusters
-# to phasor coordinates.
-#
-# Automatically find the two elliptical clusters in the phasor space using
-# a Gaussian mixture model and plot them in distinct colors:
-
-from phasorpy.cluster import phasor_cluster_gmm
-
-center_real, center_imag, radius, radius_minor, angle = phasor_cluster_gmm(
-    real, imag, clusters=2
-)
-
-plot = PhasorPlot(allquadrants=True, title='Elliptical clusters')
-plot.hist2d(real, imag, cmap='Greys')
-plot.cursor(
-    center_real,
-    center_imag,
-    radius=radius,
-    radius_minor=radius_minor,
-    angle=angle,
-    color=CATEGORICAL[:2],
-)
-plot.show()
-
-# %%
-# Use the elliptical clusters to mask regions of interest in the phasor space:
-
-from phasorpy.cursor import mask_from_elliptic_cursor
-
-elliptic_masks = mask_from_elliptic_cursor(
-    real,
-    imag,
-    center_real,
-    center_imag,
-    radius=radius,
-    radius_minor=radius_minor,
-    angle=angle,
-)
-
-# %%
-# Plot a pseudo-color image, composited from the elliptical cursor masks and
-# the mean intensity image:
-
-pseudo_color_image = pseudo_color(*elliptic_masks, intensity=mean)
-
-plot_image(
-    pseudo_color_image, title='Pseudo-color image from elliptical cursors'
-)
-
-# %%
 # Appendix
 # --------
 #
@@ -509,7 +456,7 @@ from phasorpy.utils import versions
 print(versions())
 
 # sphinx_gallery_start_ignore
-# sphinx_gallery_thumbnail_number = -8
+# sphinx_gallery_thumbnail_number = -6
 # mypy: allow-untyped-defs, allow-untyped-calls
 # mypy: disable-error-code="arg-type, assignment"
 # isort: skip_file

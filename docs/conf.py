@@ -175,6 +175,7 @@ class TutorialOrder:
         'phasorplot',
         'cursor',
         'component',
+        'cluster',
         'pca',
         # misc
         'logo',
