@@ -19,15 +19,18 @@ from phasorpy.cluster import phasor_cluster_gmm, phasor_cluster_kmeans
 from phasorpy.color import CATEGORICAL
 from phasorpy.cursor import mask_from_elliptic_cursor, pseudo_color
 from phasorpy.datasets import fetch
-from phasorpy.filter import phasor_threshold
-from phasorpy.io import signal_from_lsm
+from phasorpy.filter import phasor_filter_median, phasor_threshold
+from phasorpy.io import signal_from_imspector_tiff, signal_from_lsm
+from phasorpy.lifetime import phasor_calibrate
 from phasorpy.phasor import phasor_from_signal
 from phasorpy.plot import PhasorPlot, plot_image
 
 # %%
-# Load a hyperspectral dataset used throughout this tutorial and calculate
-# phasor coordinates at the first harmonic and filter out pixels with low
-# intensity:
+# Gaussian mixture model
+# ----------------------
+#
+# Load a hyperspectral dataset and calculate phasor coordinates at the first
+# harmonic and filter out pixels with low intensity:
 
 signal = signal_from_lsm(fetch('paramecium.lsm'))
 mean, real, imag = phasor_from_signal(signal, axis=0)
@@ -41,9 +44,6 @@ plot.hist2d(real, imag, cmap='Greys')
 plot.show()
 
 # %%
-# Gaussian mixture model
-# ----------------------
-#
 # The :py:func:`phasorpy.cluster.phasor_cluster_gmm` function fits a Gaussian
 # mixture model to the phasor coordinates and returns the parameters of
 # ellipses describing the clusters:
@@ -97,21 +97,46 @@ plot_image(
 # K-means clustering
 # ------------------
 #
+# Load a time-correlated single photon counting (TCSPC) dataset of a
+# zebrafish embryo, and calculate, calibrate, and filter phasor coordinates
+# at the first harmonic:
+
+signal = signal_from_imspector_tiff(fetch('Embryo.tif'))
+frequency = signal.attrs['frequency']
+reference_signal = signal_from_imspector_tiff(fetch('Fluorescein_Embryo.tif'))
+
+mean, real, imag = phasor_from_signal(signal, axis=0)
+reference = phasor_from_signal(reference_signal, axis=0)
+
+real, imag = phasor_calibrate(
+    real, imag, *reference, frequency=frequency, lifetime=4.2
+)
+mean, real, imag = phasor_filter_median(mean, real, imag, size=3, repeat=2)
+mean, real, imag = phasor_threshold(mean, real, imag, mean_min=1)
+
+# %%
 # Instead of describing clusters by ellipses, the
 # :py:func:`phasorpy.cluster.phasor_cluster_kmeans` function partitions the
 # phasor coordinates into a fixed number of clusters, assigning each phasor
 # coordinate to the cluster with the nearest center:
 
 center_real, center_imag, labels = phasor_cluster_kmeans(
-    real, imag, clusters=2
+    real, imag, clusters=3, n_init=10, random_state=42
 )
+
+# %%
+# K-means clustering starts from a random initialization and may converge to
+# different solutions when clusters are not well separated. Arguments such as
+# ``n_init`` and ``random_state`` are passed to
+# :py:class:`sklearn.cluster.KMeans` and are used here to obtain reproducible
+# results.
 
 # %%
 # Plot the phasor coordinates in the color of the cluster they belong to,
 # and mark the cluster centers. Phasor coordinates that are NaN are not
 # assigned to any cluster and are labeled -1:
 
-plot = PhasorPlot(allquadrants=True, title='K-means clusters')
+plot = PhasorPlot(frequency=frequency, title='K-means clusters')
 for index, color in enumerate(CATEGORICAL[:2]):
     plot.plot(
         real[labels == index],
@@ -126,13 +151,36 @@ plot.show()
 
 # %%
 # Since every phasor coordinate is assigned to a cluster, the cluster labels
-# can be used directly to plot a pseudo-color image:
+# can be used directly to mask regions of interest and to plot a pseudo-color
+# image:
 
 pseudo_color_image = pseudo_color(labels == 0, labels == 1, intensity=mean)
 
 plot_image(
     pseudo_color_image, title='Pseudo-color image from k-means clusters'
 )
+
+# %%
+# Intensity weighting
+# -------------------
+#
+# By default, all phasor coordinates contribute equally to the clusters,
+# regardless of the number of photons detected at each pixel.
+# Pass the mean intensity image to weight the phasor coordinates, such that
+# the coordinates of brighter pixels contribute more:
+
+weighted_real, weighted_imag, weighted_labels = phasor_cluster_kmeans(
+    real, imag, clusters=3, intensity=mean, n_init=10, random_state=42
+)
+
+for index in range(2):
+    print(f'cluster {index} center')
+    print(f'  unweighted: {center_real[index]:.4f}, {center_imag[index]:.4f}')
+    print(
+        f'  weighted:   {weighted_real[index]:.4f}, '
+        f'{weighted_imag[index]:.4f}'
+    )
+print(f'reassigned coordinates: {(labels != weighted_labels).sum()}')
 
 # %%
 # The clusters returned by both functions are sorted, by default by their

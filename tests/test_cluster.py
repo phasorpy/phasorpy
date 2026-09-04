@@ -229,6 +229,79 @@ def test_phasor_cluster_kmeans_nan() -> None:
         phasor_cluster_kmeans([numpy.nan, numpy.nan], [numpy.nan, numpy.nan])
 
 
+def test_phasor_cluster_kmeans_intensity() -> None:
+    """Test phasor_cluster_kmeans function with intensity weighting."""
+    real = [0.1, 0.2, 0.5, 0.6]
+    imag = [0.1, 0.2, 0.5, 0.6]
+    unweighted = phasor_cluster_kmeans(real, imag, clusters=2)
+
+    # uniform intensity is equivalent to no weighting
+    for intensity in ([1.0] * 4, [3.0] * 4):
+        center_real, center_imag, labels = phasor_cluster_kmeans(
+            real, imag, clusters=2, intensity=intensity
+        )
+        assert_allclose(center_real, unweighted[0])
+        assert_allclose(center_imag, unweighted[1])
+        assert_array_equal(labels, unweighted[2])
+
+    # centers are intensity-weighted means of coordinates in each cluster
+    center_real, center_imag, labels = phasor_cluster_kmeans(
+        real, imag, clusters=2, intensity=[1.0, 3.0, 3.0, 1.0]
+    )
+    assert_allclose(center_real, [0.175, 0.525], atol=1e-6)
+    assert_allclose(center_imag, [0.175, 0.525], atol=1e-6)
+    assert_array_equal(labels, [0, 0, 1, 1])
+
+    # coordinates with NaN intensity are not assigned to any cluster
+    _, _, labels = phasor_cluster_kmeans(
+        real, imag, clusters=2, intensity=[1.0, numpy.nan, 1.0, 1.0]
+    )
+    assert_array_equal(labels, [0, -1, 1, 1])
+
+    # integer intensity, multidimensional shape, and sorting
+    coords = numpy.asarray(real).reshape(2, 2)
+    center_real, _, labels = phasor_cluster_kmeans(
+        coords,
+        coords,
+        clusters=2,
+        intensity=numpy.asarray([[1, 3], [3, 1]]),
+        sort='size',
+    )
+    assert labels.shape == (2, 2)
+    assert_allclose(sorted(center_real), [0.175, 0.525], atol=1e-6)
+
+
+def test_phasor_cluster_kmeans_intensity_shifts_centers() -> None:
+    """Test phasor_cluster_kmeans intensity weighting shifts centers."""
+    real1, imag1 = rng.multivariate_normal(
+        [0.2, 0.3], [[1e-3, 0], [0, 1e-3]], 2**12
+    ).T
+    real2, imag2 = rng.multivariate_normal(
+        [0.5, 0.5], [[1e-3, 0], [0, 1e-3]], 2**12
+    ).T
+    real = numpy.concatenate([real1, real2])
+    imag = numpy.concatenate([imag1, imag2])
+    # brighter towards larger real coordinates
+    intensity = numpy.exp(4.0 * real)
+
+    center_real, *_ = phasor_cluster_kmeans(
+        real, imag, clusters=2, random_state=42
+    )
+    weighted_real, _, weighted_labels = phasor_cluster_kmeans(
+        real, imag, clusters=2, intensity=intensity, random_state=42
+    )
+    assert numpy.all(numpy.asarray(weighted_real) > numpy.asarray(center_real))
+
+    # weighted centers are the weighted means of the assigned coordinates
+    for i, center in enumerate(weighted_real):
+        mask = weighted_labels == i
+        assert_allclose(
+            center,
+            numpy.average(real[mask], weights=intensity[mask]),
+            atol=1e-6,
+        )
+
+
 def test_phasor_cluster_kmeans_kwargs() -> None:
     """Test phasor_cluster_kmeans function with sklearn arguments."""
     real = [0.1, 0.11, 0.5, 0.51]
@@ -273,6 +346,22 @@ def test_phasor_cluster_kmeans_exceptions() -> None:
     # insufficient data points for clusters
     with pytest.raises(ValueError):
         phasor_cluster_kmeans([1, 2], [1, 2], clusters=3)
+
+    # intensity shape mismatch
+    with pytest.raises(ValueError):
+        phasor_cluster_kmeans([1, 2], [1, 2], intensity=[1, 2, 3])
+
+    # negative intensity
+    with pytest.raises(ValueError):
+        phasor_cluster_kmeans([1, 2], [1, 2], intensity=[1.0, -1.0])
+
+    # intensity sums to zero
+    with pytest.raises(ValueError):
+        phasor_cluster_kmeans([1, 2], [1, 2], intensity=[0.0, 0.0])
+
+    # all intensity is NaN
+    with pytest.raises(ValueError):
+        phasor_cluster_kmeans([1, 2], [1, 2], intensity=[numpy.nan] * 2)
 
     with pytest.raises(ValueError):
         phasor_cluster_kmeans(
