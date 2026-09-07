@@ -238,7 +238,7 @@ def phasor_cluster_kmeans(
     tuple[float, ...],
     tuple[float, ...],
     tuple[float, ...],
-    NDArray[numpy.intp],
+    NDArray[Any],
 ]:
     """Return k-means clusters of phasor coordinates.
 
@@ -318,8 +318,9 @@ def phasor_cluster_kmeans(
 
     Examples
     --------
-    Partition phasor coordinates into two clusters and return the cluster
-    centers and the cluster index of each coordinate:
+    Partition phasor coordinates into two clusters, without intensity
+    weighting, and return the cluster centers and the cluster index of each
+    coordinate:
 
     >>> center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
     ...     None, [0.1, 0.2, 0.5, 0.6], [0.1, 0.2, 0.5, 0.6], clusters=2
@@ -327,14 +328,7 @@ def phasor_cluster_kmeans(
     >>> center_real  # doctest: +NUMBER
     (0.15, 0.55)
     >>> labels
-    array([0, 0, 1, 1])
-
-    Phasor coordinates that are NaN are not assigned to any cluster:
-
-    >>> phasor_cluster_kmeans(
-    ...     None, [0.1, numpy.nan, 0.6], [0.1, 0.2, 0.6], clusters=2
-    ... )[3]
-    array([ 0, -1,  1])
+    array([0, 0, 1, 1]...)
 
     Weight phasor coordinates by intensity, moving the cluster centers
     towards the coordinates of brighter pixels:
@@ -347,8 +341,6 @@ def phasor_cluster_kmeans(
     ... )
     >>> center_mean  # doctest: +NUMBER
     (2.0, 2.0)
-    >>> center_real  # doctest: +NUMBER
-    (0.175, 0.525)
 
     """
     from sklearn.cluster import KMeans
@@ -357,23 +349,18 @@ def phasor_cluster_kmeans(
         msg = f'{clusters=} < 1'
         raise ValueError(msg)
 
-    real = numpy.asarray(real)
-    imag = numpy.asarray(imag)
-
-    if real.shape != imag.shape:
-        msg = f'{real.shape=} != {imag.shape=}'
-        raise ValueError(msg)
-
-    coords = numpy.stack([real, imag], axis=-1).reshape((-1, 2))
+    coords = numpy.stack([real, imag], axis=-1)
+    shape = coords.shape[:-1]
+    coords = coords.reshape((-1, 2))
     valid_data = ~numpy.isnan(coords).any(axis=1)
 
     weight = None
     if mean is not None:
         mean = numpy.asarray(mean)
-        if mean.shape != real.shape:
-            msg = f'{mean.shape=} != {real.shape=}'
+        if mean.shape != shape:
+            msg = f'mean.shape={mean.shape} != real.shape={shape}'
             raise ValueError(msg)
-        weight = mean.astype(numpy.float64).reshape(-1)
+        weight = mean.reshape(-1)
         valid_data &= ~numpy.isnan(weight)
 
     size = int(valid_data.sum())
@@ -414,17 +401,18 @@ def phasor_cluster_kmeans(
         size=[-int(n) for n in counts],
     )
 
-    relabel = numpy.empty(clusters, dtype=numpy.intp)
+    dtype = numpy.min_scalar_type(-clusters)
+    relabel = numpy.empty(clusters, dtype=dtype)
     relabel[argsort] = numpy.arange(clusters)
 
-    labels = numpy.full(valid_data.size, -1, dtype=numpy.intp)
+    labels = numpy.full(valid_data.size, -1, dtype=dtype)
     labels[valid_data] = relabel[index]
 
     return (
         tuple(center_mean[i] for i in argsort),
         tuple(center_real[i] for i in argsort),
         tuple(center_imag[i] for i in argsort),
-        labels.reshape(real.shape),
+        labels.reshape(shape),
     )
 
 

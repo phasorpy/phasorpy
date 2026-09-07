@@ -242,7 +242,12 @@ def test_phasor_cluster_kmeans_shape() -> None:
         None, real, imag, clusters=2, random_state=42
     )
     assert labels.shape == (4, 5, 10)
-    assert labels.dtype.kind == 'i'
+    # smallest signed integer type holding -1 and clusters - 1
+    assert labels.dtype == numpy.int8
+    *_, labels = phasor_cluster_kmeans(
+        None, real.reshape(-1), imag.reshape(-1), clusters=200, random_state=42
+    )
+    assert labels.dtype == numpy.int16
 
     # scalar input
     center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
