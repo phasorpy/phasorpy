@@ -141,18 +141,15 @@ def test_phasor_cluster_kmeans_basic(clusters: int, sort: str) -> None:
     ).T
     real = numpy.concatenate([real1, real2])
     imag = numpy.concatenate([imag1, imag2])
-    center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
-        None,
+    center_real, center_imag, labels = phasor_cluster_kmeans(
         real,
         imag,
         clusters=clusters,
         sort=sort,  # type: ignore[arg-type]
         random_state=42,
     )
-    assert len(center_mean) == clusters
     assert len(center_real) == clusters
     assert len(center_imag) == clusters
-    assert numpy.isnan(center_mean).all()  # mean is None
     assert labels.shape == real.shape
     assert labels.min() == 0
     assert labels.max() == clusters - 1
@@ -174,8 +171,8 @@ def test_phasor_cluster_kmeans_labels() -> None:
     imag = numpy.concatenate([imag1, imag2])
 
     # 'polar' sorting: small cluster has lower phase, hence comes first
-    _, center_real, center_imag, labels = phasor_cluster_kmeans(
-        None, real, imag, clusters=2, random_state=42
+    center_real, center_imag, labels = phasor_cluster_kmeans(
+        real, imag, clusters=2, random_state=42
     )
     assert_allclose(center_real, [0.6, 0.2], atol=0.01)
     assert_allclose(center_imag, [0.2, 0.6], atol=0.01)
@@ -183,8 +180,8 @@ def test_phasor_cluster_kmeans_labels() -> None:
     assert_array_equal(labels, [0] * 100 + [1] * 1000)
 
     # 'size' sorting: large cluster comes first
-    _, center_real, center_imag, labels = phasor_cluster_kmeans(
-        None, real, imag, clusters=2, sort='size', random_state=42
+    center_real, center_imag, labels = phasor_cluster_kmeans(
+        real, imag, clusters=2, sort='size', random_state=42
     )
     assert_allclose(center_real, [0.2, 0.6], atol=0.01)
     assert_allclose(center_imag, [0.6, 0.2], atol=0.01)
@@ -199,7 +196,7 @@ def test_phasor_cluster_kmeans_labels() -> None:
 
 
 def test_phasor_cluster_kmeans_phasor_center() -> None:
-    """Test phasor_cluster_kmeans centers relate to phasor_center."""
+    """Test phasor_cluster_kmeans returns unweighted centers."""
     coords = numpy.concatenate(
         [
             rng.multivariate_normal(
@@ -213,47 +210,89 @@ def test_phasor_cluster_kmeans_phasor_center() -> None:
     real, imag = coords.T
     mean = rng.random(real.size) * 10.0
 
-    # a single cluster is the center of all phasor coordinates
-    center = phasor_cluster_kmeans(mean, real, imag)[:3]
+    # a single cluster is the unweighted center of all coordinates
+    center = phasor_cluster_kmeans(real, imag)
     assert_allclose(
-        [value[0] for value in center], phasor_center(mean, real, imag)
+        [value[0] for value in center[:2]],
+        phasor_center(numpy.ones_like(real), real, imag)[1:],
+    )
+    # centers are not weighted by intensity
+    weighted = phasor_center(mean, real, imag)
+    assert not numpy.allclose(
+        [value[0] for value in center[:2]], weighted[1:], atol=1e-6
     )
 
-    # with more clusters, the centers found by the k-means algorithm
-    # approximate the centers of the coordinates assigned to each cluster
-    center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
-        mean, real, imag, clusters=3, n_init=10, random_state=42
+    # intensity-weighted centers are obtained by applying phasor_center
+    # to the coordinates of each cluster
+    center_real, center_imag, labels = phasor_cluster_kmeans(
+        real, imag, clusters=3, n_init=10, random_state=42
     )
     for i in range(3):
         mask = labels == i
-        expected = phasor_center(mean[mask], real[mask], imag[mask])
+        expected = phasor_center(
+            numpy.ones_like(real[mask]), real[mask], imag[mask]
+        )
         assert_allclose(
             (center_real[i], center_imag[i]), expected[1:], atol=1e-3
         )
-        # center_mean is calculated from the final cluster assignment
-        assert_allclose(center_mean[i], expected[0])
+
+
+def test_phasor_cluster_kmeans_sample_weight() -> None:
+    """Test phasor_cluster_kmeans function with sample_weight argument."""
+    real = [0.1, 0.2, 0.5, 0.6]
+    imag = [0.1, 0.2, 0.5, 0.6]
+    unweighted = phasor_cluster_kmeans(real, imag, clusters=2)
+
+    # uniform sample_weight is equivalent to no weighting
+    center_real, center_imag, labels = phasor_cluster_kmeans(
+        real, imag, clusters=2, sample_weight=[2.0] * 4
+    )
+    assert_allclose(center_real, unweighted[0])
+    assert_allclose(center_imag, unweighted[1])
+    assert_array_equal(labels, unweighted[2])
+
+    # centers are weighted means of coordinates in each cluster
+    center_real, center_imag, labels = phasor_cluster_kmeans(
+        real, imag, clusters=2, sample_weight=[1.0, 3.0, 3.0, 1.0]
+    )
+    assert_allclose(center_real, [0.175, 0.525], atol=1e-6)
+    assert_allclose(center_imag, [0.175, 0.525], atol=1e-6)
+    assert_array_equal(labels, [0, 0, 1, 1])
+
+    # sample_weight is matched to non-NaN coordinates and may be
+    # multidimensional
+    coords = numpy.asarray(real).reshape(2, 2)
+    center_real, _, labels = phasor_cluster_kmeans(
+        coords, coords, clusters=2, sample_weight=[[1.0, 3.0], [3.0, 1.0]]
+    )
+    assert labels.shape == (2, 2)
+    assert_allclose(center_real, [0.175, 0.525], atol=1e-6)
+
+    center_real, _, labels = phasor_cluster_kmeans(
+        [0.1, numpy.nan, 0.2, 0.5, 0.6],
+        [0.1, 0.2, 0.2, 0.5, 0.6],
+        clusters=2,
+        sample_weight=[1.0, 99.0, 3.0, 3.0, 1.0],
+    )
+    assert_array_equal(labels, [0, -1, 0, 1, 1])
+    assert_allclose(center_real, [0.175, 0.525], atol=1e-6)
 
 
 def test_phasor_cluster_kmeans_shape() -> None:
     """Test phasor_cluster_kmeans function preserves shape of input."""
     real = rng.normal([[0.2], [0.6]], 0.01, (2, 100)).reshape(4, 5, 10)
     imag = rng.normal([[0.3], [0.5]], 0.01, (2, 100)).reshape(4, 5, 10)
-    *_, labels = phasor_cluster_kmeans(
-        None, real, imag, clusters=2, random_state=42
-    )
+    *_, labels = phasor_cluster_kmeans(real, imag, clusters=2, random_state=42)
     assert labels.shape == (4, 5, 10)
     # smallest signed integer type holding -1 and clusters - 1
     assert labels.dtype == numpy.int8
     *_, labels = phasor_cluster_kmeans(
-        None, real.reshape(-1), imag.reshape(-1), clusters=200, random_state=42
+        real.reshape(-1), imag.reshape(-1), clusters=200, random_state=42
     )
     assert labels.dtype == numpy.int16
 
     # scalar input
-    center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
-        2.0, 0.5, 0.3
-    )
-    assert center_mean == (2.0,)
+    center_real, center_imag, labels = phasor_cluster_kmeans(0.5, 0.3)
     assert center_real == (0.5,)
     assert center_imag == (0.3,)
     assert labels.shape == ()
@@ -262,8 +301,7 @@ def test_phasor_cluster_kmeans_shape() -> None:
 
 def test_phasor_cluster_kmeans_nan() -> None:
     """Test phasor_cluster_kmeans function with NaN coordinates."""
-    _, center_real, center_imag, labels = phasor_cluster_kmeans(
-        None,
+    center_real, center_imag, labels = phasor_cluster_kmeans(
         [0.1, numpy.nan, 0.5, 0.6, 0.2],
         [0.1, 0.2, 0.5, 0.6, numpy.nan],
         clusters=2,
@@ -275,90 +313,22 @@ def test_phasor_cluster_kmeans_nan() -> None:
 
     # all NaN
     with pytest.raises(ValueError):
-        phasor_cluster_kmeans(
-            None, [numpy.nan, numpy.nan], [numpy.nan, numpy.nan]
-        )
-
-
-def test_phasor_cluster_kmeans_weighted() -> None:
-    """Test phasor_cluster_kmeans function with intensity weighting."""
-    real = [0.1, 0.2, 0.5, 0.6]
-    imag = [0.1, 0.2, 0.5, 0.6]
-    unweighted = phasor_cluster_kmeans(None, real, imag, clusters=2)
-
-    # uniform intensity is equivalent to no weighting, except center_mean
-    for mean in ([1.0] * 4, [3.0] * 4):
-        center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
-            mean, real, imag, clusters=2
-        )
-        assert_allclose(center_mean, [mean[0]] * 2)
-        assert_allclose(center_real, unweighted[1])
-        assert_allclose(center_imag, unweighted[2])
-        assert_array_equal(labels, unweighted[3])
-
-    # centers are intensity-weighted means of coordinates in each cluster
-    center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
-        [1.0, 3.0, 3.0, 1.0], real, imag, clusters=2
-    )
-    assert_allclose(center_mean, [2.0, 2.0], atol=1e-6)
-    assert_allclose(center_real, [0.175, 0.525], atol=1e-6)
-    assert_allclose(center_imag, [0.175, 0.525], atol=1e-6)
-    assert_array_equal(labels, [0, 0, 1, 1])
-
-    # coordinates with NaN intensity are not assigned to any cluster
-    *_, labels = phasor_cluster_kmeans(
-        [1.0, numpy.nan, 1.0, 1.0], real, imag, clusters=2
-    )
-    assert_array_equal(labels, [0, -1, 1, 1])
-
-    # integer intensity, multidimensional shape, and sorting
-    coords = numpy.asarray(real).reshape(2, 2)
-    _, center_real, _, labels = phasor_cluster_kmeans(
-        numpy.asarray([[1, 3], [3, 1]]),
-        coords,
-        coords,
-        clusters=2,
-        sort='size',
-    )
-    assert labels.shape == (2, 2)
-    assert_allclose(sorted(center_real), [0.175, 0.525], atol=1e-6)
-
-
-def test_phasor_cluster_kmeans_weighted_shifts_centers() -> None:
-    """Test phasor_cluster_kmeans intensity weighting shifts centers."""
-    real1, imag1 = rng.multivariate_normal(
-        [0.2, 0.3], [[1e-3, 0], [0, 1e-3]], 2**12
-    ).T
-    real2, imag2 = rng.multivariate_normal(
-        [0.5, 0.5], [[1e-3, 0], [0, 1e-3]], 2**12
-    ).T
-    real = numpy.concatenate([real1, real2])
-    imag = numpy.concatenate([imag1, imag2])
-    # brighter towards larger real coordinates
-    mean = numpy.exp(4.0 * real)
-
-    _, center_real, _, _ = phasor_cluster_kmeans(
-        None, real, imag, clusters=2, n_init=10, random_state=42
-    )
-    _, weighted_real, _, _ = phasor_cluster_kmeans(
-        mean, real, imag, clusters=2, n_init=10, random_state=42
-    )
-    assert numpy.all(numpy.asarray(weighted_real) > numpy.asarray(center_real))
+        phasor_cluster_kmeans([numpy.nan, numpy.nan], [numpy.nan, numpy.nan])
 
 
 def test_phasor_cluster_kmeans_kwargs() -> None:
     """Test phasor_cluster_kmeans function with sklearn arguments."""
     real = [0.1, 0.11, 0.5, 0.51]
     imag = [0.1, 0.11, 0.5, 0.51]
-    _, center_real, _, labels = phasor_cluster_kmeans(
-        None, real, imag, clusters=2, init='random', n_init=10, random_state=42
+    center_real, _, labels = phasor_cluster_kmeans(
+        real, imag, clusters=2, init='random', n_init=10, random_state=42
     )
     assert_allclose(center_real, [0.105, 0.505], atol=1e-6)
     assert_array_equal(labels, [0, 0, 1, 1])
 
     # n_clusters is ignored in favor of clusters
-    _, center_real, *_ = phasor_cluster_kmeans(
-        None, real, imag, clusters=2, n_clusters=3, random_state=42
+    center_real, *_ = phasor_cluster_kmeans(
+        real, imag, clusters=2, n_clusters=3, random_state=42
     )
     assert len(center_real) == 2
 
@@ -367,47 +337,35 @@ def test_phasor_cluster_kmeans_exceptions() -> None:
     """Test phasor_cluster_kmeans function raises exceptions."""
     # shape mismatch
     with pytest.raises(ValueError):
-        phasor_cluster_kmeans(None, [1, 2, 3], [1, 2])
+        phasor_cluster_kmeans([1, 2, 3], [1, 2])
 
     # invalid sort method, also with a single cluster
     with pytest.raises(ValueError):
-        phasor_cluster_kmeans(None, [1, 2], [1, 2], clusters=2, sort='invalid')  # type: ignore[arg-type]
+        phasor_cluster_kmeans([1, 2], [1, 2], clusters=2, sort='invalid')  # type: ignore[arg-type]
 
     with pytest.raises(ValueError):
-        phasor_cluster_kmeans(None, [1, 2], [1, 2], clusters=1, sort='invalid')  # type: ignore[arg-type]
+        phasor_cluster_kmeans([1, 2], [1, 2], clusters=1, sort='invalid')  # type: ignore[arg-type]
 
     # sorting method of other cluster function
     with pytest.raises(ValueError):
-        phasor_cluster_kmeans(None, [1, 2], [1, 2], clusters=2, sort='area')  # type: ignore[arg-type]
+        phasor_cluster_kmeans([1, 2], [1, 2], clusters=2, sort='area')  # type: ignore[arg-type]
 
     # clusters < 1
     with pytest.raises(ValueError):
-        phasor_cluster_kmeans(None, [1, 2, 3], [1, 2, 3], clusters=0)
+        phasor_cluster_kmeans([1, 2, 3], [1, 2, 3], clusters=0)
 
     with pytest.raises(ValueError):
-        phasor_cluster_kmeans(None, [1, 2, 3], [1, 2, 3], clusters=-1)
+        phasor_cluster_kmeans([1, 2, 3], [1, 2, 3], clusters=-1)
 
     # insufficient data points for clusters
     with pytest.raises(ValueError):
-        phasor_cluster_kmeans(None, [1, 2], [1, 2], clusters=3)
+        phasor_cluster_kmeans([1, 2], [1, 2], clusters=3)
 
     with pytest.raises(ValueError):
         phasor_cluster_kmeans(
-            None, [1.0, numpy.nan, 2.0], [1.0, 2.0, numpy.nan], clusters=2
+            [1.0, numpy.nan, 2.0], [1.0, 2.0, numpy.nan], clusters=2
         )
 
-    # mean shape mismatch
-    with pytest.raises(ValueError):
-        phasor_cluster_kmeans([1, 2, 3], [1, 2], [1, 2])
-
-    # negative mean
-    with pytest.raises(ValueError):
-        phasor_cluster_kmeans([1.0, -1.0], [1, 2], [1, 2])
-
-    # mean sums to zero
-    with pytest.raises(ValueError):
-        phasor_cluster_kmeans([0.0, 0.0], [1, 2], [1, 2])
-
-    # all mean is NaN
-    with pytest.raises(ValueError):
-        phasor_cluster_kmeans([numpy.nan] * 2, [1, 2], [1, 2])
+    # sample_weight shape mismatch
+    with pytest.raises(IndexError):
+        phasor_cluster_kmeans([1, 2], [1, 2], sample_weight=[1, 2, 3])

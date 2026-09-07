@@ -6,6 +6,8 @@
 Clusters
 ========
 
+Find clusters in distributions of phasor coordinates.
+
 The :py:mod:`phasorpy.cluster` module provides functions to automatically
 find clusters in phasor coordinates, either by fitting ellipses using a
 Gaussian mixture model, or by assigning every phasor coordinate to a cluster
@@ -19,7 +21,7 @@ using k-means clustering.
 import numpy
 
 from phasorpy.cluster import phasor_cluster_gmm, phasor_cluster_kmeans
-from phasorpy.color import CATEGORICAL
+from phasorpy.phasor import phasor_center
 from phasorpy.plot import PhasorPlot
 
 # %%
@@ -46,10 +48,19 @@ mean = numpy.concatenate(
 )
 
 # %%
-# Plot the distribution as a two-dimensional histogram:
+# Plot the distribution as a two-dimensional histogram, together with the
+# mean coordinates of the two distributions for reference:
 
 plot = PhasorPlot(title='Synthetic phasor coordinates')
 plot.hist2d(real, imag, cmap='Greys')
+plot.plot(
+    [real1.mean(), real2.mean()],
+    [imag1.mean(), imag2.mean()],
+    'o',
+    color='k',
+    markersize=7,
+    label='Distribution means',
+)
 plot.show()
 
 # %%
@@ -85,16 +96,12 @@ plot.cursor(
     radius=radius,
     radius_minor=radius_minor,
     angle=angle,
-    color=CATEGORICAL[:2],
+    color=['tab:blue', 'tab:red'],
 )
-for re, im, color in zip(gmm_real, gmm_imag, CATEGORICAL[:2], strict=True):
-    plot.plot(
-        re,
-        im,
-        'o',
-        color=color,
-        markersize=7,
-    )
+for re, im, color in zip(
+    gmm_real, gmm_imag, ('tab:blue', 'tab:red'), strict=True
+):
+    plot.plot(re, im, 'o', color=color, markersize=7)
 plot.show()
 
 # %%
@@ -104,13 +111,10 @@ plot.show()
 # Instead of describing clusters by ellipses, the
 # :py:func:`phasorpy.cluster.phasor_cluster_kmeans` function partitions the
 # phasor coordinates into a fixed number of clusters, assigning each phasor
-# coordinate to the cluster with the nearest center.
-#
-# Pass ``None`` as the first argument to let all phasor coordinates
-# contribute equally:
+# coordinate to the cluster with the nearest center:
 
-center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
-    None, real, imag, clusters=2, random_state=42
+center_real, center_imag, labels = phasor_cluster_kmeans(
+    real, imag, clusters=2, random_state=42
 )
 
 # %%
@@ -119,7 +123,7 @@ center_mean, center_real, center_imag, labels = phasor_cluster_kmeans(
 # Use it to plot the phasor coordinates in the color of their cluster:
 
 plot = PhasorPlot(title='K-means clusters')
-for index, color in enumerate(CATEGORICAL[:2]):
+for index, color in enumerate(('tab:blue', 'tab:red')):
     plot.plot(
         real[labels == index],
         imag[labels == index],
@@ -128,12 +132,9 @@ for index, color in enumerate(CATEGORICAL[:2]):
         alpha=0.5,
         label=f'Cluster {index}',
     )
-for re, im, color in zip(
-    center_real, center_imag, CATEGORICAL[:2], strict=True
-):
     plot.plot(
-        re,
-        im,
+        center_real[index],
+        center_imag[index],
         'o',
         color=color,
         markeredgecolor='k',
@@ -149,79 +150,31 @@ plot.show()
 
 print(
     phasor_cluster_kmeans(
-        None, [0.56, numpy.nan, 0.40], [0.29, 0.20, 0.33], clusters=2
-    )[3]
+        [0.56, numpy.nan, 0.40], [0.29, 0.20, 0.33], clusters=2
+    )[2]
 )
 
 # %%
-# Intensity weighting
-# -------------------
+# Intensity-weighted centers
+# --------------------------
 #
-# Pass the intensity of the phasor coordinates as the first argument to
-# weight them, such that the coordinates of brighter pixels contribute more
-# to the clusters. The first returned value is then the average intensity of
-# each cluster:
-
-weighted_mean, weighted_real, weighted_imag, weighted_labels = (
-    phasor_cluster_kmeans(mean, real, imag, clusters=2, random_state=42)
-)
+# The cluster centers returned by both functions are unweighted. To obtain
+# intensity-weighted centers, apply
+# :py:func:`phasorpy.phasor.phasor_center` to the coordinates of each
+# cluster:
 
 for index in range(2):
+    weighted = phasor_center(
+        mean[labels == index], real[labels == index], imag[labels == index]
+    )
     print(f'cluster {index}')
-    print(
-        f'  unweighted center: {center_real[index]:.3f}, '
-        f'{center_imag[index]:.3f}'
-    )
-    print(
-        f'  weighted center:   {weighted_real[index]:.3f}, '
-        f'{weighted_imag[index]:.3f}'
-    )
-    print(f'  average intensity: {weighted_mean[index]:.1f}')
-print(f'reassigned coordinates: {(labels != weighted_labels).sum()}')
+    print(f'  unweighted: {center_real[index]:.3f}, {center_imag[index]:.3f}')
+    print(f'  weighted:   {float(weighted[1]):.3f}, {float(weighted[2]):.3f}')
 
 # %%
-# Weighting moves the cluster centers towards the coordinates of brighter
-# pixels. Since the clusters are separated by the perpendicular bisector
-# between their centers, coordinates near the cluster boundary are
-# reassigned:
-
-reassigned = labels != weighted_labels
-
-plot = PhasorPlot(title='Effect of intensity weighting')
-plot.plot(real, imag, color='0.8', markersize=1)
-plot.plot(
-    real[reassigned],
-    imag[reassigned],
-    color=CATEGORICAL[2],
-    markersize=1,
-    label='reassigned',
-)
-for index, color in enumerate(CATEGORICAL[:2]):
-    plot.plot(
-        center_real[index],
-        center_imag[index],
-        'o',
-        color=color,
-        markeredgecolor='k',
-        markeredgewidth=1.5,
-        markersize=7,
-        label=f'Unweighted center {index}',
-    )
-    plot.plot(
-        weighted_real[index],
-        weighted_imag[index],
-        'x',
-        color=color,
-        markersize=9,
-        markeredgewidth=2,
-        label=f'Weighted center {index}',
-    )
-plot.show()
-
-# %%
-# Intensity weighting is not available for
-# :py:func:`phasorpy.cluster.phasor_cluster_gmm`, since Gaussian mixture
-# models are fit to unweighted coordinates.
+# To weight the phasor coordinates during clustering, pass a
+# ``sample_weight`` argument to
+# :py:func:`phasorpy.cluster.phasor_cluster_kmeans`.
 
 # %%
 # Comparing the methods
@@ -233,7 +186,7 @@ plot.show()
 # to exactly one cluster along a straight boundary:
 
 plot = PhasorPlot(title='Gaussian mixture model and k-means')
-for index, color in enumerate(CATEGORICAL[:2]):
+for index, color in enumerate(('tab:blue', 'tab:red')):
     plot.plot(
         real[labels == index],
         imag[labels == index],
