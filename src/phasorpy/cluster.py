@@ -256,12 +256,12 @@ def phasor_cluster_kmeans(
         - 'phasor': Sort by phasor coordinates (imaginary, then real).
         - 'size': Sort by decreasing number of coordinates in cluster.
 
-   **kwargs
+    **kwargs
         Optional arguments passed to :py:class:`sklearn.cluster.KMeans` or
         :py:meth:`sklearn.cluster.KMeans.fit_predict`.
 
         Common options include:
-        
+
         - init : {'k-means++', 'random'}, method of initialization
         - n_init : int, number of initializations to perform
         - max_iter : int, maximum number of iterations
