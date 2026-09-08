@@ -304,16 +304,18 @@ def phasor_cluster_kmeans(
 
     Examples
     --------
-    Partition phasor coordinates into two clusters and return the cluster
+    Partition phasor coordinates into two clusters, obtaining the cluster
     centers and the cluster index of each coordinate:
 
     >>> center_real, center_imag, labels = phasor_cluster_kmeans(
-    ...     [0.1, 0.2, 0.5, 0.6], [0.1, 0.2, 0.5, 0.6], clusters=2
+    ...     [0.1, 0.2, 0.5, 0.6, numpy.nan],
+    ...     [0.1, 0.2, 0.5, 0.6, 0.0],
+    ...     clusters=2,
     ... )
     >>> center_real  # doctest: +NUMBER
     (0.15, 0.55)
     >>> labels
-    array([0, 0, 1, 1]...)
+    array([ 0,  0,  1,  1, -1], dtype=int8)
 
     """
     from sklearn.cluster import KMeans
