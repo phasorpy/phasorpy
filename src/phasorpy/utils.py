@@ -130,9 +130,9 @@ def versions(
     Examples
     --------
     >>> print(versions())  # doctest: +SKIP
-    Python-3.14.3
-    phasorpy-0.9
-    numpy-2.4.2
+    Python-3.14.7
+    phasorpy-0.13
+    numpy-2.5.3
     ...
 
     """
@@ -149,9 +149,11 @@ def versions(
         'phasorpy',
         'numpy',
         # other dependencies sorted alphabetically
+        'brighteyes_mcs_reader',
         'click',
         'czifile',
         'fbdfile',
+        'h5py',
         'imagecodecs',
         'lfdfiles',
         'liffile',
