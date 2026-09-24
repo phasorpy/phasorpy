@@ -4,6 +4,7 @@
 
 """Test handling NaN coordinates."""
 
+import sys
 import warnings
 from math import nan
 
@@ -249,6 +250,10 @@ def test_phasor_multiply_nan() -> None:
     assert_allclose(phasor, [[0.0, nan, 0.0], [1.0, nan, 0.2]], atol=1e-3)
 
 
+@pytest.mark.skipif(
+    sys.platform == 'win32' and 'ARM64' in sys.version,
+    reason='RuntimeWarning from ufunc on win-arm64',
+)
 def test_phasor_threshold_nan() -> None:
     """Test phasor_threshold function with NaN values."""
     with warnings.catch_warnings():
