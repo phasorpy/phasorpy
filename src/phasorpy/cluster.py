@@ -71,7 +71,7 @@ def phasor_cluster_gmm(
 
         - 'polar': Sort by polar coordinates (phase, then modulation).
         - 'phasor': Sort by phasor coordinates (imaginary, then real).
-        - 'area': Sort by inverse area of ellipse (-major * minor).
+        - 'area': Sort by ellipse area (descending, largest first).
 
     **kwargs
         Optional arguments passed to
@@ -254,7 +254,7 @@ def phasor_cluster_kmeans(
 
         - 'polar': Sort by polar coordinates (phase, then modulation).
         - 'phasor': Sort by phasor coordinates (imaginary, then real).
-        - 'size': Sort by decreasing number of coordinates in cluster.
+        - 'size': Sort by cluster size (descending, largest first).
 
     **kwargs
         Optional arguments passed to :py:class:`sklearn.cluster.KMeans` or

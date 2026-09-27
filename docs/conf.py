@@ -174,8 +174,8 @@ class TutorialOrder:
         'multi_harmonic',
         'phasorplot',
         'cursor',
-        'component',
         'cluster',
+        'component',
         'pca',
         # misc
         'logo',
