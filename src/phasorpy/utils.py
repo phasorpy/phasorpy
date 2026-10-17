@@ -162,6 +162,7 @@ def versions(
         'pandas',
         'pawflim',
         'pooch',
+        'ptufile',
         'scipy',
         'sdtfile',
         'skimage',

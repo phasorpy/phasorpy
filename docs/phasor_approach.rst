@@ -148,9 +148,9 @@ luminescence time-resolved or spectral images:
 
    * - **Library**
      - :ref:`PhasorPy <phasorpy>`,
-       :ref:`PyFLI <pyfli>`,
        :ref:`tttrlib <tttrlib>`,
        :ref:`FLIMLib <flimlib>`:sup:`2`,
+       :ref:`PyFLI <pyfli>`:sup:`2`,
        :ref:`BrightEyes <brighteyes>`:sup:`2`,
        :ref:`FLIM_tools <flim_tools>`:sup:`2,4`,
        :ref:`Cell-analysis-tools <cell_analysis_tools>`:sup:`2,4`
@@ -333,7 +333,7 @@ Details:
   is an open-source Python platform for Fluorescence Lifetime Imaging
   (FLI) data simulation, processing and visualization, including phasor
   analysis.
-  The library is distributed under the CC BY-NC-ND 4.0 license.
+  The library is distributed under the AGPL-3.0 license.
 
 -
   .. _flim_tools:

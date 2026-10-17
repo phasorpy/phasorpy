@@ -646,7 +646,7 @@ def test_phasor_from_polar() -> None:
     # scalars
     real, imag = phasor_from_polar(math.pi / 4, math.sqrt(0.5))
     assert numpy.isscalar(real)
-    assert numpy.isscalar(imag)
+    assert numpy.isscalar(imag)  # type: ignore[unreachable]
 
     # TODO: keep float32 dtype
     # phase = numpy.array([0, 0.785398], dtype=numpy.float32)
@@ -720,7 +720,7 @@ def test_phasor_to_polar_more() -> None:
     # scalars
     phase, modulation = phasor_to_polar(0.5, 0.5)
     assert numpy.isscalar(phase)
-    assert numpy.isscalar(modulation)
+    assert numpy.isscalar(modulation)  # type: ignore[unreachable]
 
     # TODO: keep float32 dtype
     # real = numpy.array([0, 0.5], dtype=numpy.float32)
@@ -921,7 +921,7 @@ def test_phasor_transform_more() -> None:
     # scalars
     real, imag = phasor_transform(1, 0, math.pi / 4, 0.5)
     assert numpy.isscalar(real)
-    assert numpy.isscalar(imag)
+    assert numpy.isscalar(imag)  # type: ignore[unreachable]
 
     # TODO: keep float32 dtype
     # real = numpy.array([0, 1], dtype=numpy.float32)
