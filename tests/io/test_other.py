@@ -125,6 +125,8 @@ def _write_brighteyes_mcs_h5(
 
 def test_signal_from_brighteyes_mcs(tmp_path: Path) -> None:
     """Test wrapping a BrightEyes-MCS signal as xarray."""
+    pytest.importorskip('brighteyes_mcs_reader')
+
     filename = tmp_path / 'histogram.h5'
     data, _, _ = _write_brighteyes_mcs_h5(filename)
 
@@ -144,6 +146,8 @@ def test_signal_from_brighteyes_mcs(tmp_path: Path) -> None:
 
 def test_signal_from_brighteyes_mcs_reference(tmp_path: Path) -> None:
     """Test read default BrightEyes-MCS reference trace."""
+    pytest.importorskip('brighteyes_mcs_reader')
+
     filename = tmp_path / 'histogram.h5'
     _, reference, _ = _write_brighteyes_mcs_h5(filename)
 
@@ -158,6 +162,8 @@ def test_signal_from_brighteyes_mcs_reference(tmp_path: Path) -> None:
 
 def test_signal_from_brighteyes_mcs_irf(tmp_path: Path) -> None:
     """Test read default BrightEyes-MCS IRF trace."""
+    pytest.importorskip('brighteyes_mcs_reader')
+
     filename = tmp_path / 'histogram.h5'
     _, _, irf = _write_brighteyes_mcs_h5(filename)
 
@@ -173,6 +179,8 @@ def test_signal_from_brighteyes_mcs_irf(tmp_path: Path) -> None:
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
 def test_signal_from_brighteyes_mcs_convallaria_apr() -> None:
     """Test read BrightEyes-MCS APR file."""
+    pytest.importorskip('brighteyes_mcs_reader')
+
     filename = private_file('BrightEyes/Convallaria_APR.h5')
 
     # default dataset
@@ -253,6 +261,8 @@ def test_signal_from_brighteyes_mcs_convallaria_apr() -> None:
 @pytest.mark.skipif(SKIP_PRIVATE, reason='file is private')
 def test_signal_from_brighteyes_mcs_convallaria_s2ism() -> None:
     """Test read BrightEyes-MCS S2ISM file."""
+    pytest.importorskip('brighteyes_mcs_reader')
+
     # https://zenodo.org/records/21158280
     filename = private_file('BrightEyes/Convallaria_S2ISM.h5')
 
@@ -335,6 +345,8 @@ def test_signal_from_brighteyes_mcs_import_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test optional dependency error message."""
+    pytest.importorskip('brighteyes_mcs_reader')
+
     real_import = builtins.__import__
 
     def blocked_import(name: str, *args: Any, **kwargs: Any) -> Any:

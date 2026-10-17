@@ -39,6 +39,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 authors = [{ name = "PhasorPy Contributors" }]
 license = "MIT"
@@ -65,8 +66,8 @@ all = [
     "ptufile>=2024.9.14",
     "sdtfile>=2024.5.24",
     "pawflim>=1.0.4",
-    "brighteyes-mcs-reader>=0.1.0",
-    "imagecodecs==2026.6.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "brighteyes-mcs-reader>=0.1.0; python_version < '3.15'",
+    # "imagecodecs==2026.6.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
     # "mkl-fft>=2.1.1",
 ]
 
@@ -93,8 +94,8 @@ optional = [
     "ptufile>=2024.9.14",
     "sdtfile>=2024.5.24",
     "pawflim>=1.0.4",
-    "brighteyes-mcs-reader>=0.1.0",
-    "imagecodecs==2026.6.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "brighteyes-mcs-reader>=0.1.0; python_version < '3.15'",
+    # "imagecodecs==2026.6.6; sys_platform == 'darwin' and platform_machine == 'x86_64'",
 ]
 minimal = [
     # minimal runtime versions for testing against oldest supported versions
@@ -310,7 +311,7 @@ disable = [
 
 [tool.black]
 line-length = 79
-target-version = ["py312", "py313", "py314"]
+target-version = ["py312", "py313", "py314", "py315"]
 skip-string-normalization = true
 
 [tool.isort]
@@ -414,10 +415,10 @@ norecursedirs = [
 build = ["cp312-*", "cp314t-*", "cp315t-*"]
 skip = ["*musllinux*", "*i686*", "*ppc64le*", "*s390x*"]
 test-command = "pytest {project}/tests"
-test-skip = ["cp314t*", "cp315*"]
+test-skip = ["cp3*t*"]
 test-requires = [
     # sync with [dependency-groups.optional]
-    "brighteyes-mcs-reader",
+    "brighteyes-mcs-reader; python_version < '3.15'",
     "czifile>=2026.4.11",
     "fbdfile",
     "lfdfiles",
@@ -434,10 +435,10 @@ test-requires = [
     "pytest-runner",
 ]
 
-[[tool.cibuildwheel.overrides]]
-select = "*-macosx_x86_64"
-inherit.test-requires = "append"
-test-requires = ["imagecodecs==2026.6.6"]
+# [[tool.cibuildwheel.overrides]]
+# select = "*-macosx_x86_64"
+# inherit.test-requires = "append"
+# test-requires = ["imagecodecs==2026.6.6"]
 
 [tool.cibuildwheel.test-environment]
 PHASORPY_DATA_ON_GITHUB = "1"
