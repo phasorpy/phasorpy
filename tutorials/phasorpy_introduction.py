@@ -90,8 +90,8 @@ import numpy
 # The :py:mod:`phasorpy.datasets` module provides access to various sample
 # files. For example, an ImSpector TIFF file from the
 # `FLUTE <https://zenodo.org/records/8046636>`_ project containing a
-# time-correlated single photon counting (TCSPC) histogram
-# of a zebrafish embryo at day 3, acquired at 80.11 MHz:
+# time-correlated single photon counting (TCSPC) histogram of autofluorescence
+# from a zebrafish embryo at 80.11 MHz:
 
 from phasorpy.datasets import fetch
 from phasorpy.io import signal_from_imspector_tiff
@@ -338,8 +338,9 @@ plot_phasor(
 # The calibrated phasor coordinates of all pixels lie inside the universal
 # semicircle (on which theoretically the phasor coordinates of all single
 # exponential lifetimes are located).
-# That means that all pixels contain mixtures of signals from multiple
-# lifetime components.
+# This is consistent with mixtures of signals from multiple lifetime
+# components, although continuous lifetime distributions, background, noise,
+# or calibration errors can also place phasors inside the semicircle.
 
 # %%
 # For comparison, the uncalibrated, unfiltered phasor coordinates:
@@ -399,8 +400,10 @@ plot_image(
 # ------------------
 #
 # Component analysis in the phasor space (for example, estimating fractional
-# contributions of multiple lifetime components) will be covered in a
-# dedicated tutorial.
+# contributions of multiple lifetime components) are covered in
+# dedicated tutorials:
+# :ref:`sphx_glr_tutorials_applications_phasorpy_nadh_fraction.py` and
+# :ref:`sphx_glr_tutorials_applications_phasorpy_nadh_concentration.py`.
 
 # %%
 # Spectral phasors

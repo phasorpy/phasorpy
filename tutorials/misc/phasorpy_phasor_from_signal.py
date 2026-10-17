@@ -55,7 +55,7 @@ signal = rng.random((384, 384, 384))
 signal += 1.1
 signal *= 3723  # ~12 bit
 signal = signal.astype(numpy.uint16)  # 108 MB
-signal[signal < 0.05] = 0.0  # 5% no signal
+signal[signal < 4282] = 0.0  # ~5% no signal
 
 # %%
 # Print execution times depending on FFT function, axis, number of harmonics,
@@ -98,46 +98,46 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
 
 # %%
 # For reference, the results on a Core i7-14700K CPU, Windows 11,
-# Python 3.14.0, numpy 2.3.5, scipy 1.16.3, mkl_fft 2.1.1::
+# Python 3.15.0, numpy 2.5.4 scipy 1.18.1, mkl_fft 2.3.2::
 #
 #     harmonics 1
 #       axis -1
-#         not_fft              0.034s   1.00
-#         not_fft (6 threads)  0.006s   0.17
-#         numpy_fft            0.274s   8.03
-#         scipy_fft            0.240s   7.04
-#         mkl_fft              0.141s   4.14
+#         not_fft              0.047s   1.00
+#         not_fft (6 threads)  0.008s   0.18
+#         numpy_fft            0.266s   5.62
+#         scipy_fft            0.199s   4.21
+#         mkl_fft              0.123s   2.61
 #       axis 0
-#         not_fft              0.162s   4.75
-#         not_fft (6 threads)  0.038s   1.13
-#         numpy_fft            0.697s  20.44
-#         scipy_fft            0.496s  14.54
-#         mkl_fft              0.167s   4.90
+#         not_fft              0.232s   4.91
+#         not_fft (6 threads)  0.042s   0.88
+#         numpy_fft            0.684s  14.47
+#         scipy_fft            0.470s   9.95
+#         mkl_fft              0.174s   3.67
 #       axis 2
-#         not_fft              0.038s   1.12
-#         not_fft (6 threads)  0.006s   0.16
-#         numpy_fft            0.272s   7.99
-#         scipy_fft            0.240s   7.04
-#         mkl_fft              0.130s   3.83
+#         not_fft              0.058s   1.23
+#         not_fft (6 threads)  0.008s   0.17
+#         numpy_fft            0.268s   5.67
+#         scipy_fft            0.195s   4.14
+#         mkl_fft              0.124s   2.63
 #     harmonics 8
 #       axis -1
-#         not_fft              0.287s   8.43
-#         not_fft (6 threads)  0.040s   1.17
-#         numpy_fft            0.288s   8.45
-#         scipy_fft            0.253s   7.43
-#         mkl_fft              0.161s   4.74
+#         not_fft              0.385s   8.15
+#         not_fft (6 threads)  0.060s   1.27
+#         numpy_fft            0.276s   5.84
+#         scipy_fft            0.212s   4.48
+#         mkl_fft              0.148s   3.14
 #       axis 0
-#         not_fft              1.161s  34.04
-#         not_fft (6 threads)  0.425s  12.47
-#         numpy_fft            0.715s  20.97
-#         scipy_fft            0.541s  15.88
-#         mkl_fft              0.183s   5.38
+#         not_fft              1.540s  32.59
+#         not_fft (6 threads)  0.363s   7.68
+#         numpy_fft            0.699s  14.80
+#         scipy_fft            0.474s  10.03
+#         mkl_fft              0.181s   3.82
 #       axis 2
-#         not_fft              0.282s   8.27
-#         not_fft (6 threads)  0.038s   1.13
-#         numpy_fft            0.288s   8.46
-#         scipy_fft            0.255s   7.49
-#         mkl_fft              0.155s   4.56
+#         not_fft              0.384s   8.12
+#         not_fft (6 threads)  0.062s   1.30
+#         numpy_fft            0.276s   5.84
+#         scipy_fft            0.210s   4.44
+#         mkl_fft              0.147s   3.12
 
 # %%
 # Results
@@ -154,7 +154,10 @@ for harmonic in ([1], [1, 2, 3, 4, 5, 6, 7, 8]):
 #   axis. That is because the samples in the last dimension are contiguous in
 #   memory.
 #
-# Note that these results were obtained on a single dataset of random numbers.
+# These timings are illustrative, not a controlled benchmark:
+# each configuration was measured once on a single randomly generated dataset
+# during a CI or documentation build.
+# Results may vary with system load, hardware, and software environment.
 
 # %%
 # Conclusions

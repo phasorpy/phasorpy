@@ -70,7 +70,11 @@ mean, real, imag = phasor_threshold(
 # Calculate the theoretical FRET efficiency trajectory in phasor space
 # for the CFP FRET donor.
 # The trajectory represents the path phasor coordinates follow as FRET
-# efficiency increases from 0% (donor only) to 100% (complete energy transfer):
+# efficiency increases from 0% (donor only) to 100% (complete energy transfer).
+# The trajectory is a model: it depends on the estimated donor-only phasor
+# (assumed single exponential), the background phasor, and fixed assumptions
+# about the fraction of donors undergoing FRET and the background contribution.
+# Different choices change the trajectory and the estimated efficiencies:
 
 donor_real, donor_imag = 0.72, 0.45  # estimated pure CFP phasor coordinates
 background_real, background_imag = 0.6, 0.41  # estimated background phasor
@@ -131,7 +135,9 @@ phasor_plot.show()
 #
 # Estimate FRET efficiencies for each pixel in the image by finding
 # the nearest point on the FRET efficiency trajectory to each measured
-# phasor coordinate:
+# phasor coordinate.
+# Every valid pixel is assigned an efficiency on the trajectory, even if its
+# phasor coordinates are not well described by the model:
 
 fret_efficiencies = phasor_nearest_neighbor(
     real,
@@ -163,13 +169,20 @@ plot_histograms(
 # Conclusions
 # -----------
 #
-# The FRET efficiency image shows spatial heterogeneity in donor-acceptor
-# interactions across the sample. Higher FRET efficiencies (warmer colors)
-# indicate closer proximity between CFP and YFP molecules, suggesting
-# successful FRET pair formation. Lower efficiencies (cooler colors) may
-# represent cells expressing primarily CFP donor without acceptor, or
-# regions where CFP and YFP are too far apart for efficient energy transfer.
-# The histogram reveals the distribution of FRET states in the population.
+# The estimated FRET efficiencies are conditional on the trajectory model
+# and its assumptions.
+# Within that model, the FRET efficiency image shows spatial heterogeneity
+# in donor-acceptor interactions across the sample. Higher FRET efficiencies
+# are consistent with closer proximity between CFP and YFP molecules.
+# Lower FRET efficiencies may indicate cells expressing primarily CFP donor
+# without acceptor, or regions where CFP and YFP are too far apart for
+# efficient energy transfer. They may also result from a smaller fraction of
+# donors undergoing FRET, an effect the fixed model cannot distinguish from
+# lower FRET efficiency.
+# The histogram shows the distribution of model-based efficiency estimates
+# in the population. Biological interpretation should consider the
+# sensitivity of these estimates to the model assumptions, for example by
+# validating them with control samples.
 
 # sphinx_gallery_start_ignore
 # sphinx_gallery_thumbnail_number = -2
