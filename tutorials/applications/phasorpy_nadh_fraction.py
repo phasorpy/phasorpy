@@ -3,10 +3,10 @@
 # See LICENSE.txt file in the project root for details.
 
 """
-Bound NADH fraction
-===================
+Bound NADH intensity fraction
+=============================
 
-Determine the bound NADH fraction using phasor component analysis.
+Determine the bound NADH intensity fraction using phasor component analysis.
 
 NADH (nicotinamide adenine dinucleotide) is an endogenous fluorophore
 present in cells in two forms, distinguishable by fluorescence lifetime:
@@ -15,7 +15,8 @@ enzyme-bound form whose lifetime is determined from the data.
 
 Two approaches are demonstrated: a single-harmonic phasor component analysis
 using prior knowledge of the free NADH lifetime, and a two-harmonic lifetime
-search without much prior assumption on component lifetimes.
+search that constrains the faster component to a specified lifetime range
+while estimating the longer-lived component from the data.
 
 The data are from the companion dataset of:
 
@@ -155,18 +156,20 @@ for label, (rx, ix, col) in {
 phasor_plot.show()
 
 # %%
-# Compute the fraction of enzyme-bound NADH per pixel.
+# Compute the bound NADH intensity fraction per pixel, that is, the fraction
+# of fluorescence intensity contributed by enzyme-bound NADH.
 # :py:func:`~phasorpy.component.phasor_component_fraction` returns the fraction
 # of the first component; passing bound NADH first yields the bound fraction
-# directly:
+# directly.
+# Because bound NADH is brighter than free NADH, the intensity fraction
+# overestimates the molecular fraction of bound NADH:
 
 bound_fraction = phasor_component_fraction(
     cell_real, cell_imag, [bound_real, free_real], [bound_imag, free_imag]
 )
 
 # %%
-# Display the bound NADH fraction image.
-# Pixel values represent the fraction of enzyme-bound NADH.
+# Display the bound NADH intensity fraction image.
 # Background pixels with zero signal appear as NaN:
 
 plot_image(
@@ -174,7 +177,7 @@ plot_image(
     vmin=0.4,
     vmax=0.8,
     cmap='turbo',
-    title='Bound NADH fraction (single harmonic analysis)',
+    title='Bound NADH intensity fraction (single harmonic analysis)',
 )
 
 # %%
@@ -187,7 +190,8 @@ plot_image(
 #
 # The :py:func:`~phasorpy.lifetime.phasor_to_lifetime_search` function
 # resolves two lifetime components per pixel from multi-harmonic phasor
-# coordinates without any prior assumption on component lifetimes.
+# coordinates. It searches the specified lifetime range for the first
+# (shorter-lived) component and estimates the second component from the data.
 # Recompute and calibrate phasor coordinates at the first two harmonics:
 
 harmonic = [1, 2]
@@ -226,14 +230,15 @@ lifetimes, fractions = phasor_to_lifetime_search(
 )
 
 # %%
-# Display the bound NADH fraction image from the two-harmonic decomposition.
+# Display the bound NADH intensity fraction image from the two-harmonic
+# decomposition.
 
 plot_image(
     fractions[1],
     vmin=0.4,
     vmax=0.8,
     cmap='turbo',
-    title='Bound NADH fraction (two-harmonic search)',
+    title='Bound NADH intensity fraction (two-harmonic search)',
 )
 
 # %%
