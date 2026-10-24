@@ -546,6 +546,14 @@ def test_phasor_to_signal_roundtrip(shape: tuple[int, ...], axis: int) -> None:
     assert_allclose(imag1, imag[:2], atol=1e-3)
 
 
+@pytest.mark.parametrize(('real', 'imag'), [(0, 0.0), (0.0, 0), (0, 0)])
+def test_phasor_to_signal_integer(real: float, imag: float) -> None:
+    """Test phasor_to_signal function with integer coordinates."""
+    assert_allclose(
+        phasor_to_signal(1.1, real, imag, samples=5), numpy.full(5, 1.1)
+    )
+
+
 def test_phasor_to_signal() -> None:
     """Test phasor_to_signal function."""
     sample_phase = numpy.linspace(0, 2 * math.pi, 5, endpoint=False)
