@@ -25,6 +25,7 @@ from phasorpy._phasorpy import (
     _distance_from_semicircle,
     _fraction_on_line,
     _fraction_on_segment,
+    _gaussian_signal,
     _intersect_circle_circle,
     _intersect_circle_line,
     _intersect_line_line,
@@ -39,6 +40,7 @@ from phasorpy._phasorpy import (
     _is_near_line,
     _is_near_segment,
     _is_near_semicircle,
+    _lifetime_search_2,
     _point_on_line,
     _point_on_segment,
     _segment_direction_and_length,
@@ -105,9 +107,16 @@ def test_is_inside_polar_rectangle() -> None:
     """Test _is_inside_polar_rectangle function."""
     assert_array_equal(
         _is_inside_polar_rectangle(
-            *POINTS, math.pi / 3, math.pi / 5, 0.5, 0.8
+            *POINTS, math.pi / 5, math.pi / 3, 0.5, 0.8
         ).astype(bool),
         [True, False, False],
+    )
+    # angular range wraps around +/- pi
+    assert_array_equal(
+        _is_inside_polar_rectangle(
+            [-0.5, -0.5, 0.5], [0.01, -0.01, 0.01], 3.0, -3.0, 0.4, 0.6
+        ).astype(bool),
+        [True, True, False],
     )
 
 
@@ -223,6 +232,30 @@ def test_fraction_on_line() -> None:
         [1.0, -0.069617, 0.023206],
         atol=1e-6,
     )
+    # degenerate line returns same as degenerate segment
+    assert _fraction_on_line(0.3, 0.3, 0.5, 0.5, 0.5, 0.5) == 0.0
+    assert _fraction_on_segment(0.3, 0.3, 0.5, 0.5, 0.5, 0.5) == 0.0
+
+
+def test_gaussian_signal() -> None:
+    """Test _gaussian_signal function."""
+    signal = numpy.zeros(16)
+    _gaussian_signal(signal, 8.0, 1.5)
+    assert_allclose(signal.sum(), 1.0, atol=1e-6)
+    for stdev in (0.0, nan, math.inf):
+        signal = numpy.zeros(16)
+        _gaussian_signal(signal, 8.0, stdev)
+        assert numpy.isnan(signal).all()
+
+
+def test_lifetime_search_2_shape() -> None:
+    """Test _lifetime_search_2 rejects more than two harmonics."""
+    out = numpy.zeros((2, 1))
+    phasor = numpy.full((3, 1), 0.5)
+    with pytest.raises(ValueError):
+        _lifetime_search_2(
+            out, out.copy(), phasor, phasor, numpy.array([0.5]), 1.0, 1
+        )
 
 
 def test_fraction_on_segment() -> None:

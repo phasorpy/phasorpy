@@ -276,6 +276,9 @@ def phasor_filter_median(
     buffer = numpy.empty(
         tuple(real.shape[axis] for axis in axes), dtype=real.dtype
     )
+    buffer_imag = (
+        buffer if imag.dtype == real.dtype else buffer.astype(imag.dtype)
+    )
 
     for index in numpy.ndindex(
         *[real.shape[ax] for ax in range(real.ndim) if ax not in axes]
@@ -286,7 +289,9 @@ def phasor_filter_median(
         full_index = tuple(index_list)
 
         _median_filter_2d(real[full_index], buffer, size, repeat, num_threads)
-        _median_filter_2d(imag[full_index], buffer, size, repeat, num_threads)
+        _median_filter_2d(
+            imag[full_index], buffer_imag, size, repeat, num_threads
+        )
 
     return mean, real, imag
 
@@ -365,7 +370,7 @@ def phasor_filter_gaussian(
     ValueError
         If the array shapes of `mean`, `real`, and `imag` do not match.
         If `repeat` is less than 0.
-        If `sigma` is not positive.
+        If `sigma` is not finite and positive.
         If `size` is less than 1 or even.
     IndexError
         If any `skip_axis` value is out of bounds.
@@ -423,8 +428,8 @@ def phasor_filter_gaussian(
         raise ValueError(msg)
     if sigma is None:
         sigma = 0.3 * ((size - 1) * 0.5 - 1) + 0.8
-    elif sigma <= 0:
-        msg = f'{sigma=} <= 0'
+    elif not math.isfinite(sigma) or sigma <= 0:
+        msg = f'{sigma=} is not finite and positive'
         raise ValueError(msg)
     radius = size // 2
 
@@ -545,7 +550,7 @@ def phasor_filter_pawflim(
     Raises
     ------
     ValueError
-        If `sigma` is negative.
+        If `sigma` is negative or not finite.
         If `levels` is negative.
         If the array shapes of `mean`, `real`, and `imag` do not match.
         If `real` and `imag` have no harmonic axis.
@@ -597,8 +602,8 @@ def phasor_filter_pawflim(
     """
     from pawflim import pawflim  # type: ignore[import-untyped]
 
-    if sigma < 0:
-        msg = f'{sigma=} < 0'
+    if not math.isfinite(sigma) or sigma < 0:
+        msg = f'{sigma=} is not finite and non-negative'
         raise ValueError(msg)
     if levels < 0:
         msg = f'{levels=} < 0'
@@ -1145,7 +1150,7 @@ def signal_filter_gaussian(
     ------
     ValueError
         If `repeat` is less than 0.
-        If `sigma` is not positive.
+        If `sigma` is not finite and positive.
         If `size` is less than 1 or even.
     IndexError
         If any `skip_axis` value is out of bounds.
@@ -1186,8 +1191,8 @@ def signal_filter_gaussian(
         raise ValueError(msg)
     if sigma is None:
         sigma = 0.3 * ((size - 1) * 0.5 - 1) + 0.8
-    elif sigma <= 0:
-        msg = f'{sigma=} <= 0'
+    elif not math.isfinite(sigma) or sigma <= 0:
+        msg = f'{sigma=} is not finite and positive'
         raise ValueError(msg)
     radius = size // 2
 
@@ -1272,7 +1277,7 @@ def signal_filter_svd(
     Raises
     ------
     ValueError
-        If `sigma` is not positive.
+        If `sigma` is not finite and positive.
         If `signal` has fewer than three samples along specified axis.
         If `dtype` is not a floating-point type.
         If `spectral_vector` shape does not match `signal` shape.
@@ -1303,8 +1308,8 @@ def signal_filter_svd(
     """
     num_threads = number_threads(num_threads)
 
-    if sigma <= 0:
-        msg = f'{sigma=} <= 0'
+    if not math.isfinite(sigma) or sigma <= 0:
+        msg = f'{sigma=} is not finite and positive'
         raise ValueError(msg)
 
     signal = numpy.asarray(signal)
@@ -1332,10 +1337,16 @@ def signal_filter_svd(
 
     if dtype is None:
         dtype = signal.dtype if signal.dtype.char == 'f' else numpy.float64
-    dtype = numpy.dtype(dtype)
+    dtype = numpy.dtype(dtype).newbyteorder('=')
     if dtype.char not in {'d', 'f'}:
         msg = f'{dtype=} is not a floating-point type'
         raise ValueError(msg)
+
+    if signal.dtype.char == 'e':
+        # not supported by Cython implementation
+        signal = signal.astype(numpy.float32)
+    elif not signal.dtype.isnative:
+        signal = signal.astype(signal.dtype.newbyteorder('='))
 
     if spectral_vector is None:
         sincos = numpy.empty((num_harmonics, samples, 2))
@@ -1493,26 +1504,32 @@ def signal_filter_ncpca(
     signal = signal.reshape((-1, shape[-1]))
 
     # poisson-normalize signal
+    zero = numpy.mean(signal, axis=-1) == 0.0
     scale = numpy.sqrt(numpy.nanmean(signal, axis=0, keepdims=True))
+    scale[scale == 0.0] = 1.0  # all-zero bins
     with numpy.errstate(divide='ignore', invalid='ignore'):
         signal /= scale
 
-    # replace NaN and infinite values
+    # exclude NaN, infinite, and zero-intensity values from PCA
     mask = numpy.logical_or(
         numpy.any(numpy.isnan(signal), axis=-1),
         numpy.any(numpy.isinf(signal), axis=-1),
     )
-    assert isinstance(signal, numpy.ndarray)  # for Mypy
-    signal[mask] = 0.0
+    mask |= zero
+    valid = ~mask
 
     # PCA transform and reconstruction with n_components
-    pca = PCA(n_components, **kwargs)
-    signal = pca.inverse_transform(pca.fit_transform(signal))
-    del pca
+    assert isinstance(signal, numpy.ndarray)  # for Mypy
+    denoised = numpy.full_like(signal, numpy.nan)
+    if valid.any():
+        pca = PCA(n_components, **kwargs)
+        denoised[valid] = pca.inverse_transform(
+            pca.fit_transform(signal[valid])
+        )
+        del pca
+    signal = denoised
 
     # restore original scale and shape
-    assert isinstance(signal, numpy.ndarray)  # for Mypy
-    signal[mask] = numpy.nan
     signal *= scale
     signal = signal.reshape(shape)
     if axis != -1:

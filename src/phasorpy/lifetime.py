@@ -281,8 +281,8 @@ def phasor_from_lifetime(
     (array([[0.941, 0.721], [0.8, 0.5]]), array([[0.235, 0.368], [0.4, 0.4]]))
 
     """
-    if unit_conversion < 1e-16:
-        msg = f'{unit_conversion=} < 1e-16'
+    if not math.isfinite(unit_conversion) or unit_conversion < 1e-16:
+        msg = f'{unit_conversion=} is not finite or < 1e-16'
         raise ValueError(msg)
     frequency = numpy.array(
         frequency, dtype=numpy.float64, ndmin=1, order='C', copy=None
@@ -391,6 +391,7 @@ def lifetime_to_signal(
         synthesizing multiple signals.
     background : array_like, optional, default: 0
         Background signal intensity. Must be smaller than `mean`.
+        May be a scalar or array-like broadcastable to `mean`.
     samples : int, optional, default: 64
         Number of signal samples to return. Must be at least 16.
     harmonic : int, sequence of int, or 'all', optional
@@ -448,7 +449,7 @@ def lifetime_to_signal(
     ------
     ValueError
         If `samples` is less than 16.
-        If `frequency` is not scalar and positive.
+        If `frequency` is not scalar, finite, and positive.
         If `mean - background` is less than zero.
         If `zero_phase` is not in range [0, 2 pi].
         If `zero_modulation` is not in range (0, 1].
@@ -511,7 +512,7 @@ def lifetime_to_signal(
     """
     if harmonic is None:
         harmonic = 'all'
-    all_harmonics = harmonic == 'all'
+    all_harmonics = isinstance(harmonic, str) and harmonic == 'all'
     harmonic, _ = parse_harmonic(harmonic, samples // 2)
     single_harmonic = not all_harmonics and len(harmonic) == 1
 
@@ -521,12 +522,12 @@ def lifetime_to_signal(
 
     if background is None:
         background = 0.0
-    background = numpy.asarray(background)
+    background = numpy.asarray(background, dtype=numpy.float64)
 
     if mean is None:
         mean = 1.0
-    mean = numpy.asarray(mean, dtype=numpy.float64, copy=True)
-    mean -= background
+    mean = numpy.asarray(mean, dtype=numpy.float64)
+    mean = numpy.asarray(mean - background)
     if numpy.any(mean < 0.0):
         msg = 'mean - background must not be less than zero'
         raise ValueError(msg)
@@ -535,7 +536,7 @@ def lifetime_to_signal(
     if zero_phase is None:
         zero_phase = 8.0 / scale
 
-    if zero_phase < 0 or zero_phase > 2.0 * math.pi:
+    if not 0.0 <= zero_phase <= 2.0 * math.pi:
         msg = f'{zero_phase=} is out of range [0, 2 pi]'
         raise ValueError(msg)
 
@@ -543,7 +544,7 @@ def lifetime_to_signal(
         if zero_stdev is not None:
             msg = 'zero_stdev is not applicable for single-harmonic signals'
             raise ValueError(msg)
-        if zero_modulation <= 0.0 or zero_modulation > 1.0:
+        if not 0.0 < zero_modulation <= 1.0:
             msg = f'{zero_modulation=} is not in range (0, 1]'
             raise ValueError(msg)
     else:
@@ -555,7 +556,7 @@ def lifetime_to_signal(
         if zero_stdev is None:
             zero_stdev = 1.5 / scale
         stdev = zero_stdev * scale  # in sample units
-        if stdev < 1.5:
+        if not stdev >= 1.5:
             msg = (
                 f'{zero_stdev=} < {1.5 / scale} cannot be sampled sufficiently'
             )
@@ -565,8 +566,8 @@ def lifetime_to_signal(
             raise ValueError(msg)
 
     frequencies = numpy.atleast_1d(frequency)
-    if frequencies.size > 1 or frequencies[0] <= 0.0:
-        msg = 'frequency must be scalar and positive'
+    if frequencies.size > 1 or not 0.0 < frequencies[0] < math.inf:
+        msg = 'frequency must be scalar, finite, and positive'
         raise ValueError(msg)
     frequencies = numpy.linspace(
         frequency, samples // 2 * frequency, samples // 2
@@ -625,9 +626,11 @@ def lifetime_to_signal(
     signal = phasor_to_signal(
         mean, real, imag, samples=samples, harmonic=harmonic
     )
-    signal += numpy.asarray(background)
+    signal += numpy.expand_dims(background, -1)
 
-    time = numpy.linspace(0, 1.0 / (unit_conversion * frequency), samples)
+    time = numpy.linspace(
+        0, 1.0 / (unit_conversion * frequency), samples, endpoint=False
+    )
 
     return signal.squeeze(), zero.squeeze(), time
 
@@ -706,7 +709,7 @@ def phasor_calibrate(
         Method used for calculating center of reference phasor coordinates:
 
         - ``'mean'``: Arithmetic mean.
-        - ``'median'``: Spatial median.
+        - ``'median'``: Component-wise median.
 
     nan_safe : bool, optional, default: True
         Ensure that `method` is applied to same elements of reference arrays.
@@ -1083,6 +1086,7 @@ def phasor_to_lifetime_search(
         If the array shapes of `real` and `imag` coordinates do not match.
         If the number of harmonics is less than the number of components.
         If the lifetime range is invalid.
+        If `frequency` is not finite and positive.
 
     See Also
     --------
@@ -1116,12 +1120,17 @@ def phasor_to_lifetime_search(
     if lifetime_range is None:
         lifetime_range = (0.0, 20.0, 0.1)
     elif (
-        lifetime_range[0] < 0.0
+        not all(math.isfinite(v) for v in lifetime_range)
+        or lifetime_range[0] < 0.0
         or lifetime_range[1] <= lifetime_range[0]
         or lifetime_range[2] <= 0.0
         or lifetime_range[2] >= lifetime_range[1] - lifetime_range[0]
     ):
         msg = f'invalid {lifetime_range=!r}'
+        raise ValueError(msg)
+
+    if not 0.0 < frequency < math.inf:
+        msg = f'{frequency=} is not finite and positive'
         raise ValueError(msg)
 
     num_threads = number_threads(num_threads)
@@ -1571,8 +1580,7 @@ def lifetime_fraction_to_amplitude(
     """
     t = numpy.asarray(fraction, dtype=numpy.float64, copy=True)
     t /= numpy.sum(t, axis=axis, keepdims=True)
-    numpy.true_divide(t, lifetime, out=t)
-    return t
+    return numpy.true_divide(t, lifetime)
 
 
 def lifetime_fraction_from_amplitude(
@@ -1815,18 +1823,21 @@ def phasor_at_harmonic(
     (array([0.5, 0.2, 0.05882, 0.01538]), array([0.5, 0.4, 0.2353, 0.1231]))
 
     """
-    harmonic = numpy.asarray(harmonic, dtype=numpy.int32)
-    if numpy.any(harmonic < 1):
-        msg = 'harmonic < 1'
+    harmonic = numpy.asarray(harmonic)
+    if harmonic.dtype.kind not in 'iu' or numpy.any(harmonic < 1):
+        msg = 'harmonic is not a positive integer'
         raise ValueError(msg)
 
-    other_harmonic = numpy.asarray(other_harmonic, dtype=numpy.int32)
-    if numpy.any(other_harmonic < 1):
-        msg = 'other_harmonic < 1'
+    other_harmonic = numpy.asarray(other_harmonic)
+    if other_harmonic.dtype.kind not in 'iu' or numpy.any(other_harmonic < 1):
+        msg = 'other_harmonic is not a positive integer'
         raise ValueError(msg)
 
     return _phasor_at_harmonic(  # type: ignore[no-any-return]
-        real, harmonic, other_harmonic, **kwargs
+        real,
+        harmonic.astype(numpy.int32),
+        other_harmonic.astype(numpy.int32),
+        **kwargs,
     )
 
 

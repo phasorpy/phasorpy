@@ -50,12 +50,13 @@ def number_threads(
     ----------
     num_threads : int, optional
         Number of threads to use for parallel computations on CPU cores.
-        By default, return 1, disabling multithreading.
+        By default, or if negative, return 1, disabling multithreading.
         If greater than zero, return the value, limited to `max_threads` if
         set.
         If zero, return the value of the ``PHASORPY_NUM_THREADS``
         environment variable if set, otherwise half the number of CPU cores
-        (up to `max_threads` if specified, or 32 if not).
+        available to the process. Either value is limited to `max_threads`
+        if specified, or 32 if not.
     max_threads : int, optional
         Maximum number of threads to return.
 
@@ -92,8 +93,8 @@ def number_threads(
         if hasattr(os, 'sched_getaffinity'):
             cpu_count = len(os.sched_getaffinity(0))
         else:
-            # sched_getaffinity not available on Windows
-            cpu_count = os.cpu_count()
+            # sched_getaffinity not available on Windows and macOS
+            cpu_count = getattr(os, 'process_cpu_count', os.cpu_count)()
         if cpu_count is None:
             return 1
         return min(max_threads, max(1, cpu_count // 2))
@@ -137,7 +138,6 @@ def versions(
 
     """
     import importlib.metadata
-    import os
     import sys
 
     if verbose:
@@ -172,7 +172,7 @@ def versions(
     ):
         try:
             __import__(module)
-        except (ModuleNotFoundError, ImportError, ValueError):
+        except Exception:  # noqa: BLE001
             version_strings.append(f'{module}{dash}n/a')
             continue
         lib = sys.modules[module]

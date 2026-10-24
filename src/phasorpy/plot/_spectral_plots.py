@@ -162,6 +162,9 @@ class SpectralPlots:
         **kwargs: Any,
     ) -> None:
         self._samples = int(samples)
+        if self._samples < 3:
+            msg = f'{samples=} < 3'
+            raise ValueError(msg)
         self._dho = bool(dho)
         origins = numpy.atleast_1d(numpy.asarray(origin, dtype=float))
 
@@ -202,13 +205,15 @@ class SpectralPlots:
         if fraction is None:
             fractions = numpy.ones(num_components) / num_components
         else:
-            fractions = numpy.asarray(fraction, dtype=float)
+            fractions = numpy.clip(
+                numpy.asarray(fraction, dtype=float), 0.0, None
+            )
             if fractions.size != num_components:
                 msg = f'{fractions.size=} != {num_components=}'
                 raise ValueError(msg)
             s = fractions.sum()
             if s > 0.0:
-                fractions = numpy.clip(fractions / s, 0.0, 1.0)
+                fractions = fractions / s
             else:
                 fractions = numpy.ones(num_components) / num_components
 
@@ -404,8 +409,8 @@ class SpectralPlots:
             ax=next(left_axes_iter),
             label='Wavelengths ',
             valfmt='%.0f nm',
-            valmin=350.0,
-            valmax=850.0,
+            valmin=min(350.0, wl_min),
+            valmax=max(850.0, wl_max),
             valstep=1.0,
             valinit=(wl_min, wl_max),
         )
@@ -572,10 +577,12 @@ class SpectralPlots:
             component_spectra = numpy.stack(spectra)
 
         # normalize fractions to sum to 1
-        fractions = numpy.asarray(fractions, dtype=numpy.float64)
+        fractions = numpy.clip(
+            numpy.asarray(fractions, dtype=numpy.float64), 0.0, None
+        )
         s = fractions.sum()
         if s > 0.0:
-            fractions = numpy.clip(fractions / s, 0.0, 1.0)
+            fractions = fractions / s
         else:
             fractions = numpy.ones(num_components) / num_components
 

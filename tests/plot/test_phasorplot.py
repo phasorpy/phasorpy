@@ -10,8 +10,10 @@ import math
 import numpy
 import pytest
 from matplotlib import pyplot
+from matplotlib.patches import Arc
 
 from phasorpy.plot import PhasorPlot
+from phasorpy.plot._phasorplot import CircleTicks, _semicircle_ticks
 
 rng = numpy.random.default_rng(42)
 
@@ -496,3 +498,99 @@ class TestPhasorPlot:
         plot = PhasorPlot(grid=False, title='use_lines')
         plot.semicircle(frequency=80, use_lines=True)
         self.show(plot)
+
+
+def test_fig() -> None:
+    """Test PhasorPlot.fig returns root figure."""
+    plot = PhasorPlot()
+    assert plot.fig is plot.ax.figure
+    pyplot.close()
+
+
+def test_grid_frequency() -> None:
+    """Test frequency in grid dict does not conflict with argument."""
+    plot = PhasorPlot(grid={'frequency': 80.0})
+    assert plot._frequency == 80.0
+    pyplot.close()
+
+    plot = PhasorPlot(frequency=60.0, grid={'frequency': 80.0})
+    assert plot._frequency == 60.0
+    pyplot.close()
+
+
+def test_histogram_validation() -> None:
+    """Test hist2d and contour validate bins and range."""
+    real, imag = rng.random((2, 100))
+    plot = PhasorPlot()
+    plot.hist2d(real, imag, bins=numpy.int64(16))
+    plot.contour(real, imag, bins=numpy.array([0.0, 0.1, 0.5, 1.0]))
+    with pytest.raises(ValueError):
+        plot.hist2d(real, imag, bins=0)
+    with pytest.raises(ValueError):
+        plot.hist2d(real, imag, range=((1.0, 0.0), (0.0, 1.0)))
+    pyplot.close()
+
+
+def test_polar_grid_numpy_int() -> None:
+    """Test polar_grid accepts NumPy integers."""
+    plot = PhasorPlot(allquadrants=True, grid=False)
+    plot.polar_grid(
+        radii=numpy.int64(2),  # type: ignore[arg-type]
+        angles=numpy.int64(4),  # type: ignore[arg-type]
+    )
+    assert len(plot.ax.patches) == 2
+    assert len(plot.ax.lines) == 4
+    pyplot.close()
+
+
+def test_polar_cursor_arc_direction() -> None:
+    """Test polar cursor arcs are consistent with mask_from_polar_cursor."""
+    plot = PhasorPlot(allquadrants=True, grid=False)
+    plot.polar_cursor(3.0, 0.5, -3.0, 0.8)
+    arcs = [p for p in plot.ax.patches if isinstance(p, Arc)]
+    assert len(arcs) == 2
+    for arc in arcs:
+        assert arc.theta1 == pytest.approx(math.degrees(3.0))
+        assert arc.theta2 == pytest.approx(math.degrees(-3.0))
+    pyplot.close()
+
+
+def test_cursor_one_limit() -> None:
+    """Test cursor raises if only one limit is given."""
+    plot = PhasorPlot()
+    with pytest.raises(ValueError):
+        plot.cursor(0.5, 0.3, 0.6)
+    with pytest.raises(ValueError):
+        plot.cursor(0.5, 0.3, None, 0.2)
+    pyplot.close()
+
+
+def test_semicircle_ticks() -> None:
+    """Test semicircle tick labels and reference handling."""
+    _, labels = _semicircle_ticks(80.0)
+    assert labels[2].endswith(' ns')
+    _, labels = _semicircle_ticks(80.0, [1, 2, 4])
+    assert labels == ('1', '2', '4')
+    with pytest.raises(ValueError):
+        _semicircle_ticks(80.0, [1, 2], ['a'])
+
+    plot = PhasorPlot(grid=False)
+    lines = plot.semicircle(
+        frequency=80.0,
+        polar_reference=[0, 1],  # type: ignore[arg-type]
+    )
+    assert len(lines) == 1
+    assert plot._semicircle_ticks is not None
+    pyplot.close()
+
+
+def test_circle_ticks_draw() -> None:
+    """Test CircleTicks with NaN vertices and whitespace labels."""
+    plot = PhasorPlot(allquadrants=True, grid=False)
+    plot.ax.plot(
+        [1.0, math.nan, 0.0, -1.0],
+        [0.0, math.nan, 1.0, 0.0],
+        path_effects=[CircleTicks(labels=['a', 'nan', ' '])],
+    )
+    plot.save(io.BytesIO(), format='png')
+    pyplot.close()

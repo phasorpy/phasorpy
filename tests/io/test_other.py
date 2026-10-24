@@ -533,14 +533,14 @@ def test_phasor_from_ifli() -> None:
     assert mean.shape == (256, 256)
     assert real1.shape == (256, 256)
     assert imag1.shape == (256, 256)
-    assert attr['harmonic'] == [1]
+    assert attr['harmonic'] == 1
     assert_array_equal(real1, real[0])
 
     mean, real1, imag1, attr = phasor_from_ifli(filename, harmonic=2)
     assert mean.shape == (256, 256)
     assert real1.shape == (256, 256)
     assert imag1.shape == (256, 256)
-    assert attr['harmonic'] == [2]
+    assert attr['harmonic'] == 2
     assert_array_equal(real1, real[1])
 
     mean, real1, imag1, attr = phasor_from_ifli(filename, harmonic=[3])

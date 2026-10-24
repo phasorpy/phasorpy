@@ -6,9 +6,10 @@
 
 import os
 
+import pooch
 import pytest
 
-from phasorpy.datasets import DATA_ON_GITHUB, fetch
+from phasorpy.datasets import DATA_ON_GITHUB, REPOSITORIES, fetch
 
 if os.environ.get('SKIP_FETCH', ''):
     pytest.skip('fetch is disabled', allow_module_level=True)
@@ -36,6 +37,23 @@ def test_fetch() -> None:
 def test_fetch_inzip() -> None:
     """Test fetch file from ZIP."""
     filename = fetch('simfcs.b&h')
+    assert os.path.exists(filename)
+
+    for extract_dir in (None, 'unzipped'):
+        filename = fetch('simfcs.b&h', extract_dir=extract_dir)
+        assert filename.endswith('simfcs.b&h')
+        assert os.path.exists(filename)
+
+
+def test_fetch_pooch() -> None:
+    """Test fetch from Pooch repository not in REPOSITORIES."""
+    repo = pooch.create(
+        path=REPOSITORIES['tests'].path,
+        base_url=REPOSITORIES['tests'].base_url,
+        registry={'simfcs.r64': REPOSITORIES['tests'].registry['simfcs.r64']},
+    )
+    filename = fetch(repo)
+    assert filename.endswith('simfcs.r64')
     assert os.path.exists(filename)
 
 
@@ -75,6 +93,7 @@ def test_fetch_list() -> None:
 def test_fetch_repo() -> None:
     """Test fetch repo."""
     filenames = fetch('tests')
+    assert len(filenames) == len(set(filenames))
     for filename in filenames:
         assert os.path.exists(filename)
 

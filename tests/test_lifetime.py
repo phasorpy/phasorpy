@@ -92,7 +92,7 @@ def test_lifetime_to_signal(
     assert time.shape == (16,)
     assert_allclose(signal[index], expected, atol=1e-3)
     assert_allclose(zero[[0, 9, 10, -1]], zero_expected, atol=1e-3)
-    assert_allclose(time[index], [0.0, 1.666667, 23.333333, 25.0], atol=1e-3)
+    assert_allclose(time[index], [0.0, 1.5625, 21.875, 23.4375], atol=1e-3)
 
     # two lifetimes
     signal, zero, time = lifetime_to_signal(
@@ -157,6 +157,25 @@ def test_lifetime_to_signal(
     )
     assert signal.shape == (2, 16)
     assert zero.shape == (16,)
+
+    # per-signal background with scalar mean
+    signal, _, _ = lifetime_to_signal(
+        40.0,
+        [4.2, 0.5],
+        background=[0.1, 0.2],
+        zero_phase=None,
+        samples=16,
+        harmonic=harmonic,
+    )
+    assert signal.shape == (2, 16)
+    assert_allclose(signal.mean(axis=-1), [1.0, 1.0], atol=1e-6)
+
+    # harmonic as ndarray
+    if harmonic == 1:
+        signal, _, _ = lifetime_to_signal(
+            40.0, 4.2, samples=16, harmonic=numpy.array([1])  # type: ignore[arg-type]
+        )
+        assert signal.shape == (16,)
 
 
 def test_lifetime_to_signal_multiharmonic() -> None:
@@ -228,6 +247,18 @@ def test_lifetime_to_signal_error() -> None:
         lifetime_to_signal(40.0, 4.2, mean=-0.1)
     with pytest.raises(ValueError):
         lifetime_to_signal(40.0, 4.2, mean=1.0, background=1.1)
+    for kwargs in (
+        {'zero_phase': nan},
+        {'zero_stdev': nan},
+        {'harmonic': 1, 'zero_modulation': nan},
+    ):
+        with pytest.raises(ValueError):
+            lifetime_to_signal(
+                40.0, 4.2, samples=16, **kwargs  # type: ignore[arg-type]
+            )
+    for frequency in (nan, math.inf):
+        with pytest.raises(ValueError):
+            lifetime_to_signal(frequency, 4.2)
     with pytest.raises(ValueError):
         lifetime_to_signal(40.0, 4.2, zero_phase=-1.0)
     with pytest.raises(ValueError):
@@ -582,6 +613,8 @@ def test_phasor_from_lifetime_exceptions() -> None:
     """Test exceptions in phasor_from_lifetime function."""
     with pytest.raises(ValueError):
         phasor_from_lifetime(80.0, 0.0, unit_conversion=0.0)
+    with pytest.raises(ValueError):
+        phasor_from_lifetime(80.0, 0.0, unit_conversion=nan)
     with pytest.raises(ValueError):
         phasor_from_lifetime(80.0, [[0.0]])
     with pytest.raises(ValueError):
@@ -1120,7 +1153,7 @@ def test_phasor_calibrate(
     real, imag, real_ref, imag_ref = args
     mean_ref = numpy.full_like(real_ref, 2)
     if ('harmonic' in kwargs and not isinstance(kwargs['harmonic'], int)) or (
-        isinstance(kwargs.get('frequency', None), (list, numpy.ndarray))
+        isinstance(kwargs.get('frequency', None), list | numpy.ndarray)
         and len(kwargs['frequency']) > 1
     ):
         mean_ref = mean_ref[0]
@@ -1193,6 +1226,21 @@ def test_phasor_calibrate_exceptions() -> None:
             harmonic=[1, 2, 3, 4],
             lifetime=4,
         )
+
+
+def test_phasor_lifetime_nan_or_zero() -> None:
+    """Test lifetime functions with NaN frequency or zero fraction."""
+    assert_allclose(
+        phasor_to_apparent_lifetime(0.5, 0.5, math.nan), (math.nan, math.nan)
+    )
+    assert math.isnan(phasor_to_normal_lifetime(0.5, 0.5, math.nan))
+    # scalar path matches array path
+    assert_allclose(
+        phasor_from_lifetime(80, [4.0], [0.0]), (math.nan, math.nan)
+    )
+    assert_allclose(
+        phasor_from_lifetime(80, [4.0], [math.nan]), (math.nan, math.nan)
+    )
 
 
 def test_phasor_to_normal_lifetime() -> None:
@@ -1587,6 +1635,12 @@ def test_lifetime_fraction_to_amplitude() -> None:
             [nan, nan],
             atol=1e-3,
         )
+    # lifetime with more dimensions than fraction
+    assert_allclose(
+        lifetime_fraction_to_amplitude([[4.0, 1.0], [2.0, 1.0]], [0.5, 0.5]),
+        [[0.125, 0.5], [0.25, 0.5]],
+        atol=1e-6,
+    )
 
 
 def test_lifetime_fraction_from_amplitude() -> None:
@@ -1674,6 +1728,16 @@ def test_phasor_at_harmonic() -> None:
         phasor_at_harmonic(0.5, 0, 1)
     with pytest.raises(ValueError):
         phasor_at_harmonic(0.5, 1, 0)
+    with pytest.raises(ValueError):
+        phasor_at_harmonic(0.5, 1.9, 1)
+    with pytest.raises(ValueError):
+        phasor_at_harmonic(0.5, 1, [2, 2.5])
+    with pytest.raises(ValueError):
+        phasor_at_harmonic(0.5, 1, math.nan)
+    with pytest.raises(ValueError):
+        phasor_at_harmonic(0.5, 2.0, 1)
+    with pytest.raises(ValueError):
+        phasor_at_harmonic(0.5, True, 1)  # noqa: FBT003
 
 
 def test_phasor_component_search_exceptions() -> None:
@@ -1718,6 +1782,15 @@ def test_phasor_component_search_exceptions() -> None:
     # dtype not float
     with pytest.raises(ValueError):
         phasor_to_lifetime_search(real, imag, frequency, dtype=numpy.int32)
+
+    for freq in (0.0, nan, math.inf):
+        with pytest.raises(ValueError):
+            phasor_to_lifetime_search(real, imag, freq)
+
+    with pytest.raises(ValueError):
+        phasor_to_lifetime_search(
+            real, imag, frequency, lifetime_range=(0, nan, 0.1)
+        )
 
     # too many components
     # with pytest.raises(ValueError):

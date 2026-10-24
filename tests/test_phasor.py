@@ -83,6 +83,24 @@ def test_phasor_from_signal(*, use_fft: bool) -> None:
     )
     assert_array_equal(signal, signal_copy)
 
+    # non-contiguous signal
+    strided = numpy.stack([signal, signal], axis=-1)[..., 0]
+    assert not strided.flags.c_contiguous
+    assert_allclose(
+        phasor_from_signal(strided, use_fft=use_fft),
+        (1.1, 0.4, 0.2),
+        atol=1e-6,
+    )
+
+    # float16 and big-endian signals
+    for dtype in ('<f2', '>f8', '>i4'):
+        converted = (signal * 100).astype(dtype)
+        assert_allclose(
+            phasor_from_signal(converted, use_fft=use_fft),
+            phasor_from_signal(converted.astype('<f8'), use_fft=use_fft),
+            atol=1e-6,
+        )
+
     # specify first harmonic
     assert_allclose(
         phasor_from_signal(signal, harmonic=1, use_fft=use_fft),
@@ -429,6 +447,15 @@ def test_phasor_normalization(*, harmonics: bool, normalize: bool) -> None:
             phasor_normalize(mean0, real0, imag0, samples=0)
 
 
+def test_phasor_normalize_int() -> None:
+    """Test phasor_normalize function with integer input."""
+    mean, real, imag = phasor_normalize([2, 4], [1, 2], [3, 4], samples=2)
+    assert real.dtype == numpy.float64
+    assert_allclose(mean, [1.0, 2.0])
+    assert_allclose(real, [0.5, 0.5])
+    assert_allclose(imag, [1.5, 1.0])
+
+
 @pytest.mark.parametrize(
     ('shape', 'axis'),
     [
@@ -601,8 +628,8 @@ def test_phasor_to_signal() -> None:
 def test_phasor_to_signal_error() -> None:
     """Test phasor_to_signal functions exceptions."""
     with pytest.raises(ValueError):
-        # not floating point
-        phasor_to_signal(1.0, 1, 1.0, samples=5)
+        # not real-valued
+        phasor_to_signal(1.0, 1j, 1.0, samples=5)
     with pytest.raises(ValueError):
         # phasor shape mismatch
         phasor_to_signal(1.1, 0.5, [[0.5]], samples=5)
@@ -937,6 +964,13 @@ def test_phasor_transform_more() -> None:
     assert_allclose(real, [0.353553, 0.831492], atol=1e-3)
     assert_allclose(imag, [0.353553, 0.344415], atol=1e-3)
 
+    # ufunc kwargs are passed for scalar phase and modulation
+    out = numpy.zeros(2), numpy.zeros(2)
+    real, imag = phasor_transform([1, 1], [0, 0], math.pi / 4, 0.5, out=out)
+    assert real is out[0]
+    assert imag is out[1]
+    assert_allclose(real, [0.353553, 0.353553], atol=1e-3)
+
 
 @pytest.mark.parametrize(
     ('args', 'expected'),
@@ -974,6 +1008,11 @@ def test_phasor_transform_more() -> None:
         ((1.0, 0.1, nan, 1.0, 0.3, 0.4, 1.0, 1.0), (1.0, 0.2, nan)),
         ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, nan), (nan, nan, nan)),
         ((1.0, 0.1, 0.2, 1.0, 0.3, 0.4, 1.0, nan), (nan, nan, nan)),
+        # integer fraction0
+        (
+            (1.0, 0.1, 0.2, 1.0, 0.3, 0.4, [1, 0]),
+            ([1.0, 1.0], [0.1, 0.3], [0.2, 0.4]),
+        ),
     ],
 )
 def test_phasor_combine(
@@ -1187,6 +1226,20 @@ def test_phasor_to_principal_plane() -> None:
     with pytest.raises(ValueError):
         phasor_to_principal_plane([0.0, 1.0], [0.0])
 
+    # integer input
+    phasor_to_principal_plane([[1, 0, 1], [0, 1, 1]], [[0, 1, 1], [1, 0, 0]])
+
+    # projected center lies in quadrant of first harmonic center
+    real = numpy.stack(
+        [rng.normal(0.3, 0.05, 100), rng.normal(-0.2, 0.05, 100)]
+    )
+    imag = numpy.stack(
+        [rng.normal(0.3, 0.05, 100), rng.normal(0.1, 0.05, 100)]
+    )
+    x, y, _ = phasor_to_principal_plane(real, imag)
+    assert x.mean() > 0.0
+    assert y.mean() > 0.0
+
 
 def test_phasor_nearest_neighbor() -> None:
     """Test phasor_nearest_neighbor function."""
@@ -1195,6 +1248,12 @@ def test_phasor_nearest_neighbor() -> None:
     assert_array_equal(phasor_nearest_neighbor(1, 1, 1, 1, values=1), 1.0)
     assert_array_equal(phasor_nearest_neighbor(nan, 1, 1, 1), -1)
     assert_array_equal(phasor_nearest_neighbor(nan, 1, 1, 1, values=1), nan)
+
+    # empty neighbors
+    assert_array_equal(phasor_nearest_neighbor([1, 2], [1, 2], [], []), -1)
+    assert_array_equal(
+        phasor_nearest_neighbor([1, 2], [1, 2], [], [], values=[]), nan
+    )
 
     # Test input arrays are not modified, no values
     arr = numpy.array([[nan, 2], [3, 4]])

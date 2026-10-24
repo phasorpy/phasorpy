@@ -143,7 +143,10 @@ class PhasorPlot:
             grid_kwargs = {}
             grid = True
         elif isinstance(grid, dict):
-            grid_kwargs = grid
+            grid_kwargs = dict(grid)
+            grid_frequency = grid_kwargs.pop('frequency', None)
+            if frequency is None:
+                frequency = grid_frequency
             grid = True
         else:
             grid_kwargs = {}
@@ -336,11 +339,15 @@ class PhasorPlot:
         """Return two-dimensional histogram of imag versus real coordinates."""
         update_kwargs(kwargs, range=(self._ax.get_xlim(), self._ax.get_ylim()))
         (xmin, xmax), (ymin, ymax) = kwargs['range']
-        assert xmax > xmin
-        assert ymax > ymin
+        if xmax <= xmin or ymax <= ymin:
+            msg = f'invalid range {kwargs["range"]!r}'
+            raise ValueError(msg)
         bins = kwargs.get('bins', 128)
-        if isinstance(bins, int):
-            assert bins > 0
+        if isinstance(bins, int | numpy.integer):
+            bins = int(bins)
+            if bins <= 0:
+                msg = f'{bins=} <= 0'
+                raise ValueError(msg)
             aspect = (xmax - xmin) / (ymax - ymin)
             if aspect > 1:
                 bins = (bins, max(int(bins / aspect), 1))
@@ -420,9 +427,9 @@ class PhasorPlot:
             kwargs, 'bins', 'range', 'density', 'weights'
         )
         h, xedges, yedges = self._histogram2d(real, imag, **kwargs_hist2d)
-        xedges = xedges[:-1] + ((xedges[1] - xedges[0]) / 2.0)
-        yedges = yedges[:-1] + ((yedges[1] - yedges[0]) / 2.0)
-        self._ax.contour(xedges, yedges, h.T, **kwargs)
+        xcenters = (xedges[:-1] + xedges[1:]) / 2.0
+        ycenters = (yedges[:-1] + yedges[1:]) / 2.0
+        self._ax.contour(xcenters, ycenters, h.T, **kwargs)
 
         # TODO: create custom labels for contour?
         # if 'label' in kwargs:
@@ -736,6 +743,9 @@ class PhasorPlot:
             Only applies if `radius` is provided.
         polar : bool, optional, default: False
             Draw phase line and modulation arc instead of Cartesian lines.
+            The arc is drawn counterclockwise from the phase of
+            (`real`, `imag`) to the phase of (`real_limit`, `imag_limit`),
+            consistent with :py:func:`phasorpy.cursor.mask_from_polar_cursor`.
         **kwargs
             Optional arguments passed to
             :py:class:`matplotlib.lines.Line2D`,
@@ -748,6 +758,9 @@ class PhasorPlot:
         phasorpy.plot.PhasorPlot.polar_cursor
 
         """
+        if (real_limit is None) != (imag_limit is None):
+            msg = 'real_limit and imag_limit must both be provided or None'
+            raise ValueError(msg)
         if real_limit is not None and imag_limit is not None:
             return self.polar_cursor(
                 *phasor_to_polar(real, imag),
@@ -799,8 +812,9 @@ class PhasorPlot:
             Radial component of polar coordinate.
         phase_limit : array_like, optional
             Angular component of limiting polar coordinate (in radians).
-            Modulation arcs are drawn between `phase` and `phase_limit`
-            if `polar` is True.
+            Modulation arcs are drawn counterclockwise from `phase` to
+            `phase_limit` if `polar` is True, consistent with
+            :py:func:`phasorpy.cursor.mask_from_polar_cursor`.
         modulation_limit : array_like, optional
             Radial component of limiting polar coordinate.
             Phase lines are drawn from `modulation` to `modulation_limit`
@@ -1065,8 +1079,9 @@ class PhasorPlot:
         for mod in (modulation, modulation_limit):
             if mod is not None:
                 if phase is not None and phase_limit is not None:
-                    theta1 = math.degrees(min(phase, phase_limit))
-                    theta2 = math.degrees(max(phase, phase_limit))
+                    # counterclockwise like mask_from_polar_cursor
+                    theta1 = math.degrees(phase)
+                    theta2 = math.degrees(phase_limit)
                 else:
                     theta1 = 0.0
                     theta2 = 360.0  # if self._full else 90.0
@@ -1182,8 +1197,8 @@ class PhasorPlot:
 
         if radii is None:
             radii_list: list[float] = [1 / 3, 2 / 3, 1.0]
-        elif isinstance(radii, int):
-            radii_list = numpy.linspace(0, 1, radii + 1, endpoint=True)[
+        elif isinstance(radii, int | numpy.integer):
+            radii_list = numpy.linspace(0, 1, int(radii) + 1, endpoint=True)[
                 1:
             ].tolist()
         else:
@@ -1206,9 +1221,9 @@ class PhasorPlot:
             angles_list: list[float] = numpy.linspace(
                 0, 2 * math.pi, 12, endpoint=False
             ).tolist()
-        elif isinstance(angles, int):
+        elif isinstance(angles, int | numpy.integer):
             angles_list = numpy.linspace(
-                0, 2 * math.pi, angles, endpoint=False
+                0, 2 * math.pi, int(angles), endpoint=False
             ).tolist()
         else:
             angles_list = list(angles)
@@ -1290,10 +1305,11 @@ class PhasorPlot:
             Alternative to `polar_reference`.
         lifetime : sequence of float, optional
             Single-component lifetimes at which to draw ticks and labels.
-            Only applies when `frequency` is specified.
+            Only applies when `frequency` is specified and the reference
+            is the default, (0, 1) polar or (1, 0) phasor coordinates.
         labels : sequence of str, optional
             Tick labels. By default, the values of `lifetime`.
-            Only applies when `frequency` and `lifetime` are specified.
+            Only applies when ticks are drawn.
         show_circle : bool, optional, default: True
             Draw universal semicircle.
         use_lines : bool, optional, default: False
@@ -1330,8 +1346,17 @@ class PhasorPlot:
             polar_reference = phasor_to_polar_scalar(*phasor_reference)
         if polar_reference is None:
             polar_reference = (0.0, 1.0)
+        else:
+            polar_reference = (
+                float(polar_reference[0]),
+                float(polar_reference[1]),
+            )
         if phasor_reference is None:
             phasor_reference = phasor_from_polar_scalar(*polar_reference)
+        default_reference = (
+            abs(polar_reference[0]) < 1e-9
+            and abs(polar_reference[1] - 1.0) < 1e-9
+        )
         ax = self._ax
 
         lines = []
@@ -1364,16 +1389,13 @@ class PhasorPlot:
         kwargs.pop('label', None)  # don't pass label to ticks
         kwargs.pop('capstyle', None)
 
-        if frequency is not None and polar_reference == (0.0, 1.0):
+        if frequency is not None and default_reference:
             # draw ticks and labels
             lifetime, labels = _semicircle_ticks(frequency, lifetime, labels)
             self._semicircle_ticks = CircleTicks((0.5, 0.0), labels=labels)
             lines.extend(
                 ax.plot(
-                    *phasor_transform(
-                        *phasor_from_lifetime(frequency, lifetime),
-                        *polar_reference,
-                    ),
+                    *phasor_from_lifetime(frequency, lifetime),
                     path_effects=[self._semicircle_ticks],
                     **kwargs,
                 )
@@ -1476,29 +1498,35 @@ class CircleTicks(AbstractPathEffect):
         size = renderer.points_to_pixels(self._size)
         origin = affine.transform((self._origin,))
 
-        transpath = affine.transform_path(tpath)
-        polys = transpath.to_polygons(closed_only=False)
+        # use path vertices directly to keep labels aligned with vertices
+        p = affine.transform(tpath.vertices)
+        valid = numpy.isfinite(p).all(axis=1)
+        labels = [s for s, v in zip(self._labels, valid, strict=False) if v]
+        p = p[valid]
 
-        for p in polys:
-            # coordinates of tick ends
-            t = p - origin
-            t /= numpy.hypot(t[:, 0], t[:, 1])[:, numpy.newaxis]
-            d = t.copy()
-            t *= size
-            t += p
+        if p.shape[0] == 0:
+            gc0.restore()
+            return
 
-            xyt = numpy.empty((2 * p.shape[0], 2))
-            xyt[0::2] = p
-            xyt[1::2] = t
+        # coordinates of tick ends
+        t = p - origin
+        t /= numpy.hypot(t[:, 0], t[:, 1])[:, numpy.newaxis]
+        d = t.copy()
+        t *= size
+        t += p
 
-            renderer.draw_path(
-                gc0,
-                Path(xyt, numpy.tile([Path.MOVETO, Path.LINETO], p.shape[0])),
-                affine.inverted() + trans,
-                rgbFace,
-            )
-            if not self._labels:
-                continue
+        xyt = numpy.empty((2 * p.shape[0], 2))
+        xyt[0::2] = p
+        xyt[1::2] = t
+
+        renderer.draw_path(
+            gc0,
+            Path(xyt, numpy.tile([Path.MOVETO, Path.LINETO], p.shape[0])),
+            affine.inverted() + trans,
+            rgbFace,
+        )
+
+        if labels:
             # coordinates of labels
             t = d * size * 2.5
             t += p
@@ -1508,15 +1536,16 @@ class CircleTicks(AbstractPathEffect):
             else:
                 h = 0.0
 
-            for s, (x, y), (dx, _) in zip(self._labels, t, d, strict=True):
+            for s, (x, y), (dx, _) in zip(labels, t, d, strict=False):
                 # TODO: get rendered text size from matplotlib.text.Text?
                 # this did not work:
                 # Text(d[i,0], h - d[i,1], label, ha='center', va='center')
-                if not s:
+                words = s.split()
+                if not words:
                     continue
                 renderer.draw_text(
                     gc0,
-                    x + fontsize * len(s.split()[0]) * (dx - 1.0),
+                    x + fontsize * len(words[0]) * (dx - 1.0),
                     h - y + fontsize,
                     s,
                     font,
@@ -1543,6 +1572,10 @@ def _semicircle_ticks(
         unit = ''
     if labels is None:
         labels = [f'{tau:g}' for tau in lifetime]
-        with contextlib.suppress(IndexError):
-            labels[2] = f'{labels[2]} {unit}'
+        if unit:
+            with contextlib.suppress(IndexError):
+                labels[2] = f'{labels[2]} {unit}'
+    elif labels and len(labels) != len(lifetime):
+        msg = f'{len(labels)=} != {len(lifetime)=}'
+        raise ValueError(msg)
     return tuple(lifetime), tuple(labels)

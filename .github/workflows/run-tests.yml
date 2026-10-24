@@ -52,21 +52,17 @@ jobs:
       - name: Build docs
         run: |
           cd docs
-          make dirhtml
+          python -m sphinx -M dirhtml . _build
 
   static_analysis:
     name: Static code analysis
     runs-on: "ubuntu-latest"
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v7
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.14"
       - name: Editable install
         run: |
           python -m pip install --upgrade pip
@@ -83,7 +79,7 @@ jobs:
           python -m mypy
       - name: Test with isort
         run: |
-          python -m isort --check src/phasorpy tutorials
+          python -m isort --check src/phasorpy tutorials docs
       - name: Check spelling
         run: |
           typos .

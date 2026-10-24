@@ -156,7 +156,10 @@ def phasor_from_flimlabs_json(
             raise IndexError(msg)
         channel += 1  # 1-based index
 
-    if isinstance(harmonic, str) and harmonic == 'all':
+    if harmonic is None:
+        harmonic = harmonics[:1]
+        keep_harmonic_axis = False
+    elif isinstance(harmonic, str) and harmonic == 'all':
         harmonic = harmonics
         keep_harmonic_axis = True
     else:
@@ -253,7 +256,7 @@ def signal_from_flimlabs_json(
     channel : int, optional, default: 0
         Index of channel to return (zero-based).
         By default, return the first channel.
-        If None, return all channels.
+        If None, return all channels in file.
     dtype : dtype_like, optional
         Unsigned integer type of TCSPC histogram.
         By default, use `uint16`.
@@ -283,8 +286,9 @@ def signal_from_flimlabs_json(
         If file is not a valid JSON file.
         If file is not a FLIM LABS JSON file containing TCSPC histogram.
         If `dtype` is not an unsigned integer type.
+        If photon counts overflow `dtype`.
     IndexError
-        If `channel` is out of range.
+        If `channel` is not found in file.
 
     See Also
     --------
@@ -336,7 +340,12 @@ def signal_from_flimlabs_json(
             raise ValueError(msg)
 
     header = data['header']
-    nchannels = len([c for c in header['channels'] if c])
+    if data.get('phasors_data'):
+        # phasor files may contain a subset of channels enabled in header
+        channels = sorted({d['channel'] - 1 for d in data['phasors_data']})
+    else:
+        channels = [i for i, c in enumerate(header['channels']) if c]
+    nchannels = len(channels)
     if nchannels == 0:
         msg = f'{filename!r} contains no channels'
         raise ValueError(msg)
@@ -346,9 +355,10 @@ def signal_from_flimlabs_json(
     frequency = 1000.0 / laser_period_ns if laser_period_ns > 0 else 0.0
 
     if channel is not None:
-        if channel >= nchannels or channel < 0:
-            msg = f'{channel=} is out of bounds [0, {nchannels - 1}]'
+        if channel not in channels:
+            msg = f'{channel=} not found in {channels}'
             raise IndexError(msg)
+        channel_index = channels.index(channel)
         nchannels = 1
 
     if 'data' in data:
@@ -364,7 +374,7 @@ def signal_from_flimlabs_json(
     _flimlabs_signal(
         signal,
         intensities_data,
-        -1 if channel is None else channel,
+        -1 if channel is None else channel_index,
     )
 
     if channel is None and nchannels > 1:
@@ -379,9 +389,7 @@ def signal_from_flimlabs_json(
         0.0, header['laser_period_ns'], 256, endpoint=False
     )
     if channel is None and nchannels > 1:
-        coords['C'] = numpy.asarray(
-            [i for i, c in enumerate(header['channels']) if c]
-        )
+        coords['C'] = numpy.asarray(channels)
 
     metadata = xarray_metadata(axes, signal.shape, filename, **coords)
     attrs = metadata['attrs']

@@ -13,8 +13,8 @@ __all__ = [
 ]
 
 import os
-import re
 from typing import TYPE_CHECKING
+from xml.etree import ElementTree
 
 from .._utils import parse_harmonic
 from ..utils import logger
@@ -210,11 +210,11 @@ def phasor_to_ometiff(
     if bigtiff is None:
         bigtiff = datasize > 2**31
 
-    metadata = kwargs.pop('metadata', {})
+    metadata = dict(kwargs.pop('metadata', None) or {})
     if 'Creator' not in metadata:
         metadata['Creator'] = f'PhasorPy {__version__}'
 
-    dataset = metadata.pop('Dataset', {})
+    dataset = dict(metadata.pop('Dataset', None) or {})
     if 'Name' not in dataset:
         dataset['Name'] = 'Phasor'
     if description:
@@ -362,19 +362,10 @@ def phasor_from_ometiff(
         ome_xml = tif.ome_metadata
         assert ome_xml is not None
 
-        # TODO: parse OME-XML
-        match = re.search(
-            r'><Description>(.*)</Description><',
-            ome_xml,
-            re.MULTILINE | re.DOTALL,
-        )
-        if match is not None:
-            attrs['description'] = (
-                match.group(1)
-                .replace('&amp;', '&')
-                .replace('&gt;', '>')
-                .replace('&lt;', '<')
-            )
+        root = ElementTree.fromstring(ome_xml)  # noqa: S314
+        description = root.find('./{*}Dataset/{*}Description')
+        if description is not None and description.text is not None:
+            attrs['description'] = description.text
 
         has_harmonic_dim = tif.series[1].ndim > tif.series[0].ndim
         nharmonics = tif.series[1].shape[0] if has_harmonic_dim else 1
@@ -522,7 +513,7 @@ def signal_from_ometiff(
 
     with tifffile.TiffFile(filename) as tif:
         if not tif.is_ome:
-            msg = f'{filename!r} is not an OME-TIFF file'
+            msg = f'{os.path.basename(filename)!r} is not an OME-TIFF file'
             raise ValueError(msg)
 
         # TODO: determine is_rgb and is_hyperspectral from tif.series

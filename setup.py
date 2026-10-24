@@ -12,7 +12,12 @@ import sysconfig
 import numpy
 from setuptools import Extension, setup
 
-DEBUG = bool(os.environ.get('PHASORPY_DEBUG', ''))
+DEBUG = os.environ.get('PHASORPY_DEBUG', '').strip().lower() in {
+    '1',
+    'true',
+    'yes',
+    'on',
+}
 LIMITED_API = not sysconfig.get_config_var('Py_GIL_DISABLED')
 
 print()
@@ -33,17 +38,22 @@ elif sys.platform == 'darwin':
     pass
 elif sys.platform == 'win32':
     extra_compile_args = ['/openmp']
-    if DEBUG:
+else:
+    extra_compile_args = ['-fopenmp']
+    extra_link_args = ['-fopenmp']
+
+if DEBUG:
+    if sys.platform == 'win32':
         extra_compile_args += [
             '/Zi',
             '/Od',
             '/DCYTHON_TRACE=1',
             # '/DCYTHON_TRACE_NOGIL=1',  # too slow
         ]
-        extra_link_args = ['-debug:full']
-else:
-    extra_compile_args = ['-fopenmp']
-    extra_link_args = ['-fopenmp']
+        extra_link_args += ['-debug:full']
+    else:
+        extra_compile_args += ['-g', '-O0', '-DCYTHON_TRACE=1']
+        extra_link_args += ['-g']
 
 ext_modules = [
     Extension(
@@ -64,6 +74,13 @@ ext_modules = [
         py_limited_api=LIMITED_API,
     )
 ]
+
+if DEBUG:
+    from Cython.Build import cythonize
+
+    ext_modules = cythonize(
+        ext_modules, compiler_directives={'linetrace': True}
+    )  # type: ignore[no-untyped-call]
 
 
 setup(

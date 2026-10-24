@@ -1,7 +1,7 @@
 name: Build wheels
 # Build ABI3 wheels for all platforms with Python 3.12 and test the Cython
 # extensions can be loaded on Python 3.14.
-# Also build wheels for Python 3.14t, but do not test them.
+# Also build wheels for Python 3.14t and 3.15t, but do not test them.
 # Tests using fetch are disabled.
 
 on:
@@ -14,6 +14,10 @@ on:
     branches:
       - main
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -32,9 +36,7 @@ jobs:
         python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - uses: pypa/cibuildwheel@v4.3.1
+      - uses: pypa/cibuildwheel@v4.3.4
         env:
           CIBW_ARCHS_LINUX: auto
           CIBW_ARCHS_WINDOWS: native
@@ -46,7 +48,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install packages
         run: |
-          python -m pip install -U --pre --find-links=wheelhouse phasorpy abi3audit
+          python -m pip install -U abi3audit
+          python -m pip install --pre --no-deps --no-index --find-links=wheelhouse phasorpy
+          python -m pip install --pre phasorpy
       - name: Audit ABI3 wheels
         run: |
           abi3audit --strict --report wheelhouse/*abi3*.whl
@@ -71,8 +75,8 @@ jobs:
         run: python -m pip install cibuildwheel
       - name: Build wheel
         env:
-          CIBW_BUILD: ""
-          CIBW_SKIP: ""
+          CIBW_BUILD: "*pyodide*"
+          CIBW_SKIP: "*t-*"
           CIBW_TEST_SKIP: "*"
         run: python -m cibuildwheel --platform pyodide
       - uses: actions/upload-artifact@v7

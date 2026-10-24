@@ -23,7 +23,7 @@ rng = numpy.random.default_rng(42)
 
 def test_phasor_ometiff_multiharmonic() -> None:
     """Test storing multi-harmonic phasor coordinates as OME-TIFF."""
-    description = 'PhasorPy\n  <&test> test'
+    description = 'PhasorPy\n  <&test> &gt; test'
     data = rng.random((3, 31, 35, 31))
     data[:, 0, 0] = numpy.nan
 

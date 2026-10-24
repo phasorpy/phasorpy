@@ -72,10 +72,11 @@ def test_phasor_cluster_gmm_invalid_shapes() -> None:
         phasor_cluster_gmm([1, 2], [1, 2], clusters=3)
 
 
-def test_phasor_cluster_gmm_invalid_sigma() -> None:
+@pytest.mark.parametrize('sigma', [-1.0, 0.0, numpy.nan, numpy.inf])
+def test_phasor_cluster_gmm_invalid_sigma(sigma: float) -> None:
     """Test phasor_cluster_gmm function with invalid sigma."""
     with pytest.raises(ValueError):
-        phasor_cluster_gmm([1, 2], [1, 2], sigma=-1.0)
+        phasor_cluster_gmm([1, 2], [1, 2], sigma=sigma)
 
 
 @pytest.mark.parametrize(

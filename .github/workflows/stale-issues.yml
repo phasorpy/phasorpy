@@ -2,13 +2,13 @@ name: Close inactive issues
 on:
   schedule:
     - cron: "30 2 * * *"
+  workflow_dispatch:
 
 jobs:
   close-issues:
     runs-on: ubuntu-latest
     permissions:
       issues: write
-      pull-requests: write
     steps:
       - uses: actions/stale@v11
         with:
@@ -20,4 +20,3 @@ jobs:
           days-before-pr-stale: -1
           days-before-pr-close: -1
           exempt-assignees: cgohlke
-          repo-token: ${{ secrets.GITHUB_TOKEN }}

@@ -689,56 +689,21 @@ def fetch(
     for arg in args:
         if isinstance(arg, str):
             if arg in REPOSITORIES:
-                # fetch all files in repository
                 filenames.extend(
-                    fetch(
-                        *REPOSITORIES[arg].registry.keys(),
-                        extract_dir=extract_dir,
-                        return_scalar=False,
-                        **kwargs,
-                    )
+                    _fetch_repository(REPOSITORIES[arg], extract_dir, **kwargs)
                 )
                 continue
             for repo in REPOSITORIES.values():
-                if arg + '.zip' in repo.registry:
-                    # fetch single file in ZIP
-                    filenames.append(
-                        repo.fetch(
-                            arg + '.zip',
-                            processor=_Unzip([arg], extract_dir),
-                            **kwargs,
-                        )
+                if arg in repo.registry or arg + '.zip' in repo.registry:
+                    filenames.extend(
+                        _fetch_file(repo, arg, extract_dir, **kwargs)
                     )
-                    break
-                if arg in repo.registry:
-                    if arg.endswith('.zip'):
-                        # fetch and extract all files in ZIP
-                        filenames.extend(
-                            repo.fetch(
-                                arg,
-                                processor=pooch.processors.Unzip(
-                                    extract_dir=extract_dir
-                                ),
-                                **kwargs,
-                            )
-                        )
-                    else:
-                        # fetch single file
-                        filenames.append(repo.fetch(arg, **kwargs))
                     break
             else:
                 msg = f'{arg!r} not found'
                 raise ValueError(msg)
         elif isinstance(arg, pooch.Pooch):
-            # fetch all files in repository
-            filenames.extend(
-                fetch(
-                    *arg.registry.keys(),
-                    extract_dir=extract_dir,
-                    return_scalar=False,
-                    **kwargs,
-                )
-            )
+            filenames.extend(_fetch_repository(arg, extract_dir, **kwargs))
         else:
             # fetch all files in iterable
             filenames.extend(
@@ -754,6 +719,42 @@ def fetch(
     return tuple(filenames)
 
 
+def _fetch_file(
+    repo: pooch.Pooch, name: str, extract_dir: str | None, **kwargs: Any
+) -> list[str]:
+    """Return paths of file or extracted ZIP members from repository."""
+    if name + '.zip' in repo.registry:
+        # fetch single file in ZIP
+        return [
+            repo.fetch(
+                name + '.zip', processor=_Unzip([name], extract_dir), **kwargs
+            )
+        ]
+    if name.endswith('.zip'):
+        # fetch and extract all files in ZIP
+        return list(
+            repo.fetch(
+                name,
+                processor=pooch.processors.Unzip(extract_dir=extract_dir),
+                **kwargs,
+            )
+        )
+    return [repo.fetch(name, **kwargs)]
+
+
+def _fetch_repository(
+    repo: pooch.Pooch, extract_dir: str | None, **kwargs: Any
+) -> list[str]:
+    """Return paths of all files in repository."""
+    filenames: list[str] = []
+    for name in repo.registry:
+        if name.endswith('.zip') and name[:-4] in repo.registry:
+            # fetched via name of file in ZIP
+            continue
+        filenames.extend(_fetch_file(repo, name, extract_dir, **kwargs))
+    return filenames
+
+
 class _Unzip(pooch.processors.ExtractorProcessor):  # type: ignore[misc]
     """Pooch processor that unpacks ZIP archive and returns single file."""
 
@@ -761,7 +762,8 @@ class _Unzip(pooch.processors.ExtractorProcessor):  # type: ignore[misc]
         pooch.processors.ExtractorProcessor.__call__(
             self, fname, action, pooch_
         )
-        return os.path.splitext(fname)[0]
+        # extract_dir was resolved by ExtractorProcessor
+        return os.path.join(str(self.extract_dir), str(self.members[0]))
 
     @property
     def suffix(self) -> str:

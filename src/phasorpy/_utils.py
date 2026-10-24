@@ -32,9 +32,9 @@ __all__ = [
 
 import math
 import numbers
+import operator
 import os
 import sys
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -46,6 +46,7 @@ if TYPE_CHECKING:
         Literal,
         NDArray,
         PathLike,
+        Sequence,
     )
 
 import numpy
@@ -246,6 +247,15 @@ def dilate_coordinates(
         dx = numpy.diff(x, append=0.5)
         dy = numpy.diff(y, append=0.0)
     s = numpy.hypot(dx, dy)
+    zero = s == 0.0
+    if x.size > 2 and numpy.any(zero):
+        # collinear or repeated vertices: use normal of neighboring edge
+        ex = numpy.roll(x, -1) - numpy.roll(x, 1)
+        ey = numpy.roll(y, -1) - numpy.roll(y, 1)
+        dx[zero] = -ey[zero]
+        dy[zero] = ex[zero]
+        s = numpy.hypot(dx, dy)
+    s[s == 0.0] = numpy.inf
     dx /= s
     dx *= -offset
     dx += x
@@ -399,7 +409,8 @@ def parse_signal_axis(
                 if ax in signal.dims:
                     return signal.dims.index(ax), ax
             return -1, signal.dims[-1]
-        if isinstance(axis, int):
+        if isinstance(axis, int | numbers.Integral):
+            axis = operator.index(axis)
             return axis, signal.dims[axis]
         if axis in signal.dims:
             return signal.dims.index(axis), axis
@@ -407,8 +418,8 @@ def parse_signal_axis(
         raise ValueError(msg)
     if axis is None:
         return -1, ''
-    if isinstance(axis, int):
-        return axis, ''
+    if isinstance(axis, int | numbers.Integral):
+        return operator.index(axis), ''
     msg = f'invalid {axis=} for {type(signal)=}'
     raise ValueError(msg)
 
@@ -464,12 +475,13 @@ def parse_skip_axis(
         if prepend:
             return (0,), tuple(range(1, ndim + 1))
         return (), tuple(range(ndim))
-    if not isinstance(skip_axis, Sequence):
-        skip_axis = (skip_axis,)
+    skip_axis = [
+        operator.index(i) for i in numpy.atleast_1d(skip_axis).tolist()
+    ]
     if any(i >= ndim or i < -ndim for i in skip_axis):
         msg = f'{skip_axis=} is out of bounds for {ndim=}'
         raise IndexError(msg)
-    skip_axis = sorted(int(i % ndim) for i in skip_axis)
+    skip_axis = sorted({i % ndim for i in skip_axis})
     if prepend:
         skip_axis = [0] + [i + 1 for i in skip_axis]
         ndim += 1
@@ -526,7 +538,11 @@ def parse_harmonic(
     if harmonic is None:
         return [1], False
 
-    if isinstance(harmonic, (int, numbers.Integral)):
+    if isinstance(harmonic, bool | numpy.bool_):
+        msg = f'{harmonic=!r} is not an integer'
+        raise TypeError(msg)
+
+    if isinstance(harmonic, int | numbers.Integral):
         if harmonic < 1 or (
             harmonic_max is not None and harmonic > harmonic_max
         ):
@@ -554,12 +570,12 @@ def parse_harmonic(
         msg = f'{harmonic=!r} contains element < 1'
         raise IndexError(msg)
     if harmonic_max is not None and numpy.any(h > harmonic_max):
-        msg = f'{harmonic=!r} contains element > {harmonic_max}]'
+        msg = f'{harmonic=!r} contains element > {harmonic_max}'
         raise IndexError(msg)
     if numpy.unique(h).size != h.size:
         msg = f'{harmonic=!r} elements must be unique'
         raise ValueError(msg)
-    return [int(i) for i in harmonic], True
+    return [int(i) for i in h], numpy.ndim(harmonic) > 0
 
 
 def chunk_iter(
@@ -586,8 +602,7 @@ def chunk_iter(
         String to format chunk indices.
         By default, use ``_{dims[index]}{chunk_index[index]}`` for each axis.
     squeeze : bool, optional, default: False
-        Do not include length-1 chunked dimensions in label
-        unless dimensions are part of `chunk_shape`.
+        Do not include dimensions with only one chunk in label.
         Applies only if `pattern` is None.
     use_index : bool, optional, default: False
         Use indices of chunks in `shape` instead of chunk indices to

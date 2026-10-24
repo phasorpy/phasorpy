@@ -55,6 +55,7 @@ mean, real, imag, attrs = phasor_from_simfcs_referenced(fetch(filename))
 
 plot_phasor_image(mean, real, imag, title=filename)
 
+# %%
 # Filter the phasor coordinates and set the intensity threshold
 # to 9000 counts to remove low-intensity background pixels:
 

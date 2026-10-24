@@ -131,6 +131,11 @@ def test_dilate_coordinates() -> None:
     with pytest.raises(ValueError):
         dilate_coordinates([0, 1, 2, 3], [0, 1, -1], 0.05)
 
+    # collinear vertex is moved along normal of neighboring edge
+    x, y = dilate_coordinates([0, 0.5, 1, 0.5], [0, 0, 0, 1], 0.1)
+    assert not numpy.isnan(x).any()
+    assert_allclose((x[1], y[1]), (0.5, -0.1), atol=1e-6)
+
 
 def test_parse_harmonic() -> None:
     """Test parse_harmonic function."""
@@ -149,6 +154,7 @@ def test_parse_harmonic() -> None:
     assert parse_harmonic([2, 1], 2) == ([2, 1], True)
     assert parse_harmonic((1, 2), 2) == ([1, 2], True)
     assert parse_harmonic(numpy.array([1, 2]), 2) == ([1, 2], True)  # type: ignore[arg-type]
+    assert parse_harmonic(numpy.array(2), 2) == ([2], False)  # type: ignore[arg-type]
     assert parse_harmonic('all', 1) == ([1], True)
     assert parse_harmonic('all', 2) == ([1, 2], True)
 
@@ -171,6 +177,8 @@ def test_parse_harmonic() -> None:
     with pytest.raises(TypeError):
         parse_harmonic(1.0, 1)  # type: ignore[arg-type]
     with pytest.raises(TypeError):
+        parse_harmonic(True, 1)  # noqa: FBT003
+    with pytest.raises(TypeError):
         parse_harmonic('all')
 
 
@@ -187,6 +195,8 @@ def test_parse_signal_axis() -> None:
     assert parse_signal_axis(DataArray(), -3) == (-3, 'H')
     assert parse_signal_axis([]) == (-1, '')
     assert parse_signal_axis([], 2) == (2, '')
+    assert parse_signal_axis([], numpy.int64(2)) == (2, '')  # type: ignore[arg-type]
+    assert parse_signal_axis(DataArray(), numpy.int64(1)) == (1, 'C')  # type: ignore[arg-type]
 
     DataArray.dims = ('T', 'A', 'B', 'Y', 'X')
     assert parse_signal_axis(DataArray()) == (-1, 'X')
@@ -207,6 +217,9 @@ def test_parse_skip_axis() -> None:
     assert parse_skip_axis(0, 2) == ((0,), (1,))
     assert parse_skip_axis(-1, 2) == ((1,), (0,))
     assert parse_skip_axis((1, -2), 5) == ((1, 3), (0, 2, 4))
+    assert parse_skip_axis(numpy.array([1, -2]), 5) == ((1, 3), (0, 2, 4))  # type: ignore[arg-type]
+    assert parse_skip_axis(numpy.int64(1), 2) == ((1,), (0,))  # type: ignore[arg-type]
+    assert parse_skip_axis((1, 1, -1), 2) == ((1,), (0,))
     with pytest.raises(ValueError):
         parse_skip_axis(0, -1)
     with pytest.raises(IndexError):
