@@ -41,6 +41,7 @@ from phasorpy._phasorpy import (
     _is_near_segment,
     _is_near_semicircle,
     _lifetime_search_2,
+    _phasor_from_signal,
     _point_on_line,
     _point_on_segment,
     _segment_direction_and_length,
@@ -49,6 +50,19 @@ from phasorpy._typing import Any, ArrayLike, NDArray
 
 LINE = 0.2, 0.4, 0.9, 0.3
 POINTS = [0.4, 0.86, 0.82], [0.38, 0.4, 0.4]
+
+
+def test_phasor_from_signal_two_samples() -> None:
+    """Test _phasor_from_signal with two samples at Nyquist frequency."""
+    # with two samples, the calculation is defined, but the imaginary
+    # component is always zero and phase information is lost
+    phasor = numpy.empty((3, 1, 1), dtype=numpy.float64)
+    signal = numpy.array([[[3.0], [1.0]]])
+    sincos = numpy.array([[[1.0, 0.0], [-1.0, 0.0]]])
+
+    _phasor_from_signal(phasor, signal, sincos, normalize=True, num_threads=1)
+
+    assert_allclose(phasor[:, 0, 0], [2.0, 0.5, 0.0])
 
 
 def test_is_inside_circle() -> None:

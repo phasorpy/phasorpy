@@ -31,7 +31,6 @@ __all__ = [
 ]
 
 import math
-import numbers
 import operator
 import os
 import sys
@@ -409,8 +408,8 @@ def parse_signal_axis(
                 if ax in signal.dims:
                     return signal.dims.index(ax), ax
             return -1, signal.dims[-1]
-        if isinstance(axis, int | numbers.Integral):
-            axis = operator.index(axis)
+        if isinstance(axis, int | numpy.integer):
+            axis = int(axis)
             return axis, signal.dims[axis]
         if axis in signal.dims:
             return signal.dims.index(axis), axis
@@ -418,8 +417,8 @@ def parse_signal_axis(
         raise ValueError(msg)
     if axis is None:
         return -1, ''
-    if isinstance(axis, int | numbers.Integral):
-        return operator.index(axis), ''
+    if isinstance(axis, int | numpy.integer):
+        return int(axis), ''
     msg = f'invalid {axis=} for {type(signal)=}'
     raise ValueError(msg)
 
@@ -542,7 +541,7 @@ def parse_harmonic(
         msg = f'{harmonic=!r} is not an integer'
         raise TypeError(msg)
 
-    if isinstance(harmonic, int | numbers.Integral):
+    if isinstance(harmonic, int | numpy.integer):
         if harmonic < 1 or (
             harmonic_max is not None and harmonic > harmonic_max
         ):

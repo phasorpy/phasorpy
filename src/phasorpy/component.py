@@ -65,7 +65,6 @@ __all__ = [
 ]
 
 import math
-import numbers
 from typing import TYPE_CHECKING, overload
 
 if TYPE_CHECKING:
@@ -432,11 +431,11 @@ def phasor_component_graphical(
         fractions = numpy.linspace(
             0.0, 1.0, round(longest_distance / (radius / 2) + 1)
         )
-    elif isinstance(fractions, int | numbers.Integral):
+    elif isinstance(fractions, int | numpy.integer):
         if fractions < 0:
             msg = f'{fractions=} < 0'
             raise ValueError(msg)
-        fractions = numpy.linspace(0.0, 1.0, fractions)
+        fractions = numpy.linspace(0.0, 1.0, int(fractions))
     else:
         fractions = numpy.asarray(fractions)
         if fractions.ndim != 1:

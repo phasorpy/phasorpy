@@ -229,7 +229,7 @@ def lifetime(
 )
 @click.option(
     '--samples',
-    type=click.IntRange(min=2),
+    type=click.IntRange(min=3),
     default=128,
     show_default=True,
     help='Number of wavelength samples.',

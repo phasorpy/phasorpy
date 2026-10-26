@@ -137,6 +137,8 @@ def _phasor_from_signal(
     # TODO: use NumPy iterator API?
     # https://numpy.org/devdocs/reference/c-api/iterator.html
 
+    # allow samples=2: the calculation is mathematically defined, but
+    # the imaginary component is always zero and phase information is lost
     if (
         samples < 2
         or harmonics > samples // 2
