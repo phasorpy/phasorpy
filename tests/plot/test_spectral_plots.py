@@ -213,8 +213,37 @@ def test_spectral_plots_raw_fractions() -> None:
     pyplot.close()
 
 
+def test_spectral_plots_negative_fraction() -> None:
+    """Test negative fractions are clipped before normalization."""
+    plot = SpectralPlots(origin=[500.0, 600.0], fraction=[-1.0, 1.0])
+    component_signals = plot._calculate(
+        400.0,
+        800.0,
+        numpy.asarray([500.0, 600.0]),
+        numpy.asarray([30.0, 30.0]),
+        numpy.asarray([-1.0, 1.0]),
+        numpy.empty(2),
+        numpy.empty(2),
+    )[2]
+    assert_allclose(component_signals[0], 0.0)
+    assert component_signals[1].max() == pytest.approx(1.0)
+    pyplot.close()
+
+
+def test_spectral_plots_wavelength_slider_range() -> None:
+    """Test wavelength slider range includes wavelength_range."""
+    plot = SpectralPlots(wavelength_range=(300.0, 900.0), interactive=True)
+    assert plot._wavelength_slider.valmin == 300.0
+    assert plot._wavelength_slider.valmax == 900.0
+    pyplot.close()
+
+
 def test_spectral_plots_exceptions() -> None:
     """Test SpectralPlots raises on invalid parameters."""
+    with pytest.raises(ValueError, match='samples'):
+        SpectralPlots(samples=2)
+    pyplot.close()
+
     with pytest.raises(ValueError, match='num_components'):
         SpectralPlots(origin=[400.0, 450.0, 500.0, 550.0, 600.0])
     pyplot.close()

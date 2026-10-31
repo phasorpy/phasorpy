@@ -40,8 +40,9 @@ def anscombe_transform(
 
     The Anscombe transformation normalizes the standard deviation of noisy,
     Poisson-distributed data.
-    It can be used to transform unnormalized phasor coordinates to
-    approximate standard Gaussian distributions.
+    It can be used to transform photon counts, such as signal values or
+    unnormalized intensities, to approximate standard Gaussian distributions.
+    Negative values are returned as NaN.
 
     Parameters
     ----------
@@ -183,6 +184,7 @@ def signal_from_dho(
     hr_factor : array_like
         Huang-Rhys structural coupling/displacement parameter (dimensionless).
         Typically in the range 0.1 to 2.0.
+        The area normalization error is below 1% for values up to 1.65.
     vib_frequency : array_like
         Vibrational spacing frequency in :math:`cm^{-1}`.
         Typically in the range 1000 to 1600 :math:`cm^{-1}`.

@@ -122,10 +122,10 @@ plot.show()
 plot = PhasorPlot(frequency=80.0, title='Cursors')
 plot.cursor(0.35, 0.3, 0.65, 0.1, color='tab:blue', label='rectangle')
 plot.cursor(
-    0.35,
-    0.3,
     0.65,
     0.1,
+    0.35,
+    0.3,
     polar=True,
     color='tab:orange',
     label='rectangle|polar',
@@ -165,7 +165,7 @@ plot.show()
 
 plot = PhasorPlot(frequency=80.0, title='Polar cursors')
 plot.polar_cursor(0.6435, 0.5, color='tab:blue', label='crosshair')
-plot.polar_cursor(0.5236, 0.6, 0.1963, 0.8, linewidth=2, label='rectangle')
+plot.polar_cursor(0.1963, 0.6, 0.5236, 0.8, linewidth=2, label='rectangle')
 plot.polar_cursor(
     0.6435,
     0.5,

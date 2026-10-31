@@ -13,12 +13,28 @@ from __future__ import annotations
 
 __all__ = ['CATEGORICAL', 'SRGB_SPECTRUM', 'float2int', 'wavelength2rgb']
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, overload
 
 if TYPE_CHECKING:
     from ._typing import Any, ArrayLike, DTypeLike, NDArray
 
 import numpy
+
+
+@overload
+def wavelength2rgb(
+    wavelength: float,
+    /,
+    dtype: DTypeLike | None = None,
+) -> tuple[Any, Any, Any]: ...
+
+
+@overload
+def wavelength2rgb(
+    wavelength: ArrayLike,
+    /,
+    dtype: DTypeLike | None = None,
+) -> NDArray[Any]: ...
 
 
 def wavelength2rgb(
@@ -46,6 +62,7 @@ def wavelength2rgb(
         If input is array, return ndarray with shape (..., 3).
         Floating-point values are in range [0.0, 1.0].
         Integer values are scaled to the dtype's maximum value.
+        NaN wavelengths return NaN, or zero for integer dtypes.
 
     Examples
     --------
@@ -57,17 +74,21 @@ def wavelength2rgb(
 
     """
     astuple = numpy.isscalar(wavelength)
-    indices = numpy.asarray(wavelength)
-    indices = numpy.clip(indices, 360, 750)
-    indices -= 360
-    if indices.dtype.kind not in {'u', 'i'}:
-        indices = numpy.round(indices).astype(numpy.uint32)
+    wavelength = numpy.asarray(wavelength, dtype=numpy.float64)
+    isnan = numpy.isnan(wavelength)
+    indices = numpy.clip(numpy.where(isnan, 360.0, wavelength), 360, 750)
+    indices = numpy.round(indices - 360).astype(numpy.intp)
     rgb = SRGB_SPECTRUM.take(indices, axis=0)
+    rgb[isnan] = numpy.nan
     if dtype is not None:
         dtype = numpy.dtype(dtype)
-        rgb = float2int(rgb) if dtype.kind in {'u', 'i'} else rgb.astype(dtype)
+        if dtype.kind in {'u', 'i'}:
+            rgb = float2int(numpy.nan_to_num(rgb), dtype)
+        else:
+            rgb = rgb.astype(dtype)
     if astuple:
-        return tuple(rgb.tolist()[:3])
+        r, g, b = rgb.tolist()
+        return r, g, b
     return numpy.asarray(rgb)
 
 

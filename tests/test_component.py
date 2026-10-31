@@ -123,6 +123,19 @@ def test_phasor_component_mvc() -> None:
         )
 
 
+@pytest.mark.parametrize('radius', [0.5, 0.01, 1e-4])
+def test_phasor_component_mvc_small(radius: float) -> None:
+    """Test phasor_component_mvc with small polygons."""
+    angle = numpy.linspace(0, 2 * numpy.pi, 10, endpoint=False)
+    result = phasor_component_mvc(
+        0.5,
+        0.3,
+        0.5 + radius * numpy.cos(angle),
+        0.3 + radius * numpy.sin(angle),
+    )
+    assert_allclose(result, 0.1, atol=1e-6)
+
+
 @pytest.mark.parametrize('num_components', [3, 4, 5])
 def test_phasor_component_mvc_plot(num_components: int) -> None:
     """Test phasor_component_mvc function visually."""
@@ -549,6 +562,17 @@ def test_errors_phasor_component_graphical_radius_and_components() -> None:
         phasor_component_graphical(
             [0.5], [0.3], [0.2, 0.9], [0.4, 0.3], radius=-0.05, fractions=6
         )
+    # non-finite radius
+    for radius in (nan, numpy.inf):
+        with pytest.raises(ValueError):
+            phasor_component_graphical(
+                [0.5], [0.3], [0.2, 0.9], [0.4, 0.3], radius=radius
+            )
+    # NaN in fractions
+    with pytest.raises(ValueError):
+        phasor_component_graphical(
+            [0.5], [0.3], [0.2, 0.9], [0.4, 0.3], fractions=[0.5, nan]
+        )
     # NaN in component_real
     with pytest.raises(ValueError):
         phasor_component_graphical(
@@ -630,6 +654,24 @@ def test_phasor_component_fit() -> None:
         fractions,
         atol=1e-2,
     )
+
+    # infinite coordinates are treated as NaN
+    real[1] = numpy.inf
+    assert_allclose(
+        phasor_component_fit(mean, real, imag, component_real, component_imag),
+        fractions,
+        atol=1e-2,
+    )
+
+    # multi-harmonic components require harmonic axis in phasor coordinates
+    with pytest.raises(ValueError):
+        phasor_component_fit(
+            mean,
+            real,
+            imag,
+            [component_real, component_real],
+            [component_imag, component_imag],
+        )
 
     # 3 harmonics, 4 components
     phasor_component_fit(
@@ -785,6 +827,16 @@ def test_phasor_component_concentration_errors() -> None:
     # reference_concentration <= 0
     with pytest.raises(ValueError, match='reference_concentration'):
         phasor_component_concentration(1.0, 0.4, 0.05, *args[:5], 0.0)
+
+    # reference_concentration is NaN
+    with pytest.raises(ValueError, match='reference_concentration'):
+        phasor_component_concentration(1.0, 0.4, 0.05, *args[:5], nan)
+
+    # brightness_ratio is NaN
+    with pytest.raises(ValueError, match='brightness_ratio'):
+        phasor_component_concentration(
+            1.0, 0.4, 0.05, *args, brightness_ratio=nan
+        )
 
     # brightness_ratio <= 0
     with pytest.raises(ValueError, match='brightness_ratio'):

@@ -6,6 +6,7 @@
 
 import pytest
 from matplotlib import pyplot
+from numpy.testing import assert_allclose
 
 from phasorpy.plot import LifetimePlots
 
@@ -103,3 +104,19 @@ def test_lifetime_plots_exceptions() -> None:
 
     with pytest.raises(ValueError):
         LifetimePlots(frequency=60.0, lifetime=4.2, fraction=[0.5, 0.5])
+
+
+def test_lifetime_plots_format_coord_frequency() -> None:
+    """Test phasor plot frequency follows frequency slider."""
+    plot = LifetimePlots(frequency=60.0, lifetime=4.2, interactive=True)
+    plot._frequency_slider.set_val(80.0)
+    assert plot._phasorplot._frequency == 80.0
+    pyplot.close()
+
+
+def test_lifetime_plots_negative_fraction() -> None:
+    """Test negative fractions are clipped before normalization."""
+    plot = LifetimePlots(frequency=60.0, lifetime=4.2)
+    fractions = plot._calculate(60.0, [1.0, 4.0], [-1.0, 2.0])[2]
+    assert_allclose(fractions, [0.0, 1.0])
+    pyplot.close()

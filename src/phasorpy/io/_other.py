@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING
 from xml.etree import ElementTree
 
 from .._utils import parse_harmonic, squeeze_dims, xarray_metadata
+from ..utils import logger
 
 if TYPE_CHECKING:
     from .._typing import (
@@ -319,11 +320,14 @@ def signal_from_sdt(
         data = sdt.data[index]
         times = sdt.times[index] * 1e9
 
+    if times.size < 2 or times[0] != 0.0:
+        msg = f'{filename!r} contains invalid TCSPC delay times'
+        raise ValueError(msg)
+
     # TODO: get spatial coordinates from scanner settings?
     metadata = xarray_metadata(
         'QCYXH'[-data.ndim :], data.shape, filename, H=times
     )
-    assert times[0] == 0.0
     metadata['attrs']['frequency'] = 1e3 / float(times[-1] + times[1])
 
     from xarray import DataArray
@@ -363,6 +367,7 @@ def signal_from_ptu(
           ``slice.step`` is a binning factor.
           If ``slice.step=-1``, integrate all items along axis.
 
+        Ignored for point mode files.
     trimdims : str, optional, default: 'TCH'
         Axes to trim.
     dtype : dtype_like, optional, default: uint16
@@ -371,6 +376,7 @@ def signal_from_ptu(
     frame : int, optional
         If < 0, integrate time axis, else return specified frame.
         Overrides `selection` for axis `'T'`.
+        Ignored for point mode files.
     channel : int, optional, default: 0
         Index of channel to return.
         By default, return the first channel.
@@ -457,7 +463,7 @@ def signal_from_ptu(
             assert isinstance(data, DataArray)
         elif ptu.measurement_submode == 1:
             # point mode IRF
-            if dtime == -1:
+            if dtime is not None and dtime < 0:
                 msg = f'{dtime=} not supported for point mode'
                 raise ValueError(msg)
             data = ptu.decode_histogram(
@@ -465,9 +471,14 @@ def signal_from_ptu(
             )
             assert isinstance(data, DataArray)
             if channel is not None:
-                data = (
-                    data[channel : channel + 1] if keepdims else data[channel]
-                )
+                if channel < 0:
+                    data = data.sum(
+                        dim='C', keepdims=keepdims, dtype=data.dtype
+                    )
+                elif keepdims:
+                    data = data[channel : channel + 1]
+                else:
+                    data = data[channel]
             # prepend dimensions as needed to appear image-like
             data = data.expand_dims(dim={'Y': 1, 'X': 1})
             if keepdims:
@@ -548,7 +559,7 @@ def signal_from_lsm(
         lsminfo = tif.lsm_metadata
         channels = page.tags[258].count
 
-        if channels < 4 or lsminfo is None or lsminfo['SpectralScan'] != 1:
+        if channels < 4 or lsminfo is None or lsminfo.get('SpectralScan') != 1:
             msg = f'{tif.filename!r} does not contain hyperspectral image'
             raise ValueError(msg)
 
@@ -582,9 +593,10 @@ def signal_from_lsm(
         for ax in 'ZYX':
             if ax in dims:
                 size = data.shape[dims.index(ax)]
+                origin = lsminfo[f'Origin{ax}']
                 coords[ax] = numpy.linspace(
-                    lsminfo[f'Origin{ax}'],
-                    size * lsminfo[f'VoxelSize{ax}'],
+                    origin,
+                    origin + size * lsminfo[f'VoxelSize{ax}'],
                     size,
                     endpoint=False,
                     dtype=numpy.float64,
@@ -721,15 +733,18 @@ def signal_from_imspector_tiff(
         'FirstAxis'
     ].endswith('TCSPC T'):
         ax = axes[-3]
-        assert axes_labels.attrib['FirstAxis-Unit'] == 'ns'
+        unit = axes_labels.attrib.get('FirstAxis-Unit')
     elif ndim > 3 and (
         axes_labels.attrib['SecondAxis'] == 'lifetime'
         or axes_labels.attrib['SecondAxis'].endswith('TCSPC T')
     ):
         ax = axes[-4]
-        assert axes_labels.attrib['SecondAxis-Unit'] == 'ns'
+        unit = axes_labels.attrib.get('SecondAxis-Unit')
     else:
         msg = f'{tif.filename!r} is not an ImSpector FLIM TIFF file'
+        raise ValueError(msg)
+    if unit != 'ns' or ax not in physical_size:
+        msg = f'{tif.filename!r} does not contain valid TCSPC delay times'
         raise ValueError(msg)
     axes = axes.replace(ax, 'H')
     coords['H'] = coords[ax]
@@ -874,13 +889,13 @@ def phasor_from_ifli(
     frequencies = header['ModFrequency']
     frequency = frequencies[0]
 
-    # check if frequencies are harmonics (fractional part near 1.0)
-    harmonic_stored = [
-        h if (abs(f) < 1e-2 or abs(f - frequency) < 1e-2) else None
-        for h, f in (
-            (round(f / frequency), f % frequency) for f in frequencies
+    # check if frequencies are harmonics of first frequency
+    harmonic_stored = []
+    for f in frequencies:
+        h = round(f / frequency)
+        harmonic_stored.append(
+            h if h >= 1 and abs(f - h * frequency) < 1e-6 * f else None
         )
-    ]
 
     index: int | list[int]
     if harmonic is None:
@@ -920,7 +935,7 @@ def phasor_from_ifli(
 
     attrs = {
         'dims': tuple(dims),
-        'harmonic': harmonic,
+        'harmonic': harmonic if keepdims else harmonic[0],
         'frequency': frequency * 1e-6,
         'samples': samples,
         'ifli_header': header,
@@ -987,11 +1002,18 @@ def signal_from_flif(
 
     with lfdfiles.FlimfastFlif(filename) as flif:
         nphases = int(flif.header.phases)
+        if nphases < 3:
+            msg = f'{nphases=} < 3'
+            raise ValueError(msg)
         data = flif.asarray()
         if data.shape[0] < nphases:
             msg = f'measured phases {data.shape[0]} < {nphases=}'
             raise ValueError(msg)
         if data.shape[0] % nphases != 0:
+            logger().warning(
+                f'discarding {data.shape[0] % nphases} incomplete phase '
+                f'image(s) from {os.path.basename(filename)!r}'
+            )
             data = data[: (data.shape[0] // nphases) * nphases]
         data = data.reshape((-1, nphases, data.shape[1], data.shape[2]))
         if data.shape[0] == 1:
@@ -1001,7 +1023,7 @@ def signal_from_flif(
             axes = 'THYX'
         # TODO: check if phases are ordered
         phases = numpy.radians(flif.records['phase'][:nphases])
-        metadata = xarray_metadata(axes, data.shape, H=phases)
+        metadata = xarray_metadata(axes, data.shape, filename, H=phases)
         attrs = metadata['attrs']
         attrs['frequency'] = float(flif.header.frequency)
         attrs['ref_phase'] = float(flif.header.measured_phase)

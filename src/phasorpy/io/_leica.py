@@ -8,6 +8,7 @@ from __future__ import annotations
 
 __all__ = ['lifetime_from_lif', 'phasor_from_lif', 'signal_from_lif']
 
+import re
 from typing import TYPE_CHECKING
 
 from .._utils import xarray_metadata
@@ -21,6 +22,7 @@ import numpy
 def phasor_from_lif(
     filename: str | PathLike[Any],
     /,
+    *,
     image: str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
     """Return phasor coordinates and metadata from Leica image file.
@@ -91,7 +93,7 @@ def phasor_from_lif(
     #   phasor plot images
     import liffile
 
-    image = '' if image is None else f'.*{image}.*/'
+    image = '' if image is None else f'.*{re.escape(image)}.*/'
 
     with liffile.LifFile(filename) as lif:
         try:
@@ -124,6 +126,7 @@ def phasor_from_lif(
 def lifetime_from_lif(
     filename: str | PathLike[Any],
     /,
+    *,
     image: str | None = None,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any], dict[str, Any]]:
     """Return lifetime image and metadata from Leica image file.
@@ -155,7 +158,7 @@ def lifetime_from_lif(
         - ``'dims'`` (tuple of str):
           :ref:`Axes codes <axes>` for `intensity` image dimensions.
         - ``'coords'`` (dict[str, ndarray]):
-            Coordinate arrays for image dimensions.
+          Coordinate arrays for image dimensions.
         - ``'frequency'`` (float):
           Laser pulse frequency in MHz. May not be present in all files.
         - ``'samples'`` (int):
@@ -205,7 +208,7 @@ def lifetime_from_lif(
     """
     import liffile
 
-    image = '' if image is None else f'.*{image}.*/'
+    image = '' if image is None else f'.*{re.escape(image)}.*/'
 
     with liffile.LifFile(filename) as lif:
         try:
@@ -260,8 +263,8 @@ def _flim_metadata(
 def signal_from_lif(
     filename: str | PathLike[Any],
     /,
-    image: int | str | None = None,
     *,
+    image: int | str | None = None,
     dim: Literal['λ', 'Λ'] | str = 'λ',
 ) -> DataArray:
     """Return hyperspectral image and metadata from Leica image file.
@@ -325,9 +328,13 @@ def signal_from_lif(
 
     with liffile.LifFile(filename) as lif:
         if image is None:
-            # find image with excitation or emission dimension
+            # find first hyperspectral image without channel axis
             for im in lif.images:
-                if dim in im.dims:
+                if (
+                    dim in im.dims
+                    and im.sizes[dim] >= 4
+                    and 'C' not in im.dims
+                ):
                     break
             else:
                 msg = f'{lif.filename!r} does not contain hyperspectral image'

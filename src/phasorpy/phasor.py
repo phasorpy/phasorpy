@@ -231,12 +231,11 @@ def phasor_from_signal(
     (array(1.1), array(0.0), array(0.0))
 
     """
-    # TODO: C-order not required by rfft?
     # TODO: preserve array subtypes?
 
     axis, _ = parse_signal_axis(signal, axis)
 
-    signal = numpy.asarray(signal, order='C')
+    signal = numpy.asarray(signal)
     if signal.dtype.kind not in 'uif':
         msg = f'{signal.dtype=} is not real-valued'
         raise TypeError(msg)
@@ -251,6 +250,12 @@ def phasor_from_signal(
     if dtype.kind != 'f':
         msg = f'{dtype=} is not a floating-point type'
         raise TypeError(msg)
+
+    if signal.dtype.char == 'e':
+        # not supported by Cython implementation, imprecise with FFT
+        signal = signal.astype(numpy.float32)
+    elif not signal.dtype.isnative:
+        signal = signal.astype(signal.dtype.newbyteorder('='))
 
     harmonic, keepdims = parse_harmonic(harmonic, samples // 2)
     num_harmonics = len(harmonic)
@@ -337,7 +342,7 @@ def phasor_from_signal(
     size0 = math.prod(shape0)
     size1 = math.prod(shape1)
     phasor = numpy.empty((num_harmonics * 2 + 1, size0, size1), dtype=dtype)
-    signal = signal.reshape((size0, samples, size1))
+    signal = numpy.ascontiguousarray(signal).reshape((size0, samples, size1))
 
     _phasor_from_signal(phasor, signal, sincos, normalize, num_threads)
 
@@ -409,7 +414,7 @@ def phasor_to_signal(
     ValueError
         If `samples` is less than three.
         If the array shapes of `real` and `imag` do not match.
-        If `real` or `imag` are not floating-point arrays.
+        If `real` or `imag` are not integer or floating-point arrays.
         If the number of `harmonic` values does not match the first axis of
         phasor coordinates.
     IndexError
@@ -472,8 +477,12 @@ def phasor_to_signal(
     mean = numpy.array(mean, ndmin=1, copy=False)
     real = numpy.array(real, ndmin=1, copy=False)
 
+    if real.dtype.kind in 'iu':
+        real = real.astype(numpy.float64)
+    if imag.dtype.kind in 'iu':
+        imag = imag.astype(numpy.float64)
     if real.dtype.kind != 'f' or imag.dtype.kind != 'f':
-        msg = f'{real.dtype=} or {imag.dtype=} are not floating-point types'
+        msg = f'{real.dtype=} or {imag.dtype=} are not real-valued types'
         raise ValueError(msg)
     if real.shape != imag.shape:
         msg = f'{real.shape=} != {imag.shape=}'
@@ -779,6 +788,8 @@ def phasor_normalize(
     ):
         real = real_unnormalized.copy()
     else:
+        if dtype is None:
+            dtype = numpy.float64
         real = numpy.asarray(real_unnormalized, dtype=dtype, copy=True)
     imag = numpy.asarray(imag_unnormalized, dtype=real.dtype, copy=True)
     mean = numpy.asarray(mean_unnormalized, dtype=real.dtype, copy=True)
@@ -882,8 +893,7 @@ def phasor_combine(  # noqa: PLR0917
 
     """
     if fraction1 is None:
-        fraction1 = numpy.asarray(fraction0, copy=True)
-        numpy.subtract(1.0, fraction0, out=fraction1)
+        fraction1 = numpy.subtract(1.0, fraction0)
 
     return _phasor_combine(  # type: ignore[no-any-return]
         int0, real0, imag0, int1, real1, imag1, fraction0, fraction1, **kwargs
@@ -964,6 +974,7 @@ def phasor_transform(
             imag,
             modulation * numpy.cos(phase),
             modulation * numpy.sin(phase),
+            **kwargs,
         )
     return _phasor_transform(  # type: ignore[no-any-return]
         real, imag, phase, modulation, **kwargs
@@ -1190,7 +1201,7 @@ def phasor_to_principal_plane(
     im = im.reshape((im.shape[0], -1))
 
     # vector of multi-frequency phasor coordinates
-    coordinates = numpy.vstack([re, im])
+    coordinates = numpy.vstack([re, im]).astype(numpy.float64, copy=False)
 
     # vector of centered coordinates
     center = numpy.nanmean(coordinates, axis=1, keepdims=True)
@@ -1236,7 +1247,7 @@ def phasor_to_principal_plane(
         transformation_matrix = numpy.dot(
             [
                 [-1 if cs(1, x) != cs(1, center[0][0]) else 1, 0],
-                [0, -1 if cs(1, y) != cs(1, center[1][0]) else 1],
+                [0, -1 if cs(1, y) != cs(1, center[frequencies][0]) else 1],
             ],
             transformation_matrix,
         )
@@ -1369,7 +1380,7 @@ def phasor_nearest_neighbor(
     neighbor_imag = neighbor_imag.ravel()
 
     indices = numpy.empty(
-        real.shape, dtype=numpy.min_scalar_type(-neighbor_real.size)
+        real.shape, dtype=numpy.min_scalar_type(-max(neighbor_real.size, 1))
     )
 
     if distance_max is None:
@@ -1399,6 +1410,8 @@ def phasor_nearest_neighbor(
     if values.shape != neighbor_real.shape:
         msg = f'{values.shape=} != {neighbor_real.shape=}'
         raise ValueError(msg)
+    if values.size == 0:
+        return numpy.full(shape, numpy.nan, dtype=dtype)
 
     nearest_values = values[indices]
     nearest_values[indices == -1] = numpy.nan
@@ -1434,7 +1447,7 @@ def phasor_center(
         Method used for center calculation:
 
         - ``'mean'``: Intensity-weighted mean of phasor coordinates.
-        - ``'median'``: Spatial median of phasor coordinates.
+        - ``'median'``: Component-wise median of phasor coordinates.
 
     nan_safe : bool, optional
         Ensure that `method` is applied to same elements of input arrays.
@@ -1535,7 +1548,7 @@ def _median(
     /,
     **kwargs: Any,
 ) -> tuple[NDArray[Any], NDArray[Any], NDArray[Any]]:
-    """Return spatial median of phasor coordinates."""
+    """Return component-wise median of phasor coordinates."""
     return (
         numpy.nanmedian(mean, **kwargs),
         numpy.nanmedian(real, **kwargs),

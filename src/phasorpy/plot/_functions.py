@@ -16,14 +16,13 @@ __all__ = [
 ]
 
 import warnings
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
     from matplotlib.image import AxesImage
 
-    from .._typing import Any, ArrayLike, Literal, NDArray
+    from .._typing import Any, ArrayLike, Literal, NDArray, Sequence
 
 import numpy
 from matplotlib import pyplot
@@ -97,6 +96,7 @@ def plot_phasor(
         'yticks',
         'grid',
         'pad',
+        'figsize',
     )
 
     real = numpy.asanyarray(real)
@@ -231,7 +231,7 @@ def plot_phasor_image(
     assert isinstance(imag, numpy.ndarray)
 
     # limit number of shown harmonics
-    nh = min(4 if harmonics is None else harmonics, nh)
+    nh = max(1, min(4 if harmonics is None else harmonics, nh))
 
     # create figure with size depending on image aspect and number of harmonics
     fig = pyplot.figure(layout='constrained')
@@ -450,9 +450,13 @@ def plot_image(
     Raises
     ------
     ValueError
+        If no images are provided.
         If `percentile` is out of range.
 
     """
+    if not images:
+        msg = 'no images provided'
+        raise ValueError(msg)
     update_kwargs(
         kwargs, interpolation='nearest', location='right', shrink=0.5
     )
@@ -503,15 +507,17 @@ def plot_image(
     if percentile is None:
         vmin = kwargs.pop('vmin', None)
         vmax = kwargs.pop('vmax', None)
+        # RGB(A) images are 3D, others were reduced to 2D above
+        grayscale = [image for image in arrays if image.ndim == 2]
         if vmin is None:
             vmin = numpy.inf
-            for image in arrays:
+            for image in grayscale:
                 vmin = min(vmin, numpy.nanmin(image))
             if vmin == numpy.inf:
                 vmin = None
         if vmax is None:
             vmax = -numpy.inf
-            for image in arrays:
+            for image in grayscale:
                 vmax = max(vmax, numpy.nanmax(image))
             if vmax == -numpy.inf:
                 vmax = None
@@ -540,11 +546,12 @@ def plot_image(
         fig.suptitle(title)
 
     axs = []
+    pos = None
     for i, image in enumerate(arrays):
         ax = fig.add_subplot(gs[i // columns, i % columns], **subplot_kw)
         ax.set_anchor('C')
         axs.append(ax)
-        pos = _imshow(
+        aximage = _imshow(
             ax,
             image,
             percentile=percentile,
@@ -556,7 +563,9 @@ def plot_image(
             title=None if labels is None else labels[i],
             **kwargs,
         )
-    if not allrgb and percentile is None:
+        if image.ndim == 2:
+            pos = aximage
+    if pos is not None and percentile is None:
         fig.colorbar(pos, ax=axs, shrink=kwargs['shrink'], location=location)
 
     if show:
@@ -706,19 +715,18 @@ def _imshow(
         percentile = None
         colorbar = False
     if percentile is not None:
-        if isinstance(percentile, Sequence):
-            percentile = percentile[0], percentile[1]
+        q = numpy.asarray(percentile, dtype=numpy.float64).reshape(-1)
+        if q.size == 1:
+            q0, q1 = float(q[0]), 100.0 - float(q[0])
+        elif q.size == 2:
+            q0, q1 = float(q[0]), float(q[1])
         else:
-            # percentile = max(0.0, min(50, percentile))
-            percentile = percentile, 100.0 - percentile
-        if (
-            percentile[0] >= percentile[1]
-            or percentile[0] < 0
-            or percentile[1] > 100
-        ):
-            msg = f'{percentile=} is out of range [0, 100]'
+            msg = f'invalid {percentile=}'
             raise ValueError(msg)
-        vmin, vmax = numpy.nanpercentile(image, percentile)
+        if not 0.0 <= q0 < q1 <= 100.0:
+            msg = f'invalid {percentile=}, requires 0 <= q0 < q1 <= 100'
+            raise ValueError(msg)
+        vmin, vmax = numpy.nanpercentile(image, (q0, q1))
     pos = ax.imshow(image, vmin=vmin, vmax=vmax, **kwargs)
     if colorbar:
         if percentile is not None and vmin is not None and vmax is not None:

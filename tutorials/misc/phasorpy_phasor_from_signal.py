@@ -6,7 +6,7 @@
 Benchmark phasor_from_signal
 ============================
 
-Benchmark the ``phasor_from_signal`` function.
+Benchmark the `phasor_from_signal` function.
 
 The :py:func:`~phasorpy.phasor.phasor_from_signal` function used to calculate
 phasor coordinates from time-resolved or spectral signals can operate in

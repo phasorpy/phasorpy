@@ -266,8 +266,8 @@ class PhasorPlotFret(PhasorPlot):
         self._donor_only_line = lines[0]
 
         lines = self.plot(
-            donor_real,
-            donor_imag,
+            donor_fret_real,
+            donor_fret_imag,
             '.',
             color='tab:green',
         )
@@ -281,7 +281,7 @@ class PhasorPlotFret(PhasorPlot):
         )
         self._acceptor_only_line = lines[0]
 
-        e = min(int(fret_efficiency * 100.0), 100)
+        e = max(0, min(round(fret_efficiency * 100.0), 100))
         lines = self.plot(
             donor_trajectory_real[e],
             donor_trajectory_imag[e],
@@ -489,7 +489,7 @@ class PhasorPlotFret(PhasorPlot):
         donor_background = self._donor_background_slider.val
         background_real = self._background_real_slider.val
         background_imag = self._background_imag_slider.val
-        e = min(int(fret_efficiency * 100), 100)
+        e = max(0, min(round(fret_efficiency * 100.0), 100))
 
         donor_real, donor_imag = phasor_from_lifetime(
             frequency, donor_lifetime

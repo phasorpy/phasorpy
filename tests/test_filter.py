@@ -296,6 +296,10 @@ def test_phasor_filter_gaussian_errors() -> None:
     # sigma <= 0
     with pytest.raises(ValueError):
         phasor_filter_gaussian([[0]], [[0]], [[0]], sigma=0.0)
+    with pytest.raises(ValueError):
+        phasor_filter_gaussian([[0]], [[0]], [[0]], sigma=nan)
+    with pytest.raises(ValueError):
+        phasor_filter_gaussian([[0]], [[0]], [[0]], sigma=numpy.inf)
     # size < 1
     with pytest.raises(ValueError):
         phasor_filter_gaussian([[0]], [[0]], [[0]], size=0)
@@ -626,6 +630,19 @@ def test_phasor_filter_median_mean_nan() -> None:
     assert_array_equal(mean_out, mean)
 
 
+def test_phasor_filter_median_mixed_dtype() -> None:
+    """Test phasor_filter_median with different real and imag dtypes."""
+    mean = numpy.ones((5, 5))
+    real = rng.random((5, 5)).astype(numpy.float32)
+    imag = rng.random((5, 5))
+    _, real_out, imag_out = phasor_filter_median(mean, real, imag)
+    assert real_out.dtype == numpy.float32
+    assert imag_out.dtype == numpy.float64
+    assert_allclose(
+        imag_out, phasor_filter_median(mean, imag, imag)[1], atol=1e-6
+    )
+
+
 def test_phasor_filter_median_harmonics() -> None:
     """Test phasor_filter_median with a harmonics axis (prepend_axis)."""
     # mean has shape (H, W), real/imag have shape (N, H, W)
@@ -848,6 +865,10 @@ def test_signal_filter_gaussian_errors() -> None:
         signal_filter_gaussian([[0]], size=2)
     with pytest.raises(ValueError):
         signal_filter_gaussian([[0]], sigma=0.0)
+    with pytest.raises(ValueError):
+        signal_filter_gaussian([[0]], sigma=nan)
+    with pytest.raises(ValueError):
+        signal_filter_gaussian([[0]], sigma=numpy.inf)
     with pytest.raises(IndexError):
         signal_filter_gaussian([[0]], skip_axis=2)
 
@@ -1343,6 +1364,10 @@ def test_phasor_filter_pawflim_errors() -> None:
     # sigma < 0
     with pytest.raises(ValueError):
         phasor_filter_pawflim([1], [[1], [1]], [[1], [1]], sigma=-1)
+    with pytest.raises(ValueError):
+        phasor_filter_pawflim([1], [[1], [1]], [[1], [1]], sigma=nan)
+    with pytest.raises(ValueError):
+        phasor_filter_pawflim([1], [[1], [1]], [[1], [1]], sigma=numpy.inf)
     # levels < 1
     with pytest.raises(ValueError):
         phasor_filter_pawflim([1], [[1], [1]], [[1], [1]], levels=-1)
@@ -1603,6 +1628,34 @@ def test_phasor_threshold() -> None:
     )
 
 
+@pytest.mark.parametrize('open_interval', [False, True])
+def test_phasor_threshold_modulation_negative(*, open_interval: bool) -> None:
+    """Test phasor_threshold with negative modulation thresholds."""
+    args = ([1.0, 1.0], [0.1, 0.0], [0.1, 0.0])
+
+    # negative minimum is always satisfied
+    mean, real, imag = phasor_threshold(
+        *args, modulation_min=-0.5, open_interval=open_interval
+    )
+    assert_array_equal(mean, [1.0, 1.0])
+    assert_array_equal(real, [0.1, 0.0])
+    assert_array_equal(imag, [0.1, 0.0])
+
+    # negative maximum is never satisfied
+    mean, real, imag = phasor_threshold(
+        *args, modulation_max=-0.5, open_interval=open_interval
+    )
+    assert_array_equal(mean, [nan, nan])
+    assert_array_equal(real, [nan, nan])
+    assert_array_equal(imag, [nan, nan])
+
+    # zero maximum only includes zero modulation in closed interval
+    mean, _, _ = phasor_threshold(
+        *args, modulation_max=0.0, open_interval=open_interval
+    )
+    assert_array_equal(mean, [nan, nan] if open_interval else [nan, 1.0])
+
+
 @pytest.mark.parametrize('dtype', [numpy.float32, numpy.float64])
 @pytest.mark.parametrize(
     'kwargs',
@@ -1782,10 +1835,38 @@ def test_signal_filter_svd_exceptions() -> None:
     with pytest.raises(ValueError):
         signal_filter_svd(signal, axis=1, sigma=-0.1)
 
+    with pytest.raises(ValueError):
+        signal_filter_svd(signal, axis=1, sigma=nan)
+
+    with pytest.raises(ValueError):
+        signal_filter_svd(signal, axis=1, sigma=numpy.inf)
+
     # samples < 3
     signal_small = rng.integers(0, 255, (16, 2, 16)).astype(numpy.float32)
     with pytest.raises(ValueError):
         signal_filter_svd(signal_small, axis=1)
+
+
+@pytest.mark.parametrize('dtype', ['<f2', '>f8', '>i4'])
+def test_signal_filter_svd_dtype(dtype: str) -> None:
+    """Test signal_filter_svd with float16 and big-endian signals."""
+    signal = rng.integers(0, 255, (8, 8, 16)).astype(dtype)
+    assert_allclose(
+        signal_filter_svd(signal, sigma=0.1),
+        signal_filter_svd(signal.astype('<f8'), sigma=0.1),
+        atol=1e-6,
+    )
+
+
+def test_signal_filter_ncpca_zero() -> None:
+    """Test signal_filter_ncpca with zero bins and zero pixels."""
+    signal = rng.poisson(100, (16, 16, 32)).astype(numpy.float64)
+    signal[..., 0] = 0.0  # all-zero bin
+    signal[0, 0] = 0.0  # all-zero pixel
+    denoised = signal_filter_ncpca(signal, 3)
+    assert numpy.isnan(denoised[0, 0]).all()
+    assert not numpy.isnan(denoised[1:]).any()
+    assert_allclose(denoised[1:, :, 0], 0.0, atol=1e-6)
 
 
 @pytest.mark.parametrize('dtype', [None, 'float32'])
@@ -1802,6 +1883,12 @@ def test_signal_filter_ncpca(*, dtype: DTypeLike, n_components: Any) -> None:
     denoised = signal_filter_ncpca(signal, n_components, axis=0)
 
     assert_array_equal(signal, signal_copy)
+    # zero-intensity pixels are NaN
+    zero = numpy.mean(signal, axis=0) == 0.0
+    assert zero.any()
+    assert numpy.isnan(denoised[:, zero]).all()
+    signal = numpy.where(zero, numpy.nan, signal)
+
     assert_allclose(numpy.nanmean(denoised), numpy.nanmean(signal), atol=1e-4)
     assert_allclose(
         denoised, signal, atol=1e-3 if n_components is None else 30

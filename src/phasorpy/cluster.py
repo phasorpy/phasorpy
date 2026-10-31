@@ -99,7 +99,7 @@ def phasor_cluster_gmm(
     Raises
     ------
     ValueError
-        If `sigma` is not positive.
+        If `sigma` is not finite and positive.
         If `clusters` is less than 1.
         If the array shapes of `real` and `imag` do not match.
         If the number of valid (non-NaN) data points is less than `clusters`.
@@ -143,10 +143,10 @@ def phasor_cluster_gmm(
     """
     from sklearn.mixture import GaussianMixture
 
-    if sigma <= 0.0:
-        msg = f'{sigma=} <= 0'
-        raise ValueError(msg)
     sigma = float(sigma)
+    if not math.isfinite(sigma) or sigma <= 0.0:
+        msg = f'{sigma=} is not finite and positive'
+        raise ValueError(msg)
 
     if clusters < 1:
         msg = f'{clusters=} < 1'

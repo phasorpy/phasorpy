@@ -310,3 +310,42 @@ def test_plot_image_other() -> None:
 
     with pytest.raises(ValueError):
         plot_image(numpy.zeros(100), show=INTERACTIVE)
+
+    with pytest.raises(ValueError):
+        plot_image(show=INTERACTIVE)
+
+
+def test_plot_image_mixed_rgb() -> None:
+    """Test plot_image scales grayscale images independent of RGB images."""
+    gray = rng.random((16, 16))
+    rgb = rng.integers(0, 256, (16, 16, 3), dtype=numpy.uint8)
+    plot_image(gray, rgb, show=INTERACTIVE)
+    fig = pyplot.gcf()
+    gray_image = fig.axes[0].images[0]
+    assert gray_image.get_clim() == pytest.approx((gray.min(), gray.max()))
+    assert gray_image.colorbar is not None
+    pyplot.close()
+
+
+def test_plot_phasor_figsize() -> None:
+    """Test plot_phasor passes figsize to PhasorPlot."""
+    plot_phasor([0.5], [0.3], figsize=(3.0, 2.0), show=INTERACTIVE)
+    assert tuple(pyplot.gcf().get_size_inches()) == (3.0, 2.0)
+    pyplot.close()
+
+
+def test_plot_phasor_image_zero_harmonics() -> None:
+    """Test plot_phasor_image shows at least one harmonic."""
+    data = rng.random((2, 8, 8))
+    plot_phasor_image(data[0], data, data, harmonics=0, show=INTERACTIVE)
+    pyplot.close()
+
+
+def test_plot_signal_image_percentile_array() -> None:
+    """Test percentile may be a NumPy array."""
+    plot_signal_image(
+        rng.random((8, 8, 4)),
+        percentile=numpy.array([5.0, 95.0]),  # type: ignore[arg-type]
+        show=INTERACTIVE,
+    )
+    pyplot.close()

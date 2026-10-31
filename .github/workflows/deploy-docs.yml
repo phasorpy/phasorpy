@@ -11,6 +11,14 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+# serialize deploys to the external repo; cancel superseded PR builds
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && 'deploy' || github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
+
 env:
   MPLBACKEND: agg
 

@@ -58,9 +58,12 @@ def fetch(*, files: Iterable[str], show_progress: bool) -> None:
     """Fetch sample files from remote repositories."""
     from . import datasets
 
-    files = datasets.fetch(
-        *files, return_scalar=False, progressbar=show_progress
-    )
+    try:
+        files = datasets.fetch(
+            *files, return_scalar=False, progressbar=show_progress
+        )
+    except ValueError as exc:
+        raise click.UsageError(str(exc)) from exc
     if files:
         click.echo(f'Cached at {os.path.commonpath(files)}')
     else:
@@ -145,17 +148,22 @@ def lifetime(
         if number_lifetimes == 2:
             lifetime = (4.0, 1.0)
         else:
+            if frequency is None:
+                frequency = 80.0
             real, imag = phasor_semicircle(number_lifetimes + 2)
             lifetime = phasor_to_normal_lifetime(
-                real[1:-1], imag[1:-1], frequency or 80.0
+                real[1:-1], imag[1:-1], frequency
             )  # type: ignore[assignment]
 
-    plot = LifetimePlots(
-        frequency,
-        lifetime,
-        fraction if len(fraction) > 0 else None,
-        interactive=True,
-    )
+    try:
+        plot = LifetimePlots(
+            frequency,
+            lifetime,
+            fraction if len(fraction) > 0 else None,
+            interactive=True,
+        )
+    except ValueError as exc:
+        raise click.UsageError(str(exc)) from exc
     if not hide:
         plot.show()
 
@@ -221,7 +229,7 @@ def lifetime(
 )
 @click.option(
     '--samples',
-    type=int,
+    type=click.IntRange(min=3),
     default=128,
     show_default=True,
     help='Number of wavelength samples.',
@@ -264,21 +272,30 @@ def spectral(
         4: (470.0, 510.0, 560.0, 620.0),
     }
 
-    if not origin:
-        n = min(number_spectra, 2 if dho else 4)
-        origin = _default_origins[n]
+    if dho and max(number_spectra, len(origin)) > 2:
+        msg = 'DHO model supports at most 2 spectra'
+        raise click.UsageError(msg)
+    if not wavelength_min < wavelength_max:
+        msg = f'{wavelength_min=} must be smaller than {wavelength_max=}'
+        raise click.UsageError(msg)
 
-    plot = SpectralPlots(
-        origin,
-        sigma or None,
-        fraction if len(fraction) > 0 else None,
-        hr_factor=hr_factor,
-        vib_frequency=vib_frequency,
-        wavelength_range=(wavelength_min, wavelength_max),
-        samples=samples,
-        dho=dho,
-        interactive=True,
-    )
+    if not origin:
+        origin = _default_origins[number_spectra]
+
+    try:
+        plot = SpectralPlots(
+            origin,
+            sigma or None,
+            fraction if len(fraction) > 0 else None,
+            hr_factor=hr_factor,
+            vib_frequency=vib_frequency,
+            wavelength_range=(wavelength_min, wavelength_max),
+            samples=samples,
+            dho=dho,
+            interactive=True,
+        )
+    except ValueError as exc:
+        raise click.UsageError(str(exc)) from exc
     if not hide:
         plot.show()
 

@@ -60,6 +60,7 @@ mean, real, imag = phasor_from_signal(signal, harmonic='all', axis=0)
 
 print(mean.shape, real.shape, imag.shape)
 
+# %%
 # For the remainder of the tutorial, only the first and second harmonics
 # are used. They are calculated by specifying `harmonic=[1, 2]`:
 

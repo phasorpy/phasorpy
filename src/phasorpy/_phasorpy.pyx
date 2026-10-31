@@ -35,6 +35,7 @@ from libc.math cimport (
     fmax,
     fmin,
     hypot,
+    isinf,
     isnan,
     sin,
     sqrt,
@@ -136,6 +137,8 @@ def _phasor_from_signal(
     # TODO: use NumPy iterator API?
     # https://numpy.org/devdocs/reference/c-api/iterator.html
 
+    # allow samples=2: the calculation is mathematically defined, but
+    # the imaginary component is always zero and phase information is lost
     if (
         samples < 2
         or harmonics > samples // 2
@@ -299,6 +302,11 @@ def _phasor_from_lifetime(
 
     if nfreq == 1 and ntau == 1 and nfrac == 1 and ncomp == 1:
         # scalar
+        frac = fraction[0, 0]
+        if isnan(frac) or fabs(frac) < 1e-15:
+            phasor[0, 0, 0] = <float_t> NAN
+            phasor[1, 0, 0] = <float_t> NAN
+            return
         tau = lifetime[0, 0] * frequency[0] * twopi  # omega_tau
         gs = 1.0 / (1.0 + tau * tau)
         phasor[0, 0, 0] = <float_t> gs
@@ -444,14 +452,14 @@ def _gaussian_signal(
     if samples < 1:
         return
 
-    if folds < 0:
-        folds = <ssize_t> (-floor(-6.0 * stdev / <double> samples))
-
     with nogil:
-        if isnan(mean) or isnan(stdev) or stdev <= 0.0:
+        if isnan(mean) or isnan(stdev) or isinf(stdev) or stdev <= 0.0:
             for i in range(samples):
                 signal[i] = <float_t> NAN
         else:
+            if folds < 0:
+                folds = <ssize_t> (-floor(-6.0 * stdev / <double> samples))
+
             c = 1.0 / (sqrt(2.0 * M_PI) * stdev)
 
             for i in range(-folds * samples, (folds + 1) * samples):
@@ -770,7 +778,7 @@ cdef (float_t, float_t) _phasor_to_apparent_lifetime(
         double taumod = INFINITY
         double t
 
-    if isnan(real) or isnan(imag):
+    if isnan(real) or isnan(imag) or isnan(omega):
         return <float_t> NAN, <float_t> NAN
 
     t = real * real + imag * imag
@@ -820,7 +828,7 @@ cdef float_t _phasor_to_normal_lifetime(
         double taunorm = INFINITY
         double t
 
-    if isnan(real) or isnan(imag):
+    if isnan(real) or isnan(imag) or isnan(omega):
         return <float_t> NAN
 
     omega *= omega
@@ -1166,6 +1174,7 @@ cdef unsigned char _is_inside_polar_rectangle(
     """Return whether point is inside polar rectangle.
 
     Angles should be in the range [-pi, pi]. Otherwise performance is degraded.
+    If angle_min > angle_max, the angular range wraps around +/- pi.
 
     """
     cdef:
@@ -1184,10 +1193,11 @@ cdef unsigned char _is_inside_polar_rectangle(
         angle_min = <float_t> atan2(sin(angle_min), cos(angle_min))
     if angle_max < -M_PI or angle_max > M_PI:
         angle_max = <float_t> atan2(sin(angle_max), cos(angle_max))
-    if angle_min > angle_max:
-        angle_min, angle_max = angle_max, angle_min
     t = <float_t> atan2(y, x)
-    if t < angle_min or t > angle_max:
+    if angle_min <= angle_max:
+        if t < angle_min or t > angle_max:
+            return False
+    elif t < angle_min and t > angle_max:
         return False
 
     return True
@@ -1508,7 +1518,7 @@ cdef float_t _fraction_on_segment(
     # square of line length
     t = x0 * x0 + y0 * y0
     if t <= 0.0:
-        # not a line segment, return start
+        # degenerate segment, return fraction at (x1, y1)
         return 0.0
     # projection of point on line
     t = (x * x0 + y * y0) / t
@@ -1553,8 +1563,8 @@ cdef float_t _fraction_on_line(
     # square of line length
     t = x0 * x0 + y0 * y0
     if t <= 0.0:
-        # not a line, return end
-        return 1.0
+        # degenerate line, return fraction at (x1, y1)
+        return 0.0
     # projection of point on line
     t = (x * x0 + y * y0) / t
     return t
@@ -1895,7 +1905,7 @@ def _lifetime_search_2(
         raise ValueError('invalid lifetime shape')
     if fraction.shape[0] != 2 or fraction.shape[1] != real.shape[1]:
         raise ValueError('invalid fraction shape')
-    if real.shape[0] != imag.shape[0] != 2:
+    if real.shape[0] != 2 or imag.shape[0] != 2:
         raise ValueError('invalid phasor harmonics')
     if real.shape[1] != imag.shape[1]:
         raise ValueError('invalid phasor size')
@@ -2107,7 +2117,7 @@ def _mean_value_coordinates(
     """
     cdef:
         ssize_t i, j, k, p, nv
-        double x, y, alpha, weight, weight_sum
+        double x, y, alpha, weight, weight_sum, weight_abs_sum
         double* weights = NULL
         double* sigma = NULL
         double* length = NULL
@@ -2151,6 +2161,7 @@ def _mean_value_coordinates(
                 length[i] = hypot(vx[i] - x, vy[i] - y)
 
             weight_sum = 0.0
+            weight_abs_sum = 0.0
             for i in range(nv):
                 j = (i + 1) % nv  # next vertex, wrapped around
                 k = (i - 1 + nv) % nv  # previous vertex, wrapped around
@@ -2166,9 +2177,11 @@ def _mean_value_coordinates(
                     if j != k and j != i:
                         weight = weight * length[j] * sin(fabs(sigma[j]) * 0.5)
                 weight_sum = weight_sum + weight
+                weight_abs_sum = weight_abs_sum + fabs(weight)
                 weights[i] = weight
 
-            if fabs(weight_sum) > 1e-12:
+            # weights scale with polygon size. use relative threshold
+            if fabs(weight_sum) > 1e-12 * weight_abs_sum:
                 for i in range(nv):
                     fraction[order[i], p] = <float_t> (weights[i] / weight_sum)
             else:
@@ -2327,11 +2340,13 @@ cdef (float_t, float_t, float_t) _phasor_threshold_open(
     if not isnan(imag_max) and imag >= imag_max:
         return <float_t> NAN, <float_t> NAN, <float_t> NAN
 
-    if not isnan(modulation_min):
+    if not isnan(modulation_min) and modulation_min >= 0.0:
         mod = real * real + imag * imag
         if mod <= modulation_min * modulation_min:
             return <float_t> NAN, <float_t> NAN, <float_t> NAN
     if not isnan(modulation_max):
+        if modulation_max <= 0.0:
+            return <float_t> NAN, <float_t> NAN, <float_t> NAN
         if isnan(mod):
             mod = real * real + imag * imag
         if mod >= modulation_max * modulation_max:
@@ -2389,11 +2404,13 @@ cdef (float_t, float_t, float_t) _phasor_threshold_closed(
     if not isnan(imag_max) and imag > imag_max:
         return <float_t> NAN, <float_t> NAN, <float_t> NAN
 
-    if not isnan(modulation_min):
+    if not isnan(modulation_min) and modulation_min > 0.0:
         mod = real * real + imag * imag
         if mod < modulation_min * modulation_min:
             return <float_t> NAN, <float_t> NAN, <float_t> NAN
     if not isnan(modulation_max):
+        if modulation_max < 0.0:
+            return <float_t> NAN, <float_t> NAN, <float_t> NAN
         if isnan(mod):
             mod = real * real + imag * imag
         if mod > modulation_max * modulation_max:
@@ -2836,6 +2853,8 @@ def _flimlabs_signal(
             for pixels in channels:
                 signal_ = signal[c, i]
                 for h, count in pixels:
+                    if count < 0 or <ssize_t> <uint_t> count != count:
+                        raise ValueError(f'{count=} overflows signal dtype')
                     signal_[h] = <uint_t> count
                 i += 1
             c += 1
@@ -2844,6 +2863,8 @@ def _flimlabs_signal(
         for pixels in data[channel]:
             signal_ = signal[0, i]
             for h, count in pixels:
+                if count < 0 or <ssize_t> <uint_t> count != count:
+                    raise ValueError(f'{count=} overflows signal dtype')
                 signal_[h] = <uint_t> count
             i += 1
 

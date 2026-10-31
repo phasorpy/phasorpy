@@ -64,7 +64,7 @@ __all__ = [
     'phasor_from_component',
 ]
 
-import numbers
+import math
 from typing import TYPE_CHECKING, overload
 
 if TYPE_CHECKING:
@@ -327,7 +327,7 @@ def phasor_component_graphical(
         If the array shapes of `real` and `imag`, or `component_real` and
         `component_imag` do not match.
         If the number of components is not 2 or 3.
-        If the `radius` is not positive.
+        If the `radius` is not finite and positive.
         If the component coordinates contain NaN or infinite values.
         If `fractions` values are out of range [0, 1].
 
@@ -388,8 +388,8 @@ def phasor_component_graphical(
            [0, 1, 2, 0, 0, 0]], dtype=uint8)
 
     """
-    if radius <= 0:
-        msg = f'{radius=} <= 0'
+    if not math.isfinite(radius) or radius <= 0:
+        msg = f'{radius=} is not finite and positive'
         raise ValueError(msg)
 
     real = numpy.asarray(real)
@@ -431,18 +431,20 @@ def phasor_component_graphical(
         fractions = numpy.linspace(
             0.0, 1.0, round(longest_distance / (radius / 2) + 1)
         )
-    elif isinstance(fractions, (int, numbers.Integral)):
+    elif isinstance(fractions, int | numpy.integer):
         if fractions < 0:
             msg = f'{fractions=} < 0'
             raise ValueError(msg)
-        fractions = numpy.linspace(0.0, 1.0, fractions)
+        fractions = numpy.linspace(0.0, 1.0, int(fractions))
     else:
         fractions = numpy.asarray(fractions)
         if fractions.ndim != 1:
             msg = 'fractions is not a one-dimensional array'
             raise ValueError(msg)
         if fractions.size > 0 and (
-            fractions.min() < 0.0 or fractions.max() > 1.0
+            not numpy.isfinite(fractions).all()
+            or fractions.min() < 0.0
+            or fractions.max() > 1.0
         ):
             msg = 'fraction values must be in range [0, 1]'
             raise ValueError(msg)
@@ -631,13 +633,17 @@ def phasor_component_fit(
 
     has_harmonic_axis = mean.ndim + 1 == real.ndim
     if not has_harmonic_axis:
+        if num_harmonics != 1:
+            msg = f'{num_harmonics=} != 1 but phasor has no harmonic axis'
+            raise ValueError(msg)
         real = numpy.expand_dims(real, axis=0)
         imag = numpy.expand_dims(imag, axis=0)
     elif real.shape[0] != num_harmonics:
         msg = f'{real.shape[0]=} != {component_real.shape[0]=}'
         raise ValueError(msg)
 
-    # TODO: replace Inf with NaN values?
+    real = numpy.where(numpy.isfinite(real), real, numpy.nan)
+    imag = numpy.where(numpy.isfinite(imag), imag, numpy.nan)
     mean, real, imag = phasor_threshold(mean, real, imag)
 
     # replace NaN values with 0.0 for least squares solving
@@ -775,8 +781,8 @@ def phasor_component_concentration(  # noqa: PLR0917
         If `component_real` values are equal (degenerate component line).
         If `component_real` or `component_imag` do not have shape ``(2,)``.
         If `reference_mean` is not finite and positive.
-        If `reference_concentration` is not positive.
-        If `brightness_ratio` is not positive.
+        If `reference_concentration` is not finite and positive.
+        If `brightness_ratio` is not finite and positive.
 
     See Also
     --------
@@ -910,11 +916,16 @@ def phasor_component_concentration(  # noqa: PLR0917
     if not numpy.isfinite(reference_mean) or reference_mean <= 0.0:
         msg = f'{reference_mean=} is not finite and positive'
         raise ValueError(msg)
-    if reference_concentration <= 0.0:
-        msg = f'{reference_concentration=} is not positive'
+    if (
+        not numpy.isfinite(reference_concentration)
+        or reference_concentration <= 0.0
+    ):
+        msg = f'{reference_concentration=} is not finite and positive'
         raise ValueError(msg)
-    if brightness_ratio is not None and brightness_ratio <= 0.0:
-        msg = f'{brightness_ratio=} is not positive'
+    if brightness_ratio is not None and (
+        not numpy.isfinite(brightness_ratio) or brightness_ratio <= 0.0
+    ):
+        msg = f'{brightness_ratio=} is not finite and positive'
         raise ValueError(msg)
 
     # line(c0 -> origin) X line(c1/2 -> cal/2)
@@ -1006,8 +1017,11 @@ def phasor_component_mvc(
     """Return mean value coordinates of phasor coordinates from components.
 
     The mean value coordinates of phasor coordinates with respect to three or
-    more components spanning an arbitrary simple polygon are computed using
+    more components spanning a convex polygon are computed using
     the stable method described in [3]_.
+    The components may be specified in any order. They are sorted by angle
+    around their centroid to form the polygon. Non-convex polygons are not
+    supported.
     For three components, mean value coordinates are equivalent to
     barycentric coordinates.
 

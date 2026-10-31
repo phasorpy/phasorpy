@@ -4,11 +4,30 @@
 
 """Test PhasorPlotFret class."""
 
+import numpy
 from matplotlib import pyplot
+from numpy.testing import assert_allclose
 
+from phasorpy.lifetime import phasor_from_lifetime
 from phasorpy.plot import PhasorPlotFret
 
 INTERACTIVE = False  # enable for interactive plotting
+
+
+def test_phasorplot_fret_positions() -> None:
+    """Test initial positions of FRET donor markers."""
+    # 0.29 * 100 truncates to 28
+    plot = PhasorPlotFret(
+        frequency=60.0, donor_lifetime=4.2, fret_efficiency=0.29
+    )
+    expected = numpy.asarray(
+        phasor_from_lifetime(60.0, 4.2 * (1.0 - 0.29))
+    ).reshape(-1)
+    donor_fret = numpy.asarray(plot._donor_fret_line.get_xydata())
+    donor = numpy.asarray(plot._donor_line.get_xydata())
+    assert_allclose(donor_fret[0], expected)
+    assert_allclose(donor[0], expected)
+    pyplot.close()
 
 
 def test_phasorplot_fret() -> None:

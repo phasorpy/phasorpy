@@ -82,6 +82,7 @@ class LifetimePlots:
 
     _time_plot: Axes
     _phasor_plot: Axes
+    _phasorplot: PhasorPlot
     _phase_plot: Axes
     _modulation_plot: Axes
 
@@ -209,6 +210,7 @@ class LifetimePlots:
 
         # phasor plot
         phasorplot = PhasorPlot(ax=phasor_plot)
+        self._phasorplot = phasorplot
         lines = phasorplot.semicircle(frequency)
         self._semicircle_line = lines[0]
         self._semicircle_ticks = phasorplot._semicircle_ticks  # noqa: SLF001
@@ -408,14 +410,14 @@ class LifetimePlots:
         if fractions is None:
             fractions = numpy.ones(num_components) / num_components
         else:
-            fractions = numpy.asarray(fractions)
+            fractions = numpy.asarray(fractions, dtype=numpy.float64).clip(0.0)
             num_fractions = max(fractions.size, 1)
             if num_fractions != num_components:
                 msg = f'{num_fractions=} != {num_components=}'
                 raise ValueError(msg)
             s = fractions.sum()
             if s > 0.0:
-                fractions = numpy.clip(fractions / s, 0.0, 1.0)
+                fractions = fractions / s
             else:
                 fractions = numpy.ones(num_components) / num_components
 
@@ -503,6 +505,7 @@ class LifetimePlots:
             self._semicircle_line.set_data(
                 *phasor_transform(*phasor_from_lifetime(frequency, lifetime))
             )
+        self._phasorplot._frequency = frequency  # noqa: SLF001
 
         lifetimes = numpy.asarray([s.val for s in self._lifetime_sliders])
         fractions = numpy.asarray([s.val for s in self._fraction_sliders])

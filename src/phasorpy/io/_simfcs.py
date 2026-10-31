@@ -181,7 +181,7 @@ def phasor_to_simfcs_referenced(
     for index, label, _ in chunk_iter(
         phi.shape, chunk_shape, dims, squeeze=False, use_index=True
     ):
-        rawdata = [struct.pack('I', size)]
+        rawdata = [struct.pack('<I', size)]
         rawdata_append(rawdata, mean[index[1:]])
         phi_ = phi[index]
         mod_ = mod[index]
@@ -273,7 +273,7 @@ def phasor_from_simfcs_referenced(
     elif ext.startswith('.re') and len(ext) == 4:
         if ext[-1] == 'f':
             num_images = 5
-        elif ext[-1].isdigit():
+        elif ext[-1].isdigit() and ext[-1] != '0':
             # non-SimFCS referenced files containing a different
             # number of harmonics
             num_images = int(ext[-1]) * 2 + 1
@@ -461,7 +461,7 @@ def signal_from_fbd(
         phases = numpy.linspace(
             0.0, numpy.pi * 2, data.shape[-1], endpoint=False
         )
-        metadata = xarray_metadata(axes, data.shape, H=phases)
+        metadata = xarray_metadata(axes, data.shape, filename, H=phases)
         attrs = metadata['attrs']
         attrs['frequency'] = fbd.laser_frequency * 1e-6
         attrs['harmonic'] = fbd.harmonics

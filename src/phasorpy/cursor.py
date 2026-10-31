@@ -304,6 +304,8 @@ def mask_from_polar_cursor(  # noqa: PLR0917
     phase_max : array_like, shape (n,)
         Upper bound of angular range of cursors in radians.
         Values should be in the range [-pi, pi].
+        If `phase_min` is larger than `phase_max`, the angular range
+        wraps around +/- pi.
     modulation_min : array_like, shape (n,)
         Lower bound of radial range of cursors.
     modulation_max : array_like, shape (n,)

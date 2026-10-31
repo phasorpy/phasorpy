@@ -39,6 +39,9 @@ def test_fetch() -> None:
     result = runner.invoke(main, ['fetch', 'simfcs.r64'])
     assert result.exit_code == 0
     assert result.output.strip().endswith('simfcs.r64')
+    result = runner.invoke(main, ['fetch', 'non-existent.file'])
+    assert result.exit_code == 2
+    assert 'not found' in result.output
 
 
 def test_fret() -> None:
@@ -61,6 +64,13 @@ def test_lifetime() -> None:
         main, ['lifetime', '-l 4.2', '-l 1.0', '-a 0.6', '-a 0.4', '--hide']
     )
     assert result.exit_code == 0
+    # invalid input is reported as usage error
+    result = runner.invoke(
+        main, ['lifetime', '-l 4.2', '-a 0.6', '-a 0.4', '--hide']
+    )
+    assert result.exit_code == 2
+    result = runner.invoke(main, ['lifetime', '-f 0', '--hide'])
+    assert result.exit_code == 2
 
 
 def test_spectral() -> None:
@@ -90,3 +100,12 @@ def test_spectral() -> None:
         ],
     )
     assert result.exit_code == 0
+    # invalid input is reported as usage error
+    for args in (
+        ['spectral', '3', '--dho'],
+        ['spectral', '-o', '480', '-o', '530', '-o', '590', '--dho'],
+        ['spectral', '--wavelength-min', '700', '--wavelength-max', '400'],
+        ['spectral', '--samples', '0'],
+    ):
+        result = runner.invoke(main, [*args, '--hide'])
+        assert result.exit_code == 2, args

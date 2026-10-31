@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=68",
+    "setuptools>=77",
     "numpy>=2.1.0",
     "cython>=3.2.9",
 ]
@@ -15,11 +15,11 @@ dependencies = [
     # sync with [dependency-groups.run]
     # https://scientific-python.org/specs/spec-0000/
     "numpy>=2.1.0",
-    "matplotlib>=3.9.0",
-    "pandas>=2.3.0",
+    "matplotlib>=3.10.3",
+    "pandas>=2.3.2",
     # "scikit-image>=0.24.0",
     "scikit-learn>=1.5.0",
-    "scipy>=1.14.0",
+    "scipy>=1.14.1",
     "tifffile>=2026.5.2",
     "xarray>=2024.6.0",
     "click",
@@ -75,10 +75,10 @@ all = [
 run = [
     # runtime dependencies; sync with [project.dependencies]
     "numpy>=2.1.0",
-    "matplotlib>=3.10.0",
-    "pandas>=2.3.0",
+    "matplotlib>=3.10.3",
+    "pandas>=2.3.2",
     "scikit-learn>=1.5.0",
-    "scipy>=1.14.0",
+    "scipy>=1.14.1",
     "tifffile>=2026.5.2",
     "xarray>=2024.6.0",
     "click",
@@ -118,7 +118,7 @@ minimal = [
 ]
 build = [
     # build requirements
-    "cython>=3.2.4",
+    "cython>=3.2.9",
     "numpy>=2.1.0",
     "abi3audit",
     "build",
@@ -151,7 +151,7 @@ docs = [
 lint = [
     # static code analysis requirements
     "autoflake",
-    "black",
+    "black>=26.10.1",
     "blackdoc",
     # "codespell",
     "cython_lint",
@@ -265,7 +265,7 @@ typing-modules = ["_typing"]
 "setup.py" = ["T201"]
 "tests/*" = ["INP001", "PT011", "SLF001", "TC001", "PLR0917"]
 "tools/*" = ["ANN", "INP001", "T201"]
-"tutorials/*" = ["ANN", "D", "E402", "INP001", "T201", "S101", "ERA001", "PLR0917"]
+"tutorials/*" = ["ANN", "D", "E402", "INP001", "T201", "PLR0917"]
 "docs/conf.py" = ["A001", "ANN204", "D102", "E402", "INP001", "RUF012"]
 
 [tool.ruff.format]
@@ -398,7 +398,6 @@ norecursedirs = [
     ".pytest_cache",
     ".ruff_cache",
     ".vscode",
-    "htmlcov",
     "adhoc",
     "build",
     "docs/_build",
@@ -418,14 +417,14 @@ test-command = "pytest {project}/tests"
 test-skip = ["cp3*t*"]
 test-requires = [
     # sync with [dependency-groups.optional]
-    "brighteyes-mcs-reader; python_version < '3.15'",
+    "brighteyes-mcs-reader>=0.1.0; python_version < '3.15'",
     "czifile>=2026.4.11",
-    "fbdfile",
-    "lfdfiles",
-    "liffile",
-    "ptufile",
-    "sdtfile",
-    "pawflim",
+    "fbdfile>=2025.9.18",
+    "lfdfiles>=2026.6.24",
+    "liffile>=2025.2.10",
+    "ptufile>=2024.9.14",
+    "sdtfile>=2024.5.24",
+    "pawflim>=1.0.4",
     # sync with [dependency-groups.test]
     "coverage",
     "cython",  # for Cython.Coverage plugin
