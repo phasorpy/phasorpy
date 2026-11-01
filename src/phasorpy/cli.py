@@ -126,6 +126,11 @@ def fret(*, hide: bool) -> None:
     help='Fractional intensity of lifetime.',
 )
 @click.option(
+    '--apparent/--no-apparent',
+    default=None,
+    help='Show apparent lifetimes of mixture in phasor plot.',
+)
+@click.option(
     '--hide',
     default=False,
     is_flag=True,
@@ -138,6 +143,7 @@ def lifetime(
     frequency: float | None,
     lifetime: tuple[float, ...],
     fraction: tuple[float, ...],
+    apparent: bool | None,
     hide: bool,
 ) -> None:
     """Start interactive lifetime plots."""
@@ -160,6 +166,7 @@ def lifetime(
             frequency,
             lifetime,
             fraction if len(fraction) > 0 else None,
+            apparent=apparent,
             interactive=True,
         )
     except ValueError as exc:

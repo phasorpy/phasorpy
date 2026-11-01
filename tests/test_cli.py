@@ -60,6 +60,8 @@ def test_lifetime() -> None:
     assert result.exit_code == 0
     result = runner.invoke(main, ['lifetime', '-f 60', '-l 4.2', '--hide'])
     assert result.exit_code == 0
+    result = runner.invoke(main, ['lifetime', '--no-apparent', '--hide'])
+    assert result.exit_code == 0
     result = runner.invoke(
         main, ['lifetime', '-l 4.2', '-l 1.0', '-a 0.6', '-a 0.4', '--hide']
     )

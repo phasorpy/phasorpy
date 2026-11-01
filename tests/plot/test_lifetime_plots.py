@@ -4,6 +4,7 @@
 
 """Test LifetimePlots class."""
 
+import numpy
 import pytest
 from matplotlib import pyplot
 from numpy.testing import assert_allclose
@@ -92,6 +93,79 @@ def test_lifetime_plots_four() -> None:
     assert len(plot._fraction_sliders) == 4
     assert plot._fraction_sliders[0].val == 0.25
     assert plot._frequency_slider.val == 50.0
+    if INTERACTIVE:
+        plot.show()
+    pyplot.close()
+
+
+def test_lifetime_plots_apparent_lifetime() -> None:
+    """Test LifetimePlots apparent and normal lifetimes."""
+    plot = LifetimePlots(frequency=60.0, lifetime=4.2, interactive=True)
+    assert plot._apparent_points is None
+    assert plot._phase_lifetime_line is not None
+    assert plot._modulation_lifetime_arc is not None
+    plot._lifetime_sliders[0].set_val(2.0)
+    pyplot.close()
+
+    plot = LifetimePlots(frequency=60.0, lifetime=[0.4, 4.0], apparent=False)
+    assert plot._apparent_points is None
+    assert plot._phase_lifetime_line is None
+    assert plot._modulation_lifetime_arc is None
+    pyplot.close()
+
+    # disabled by default for three or more components
+    plot = LifetimePlots(frequency=60.0, lifetime=[0.4, 1.0, 4.0])
+    assert plot._apparent_points is None
+    assert plot._phase_lifetime_line is None
+    pyplot.close()
+
+    plot = LifetimePlots(
+        frequency=60.0, lifetime=[0.4, 1.0, 4.0], apparent=True
+    )
+    assert plot._apparent_points is not None
+    pyplot.close()
+
+    plot = LifetimePlots(
+        frequency=60.0,
+        lifetime=[4.0, 4.0],
+        fraction=[0.5, 0.5],
+        interactive=True,
+    )
+    plot._frequency_slider.set_val(80.0)
+    plot._lifetime_sliders[0].set_val(0.4)
+    plot._fraction_sliders[0].set_val(0.6)
+    assert plot._apparent_points is not None
+    assert plot._phase_lifetime_line is not None
+    assert plot._modulation_lifetime_arc is not None
+    real, imag = numpy.asarray(
+        plot._phasor_points[0].get_data(), dtype=numpy.float64
+    )[:, 0]
+    points_real, points_imag = numpy.asarray(
+        plot._apparent_points.get_data(), dtype=numpy.float64
+    )
+    assert len(points_real) == 3
+    # markers on universal semicircle
+    assert_allclose((points_real - 0.5) ** 2 + points_imag**2, 0.25)
+    # phase line from origin through mixture to phase lifetime
+    x, y = numpy.asarray(
+        plot._phase_lifetime_line.get_data(), dtype=numpy.float64
+    )
+    assert_allclose([x[0], y[0]], [0.0, 0.0])
+    assert_allclose([x[1], y[1]], [points_real[0], points_imag[0]])
+    assert_allclose(y[1] * real, x[1] * imag, atol=1e-12)
+    # modulation arc from real axis to modulation lifetime
+    x, y = numpy.asarray(
+        plot._modulation_lifetime_arc.get_data(), dtype=numpy.float64
+    )
+    assert_allclose([x[0], y[0]], [numpy.hypot(real, imag), 0.0])
+    assert_allclose([x[-1], y[-1]], [points_real[1], points_imag[1]])
+    assert_allclose(numpy.hypot(x, y), numpy.hypot(real, imag))
+    # normal lifetime on line through semicircle center and mixture
+    assert_allclose(
+        points_imag[2] * (real - 0.5),
+        (points_real[2] - 0.5) * imag,
+        atol=1e-12,
+    )
     if INTERACTIVE:
         plot.show()
     pyplot.close()
