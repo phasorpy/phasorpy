@@ -253,7 +253,11 @@ class LifetimePlots:
             points, phase_line, modulation_arc = _apparent_lifetime_data(
                 frequency, real, imag
             )
-            style = {'color': 'tab:blue', 'alpha': 0.5, 'zorder': 5}
+            style: dict[str, Any] = {
+                'color': 'tab:blue',
+                'alpha': 0.5,
+                'zorder': 5,
+            }
             self._phase_lifetime_line = phasorplot.plot(
                 *phase_line, ':', linewidth=0.8, **style
             )[0]

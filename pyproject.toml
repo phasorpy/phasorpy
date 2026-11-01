@@ -359,6 +359,12 @@ module = [
 ]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# PyQt6 6.12 stubs contain syntax errors that block mypy
+module = ["PyQt6.*"]
+follow_imports = "skip"
+follow_imports_for_stubs = true
+
 [tool.coverage.run]
 plugins = ["Cython.Coverage"]
 omit = ["conftest.py", "__main__.py"]

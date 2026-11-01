@@ -137,22 +137,26 @@ def test_lifetime_plots_apparent_lifetime() -> None:
     assert plot._apparent_points is not None
     assert plot._phase_lifetime_line is not None
     assert plot._modulation_lifetime_arc is not None
-    real, imag = (float(v[0]) for v in plot._phasor_points[0].get_data())
-    points_real, points_imag = plot._apparent_points.get_data()
+    real, imag = numpy.asarray(
+        plot._phasor_points[0].get_data(), dtype=numpy.float64
+    )[:, 0]
+    points_real, points_imag = numpy.asarray(
+        plot._apparent_points.get_data(), dtype=numpy.float64
+    )
     assert len(points_real) == 3
     # markers on universal semicircle
-    assert_allclose(
-        (numpy.asarray(points_real) - 0.5) ** 2
-        + numpy.asarray(points_imag) ** 2,
-        0.25,
-    )
+    assert_allclose((points_real - 0.5) ** 2 + points_imag**2, 0.25)
     # phase line from origin through mixture to phase lifetime
-    x, y = plot._phase_lifetime_line.get_data()
+    x, y = numpy.asarray(
+        plot._phase_lifetime_line.get_data(), dtype=numpy.float64
+    )
     assert_allclose([x[0], y[0]], [0.0, 0.0])
     assert_allclose([x[1], y[1]], [points_real[0], points_imag[0]])
     assert_allclose(y[1] * real, x[1] * imag, atol=1e-12)
     # modulation arc from real axis to modulation lifetime
-    x, y = plot._modulation_lifetime_arc.get_data()
+    x, y = numpy.asarray(
+        plot._modulation_lifetime_arc.get_data(), dtype=numpy.float64
+    )
     assert_allclose([x[0], y[0]], [numpy.hypot(real, imag), 0.0])
     assert_allclose([x[-1], y[-1]], [points_real[1], points_imag[1]])
     assert_allclose(numpy.hypot(x, y), numpy.hypot(real, imag))
