@@ -36,7 +36,7 @@ jobs:
         python-version: ["3.14"]
     steps:
       - uses: actions/checkout@v7
-      - uses: pypa/cibuildwheel@v4.3.4
+      - uses: pypa/cibuildwheel@v4.3.5
         env:
           CIBW_ARCHS_LINUX: auto
           CIBW_ARCHS_WINDOWS: native
