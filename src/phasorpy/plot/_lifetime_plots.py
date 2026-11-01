@@ -26,6 +26,8 @@ from ..lifetime import (
     lifetime_to_frequency,
     lifetime_to_signal,
     phasor_from_lifetime,
+    phasor_to_apparent_lifetime,
+    phasor_to_normal_lifetime,
 )
 from ..phasor import (
     phasor_to_polar,
@@ -63,6 +65,9 @@ class LifetimePlots:
     lifetime_range : tuple[float, float, float], optional
         Range of lifetimes in ns for lifetime sliders.
         The default is (0.0, 20.0, 0.1).
+    apparent : bool, optional
+        Mark apparent and normal lifetimes of mixture in phasor plot.
+        By default, enabled for fewer than three lifetime components.
     interactive : bool, optional, default: False
         Add sliders to change frequency and lifetimes interactively.
     **kwargs
@@ -104,6 +109,10 @@ class LifetimePlots:
     _semicircle_line: Line2D
     _semicircle_ticks: CircleTicks | None
 
+    _apparent_points: Line2D | None = None
+    _phase_lifetime_line: Line2D | None = None
+    _modulation_lifetime_arc: Line2D | None = None
+
     _component_colors = (
         # 'tab:blue',  # main
         # 'tab:red',  # modulation
@@ -125,6 +134,7 @@ class LifetimePlots:
         *,
         frequency_range: tuple[float, float, float] = (10.0, 200.0, 1.0),
         lifetime_range: tuple[float, float, float] = (0.0, 20.0, 0.1),
+        apparent: bool | None = None,
         interactive: bool = False,
         **kwargs: Any,
     ) -> None:
@@ -156,6 +166,8 @@ class LifetimePlots:
         if num_components > 6:
             msg = f'too many components {num_components} > 6'
             raise ValueError(msg)
+        if apparent is None:
+            apparent = num_components < 3
 
         # create plots
         update_kwargs(kwargs, figsize=(10.24, 7.68))
@@ -236,6 +248,23 @@ class LifetimePlots:
                     color=self._component_colors[i],
                 )
                 self._phasor_points.append(lines[0])
+
+        if apparent:
+            points, phase_line, modulation_arc = _apparent_lifetime_data(
+                frequency, real, imag
+            )
+            style = {'color': 'tab:blue', 'alpha': 0.5, 'zorder': 5}
+            self._phase_lifetime_line = phasorplot.plot(
+                *phase_line, ':', linewidth=0.8, **style
+            )[0]
+            self._modulation_lifetime_arc = phasorplot.plot(
+                *modulation_arc, ':', linewidth=0.8, **style
+            )[0]
+            if num_components > 1:
+                # markers coincide with mixture for single lifetime
+                self._apparent_points = phasorplot.plot(
+                    *points, 'o', markersize=4, **{**style, 'zorder': 1.5}
+                )[0]
 
         # frequency-domain plot
         phase_plot.set_title('Frequency domain')
@@ -556,6 +585,17 @@ class LifetimePlots:
                 self._phasor_points[i + 1].set_data(
                     [component_real[i]], [component_imag[i]]
                 )
+        if (
+            self._phase_lifetime_line is not None
+            and self._modulation_lifetime_arc is not None
+        ):
+            points, phase_line, modulation_arc = _apparent_lifetime_data(
+                frequency, real, imag
+            )
+            if self._apparent_points is not None:
+                self._apparent_points.set_data(*points)
+            self._phase_lifetime_line.set_data(*phase_line)
+            self._modulation_lifetime_arc.set_data(*modulation_arc)
 
         # frequency-domain plot
         self._frequency_line.set_data([frequency, frequency], [0, 90])
@@ -584,3 +624,41 @@ def _degpct(
 ) -> tuple[NDArray[Any], NDArray[Any]]:
     """Return phase in degrees and modulation in percent."""
     return numpy.rad2deg(phase), numpy.multiply(modulation, 100.0)
+
+
+def _apparent_lifetime_data(
+    frequency: float, real: float, imag: float, /
+) -> tuple[
+    tuple[NDArray[Any], NDArray[Any]],
+    tuple[NDArray[Any], NDArray[Any]],
+    tuple[NDArray[Any], NDArray[Any]],
+]:
+    """Return coordinates of apparent lifetime markers and lines.
+
+    Return semicircle points of phase, modulation, and normal lifetimes,
+    line from origin to phase lifetime, and arc from real axis to
+    modulation lifetime.
+
+    """
+    phase_lifetime, modulation_lifetime = phasor_to_apparent_lifetime(
+        real, imag, frequency
+    )
+    normal_lifetime = phasor_to_normal_lifetime(real, imag, frequency)
+    points_real, points_imag = phasor_from_lifetime(
+        frequency,
+        numpy.asarray(
+            [phase_lifetime, modulation_lifetime, normal_lifetime],
+            dtype=numpy.float64,
+        ),
+    )
+    modulation = phasor_to_polar(real, imag)[1]
+    modulation_phase = phasor_to_polar(points_real[1], points_imag[1])[0]
+    angle = numpy.linspace(0.0, modulation_phase, 32)
+    return (
+        (points_real, points_imag),
+        (
+            numpy.asarray([0.0, points_real[0]]),
+            numpy.asarray([0.0, points_imag[0]]),
+        ),
+        (modulation * numpy.cos(angle), modulation * numpy.sin(angle)),
+    )

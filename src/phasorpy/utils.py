@@ -165,7 +165,6 @@ def versions(
         'ptufile',
         'scipy',
         'sdtfile',
-        'skimage',
         'sklearn',
         'tifffile',
         'xarray',
