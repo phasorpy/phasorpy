@@ -17,6 +17,8 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 # remove the examples header from HTML tutorials
 import sphinx_gallery.gen_rst
+from docutils import nodes
+from sphinx.application import Sphinx
 from sphinx_gallery.sorting import ExplicitOrder
 
 sphinx_gallery.gen_rst.EXAMPLE_HEADER = (
@@ -210,6 +212,29 @@ intersphinx_mapping = {
 
 # do not show typehints
 autodoc_typehints = 'none'
+
+# redirect links to defunct websites, for example, to the Web Archive
+link_redirects = {
+    'https://www.lfd.uci.edu': (
+        'https://web.archive.org/web/20260926221331/https://www.lfd.uci.edu'
+    ),
+}
+
+
+def redirect_links(app: Sphinx, doctree: nodes.document) -> None:
+    """Replace URL prefixes in links according to link_redirects."""
+    del app
+    for node in doctree.findall(nodes.reference):
+        refuri = node.get('refuri', '')
+        for old, new in link_redirects.items():
+            if refuri.startswith(old):
+                node['refuri'] = new + refuri[len(old) :]
+                break
+
+
+def setup(app: Sphinx) -> None:
+    """Set up Sphinx app with link redirection."""
+    app.connect('doctree-read', redirect_links)
 
 
 def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
