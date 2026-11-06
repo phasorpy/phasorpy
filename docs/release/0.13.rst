@@ -1,0 +1,38 @@
+.. currentmodule:: phasorpy
+
+PhasorPy 0.13 (2026-11-06)
+==========================
+
+This is the fourth beta release of the PhasorPy library.
+It contains new functions, support for Python 3.15, improved tutorials,
+and many bug fixes.
+
+The new ``cluster.phasor_cluster_kmeans`` function partitions phasor
+coordinates into clusters using k-means clustering.
+
+The ``io.signal_from_fbd`` function passes keyword arguments to
+``FbdFile`` and ``FbdFile.asimage``.
+
+Wheels are now available for free-threaded Python 3.15 and Pyodide.
+
+This release supports Python 3.12 through 3.15.
+
+What's Changed
+--------------
+
+* Bump version by @cgohlke in https://github.com/phasorpy/phasorpy/pull/366
+* Upgrade ruff and fix lint errors by @cgohlke in https://github.com/phasorpy/phasorpy/pull/368
+* Bump the github-actions group with 3 updates by @dependabot[bot] in https://github.com/phasorpy/phasorpy/pull/369
+* Build wheels for cp315t and pyodide by @cgohlke in https://github.com/phasorpy/phasorpy/pull/370
+* Dispatch kwargs to FbdFile and FbdFile.asimage in signal_from_fbd by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/372
+* Add k-means clustering functionality by @bruno-pannunzio in https://github.com/phasorpy/phasorpy/pull/373
+* Update tooling and reported package versions by @cgohlke in https://github.com/phasorpy/phasorpy/pull/374
+* Improve cluster tutorial by @cgohlke in https://github.com/phasorpy/phasorpy/pull/376
+* Support Python 3.15 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/380
+* Improve tutorials by @cgohlke in https://github.com/phasorpy/phasorpy/pull/381
+* Fix many code review issues by @cgohlke in https://github.com/phasorpy/phasorpy/pull/383
+* Add apparent lifetime indicators to LifetimePlots by @cgohlke in https://github.com/phasorpy/phasorpy/pull/385
+* Redirect lfd.uci.edu links to web.archive.org by @cgohlke in https://github.com/phasorpy/phasorpy/pull/387
+* Release v0.13 by @cgohlke in https://github.com/phasorpy/phasorpy/pull/388
+
+**Full Changelog**: https://github.com/phasorpy/phasorpy/compare/v0.12...v0.13

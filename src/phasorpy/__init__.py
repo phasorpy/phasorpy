@@ -9,5 +9,5 @@ from __future__ import annotations
 __all__ = ['__version__']
 
 
-__version__ = '0.13.dev0'
+__version__ = '0.13'
 """PhasorPy version string."""
