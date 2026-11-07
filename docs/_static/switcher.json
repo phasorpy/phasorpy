@@ -1,14 +1,19 @@
 [
   {
     "name": "dev",
-    "version": "0.13",
+    "version": "0.14",
     "url": "https://www.phasorpy.org/docs/dev/"
   },
   {
-    "name": "0.12 (stable)",
-    "version": "0.12",
+    "name": "0.13 (stable)",
+    "version": "0.13",
     "url": "https://www.phasorpy.org/docs/stable/",
     "preferred": true
+  },
+  {
+    "name": "0.12",
+    "version": "0.12",
+    "url": "https://www.phasorpy.org/docs/v0.12/"
   },
   {
     "name": "0.11",
@@ -19,10 +24,5 @@
     "name": "0.10",
     "version": "0.10",
     "url": "https://www.phasorpy.org/docs/v0.10/"
-  },
-  {
-    "name": "0.9",
-    "version": "0.9",
-    "url": "https://www.phasorpy.org/docs/v0.9/"
   }
 ]
